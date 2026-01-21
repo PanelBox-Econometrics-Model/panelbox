@@ -179,9 +179,8 @@ QA_GUIDE.md
 *_BACKUP.*
 *.bak
 
-# Debug and test scripts
+# Debug scripts (but not actual test files)
 debug_*.py
-test_*.py
 setup_structure.sh
 install_reports.sh
 
