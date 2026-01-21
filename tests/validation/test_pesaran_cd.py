@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
-from panelbox.validation.cross_sectional.pesaran_cd import PesaranCDTest
+from panelbox.validation.cross_sectional_dependence.pesaran_cd import PesaranCDTest
 
 
 class TestPesaranCD:
