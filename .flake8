@@ -1,0 +1,40 @@
+# Flake8 Configuration for PanelBox
+# https://flake8.pycqa.org/en/latest/user/configuration.html
+
+[flake8]
+max-line-length = 100
+extend-ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by black)
+    E501,
+    # E402: module level import not at top (sometimes needed)
+    E402
+
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    .mypy_cache,
+    .tox,
+    venv,
+    env,
+    desenvolvimento,
+    htmlcov,
+    .coverage
+
+per-file-ignores =
+    __init__.py:F401,F403
+    # F401: module imported but unused (expected in __init__)
+    # F403: 'from module import *' used (acceptable in __init__)
+
+# Complexity
+max-complexity = 15
+
+# Docstring conventions
+docstring-convention = numpy

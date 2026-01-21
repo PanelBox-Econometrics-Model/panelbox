@@ -1,0 +1,92 @@
+# Copyright Header for PanelBox Files
+
+Use this header at the top of new Python files:
+
+```python
+# Copyright (c) 2026 Gustavo Haase
+#
+# This file is part of PanelBox.
+#
+# PanelBox is free software: you can redistribute it and/or modify
+# it under the terms of the MIT License as published in the LICENSE file.
+#
+# PanelBox is provided "as is", without warranty of any kind.
+# See the LICENSE file for full license text.
+```
+
+For shorter version (docstring):
+
+```python
+"""
+Module description here.
+
+Copyright (c) 2026 Gustavo Haase
+License: MIT (see LICENSE file)
+"""
+```
+
+## Files with Copyright Headers
+
+Core modules (should have headers):
+- panelbox/__init__.py
+- panelbox/__version__.py
+- panelbox/gmm/difference_gmm.py
+- panelbox/gmm/system_gmm.py
+- panelbox/gmm/results.py
+- panelbox/gmm/estimator.py
+- panelbox/gmm/instruments.py
+- panelbox/gmm/tests.py
+
+## Adding Headers to Existing Files
+
+Run this to add headers automatically (optional):
+
+```bash
+# Install copyright tool
+pip install reuse
+
+# Or manually add to files:
+for file in panelbox/*.py panelbox/**/*.py; do
+    if ! grep -q "Copyright" "$file"; then
+        echo "Missing copyright: $file"
+    fi
+done
+```
+
+## SPDX License Identifier (Alternative)
+
+Modern approach using SPDX:
+
+```python
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Gustavo Haase
+```
+
+This is shorter and machine-readable.
+
+## License Compatibility
+
+MIT License is compatible with:
+- ✅ GPL (can be included in GPL projects)
+- ✅ Apache 2.0
+- ✅ BSD licenses
+- ✅ Commercial use
+- ✅ Academic use
+
+## Attribution Requirements
+
+When using PanelBox, users should:
+1. Keep the LICENSE file in distributions
+2. Cite in academic work (see README for BibTeX)
+3. No need to display copyright in UI
+
+## Third-Party Licenses
+
+PanelBox depends on:
+- NumPy (BSD)
+- Pandas (BSD)
+- SciPy (BSD)
+- statsmodels (BSD)
+- patsy (BSD)
+
+All dependencies have permissive licenses compatible with MIT.

@@ -1,0 +1,24 @@
+<div class="report-footer">
+    <div class="report-footer-actions no-print">
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+            Print Report
+        </button>
+        {% if show_export_buttons %}
+        <button class="btn btn-secondary btn-sm" onclick="PanelBoxUtils.exportTableToCSV('summary-table', 'panelbox_results.csv')">
+            Export to CSV
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="report-footer-text">
+        <p>
+            Generated with <strong>PanelBox {{ panelbox_version }}</strong> |
+            <a href="https://github.com/panelbox/panelbox" target="_blank">Documentation</a>
+        </p>
+        <p class="text-xs text-gray-500">
+            Report Type: {{ report_type }} |
+            Generated: {{ generation_date }} |
+            Python {{ python_version }}
+        </p>
+    </div>
+</div>

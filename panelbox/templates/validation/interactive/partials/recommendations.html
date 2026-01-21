@@ -1,0 +1,101 @@
+<section class="report-section">
+    <h3 class="section-subtitle">Recommendations</h3>
+
+    <p class="text-muted mb-6">
+        Based on the validation test results, here are specific recommendations to address detected issues.
+        Each recommendation includes actionable suggestions to improve your panel data model.
+    </p>
+
+    {% for rec in recommendations %}
+    <div class="recommendation-card recommendation-{{ rec.severity }} mb-6">
+        <div class="recommendation-header">
+            <div class="recommendation-category">
+                <span class="recommendation-icon">
+                    {% if rec.severity == 'critical' %}⚠️{% elif rec.severity == 'high' %}🔴{% elif rec.severity == 'medium' %}🟡{% else %}🔵{% endif %}
+                </span>
+                <span class="recommendation-category-text">{{ rec.category }}</span>
+            </div>
+            <span class="badge badge-{{ rec.severity }}">{{ rec.severity|upper }}</span>
+        </div>
+
+        <div class="recommendation-body">
+            <h4 class="recommendation-title">{{ rec.issue }}</h4>
+
+            <div class="recommendation-tests">
+                <strong>Failed Tests:</strong>
+                <ul class="test-list">
+                    {% for test in rec.tests %}
+                    <li>{{ test }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="recommendation-suggestions">
+                <strong>Suggested Actions:</strong>
+                <ol class="suggestion-list">
+                    {% for suggestion in rec.suggestions %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- General Best Practices -->
+    <div class="info-box mt-8">
+        <h4 class="info-box-title">General Best Practices</h4>
+        <div class="info-box-content">
+            <ul class="info-box-list">
+                <li>
+                    <strong>Robust Standard Errors:</strong>
+                    Always consider using robust standard errors (clustered, HAC, or Driscoll-Kraay) to
+                    account for potential violations of i.i.d. assumptions.
+                </li>
+                <li>
+                    <strong>Specification Testing:</strong>
+                    Run specification tests (Hausman, Mundlak) to validate your choice between Fixed Effects
+                    and Random Effects models.
+                </li>
+                <li>
+                    <strong>Time Effects:</strong>
+                    Consider including time fixed effects to control for common shocks and time trends that
+                    affect all entities.
+                </li>
+                <li>
+                    <strong>Model Diagnostics:</strong>
+                    Examine residual plots and influential observations to identify outliers and
+                    potential model misspecification.
+                </li>
+                <li>
+                    <strong>Theory-Driven Specification:</strong>
+                    Base your model specification on economic theory and prior research, not just
+                    statistical tests.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- References -->
+    <div class="references-box mt-6">
+        <h4 class="references-title">Further Reading</h4>
+        <ul class="references-list">
+            <li>
+                Wooldridge, J. M. (2010). <em>Econometric Analysis of Cross Section and Panel Data</em> (2nd ed.).
+                MIT Press.
+            </li>
+            <li>
+                Baltagi, B. H. (2021). <em>Econometric Analysis of Panel Data</em> (6th ed.).
+                Springer.
+            </li>
+            <li>
+                Cameron, A. C., & Trivedi, P. K. (2005). <em>Microeconometrics: Methods and Applications</em>.
+                Cambridge University Press.
+            </li>
+            <li>
+                Pesaran, M. H. (2015). Testing Weak Cross-Sectional Dependence in Large Panels.
+                <em>Econometric Reviews</em>, 34(6-10), 1089-1117.
+            </li>
+        </ul>
+    </div>
+</section>

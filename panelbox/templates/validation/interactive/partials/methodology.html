@@ -1,0 +1,201 @@
+<section class="report-section">
+    <h3 class="section-subtitle">Validation Methodology</h3>
+
+    <p class="text-muted mb-6">
+        This section provides technical details about the validation tests performed on your panel data model.
+        Each test is designed to detect specific violations of panel data assumptions.
+    </p>
+
+    <!-- Specification Tests -->
+    <div class="methodology-section mb-8">
+        <h4 class="methodology-title">Specification Tests</h4>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Hausman Test</h5>
+            <p class="test-method-description">
+                Tests the null hypothesis that Random Effects estimates are consistent. Rejection suggests
+                systematic differences between FE and RE estimates, favoring Fixed Effects.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Test Statistic:</strong> H = (β<sub>FE</sub> - β<sub>RE</sub>)' [Var(β<sub>FE</sub>) - Var(β<sub>RE</sub>)]<sup>-1</sup> (β<sub>FE</sub> - β<sub>RE</sub>)</p>
+                <p><strong>Distribution:</strong> χ² with K degrees of freedom</p>
+                <p><strong>Interpretation:</strong> If p-value < 0.05, use Fixed Effects</p>
+            </div>
+        </div>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Mundlak Test</h5>
+            <p class="test-method-description">
+                Alternative to Hausman test based on auxiliary regression. Tests whether entity means of
+                time-varying regressors are correlated with the unobserved effect.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Approach:</strong> Estimate Random Effects including entity means of X as additional regressors</p>
+                <p><strong>Test Statistic:</strong> Wald test on coefficients of entity means</p>
+                <p><strong>Interpretation:</strong> Rejection indicates correlation, favoring Fixed Effects</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Serial Correlation Tests -->
+    <div class="methodology-section mb-8">
+        <h4 class="methodology-title">Serial Correlation Tests</h4>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Wooldridge Test</h5>
+            <p class="test-method-description">
+                Tests for first-order autocorrelation in panel data models. Specifically designed for
+                Fixed Effects models with small T.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Null Hypothesis:</strong> No first-order autocorrelation</p>
+                <p><strong>Test Statistic:</strong> F-test on correlation of lagged residuals</p>
+                <p><strong>Distribution:</strong> F(1, N-1)</p>
+            </div>
+        </div>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Baltagi-Wu Test</h5>
+            <p class="test-method-description">
+                Durbin-Watson analogue for panel data. Tests for serial correlation in the idiosyncratic
+                error component.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Test Statistic:</strong> BW = Σ<sub>i</sub>Σ<sub>t</sub>(ê<sub>it</sub> - ê<sub>i,t-1</sub>)² / Σ<sub>i</sub>Σ<sub>t</sub>ê<sub>it</sub>²</p>
+                <p><strong>Range:</strong> 0 to 4 (2 indicates no autocorrelation)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Heteroskedasticity Tests -->
+    <div class="methodology-section mb-8">
+        <h4 class="methodology-title">Heteroskedasticity Tests</h4>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Breusch-Pagan LM Test</h5>
+            <p class="test-method-description">
+                Tests for heteroskedasticity in panel data residuals. Detects whether error variance
+                depends on explanatory variables.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Null Hypothesis:</strong> Homoskedastic errors</p>
+                <p><strong>Approach:</strong> Regress squared residuals on regressors</p>
+                <p><strong>Test Statistic:</strong> LM = N·R² ~ χ²(K)</p>
+            </div>
+        </div>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Modified Wald Test</h5>
+            <p class="test-method-description">
+                Tests for groupwise heteroskedasticity in Fixed Effects models. Allows variance to differ
+                across entities.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Null Hypothesis:</strong> σ²<sub>1</sub> = σ²<sub>2</sub> = ... = σ²<sub>N</sub></p>
+                <p><strong>Test Statistic:</strong> Wald statistic ~ χ²(N)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cross-Sectional Dependence Tests -->
+    <div class="methodology-section mb-8">
+        <h4 class="methodology-title">Cross-Sectional Dependence Tests</h4>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Pesaran CD Test</h5>
+            <p class="test-method-description">
+                Tests for weak cross-sectional dependence in large panels. Robust to non-stationarity
+                and structural breaks.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Test Statistic:</strong> CD = √(2T/(N(N-1))) Σ<sub>i&lt;j</sub> ρ̂<sub>ij</sub></p>
+                <p><strong>Distribution:</strong> N(0,1) asymptotically</p>
+                <p><strong>Advantages:</strong> Valid for large N, valid for dynamic models</p>
+            </div>
+        </div>
+
+        <div class="test-methodology">
+            <h5 class="test-method-name">Frees Test</h5>
+            <p class="test-method-description">
+                Nonparametric test for cross-sectional independence. Based on squared rank correlation
+                of residuals across entities.
+            </p>
+            <div class="test-method-details">
+                <p><strong>Null Hypothesis:</strong> No cross-sectional correlation</p>
+                <p><strong>Test Statistic:</strong> Frees = T·mean(R²<sub>ij</sub>) where R is rank correlation</p>
+                <p><strong>Critical values:</strong> Tabulated by Frees (1995, 2004)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interpretation Guidelines -->
+    <div class="guidelines-box mt-8">
+        <h4 class="guidelines-title">Interpretation Guidelines</h4>
+
+        <div class="guideline-item">
+            <h5>Significance Levels</h5>
+            <p>
+                Tests use standard significance levels: 1% (***), 5% (**), 10% (*). A p-value below the
+                chosen significance level (typically 5%) leads to rejection of the null hypothesis.
+            </p>
+        </div>
+
+        <div class="guideline-item">
+            <h5>Multiple Testing</h5>
+            <p>
+                When conducting multiple tests, consider adjusting significance levels (e.g., Bonferroni correction)
+                to control for family-wise error rate. However, validation tests are typically exploratory,
+                so strict corrections may be overly conservative.
+            </p>
+        </div>
+
+        <div class="guideline-item">
+            <h5>Sample Size Considerations</h5>
+            <p>
+                Some tests have low power in small samples. With large N or T, even minor deviations from
+                assumptions may be detected as statistically significant. Always consider economic significance
+                alongside statistical significance.
+            </p>
+        </div>
+
+        <div class="guideline-item">
+            <h5>Remedial Actions</h5>
+            <p>
+                Failing a test doesn't necessarily invalidate your model. Many violations can be addressed
+                through robust standard errors, alternative estimators, or model re-specification. Consult
+                the Recommendations tab for specific guidance.
+            </p>
+        </div>
+    </div>
+
+    <!-- Technical References -->
+    <div class="references-box mt-6">
+        <h4 class="references-title">Technical References</h4>
+        <ul class="references-list">
+            <li>
+                Baltagi, B. H., & Wu, P. X. (1999). Unequally Spaced Panel Data Regressions with AR(1) Disturbances.
+                <em>Econometric Theory</em>, 15(6), 814-823.
+            </li>
+            <li>
+                Frees, E. W. (1995). Assessing Cross-Sectional Correlation in Panel Data.
+                <em>Journal of Econometrics</em>, 69(2), 393-414.
+            </li>
+            <li>
+                Hausman, J. A. (1978). Specification Tests in Econometrics.
+                <em>Econometrica</em>, 46(6), 1251-1271.
+            </li>
+            <li>
+                Mundlak, Y. (1978). On the Pooling of Time Series and Cross Section Data.
+                <em>Econometrica</em>, 46(1), 69-85.
+            </li>
+            <li>
+                Pesaran, M. H. (2004). General Diagnostic Tests for Cross Section Dependence in Panels.
+                <em>Cambridge Working Papers in Economics</em>, 0435.
+            </li>
+            <li>
+                Wooldridge, J. M. (2002). <em>Econometric Analysis of Cross Section and Panel Data</em>.
+                MIT Press.
+            </li>
+        </ul>
+    </div>
+</section>

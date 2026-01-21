@@ -1,0 +1,36 @@
+{
+  "model_type": "random",
+  "dataset": "Clean data (RE)",
+  "coefficients": {
+    "x1": 1.9424,
+    "x2": -1.5861
+  },
+  "tests": {
+    "breusch_godfrey": {
+      "statistic": 1.4041,
+      "pvalue": 0.236,
+      "df": 1,
+      "method": "Breusch-Godfrey/Wooldridge test for serial correlation in panel models"
+    },
+    "breusch_pagan": {
+      "statistic": 4.5372,
+      "pvalue": 0.1035,
+      "df": 2,
+      "method": "studentized Breusch-Pagan test"
+    },
+    "white": {
+      "error": "0 (non-NA) cases"
+    },
+    "pesaran_cd": {
+      "statistic": 0.2437,
+      "pvalue": 0.8074,
+      "method": "Pesaran CD test for  cross-sectional dependence in panels"
+    },
+    "mundlak": {
+      "statistic": 3.0268,
+      "pvalue": 0.2202,
+      "df": 2,
+      "method": "Mundlak test (Wald test on group means)"
+    }
+  }
+}

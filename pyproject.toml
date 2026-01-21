@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "panelbox"
+version = "0.2.0"
+description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond)"
+authors = [
+    {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},
+    {name = "Paulo Dourado", email = "paulodourado.unb@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = [
+    "econometrics",
+    "panel data",
+    "GMM",
+    "Arellano-Bond",
+    "Blundell-Bond",
+    "fixed effects",
+    "random effects",
+    "dynamic panel",
+    "instrumental variables"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Office/Business :: Financial",
+]
+
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "statsmodels>=0.14.0",
+    "patsy>=0.5.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.3.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+    "mypy>=1.3.0",
+    "isort>=5.12.0",
+]
+docs = [
+    "mkdocs>=1.4.0",
+    "mkdocs-material>=9.1.0",
+    "mkdocstrings>=0.22.0",
+    "mkdocstrings-python>=1.1.0",
+]
+test = [
+    "pytest>=7.3.0",
+    "pytest-cov>=4.1.0",
+    "hypothesis>=6.75.0",
+]
+
+[project.scripts]
+panelbox = "panelbox.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/PanelBox-Econometrics-Model/panelbox"
+Documentation = "https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs"
+Repository = "https://github.com/PanelBox-Econometrics-Model/panelbox"
+Issues = "https://github.com/PanelBox-Econometrics-Model/panelbox/issues"
+Changelog = "https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=panelbox --cov-report=html --cov-report=term-missing"
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["panelbox*"]
+exclude = ["desenvolvimento*", "tests*", "examples*"]

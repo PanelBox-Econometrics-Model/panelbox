@@ -1,0 +1,231 @@
+<section class="report-section">
+    <h3 class="section-subtitle">Detailed Test Results</h3>
+
+    <p class="text-muted mb-4">
+        This table shows detailed results for all {{ tests|length }} validation tests performed on your panel data model.
+        Tests marked as "REJECT" indicate potential issues that may require attention.
+    </p>
+
+    <!-- Specification Tests -->
+    {% set spec_tests = tests|selectattr('category', 'equalto', 'Specification')|list %}
+    {% if spec_tests %}
+    <div class="test-group mb-6">
+        <h4 class="test-group-title">Specification Tests</h4>
+        <p class="test-group-description">
+            Tests for model specification, including choice between Fixed Effects and Random Effects.
+        </p>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Statistic</th>
+                        <th>P-value</th>
+                        <th>DF</th>
+                        <th>Result</th>
+                        <th>Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in spec_tests %}
+                    <tr class="test-row test-row-{{ test.result_class }}">
+                        <td class="font-medium">{{ test.name }}</td>
+                        <td>{{ test.statistic_formatted }}</td>
+                        <td>
+                            {{ test.pvalue_formatted }}
+                            {% if test.significance %}
+                            <span class="significance-stars">{{ test.significance }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ test.df or 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-{{ test.result_class }}">
+                                {{ test.result }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ test.conclusion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Serial Correlation Tests -->
+    {% set serial_tests = tests|selectattr('category', 'equalto', 'Serial Correlation')|list %}
+    {% if serial_tests %}
+    <div class="test-group mb-6">
+        <h4 class="test-group-title">Serial Correlation Tests</h4>
+        <p class="test-group-description">
+            Tests for autocorrelation in residuals across time periods.
+        </p>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Statistic</th>
+                        <th>P-value</th>
+                        <th>DF</th>
+                        <th>Result</th>
+                        <th>Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in serial_tests %}
+                    <tr class="test-row test-row-{{ test.result_class }}">
+                        <td class="font-medium">{{ test.name }}</td>
+                        <td>{{ test.statistic_formatted }}</td>
+                        <td>
+                            {{ test.pvalue_formatted }}
+                            {% if test.significance %}
+                            <span class="significance-stars">{{ test.significance }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ test.df or 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-{{ test.result_class }}">
+                                {{ test.result }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ test.conclusion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Heteroskedasticity Tests -->
+    {% set het_tests = tests|selectattr('category', 'equalto', 'Heteroskedasticity')|list %}
+    {% if het_tests %}
+    <div class="test-group mb-6">
+        <h4 class="test-group-title">Heteroskedasticity Tests</h4>
+        <p class="test-group-description">
+            Tests for non-constant variance in residuals.
+        </p>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Statistic</th>
+                        <th>P-value</th>
+                        <th>DF</th>
+                        <th>Result</th>
+                        <th>Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in het_tests %}
+                    <tr class="test-row test-row-{{ test.result_class }}">
+                        <td class="font-medium">{{ test.name }}</td>
+                        <td>{{ test.statistic_formatted }}</td>
+                        <td>
+                            {{ test.pvalue_formatted }}
+                            {% if test.significance %}
+                            <span class="significance-stars">{{ test.significance }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ test.df or 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-{{ test.result_class }}">
+                                {{ test.result }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ test.conclusion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cross-Sectional Dependence Tests -->
+    {% set cd_tests = tests|selectattr('category', 'equalto', 'Cross-Sectional Dependence')|list %}
+    {% if cd_tests %}
+    <div class="test-group mb-6">
+        <h4 class="test-group-title">Cross-Sectional Dependence Tests</h4>
+        <p class="test-group-description">
+            Tests for correlation across entities (cross-sectional units).
+        </p>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Statistic</th>
+                        <th>P-value</th>
+                        <th>DF</th>
+                        <th>Result</th>
+                        <th>Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in cd_tests %}
+                    <tr class="test-row test-row-{{ test.result_class }}">
+                        <td class="font-medium">{{ test.name }}</td>
+                        <td>{{ test.statistic_formatted }}</td>
+                        <td>
+                            {{ test.pvalue_formatted }}
+                            {% if test.significance %}
+                            <span class="significance-stars">{{ test.significance }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ test.df or 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-{{ test.result_class }}">
+                                {{ test.result }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ test.conclusion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Legend -->
+    <div class="legend-box mt-6">
+        <h4 class="legend-title">Result Legend</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="badge badge-accept">ACCEPT</span>
+                <span class="legend-text">Test passed - no issues detected</span>
+            </div>
+            <div class="legend-item">
+                <span class="badge badge-reject">REJECT</span>
+                <span class="legend-text">Test failed - potential issue detected</span>
+            </div>
+        </div>
+
+        <h4 class="legend-title mt-4">Significance Levels</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="significance-stars">***</span>
+                <span class="legend-text">p < 0.001</span>
+            </div>
+            <div class="legend-item">
+                <span class="significance-stars">**</span>
+                <span class="legend-text">p < 0.01</span>
+            </div>
+            <div class="legend-item">
+                <span class="significance-stars">*</span>
+                <span class="legend-text">p < 0.05</span>
+            </div>
+            <div class="legend-item">
+                <span class="significance-stars">.</span>
+                <span class="legend-text">p < 0.1</span>
+            </div>
+        </div>
+    </div>
+</section>

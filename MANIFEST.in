@@ -1,0 +1,51 @@
+# MANIFEST.in - Specifies additional files to include in distribution
+
+# Documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+include QUICKSTART.md
+
+# Configuration files
+include pyproject.toml
+include .gitignore
+
+# Include all markdown files in docs/
+recursive-include docs *.md
+recursive-include docs *.png
+recursive-include docs *.jpg
+
+# Include example scripts
+recursive-include examples *.py
+recursive-include examples *.md
+recursive-include examples *.csv
+
+# Include validation data (for testing/examples)
+recursive-include validation/data *.csv
+recursive-include validation/data *.dta
+
+# Include templates for reporting
+recursive-include panelbox/templates *.html
+recursive-include panelbox/templates *.css
+recursive-include panelbox/templates *.js
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .coverage
+global-exclude .pytest_cache
+
+# Exclude development directories
+prune desenvolvimento
+prune .pytest_cache
+prune .coverage
+prune htmlcov
+prune .mypy_cache
+prune .tox
+prune build
+prune dist
+prune *.egg-info

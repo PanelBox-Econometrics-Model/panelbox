@@ -1,0 +1,44 @@
+<div class="report-header">
+    <h1 class="report-title">{{ report_title }}</h1>
+    {% if report_subtitle %}
+    <p class="report-subtitle">{{ report_subtitle }}</p>
+    {% endif %}
+
+    <div class="report-meta">
+        <div class="report-meta-item">
+            <span class="report-meta-label">Model:</span>
+            <span>{{ model_type }}</span>
+        </div>
+
+        {% if formula %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Formula:</span>
+            <code class="text-sm">{{ formula }}</code>
+        </div>
+        {% endif %}
+
+        <div class="report-meta-item">
+            <span class="report-meta-label">Observations:</span>
+            <span>{{ nobs|number_format }}</span>
+        </div>
+
+        {% if n_entities %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Entities:</span>
+            <span>{{ n_entities|number_format }}</span>
+        </div>
+        {% endif %}
+
+        {% if n_periods %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Periods:</span>
+            <span>{{ n_periods }}</span>
+        </div>
+        {% endif %}
+
+        <div class="report-meta-item">
+            <span class="report-meta-label">Generated:</span>
+            <span>{{ generation_date }}</span>
+        </div>
+    </div>
+</div>
