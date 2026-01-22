@@ -96,9 +96,6 @@ class GMMEstimator:
         X_clean = X[valid_mask]
         Z_clean = Z[valid_mask]
 
-        # Note: Instrument column cleaning should be done by caller before calling this method
-        # to avoid dimension mismatches with weight matrices
-
         # Compute weight matrix W = (Z'Z)^{-1}
         ZtZ = Z_clean.T @ Z_clean
         try:
@@ -185,8 +182,6 @@ class GMMEstimator:
         y_clean = y[valid_mask]
         X_clean = X[valid_mask]
         Z_clean = Z[valid_mask]
-
-        # Note: Instrument column cleaning should be done by caller before calling this method
 
         # Step 1: One-step GMM to get initial residuals
         beta_init, _, resid_init_full = self.one_step(y, X, Z)
@@ -512,6 +507,52 @@ class GMMEstimator:
         """
         diff = np.max(np.abs(beta_new - beta_old))
         return diff < self.tol
+
+    def _compute_gram_matrix_sparse(self, A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
+        """
+        Compute A'B handling NaN values properly for sparse GMM instruments.
+
+        For GMM-style instruments, NaN indicates instrument not available.
+        Each element (i,j) of A'B is computed as sum over observations where
+        BOTH A[:,i] and B[:,j] are non-NaN.
+
+        This is the CORRECT approach for GMM with sparse instruments, as each
+        moment condition should only include observations where the instrument
+        is actually available.
+
+        Parameters
+        ----------
+        A : np.ndarray (n x p)
+            First matrix (typically Z or X)
+        B : np.ndarray (n x q), optional
+            Second matrix (typically Z, X, or y). If None, computes A'A.
+
+        Returns
+        -------
+        AtB : np.ndarray (p x q)
+            Gram matrix computed using pairwise-valid observations
+
+        Notes
+        -----
+        This uses a simple nested loop which may be slow for large matrices.
+        Future optimization: vectorize using broadcasting and nansum.
+        """
+        if B is None:
+            B = A
+
+        p = A.shape[1]
+        q = B.shape[1]
+        AtB = np.zeros((p, q))
+
+        # For each column pair, sum over observations where both are valid
+        for i in range(p):
+            for j in range(q):
+                # Valid where both A[:, i] and B[:, j] are not NaN
+                valid = ~(np.isnan(A[:, i]) | np.isnan(B[:, j]))
+                if valid.any():
+                    AtB[i, j] = np.sum(A[valid, i] * B[valid, j])
+
+        return AtB
 
     def _get_valid_mask(self,
                        y: np.ndarray,

@@ -1,0 +1,126 @@
+{
+  "script": "01_difference_gmm_basic",
+  "reference": "Roodman (2009), page 106",
+  "stata_command": "xtabond2 n L.n w k, gmm(L.n, lag(2 .)) iv(w k) robust small twostep",
+  "results": {
+    "params": {
+      "L1.n": 0.24431258678053833,
+      "w": -0.5780784886537779,
+      "k": 0.4244730943086615
+    },
+    "std_errors": {
+      "L1.n": NaN,
+      "w": NaN,
+      "k": NaN
+    },
+    "tvalues": {
+      "L1.n": NaN,
+      "w": NaN,
+      "k": NaN
+    },
+    "pvalues": {
+      "L1.n": NaN,
+      "w": NaN,
+      "k": NaN
+    },
+    "n_obs": 611,
+    "n_groups": 140,
+    "n_instruments": 41,
+    "hansen_j": {
+      "statistic": 0.13090238294411555,
+      "pvalue": 1.0,
+      "df": 38
+    },
+    "sargan": {
+      "statistic": NaN,
+      "pvalue": NaN,
+      "df": 38
+    },
+    "ar1_test": {
+      "statistic": -2.2266752368875378,
+      "pvalue": 0.02596898658780966
+    },
+    "ar2_test": {
+      "statistic": -0.71986185388666,
+      "pvalue": 0.4716100566987147
+    }
+  },
+  "stata_reference": {
+    "coef_L_n": 0.6861222,
+    "se_L_n": 0.1410496,
+    "coef_w": -0.6078527,
+    "se_w": 0.1749928,
+    "coef_k": 0.3569219,
+    "se_k": 0.0617118,
+    "hansen_stat": 28.31,
+    "hansen_p": 0.905,
+    "n_obs": 611,
+    "n_groups": 140,
+    "n_instruments": 42
+  },
+  "comparisons": [
+    {
+      "variable": "L.n",
+      "type": "coefficient",
+      "stata": 0.6861222,
+      "panelbox": 0.24431258678053833,
+      "diff": -0.44180961321946166,
+      "pct_diff": -64.39226324690583,
+      "within_tolerance": false
+    },
+    {
+      "variable": "w",
+      "type": "coefficient",
+      "stata": -0.6078527,
+      "panelbox": -0.5780784886537779,
+      "diff": 0.029774211346222157,
+      "pct_diff": -4.89826093496371,
+      "within_tolerance": false
+    },
+    {
+      "variable": "k",
+      "type": "coefficient",
+      "stata": 0.3569219,
+      "panelbox": 0.4244730943086615,
+      "diff": 0.06755119430866147,
+      "pct_diff": 18.926043571061754,
+      "within_tolerance": false
+    },
+    {
+      "variable": "L.n",
+      "type": "std_error",
+      "stata": 0.1410496,
+      "panelbox": NaN,
+      "diff": NaN,
+      "pct_diff": NaN,
+      "within_tolerance": false
+    },
+    {
+      "variable": "w",
+      "type": "std_error",
+      "stata": 0.1749928,
+      "panelbox": NaN,
+      "diff": NaN,
+      "pct_diff": NaN,
+      "within_tolerance": false
+    },
+    {
+      "variable": "k",
+      "type": "std_error",
+      "stata": 0.0617118,
+      "panelbox": NaN,
+      "diff": NaN,
+      "pct_diff": NaN,
+      "within_tolerance": false
+    },
+    {
+      "test": "hansen_j_stat",
+      "stata": 28.31,
+      "panelbox": 0.13090238294411555,
+      "diff": -28.179097617055884,
+      "pct_diff": -99.5376107985019,
+      "within_tolerance": false
+    }
+  ],
+  "validation_passed": false
+}

@@ -195,7 +195,14 @@ from panelbox import FixedEffects, RandomEffects
 from panelbox import DifferenceGMM, SystemGMM  # NEW!
 ```
 
+**Best Practices:**
+- **Recommendation**: Use `collapse=True` for GMM models (Roodman 2009)
+- Collapsed instruments provide better numerical stability
+- Reduces instrument count from O(T²) to O(T)
+- Improves finite-sample properties
+
 **Known Limitations:**
+- Non-collapsed instruments (`collapse=False`) may show numerical warnings
 - System GMM may fail with very sparse synthetic data (add appropriate try/except)
 - Type hints are partial (gradual typing in progress)
 - Some specification tests may be under-powered with T < 5

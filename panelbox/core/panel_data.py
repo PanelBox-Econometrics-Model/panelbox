@@ -98,7 +98,7 @@ class PanelData:
         # Check if balanced
         obs_per_entity = self.data.groupby(entity_col).size()
         self.n_periods = int(obs_per_entity.max())
-        self.is_balanced = (obs_per_entity == self.n_periods).all()
+        self.is_balanced = bool((obs_per_entity == self.n_periods).all())
 
         if not self.is_balanced:
             self.min_periods = int(obs_per_entity.min())

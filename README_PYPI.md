@@ -49,7 +49,7 @@ pip install panelbox
 Or install from source:
 
 ```bash
-git clone https://github.com/PanelBox-Econometrics-Model/panelbox.git
+git clone https://github.com/guhaase/panelbox.git
 cd panelbox
 pip install -e .
 ```
@@ -133,32 +133,6 @@ print(f"Instrument count: {results.n_instruments}")
 print(f"Instrument ratio: {results.instrument_ratio:.3f}")
 ```
 
-## 📖 Best Practices for GMM
-
-### Recommended: Use `collapse=True`
-
-Following Roodman (2009), we **strongly recommend** using collapsed instruments:
-
-```python
-# ✅ RECOMMENDED
-gmm = DifferenceGMM(..., collapse=True)
-```
-
-**Why collapse instruments?**
-- ✅ **Better numerical stability** - Avoids ill-conditioned matrices
-- ✅ **Reduces overfitting** - Fewer instruments mean less overfitting risk
-- ✅ **Improves finite-sample properties** - Better performance with limited data
-- ✅ **Grows as O(T) not O(T²)** - Scales better with time periods
-
-**When you use `collapse=False`:**
-- ⚠️ You'll see a detailed warning message
-- ⚠️ May encounter numerical instability warnings
-- ⚠️ Works but requires careful interpretation
-
-See `examples/gmm/unbalanced_panel_guide.py` for detailed guidance.
-
-**Reference:** Roodman, D. (2009). "How to do xtabond2: An introduction to difference and system GMM in Stata." *The Stata Journal*, 9(1), 86-136.
-
 ## Key Advantages
 
 ### 1. Handles Unbalanced Panels Gracefully
@@ -199,14 +173,14 @@ Based on Roodman (2009) "How to do xtabond2":
 
 ### 4. Rich Documentation
 
-- 📚 Comprehensive [tutorial](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/gmm/tutorial.md)
-- 📖 [Interpretation guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/gmm/interpretation_guide.md) with decision tables
-- 💡 [Example scripts](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/) for common use cases
-- 🔬 [Unbalanced panel guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/unbalanced_panel_guide.py)
+- 📚 Comprehensive [tutorial](https://github.com/guhaase/panelbox/tree/main/docs/gmm/tutorial.md)
+- 📖 [Interpretation guide](https://github.com/guhaase/panelbox/tree/main/docs/gmm/interpretation_guide.md) with decision tables
+- 💡 [Example scripts](https://github.com/guhaase/panelbox/tree/main/examples/gmm/) for common use cases
+- 🔬 [Unbalanced panel guide](https://github.com/guhaase/panelbox/tree/main/examples/gmm/unbalanced_panel_guide.py)
 
 ## Examples
 
-See the [examples directory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples) for:
+See the [examples directory](https://github.com/guhaase/panelbox/tree/main/examples) for:
 
 - **OLS vs FE vs GMM comparison**: Demonstrating bias in each estimator
 - **Firm growth model**: Intermediate example with error handling
@@ -241,7 +215,7 @@ PanelBox has been validated against:
 - ✅ Stata xtabond2 (with appropriate specifications)
 - ✅ Multiple synthetic datasets with known DGP
 
-See [validation directory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/validation) for details.
+See [validation directory](https://github.com/guhaase/panelbox/tree/main/validation) for details.
 
 ## Citation
 
@@ -249,11 +223,11 @@ If you use PanelBox in your research, please cite:
 
 ```bibtex
 @software{panelbox2026,
-  author = {Haase, Gustavo and Dourado, Paulo},
+  author = {Haase, Gustavo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
   version = {0.2.0},
-  url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
+  url = {https://github.com/guhaase/panelbox}
 }
 ```
 
@@ -276,21 +250,21 @@ If you use PanelBox in your research, please cite:
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/guhaase/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/guhaase/panelbox/blob/main/LICENSE) file for details.
 
 ## Support
 
-- 📫 Issues: [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
-- 📖 Documentation: [GitHub Wiki](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs)
-- 💬 Discussions: [GitHub Discussions](https://github.com/PanelBox-Econometrics-Model/panelbox/discussions)
+- 📫 Issues: [GitHub Issues](https://github.com/guhaase/panelbox/issues)
+- 📖 Documentation: [GitHub Wiki](https://github.com/guhaase/panelbox/tree/main/docs)
+- 💬 Discussions: [GitHub Discussions](https://github.com/guhaase/panelbox/discussions)
 
 ## Changelog
 
-See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for version history.
+See [CHANGELOG.md](https://github.com/guhaase/panelbox/blob/main/CHANGELOG.md) for version history.
 
 ### Latest Release: v0.2.0 (2026-01-21)
 

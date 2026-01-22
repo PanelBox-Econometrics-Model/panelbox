@@ -1,0 +1,27 @@
+\begin{table}[htbp]
+    \centering
+    \caption{Panel Data Validation Test Results}
+    \label{tab:validation}
+    \begin{tabular}{lcccc}
+        \toprule
+        Test & Statistic & P-value & DF & Result \\
+        \midrule
+        \multicolumn{5}{l}{\textit{Specification}} \\
+        Hausman Test & 15.234 & 0.0020** & 3 & REJECT \\
+        Mundlak Test & 12.876 & 0.0050** & 3 & REJECT \\
+        \multicolumn{5}{l}{\textit{Serial Correlation}} \\
+        Wooldridge Test & 2.345 & 0.1280 & 1 & ACCEPT \\
+        Baltagi-Wu Test & 1.987 & 0.1560 & -- & ACCEPT \\
+        \multicolumn{5}{l}{\textit{Heteroskedasticity}} \\
+        Breusch-Pagan LM Test & 18.456 & 0.0010** & 3 & REJECT \\
+        \multicolumn{5}{l}{\textit{Cross-Sectional Dependence}} \\
+        Pesaran CD Test & 3.789 & 2.00e-04*** & -- & REJECT \\
+        Frees Test & 2.456 & 0.0320* & -- & REJECT \\
+        \bottomrule
+    \end{tabular}
+    \medskip
+    \begin{minipage}{\textwidth}
+        \small
+        \textit{Note:} Significance levels: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1.
+    \end{minipage}
+\end{table}

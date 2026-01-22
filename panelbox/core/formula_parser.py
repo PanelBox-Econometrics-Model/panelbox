@@ -143,7 +143,14 @@ class FormulaParser:
 
             # Extract variable names from term
             # Handle simple cases: x, log(x), I(x**2), x:y, x*y
-            if ':' in term:
+            # Check for function calls first (before checking for : or *)
+            func_match = re.match(r'(?:\w+\.)*(\w+)\((.*)\)', term)
+            if func_match:
+                # This is a function call - extract variable from it
+                var = self._extract_var_from_term(term)
+                if var and var not in variables:
+                    variables.append(var)
+            elif ':' in term:
                 # Interaction term
                 parts = term.split(':')
                 for part in parts:
@@ -151,7 +158,7 @@ class FormulaParser:
                     if var and var not in variables:
                         variables.append(var)
             elif '*' in term:
-                # Interaction with expansion
+                # Interaction with expansion (not inside parentheses)
                 parts = term.split('*')
                 for part in parts:
                     var = self._extract_var_from_term(part.strip())
