@@ -96,7 +96,7 @@ class TestFirstDifferenceEstimator:
         # Differenced: 10 entities × 4 differences = 40 observations
         assert model.n_obs_original == 50
         assert model.n_obs_differenced == 40
-        assert results.data_info["n_obs_dropped"] == 10
+        assert results.n_obs_dropped == 10
 
     def test_degrees_of_freedom(self, simple_panel_data):
         """Test degrees of freedom calculation."""
@@ -107,9 +107,9 @@ class TestFirstDifferenceEstimator:
         n = 40  # 10 entities × (5-1) periods
         k = 2  # x1, x2 (no intercept)
 
-        assert results.data_info["nobs"] == n
-        assert results.data_info["df_model"] == k
-        assert results.data_info["df_resid"] == n - k
+        assert results.nobs == n
+        assert results.df_model == k
+        assert results.df_resid == n - k
 
     def test_no_intercept_in_results(self, simple_panel_data):
         """Test that intercept is automatically excluded in FD."""
@@ -180,9 +180,9 @@ class TestFirstDifferenceEstimator:
 
         # Check basic properties
         # 10 firms × 20 years = 200 obs → 10 firms × 19 diffs = 190 obs
-        assert results.data_info["nobs"] == 190
-        assert results.data_info["n_entities"] == 10
-        assert results.data_info["n_obs_dropped"] == 10
+        assert results.nobs == 190
+        assert results.n_entities == 10
+        assert results.n_obs_dropped == 10
         assert len(results.params) == 2  # value, capital (no intercept)
 
     def test_unbalanced_panel(self):
@@ -204,9 +204,9 @@ class TestFirstDifferenceEstimator:
         # Entity 1: 4 periods → 3 differences
         # Entity 2: 5 periods → 4 differences
         # Total: 2 + 3 + 4 = 9 differences
-        assert results.data_info["nobs"] == 9
-        assert results.data_info["n_obs_original"] == 12
-        assert results.data_info["n_obs_dropped"] == 3  # One per entity
+        assert results.nobs == 9
+        assert results.n_obs_original == 12
+        assert results.n_obs_dropped == 3  # One per entity
 
     def test_insufficient_periods_per_entity(self):
         """Test error when entities have only 1 period."""
@@ -319,7 +319,7 @@ class TestFirstDifferenceEstimator:
 
         # Should produce valid results
         assert isinstance(results, PanelResults)
-        assert results.data_info["nobs"] == 4  # 2 entities × 2 differences
+        assert results.nobs == 4  # 2 entities × 2 differences
 
     def test_estimate_coefficients_method(self, simple_panel_data):
         """Test _estimate_coefficients abstract method implementation."""

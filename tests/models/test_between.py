@@ -115,10 +115,10 @@ class TestBetweenEstimator:
         results = model.fit()
 
         # Between estimator uses N entities, not N*T observations
-        assert results.data_info["nobs"] == 10  # 10 entities
-        assert results.data_info["n_entities"] == 10
-        assert results.data_info["df_model"] == 2  # x1, x2 (slopes only)
-        assert results.data_info["df_resid"] == 10 - 3  # n - k (including intercept)
+        assert results.nobs == 10  # 10 entities
+        assert results.n_entities == 10
+        assert results.df_model == 2  # x1, x2 (slopes only)
+        assert results.df_resid == 10 - 3  # n - k (including intercept)
 
     def test_entity_means_structure(self, simple_panel_data):
         """Test structure of entity means DataFrame."""
@@ -184,8 +184,8 @@ class TestBetweenEstimator:
         results = model.fit(cov_type="robust")
 
         # Check basic properties
-        assert results.data_info["nobs"] == 10  # 10 firms
-        assert results.data_info["n_entities"] == 10
+        assert results.nobs == 10  # 10 firms
+        assert results.n_entities == 10
         assert len(results.params) == 3  # intercept + value + capital
 
         # Between R² should be high (known for Grunfeld data)

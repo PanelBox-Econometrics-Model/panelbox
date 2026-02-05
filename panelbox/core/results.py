@@ -117,6 +117,10 @@ class PanelResults:
         self.entity_index = data_info.get("entity_index", None)
         self.time_index = data_info.get("time_index", None)
 
+        # Model-specific attributes (for First Difference, etc.)
+        self.n_obs_original = data_info.get("n_obs_original", None)
+        self.n_obs_dropped = data_info.get("n_obs_dropped", None)
+
         # Store reference to model for validation tests
         self._model = model
 
