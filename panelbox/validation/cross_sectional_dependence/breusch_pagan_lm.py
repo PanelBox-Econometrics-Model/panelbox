@@ -114,7 +114,7 @@ class BreuschPaganLMTest(ValidationTest):
 
         # Compute pairwise correlations
         # Use pairwise complete observations
-        correlations = []
+        correlations: list[float] | np.ndarray = []
         n_pairs = 0
 
         entity_list = list(resid_wide.columns)

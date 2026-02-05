@@ -88,7 +88,10 @@ def compute_fstat(
 
 
 def wald_test(
-    restrictions: np.ndarray, params: np.ndarray, vcov: np.ndarray, q: np.ndarray = None
+    restrictions: np.ndarray,
+    params: np.ndarray,
+    vcov: np.ndarray,
+    q: Optional[np.ndarray] = None,
 ) -> Tuple[float, float, int]:
     """
     Compute Wald test for linear restrictions.

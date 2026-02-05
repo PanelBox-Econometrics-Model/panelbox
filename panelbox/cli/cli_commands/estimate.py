@@ -154,15 +154,15 @@ def load_data(filepath: str, verbose: bool = False) -> pd.DataFrame:
     pd.DataFrame
         Loaded data
     """
-    filepath = Path(filepath)
+    file_path = Path(filepath)
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"Data file not found: {filepath}")
+    if not file_path.exists():
+        raise FileNotFoundError(f"Data file not found: {file_path}")
 
     if verbose:
-        print(f"Loading data from: {filepath}")
+        print(f"Loading data from: {file_path}")
 
-    data = pd.read_csv(filepath)
+    data = pd.read_csv(file_path)
 
     if verbose:
         print(f"  Loaded {len(data)} observations")

@@ -8,7 +8,7 @@ datasets or saved results.
 import argparse
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 
@@ -68,7 +68,10 @@ Examples:
 
 
 def print_data_info(
-    filepath: str, entity_col: str = None, time_col: str = None, verbose: bool = False
+    filepath: str,
+    entity_col: Optional[str] = None,
+    time_col: Optional[str] = None,
+    verbose: bool = False,
 ) -> None:
     """
     Print information about CSV data.
@@ -84,21 +87,21 @@ def print_data_info(
     verbose : bool, default=False
         Print verbose output
     """
-    filepath = Path(filepath)
+    file_path = Path(filepath)
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"Data file not found: {filepath}")
+    if not file_path.exists():
+        raise FileNotFoundError(f"Data file not found: {file_path}")
 
     # Load data
-    data = pd.read_csv(filepath)
+    data = pd.read_csv(file_path)
 
     print("=" * 80)
-    print(f"Data File Information: {filepath.name}")
+    print(f"Data File Information: {file_path.name}")
     print("=" * 80)
 
     # Basic info
-    print(f"\nFile path:        {filepath}")
-    print(f"File size:        {filepath.stat().st_size:,} bytes")
+    print(f"\nFile path:        {file_path}")
+    print(f"File size:        {file_path.stat().st_size:,} bytes")
     print(f"Number of rows:   {len(data):,}")
     print(f"Number of cols:   {len(data.columns)}")
 
@@ -174,20 +177,20 @@ def print_results_info(filepath: str, verbose: bool = False) -> None:
     verbose : bool, default=False
         Print verbose output
     """
-    filepath = Path(filepath)
+    file_path = Path(filepath)
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"Results file not found: {filepath}")
+    if not file_path.exists():
+        raise FileNotFoundError(f"Results file not found: {file_path}")
 
     # Load results
-    results = pb.PanelResults.load(filepath)
+    results = pb.PanelResults.load(file_path)
 
     print("=" * 80)
-    print(f"Results File Information: {filepath.name}")
+    print(f"Results File Information: {file_path.name}")
     print("=" * 80)
 
-    print(f"\nFile path:        {filepath}")
-    print(f"File size:        {filepath.stat().st_size:,} bytes")
+    print(f"\nFile path:        {file_path}")
+    print(f"File size:        {file_path.stat().st_size:,} bytes")
 
     print("\n" + "-" * 80)
     print("Model Information:")
