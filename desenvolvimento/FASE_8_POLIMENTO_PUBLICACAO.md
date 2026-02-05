@@ -107,12 +107,20 @@
 - [ ] Adicionar testes para atingir target
 - [ ] Configurar coverage reporting em CI/CD
 
-#### Type Checking ⏳ **PARCIAL**
-- [x] Instalar MyPy
-- [ ] Resolver issue de nome de pacote (`commands`)
-- [ ] Executar MyPy em strict mode
-- [ ] Adicionar type hints onde faltam
-- [ ] Resolver todos os erros de tipo
+#### Type Checking ✅ **ANÁLISE COMPLETA** - ⏳ **IMPLEMENTAÇÃO PENDENTE**
+- [x] Instalar MyPy (v1.19.1)
+- [x] Resolver issue de nome de pacote (`commands` → `cli_commands`)
+- [x] Executar MyPy em modo padrão
+  - **Resultado**: 395 erros identificados
+  - **Breakdown**: 73 import-untyped, 65 assignment, 56 no-untyped-def, 43 no-any-return, outros
+- [ ] Configurar mypy.ini (Fase 3.1 - 30 min)
+- [ ] Instalar type stubs (pandas-stubs, types-scipy)
+- [ ] Resolver erros críticos (Fase 3.2 - 2-3h)
+  - Forward references (16 erros)
+  - Override signatures (13 erros)
+- [ ] Adicionar type hints principais (Fase 3.3 - 4-5h)
+- [ ] Refinamento (Fase 3.4 - 3-4h)
+- [ ] Executar MyPy em strict mode (Fase 3.5 - opcional, 5-8h)
 - [ ] Configurar MyPy em CI/CD
 
 #### Linting e Formatação ✅ **FASE 1 COMPLETA** (Commit `6a9b394`)

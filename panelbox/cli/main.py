@@ -54,7 +54,7 @@ For more information, visit: https://github.com/yourusername/panelbox
     )
 
     # Import command modules
-    from panelbox.cli.commands import estimate, info
+    from panelbox.cli.cli_commands import estimate, info
 
     # Add estimate command
     estimate.add_parser(subparsers)
