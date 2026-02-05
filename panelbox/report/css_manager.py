@@ -400,7 +400,7 @@ class CSSManager:
         >>> if missing['custom']:
         ...     print(f"Missing files: {missing['custom']}")
         """
-        missing = {}
+        missing: dict[str, list] = {}
 
         for name, layer in self.layers.items():
             missing[name] = []

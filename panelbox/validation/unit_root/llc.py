@@ -11,7 +11,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -226,7 +226,7 @@ class LLCTest:
     def _compute_aic(self, lags: int) -> float:
         """Compute AIC for given lag order."""
         # Simplified AIC computation
-        residuals: list[float] | np.ndarray = []
+        residuals: Union[list[float], np.ndarray] = []
 
         for entity in self.entities:
             entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values

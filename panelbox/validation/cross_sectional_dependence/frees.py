@@ -12,6 +12,8 @@ in the Social Sciences. Cambridge University Press.
 
 from __future__ import annotations
 
+from typing import Union
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -111,7 +113,7 @@ class FreesTest(ValidationTest):
             raise ValueError("Need at least 3 time periods for Frees test")
 
         # Compute pairwise Spearman correlations
-        rank_correlations: list[float] | np.ndarray = []
+        rank_correlations: Union[list[float], np.ndarray] = []
         n_pairs = 0
 
         entity_list = list(resid_wide.columns)

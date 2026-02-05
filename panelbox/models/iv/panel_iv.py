@@ -133,7 +133,7 @@ class PanelIV(PanelModel):
         self.instruments = self._parse_instruments()
 
         # Attributes to be filled during fit
-        self.first_stage_results = {}
+        self.first_stage_results: dict[str, dict] = {}
         self.weak_instruments = False
         self._fitted_endogenous = None
 
