@@ -65,7 +65,7 @@ class BreuschGodfreyTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, lags: int = 1, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, lags: int = 1, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Breusch-Godfrey LM test for serial correlation.
 

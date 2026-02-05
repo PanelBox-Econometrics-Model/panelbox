@@ -69,7 +69,7 @@ class ChowTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, break_point=None, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, break_point=None, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Chow test for structural break.
 
