@@ -147,17 +147,81 @@ class DifferenceGMM:
 
     Notes
     -----
-    Transformation: First-differences to eliminate fixed effects
+    **Model and Transformation:**
+
+    The Difference GMM estimator addresses dynamic panel bias by:
+
+    1. First-differencing to eliminate fixed effects α_i:
+
         Δy_{it} = γ Δy_{i,t-1} + β' Δx_{it} + Δε_{it}
 
-    Instruments: Lags of levels for differenced equations
-        - Strictly exogenous: all lags and leads
-        - Predetermined: lags t-2 and earlier
-        - Endogenous: lags t-3 and earlier
+    2. Using lagged levels as instruments (valid under E[y_{i,t-s} Δε_{it}] = 0)
+
+    **Instrument Strategy:**
+
+    For the differenced equation at time t, available instruments are:
+
+    - **Strictly exogenous** variables: All lags and leads (t-∞ to t+∞)
+    - **Predetermined** variables: Lags t-2 and earlier
+    - **Endogenous** variables: Lags t-3 and earlier
+    - **Lagged dependent**: Levels y_{i,t-2}, y_{i,t-3}, ... for Δy_{i,t-1}
+
+    **Instrument Proliferation:**
+
+    Without collapse, instruments grow as O(T²). **Always use collapse=True**
+    (Roodman 2009) to:
+
+    - Avoid overfitting
+    - Improve finite-sample properties
+    - Reduce computational burden
+    - Achieve better numerical stability
+
+    **Diagnostic Tests:**
+
+    1. **Hansen J-test**: Tests overidentifying restrictions
+       - p > 0.25: Strong evidence instruments are valid
+       - 0.10 < p < 0.25: Acceptable
+       - p < 0.10: Reject (instruments may be invalid)
+
+    2. **AR(2) test**: Tests for second-order autocorrelation in differenced errors
+       - p > 0.10: Fail to reject (good)
+       - p < 0.10: Reject (moment conditions violated)
+
+    3. **Instrument ratio**: Number of instruments / number of groups
+       - Should be < 1.0 (fewer instruments than groups)
+       - If > 1.0, consider collapsing or reducing lags
+
+    **When to Use:**
+
+    Difference GMM is appropriate for:
+
+    - Dynamic panels: y_{it} depends on y_{i,t-1}
+    - Short panels: Small T (T < 10-20), large N
+    - Fixed effects correlated with regressors
+    - Strict exogeneity fails (endogenous regressors)
+
+    **Limitations:**
+
+    - Weak instruments when series are highly persistent (ρ → 1)
+    - Use System GMM instead for persistent series
+    - Requires T ≥ 3 for identification
+    - Inefficient for unbalanced panels (use collapse=True)
 
     References
     ----------
-    Arellano, M., & Bond, S. (1991). Review of Economic Studies, 58(2), 277-297.
+    .. [1] Arellano, M., & Bond, S. (1991). "Some Tests of Specification
+           for Panel Data: Monte Carlo Evidence and an Application to
+           Employment Equations." Review of Economic Studies, 58(2), 277-297.
+    .. [2] Roodman, D. (2009). "How to do xtabond2: An Introduction to
+           Difference and System GMM in Stata." The Stata Journal, 9(1), 86-136.
+    .. [3] Windmeijer, F. (2005). "A Finite Sample Correction for the
+           Variance of Linear Efficient Two-step GMM Estimators."
+           Journal of Econometrics, 126(1), 25-51.
+
+    See Also
+    --------
+    SystemGMM : System GMM (Blundell-Bond) for persistent series
+    FixedEffects : Fixed Effects estimator (for static panels)
     """
 
     def __init__(

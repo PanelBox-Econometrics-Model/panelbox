@@ -167,23 +167,86 @@ class SystemGMM(DifferenceGMM):
 
     Notes
     -----
-    System combines:
+    **Model and System:**
 
-    Difference equation:
+    System GMM stacks two sets of equations:
+
+    1. **Difference equations** (Arellano-Bond):
+
         Δy_{it} = γ Δy_{i,t-1} + β' Δx_{it} + Δε_{it}
-        Instruments: lags of levels (y_{i,t-2}, y_{i,t-3}, ...)
 
-    Level equation:
+       Instruments: Lags of levels (y_{i,t-2}, y_{i,t-3}, ...)
+
+    2. **Level equations** (additional moment conditions):
+
         y_{it} = γ y_{i,t-1} + β' x_{it} + η_i + ε_{it}
-        Instruments: lags of differences (Δy_{i,t-1}, Δy_{i,t-2}, ...)
 
-    Critical assumption:
-        E[Δy_{i,1} · η_i] = 0
-        Violated if initial conditions are correlated with fixed effects
+       Instruments: Lags of differences (Δy_{i,t-1}, Δy_{i,t-2}, ...)
+
+    **Critical Additional Assumption:**
+
+        E[Δy_{i,1} · η_i] = 0  (stationarity of initial conditions)
+
+    This requires:
+    - The process generating y_i started long before the first observation
+    - Initial deviations from long-run mean are uncorrelated with fixed effects
+    - Violated if panel starts at firm entry, policy change, etc.
+
+    **When to Use System GMM:**
+
+    Prefer System over Difference GMM when:
+
+    - **Persistent series**: AR coefficient > 0.8 (levels weak instruments)
+    - **Small T**: Few time periods (efficiency matters)
+    - **Stationary process**: Initial conditions assumption plausible
+    - **Need precision**: Want smaller standard errors
+
+    Use Difference GMM when:
+
+    - **Initial conditions suspect**: Panel starts at event time
+    - **Non-stationary**: Unit root processes
+    - **Conservative approach**: Fewer assumptions
+
+    **Diagnostic Tests:**
+
+    Same as Difference GMM, plus:
+
+    - **Difference-in-Hansen test**: Tests validity of level instruments
+      - p > 0.10: Fail to reject (level instruments valid)
+      - p < 0.10: Reject (use Difference GMM instead)
+
+    **Efficiency Gains:**
+
+    System GMM typically reduces standard errors by 20-50% compared to
+    Difference GMM when:
+
+    - Series are persistent (ρ > 0.8)
+    - Additional moment conditions are valid
+    - Sample size is moderate (N > 50)
+
+    **Instrument Control:**
+
+    Use `level_instruments={'max_lags': k}` to control depth:
+
+    - max_lags=1: Use only Δy_{t-1} (most conservative, recommended)
+    - max_lags=2: Use Δy_{t-1}, Δy_{t-2}
+    - Deeper lags rarely improve efficiency
 
     References
     ----------
-    Blundell, R., & Bond, S. (1998). Journal of Econometrics, 87(1), 115-143.
+    .. [1] Blundell, R., & Bond, S. (1998). "Initial Conditions and Moment
+           Restrictions in Dynamic Panel Data Models." Journal of Econometrics,
+           87(1), 115-143.
+    .. [2] Roodman, D. (2009). "How to do xtabond2: An Introduction to
+           Difference and System GMM in Stata." The Stata Journal, 9(1), 86-136.
+    .. [3] Bond, S. R., Hoeffler, A., & Temple, J. (2001). "GMM Estimation of
+           Empirical Growth Models." Economics Papers 2001-W21, Economics Group,
+           Nuffield College, University of Oxford.
+
+    See Also
+    --------
+    DifferenceGMM : Difference GMM (Arellano-Bond) estimator
+    FixedEffects : Fixed Effects estimator (for static panels)
     """
 
     def __init__(

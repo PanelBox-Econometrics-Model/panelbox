@@ -94,6 +94,13 @@ def load_grunfeld(return_panel_data: bool = False) -> Union[pd.DataFrame, "Panel
     >>> fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
     >>> results = fe.fit()
     >>> print(results.summary())
+
+    See Also
+    --------
+    FixedEffects : Fixed Effects estimator
+    RandomEffects : Random Effects estimator
+    DifferenceGMM : Difference GMM estimator
+    SystemGMM : System GMM estimator
     """
     data_path = os.path.join(_get_data_path(), "grunfeld.csv")
     df = pd.read_csv(data_path)
