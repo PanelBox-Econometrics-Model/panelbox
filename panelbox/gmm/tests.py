@@ -297,12 +297,12 @@ class GMMTests:
                 details={"message": "Insufficient observations for AR test"},
             )
 
-        products = np.array(products)
+        products_arr: np.ndarray = np.array(products)
 
         # Compute test statistic
         # Under H0, E[Δε_it * Δε_{i,t-k}] = 0
-        mean_product = np.mean(products)
-        var_product = np.var(products, ddof=1)
+        mean_product = np.mean(products_arr)
+        var_product = np.var(products_arr, ddof=1)
 
         if var_product == 0:
             return TestResult(
@@ -317,7 +317,7 @@ class GMMTests:
             )
 
         # Normalize by standard error
-        se_product = np.sqrt(var_product / len(products))
+        se_product = np.sqrt(var_product / len(products_arr))
         z_stat = mean_product / se_product
 
         # P-value from standard normal (two-sided test)
