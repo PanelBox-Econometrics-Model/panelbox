@@ -158,8 +158,8 @@ class ValidationSuite:
             try:
                 if verbose:
                     print("Running Mundlak test...")
-                test = MundlakTest(self.results)
-                results["Mundlak"] = test.run(alpha)
+                mundlak_test = MundlakTest(self.results)
+                results["Mundlak"] = mundlak_test.run(alpha)
             except Exception as e:
                 if verbose:
                     print(f"  Warning: Mundlak test failed: {e}")
@@ -169,8 +169,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running RESET test...")
-            test = RESETTest(self.results)
-            results["RESET"] = test.run(alpha=alpha)
+            reset_test = RESETTest(self.results)
+            results["RESET"] = reset_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: RESET test failed: {e}")
@@ -207,8 +207,8 @@ class ValidationSuite:
             try:
                 if verbose:
                     print("Running Wooldridge AR test...")
-                test = WooldridgeARTest(self.results)
-                results["Wooldridge"] = test.run(alpha)
+                wooldridge_test = WooldridgeARTest(self.results)
+                results["Wooldridge"] = wooldridge_test.run(alpha)
             except Exception as e:
                 if verbose:
                     print(f"  Warning: Wooldridge test failed: {e}")
@@ -218,8 +218,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Breusch-Godfrey test...")
-            test = BreuschGodfreyTest(self.results)
-            results["Breusch-Godfrey"] = test.run(lags=1, alpha=alpha)
+            bg_test = BreuschGodfreyTest(self.results)
+            results["Breusch-Godfrey"] = bg_test.run(lags=1, alpha=alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Breusch-Godfrey test failed: {e}")
@@ -229,8 +229,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Baltagi-Wu LBI test...")
-            test = BaltagiWuTest(self.results)
-            results["Baltagi-Wu"] = test.run(alpha=alpha)
+            bw_test = BaltagiWuTest(self.results)
+            results["Baltagi-Wu"] = bw_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Baltagi-Wu test failed: {e}")
@@ -263,8 +263,8 @@ class ValidationSuite:
             try:
                 if verbose:
                     print("Running Modified Wald test...")
-                test = ModifiedWaldTest(self.results)
-                results["Modified Wald"] = test.run(alpha)
+                mwald_test = ModifiedWaldTest(self.results)
+                results["Modified Wald"] = mwald_test.run(alpha)
             except Exception as e:
                 if verbose:
                     print(f"  Warning: Modified Wald test failed: {e}")
@@ -274,8 +274,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Breusch-Pagan test...")
-            test = BreuschPaganTest(self.results)
-            results["Breusch-Pagan"] = test.run(alpha)
+            bp_test = BreuschPaganTest(self.results)
+            results["Breusch-Pagan"] = bp_test.run(alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Breusch-Pagan test failed: {e}")
@@ -285,8 +285,10 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running White test...")
-            test = WhiteTest(self.results)
-            results["White"] = test.run(alpha, cross_terms=False)  # Without cross terms for speed
+            white_test = WhiteTest(self.results)
+            results["White"] = white_test.run(
+                alpha, cross_terms=False
+            )  # Without cross terms for speed
         except Exception as e:
             if verbose:
                 print(f"  Warning: White test failed: {e}")
@@ -318,8 +320,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Pesaran CD test...")
-            test = PesaranCDTest(self.results)
-            results["Pesaran CD"] = test.run(alpha)
+            pesaran_test = PesaranCDTest(self.results)
+            results["Pesaran CD"] = pesaran_test.run(alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Pesaran CD test failed: {e}")
@@ -329,8 +331,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Breusch-Pagan LM test...")
-            test = BreuschPaganLMTest(self.results)
-            results["Breusch-Pagan LM"] = test.run(alpha=alpha)
+            bplm_test = BreuschPaganLMTest(self.results)
+            results["Breusch-Pagan LM"] = bplm_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Breusch-Pagan LM test failed: {e}")
@@ -340,8 +342,8 @@ class ValidationSuite:
         try:
             if verbose:
                 print("Running Frees test...")
-            test = FreesTest(self.results)
-            results["Frees"] = test.run(alpha=alpha)
+            frees_test = FreesTest(self.results)
+            results["Frees"] = frees_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
                 print(f"  Warning: Frees test failed: {e}")
