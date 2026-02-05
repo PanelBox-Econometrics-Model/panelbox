@@ -15,14 +15,14 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from panelbox.gmm.estimator import GMMEstimator
 from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
-from panelbox.gmm.results import GMMResults, TestResult
+from panelbox.gmm.results import GMMResults
 from panelbox.gmm.tests import GMMTests
 
 

@@ -5,7 +5,6 @@ This module provides the Hausman test for choosing between Fixed Effects
 and Random Effects models.
 """
 
-from typing import Optional
 
 import numpy as np
 import pandas as pd

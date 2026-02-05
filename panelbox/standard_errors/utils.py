@@ -8,8 +8,6 @@ matrices and their components (bread and meat).
 from typing import Optional
 
 import numpy as np
-import pandas as pd
-from scipy import sparse
 
 
 def compute_leverage(X: np.ndarray) -> np.ndarray:

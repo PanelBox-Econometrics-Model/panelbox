@@ -6,12 +6,10 @@ endogenous regressors. Supports Pooled, Fixed Effects, and Random Effects
 specifications with instrumental variables.
 """
 
-import re
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults

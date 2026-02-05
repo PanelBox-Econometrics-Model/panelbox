@@ -5,7 +5,7 @@ This module provides the Fixed Effects estimator which removes entity-specific
 (and optionally time-specific) fixed effects through demeaning.
 """
 
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -491,7 +491,7 @@ class FixedEffects(PanelModel):
             Robust covariance matrix
         """
         n = len(resid)
-        k = X.shape[1]
+        X.shape[1]
 
         # HC1: adjustment factor n/(n-k)
         adjustment = n / df_resid
@@ -529,7 +529,7 @@ class FixedEffects(PanelModel):
         np.ndarray
             Cluster-robust covariance matrix
         """
-        n = len(resid)
+        len(resid)
         k = X.shape[1]
 
         unique_entities = np.unique(entities)

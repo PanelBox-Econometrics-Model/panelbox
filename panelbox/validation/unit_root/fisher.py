@@ -15,12 +15,11 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.stattools import adfuller
 
 
@@ -64,13 +63,13 @@ class FisherTestResult:
             f"Test type:         {self.test_type.upper()}",
             f"Fisher statistic:  {self.statistic:10.4f}",
             f"P-value:           {self.pvalue:10.4f}",
-            f"",
+            "",
             f"Cross-sections:    {self.n_entities}",
             f"Trend:             {self.trend}",
-            f"",
+            "",
             "H0: All series have unit roots",
             "H1: At least one series is stationary",
-            f"",
+            "",
             f"Conclusion: {self.conclusion}",
             "=" * 70,
         ]
@@ -225,7 +224,7 @@ class FisherTest:
 
             return pvalue
 
-        except Exception as e:
+        except Exception:
             # If test fails, return conservative p-value
             return 1.0
 
@@ -282,7 +281,7 @@ class FisherTest:
                 resid = y_diff - X @ beta
 
             # Compute PP statistic with Newey-West correction
-            T_eff = len(resid)
+            len(resid)
             se_rho = (
                 np.sqrt(np.var(resid) / np.sum(y_lag**2))
                 if self.trend == "n"
@@ -309,7 +308,7 @@ class FisherTest:
 
             return pvalue
 
-        except Exception as e:
+        except Exception:
             return 1.0  # Conservative if test fails
 
     def run(self, alpha: float = 0.05) -> FisherTestResult:

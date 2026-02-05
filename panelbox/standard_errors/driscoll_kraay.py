@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
-import pandas as pd
 
 from .utils import compute_bread, sandwich_covariance
 
@@ -287,7 +286,7 @@ class DriscollKraayStandardErrors:
 
         The kernel weights w_l ensure positive semi-definiteness.
         """
-        k = self.n_params
+        self.n_params
 
         # Start with lag-0 autocovariance
         S = self._compute_gamma(0)

@@ -4,6 +4,8 @@ Base model class for panel econometric models.
 This module provides the abstract base class that all panel models inherit from.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
@@ -102,7 +104,6 @@ class PanelModel(ABC):
         PanelResults
             Fitted model results
         """
-        pass
 
     @abstractmethod
     def _estimate_coefficients(self) -> np.ndarray:
@@ -117,7 +118,6 @@ class PanelModel(ABC):
         np.ndarray
             Estimated coefficients
         """
-        pass
 
     def validate(self, tests: Optional[list] = None, verbose: bool = True) -> "ValidationReport":
         """

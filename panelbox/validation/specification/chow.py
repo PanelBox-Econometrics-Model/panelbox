@@ -10,8 +10,9 @@ Baltagi, B. H. (2013). Econometric Analysis of Panel Data (5th ed.).
 Wiley, Chapter 4.
 """
 
+from __future__ import annotations
+
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult

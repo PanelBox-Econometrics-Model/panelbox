@@ -9,12 +9,8 @@ PCSE requires T > N (more time periods than entities).
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
-import pandas as pd
-
-from .utils import compute_bread
 
 
 @dataclass
@@ -304,7 +300,7 @@ class PanelCorrectedStandardErrors:
         # Check requirements
         if self.n_periods <= self.n_entities:
             lines.append("⚠ CRITICAL: T ≤ N")
-            lines.append(f"  PCSE requires T > N")
+            lines.append("  PCSE requires T > N")
             lines.append(f"  T={self.n_periods}, N={self.n_entities}")
             lines.append("  Σ matrix will be poorly estimated or singular")
             lines.append("  Consider cluster-robust or Driscoll-Kraay SEs")

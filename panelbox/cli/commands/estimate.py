@@ -237,7 +237,7 @@ def execute(args: argparse.Namespace) -> int:
             results.save(output_path, format=args.format)
 
             if args.verbose:
-                print(f"✓ Results saved successfully")
+                print("✓ Results saved successfully")
 
         return 0
 

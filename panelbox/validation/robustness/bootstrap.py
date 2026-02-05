@@ -14,11 +14,10 @@ Efron, B., & Tibshirani, R. J. (1994). An Introduction to the Bootstrap.
 """
 
 import warnings
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 from tqdm import tqdm
 
 from panelbox.core.results import PanelResults
@@ -364,8 +363,8 @@ class PanelBootstrap:
         """
         # Get data
         data_df = self.model.data.data
-        entity_col = self.model.data.entity_col
-        time_col = self.model.data.time_col
+        self.model.data.entity_col
+        self.model.data.time_col
 
         # Get residuals and fitted values from original model
         residuals = self.results.resid
@@ -373,7 +372,7 @@ class PanelBootstrap:
 
         # Get original data in same order
         # We need to reconstruct y from fitted + residuals
-        y_original = fitted_values + residuals
+        fitted_values + residuals
 
         # Storage for estimates
         n_params = len(self.results.params)
@@ -463,7 +462,7 @@ class PanelBootstrap:
         """
         # Get data
         data_df = self.model.data.data
-        entity_col = self.model.data.entity_col
+        self.model.data.entity_col
         time_col = self.model.data.time_col
 
         # Get unique time periods

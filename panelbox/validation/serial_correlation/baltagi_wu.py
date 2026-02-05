@@ -12,6 +12,8 @@ Baltagi, B. H., & Li, Q. (1995). Testing AR(1) Against MA(1) Disturbances
 in an Error Component Model. Journal of Econometrics, 68(1), 133-151.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy import stats

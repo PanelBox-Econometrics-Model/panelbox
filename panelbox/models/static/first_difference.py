@@ -20,7 +20,7 @@ from panelbox.standard_errors import (
     robust_covariance,
     twoway_cluster,
 )
-from panelbox.utils.matrix_ops import compute_ols, compute_panel_rsquared, compute_vcov_nonrobust
+from panelbox.utils.matrix_ops import compute_ols, compute_vcov_nonrobust
 
 
 class FirstDifferenceEstimator(PanelModel):

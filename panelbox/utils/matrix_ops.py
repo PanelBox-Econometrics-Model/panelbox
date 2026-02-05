@@ -8,7 +8,6 @@ panel data estimation.
 from typing import Tuple
 
 import numpy as np
-import pandas as pd
 
 
 def add_intercept(X: np.ndarray) -> np.ndarray:

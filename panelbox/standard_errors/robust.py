@@ -14,7 +14,6 @@ from .utils import (
     compute_bread,
     compute_leverage,
     compute_meat_hc,
-    hc_covariance,
     sandwich_covariance,
 )
 

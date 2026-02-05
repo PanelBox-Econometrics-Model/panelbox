@@ -10,7 +10,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -187,7 +187,7 @@ class KaoTest:
             params = np.linalg.lstsq(X, y, rcond=None)[0]
             resid = y - X @ params
             return resid
-        except:
+        except Exception:
             return np.full(len(y), np.nan)
 
     def run(self) -> KaoTestResult:

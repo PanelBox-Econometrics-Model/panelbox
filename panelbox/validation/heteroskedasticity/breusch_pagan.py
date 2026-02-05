@@ -9,8 +9,9 @@ and random coefficient variation. Econometrica, 47(5), 1287-1294.
 Greene, W. H. (2018). Econometric Analysis (8th ed.). Pearson.
 """
 
+from __future__ import annotations
+
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult

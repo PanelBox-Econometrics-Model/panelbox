@@ -10,6 +10,8 @@ Frees, E. W. (2004). Longitudinal and Panel Data: Analysis and Applications
 in the Social Sciences. Cambridge University Press.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy import stats

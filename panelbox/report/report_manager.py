@@ -390,7 +390,7 @@ class ReportManager:
         """
         css_files = []
 
-        for layer in sorted(self.css_manager.layers.values(), key=lambda l: l.priority):
+        for layer in sorted(self.css_manager.layers.values(), key=lambda layer: layer.priority):
             css_files.extend(layer.files)
 
         return css_files
