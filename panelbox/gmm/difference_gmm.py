@@ -637,7 +637,7 @@ class DifferenceGMM:
         B = XtZ @ W @ ZtOmegaZ @ W @ ZtX
         vcov = A_inv @ B @ A_inv
 
-        return vcov
+        return np.asarray(vcov)
 
     def _get_variable_names(self) -> List[str]:
         """

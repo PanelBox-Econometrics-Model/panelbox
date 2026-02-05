@@ -233,7 +233,7 @@ class PedroniTest:
         try:
             params = np.linalg.lstsq(X, y, rcond=None)[0]
             resid = y - X @ params
-            return resid
+            return np.asarray(resid)
         except Exception:
             return np.full(len(y), np.nan)
 

@@ -17,7 +17,7 @@ References
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -557,7 +557,7 @@ class InstrumentBuilder:
         else:
             analysis["Warning"] = "OK"
 
-        return pd.DataFrame([analysis]).T
+        return cast(pd.DataFrame, pd.DataFrame([analysis]).T)
 
     def get_valid_obs_mask(self, Z: InstrumentSet) -> np.ndarray:
         """
@@ -574,4 +574,4 @@ class InstrumentBuilder:
             Boolean mask of valid observations
         """
         # Valid if at least one instrument is non-missing
-        return ~np.all(np.isnan(Z.Z), axis=1)
+        return np.asarray(~np.all(np.isnan(Z.Z), axis=1))

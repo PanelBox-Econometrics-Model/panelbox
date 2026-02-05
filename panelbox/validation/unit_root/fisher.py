@@ -222,7 +222,7 @@ class FisherTest:
             if pvalue is None or np.isnan(pvalue):
                 pvalue = 1.0  # Conservative: assume unit root
 
-            return pvalue
+            return float(pvalue)
 
         except Exception:
             # If test fails, return conservative p-value
@@ -306,7 +306,7 @@ class FisherTest:
             # Ensure p-value is in [0, 1]
             pvalue = np.clip(pvalue, 0.0, 1.0)
 
-            return pvalue
+            return float(pvalue)
 
         except Exception:
             return 1.0  # Conservative if test fails

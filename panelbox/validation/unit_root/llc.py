@@ -274,7 +274,7 @@ class LLCTest:
         sigma2 = np.sum(residuals**2) / n
         aic = n * np.log(sigma2) + 2 * k
 
-        return aic
+        return float(aic)
 
     def _demean_data(self, X: np.ndarray, method: str = "within") -> np.ndarray:
         """

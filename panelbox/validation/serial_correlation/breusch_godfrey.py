@@ -260,7 +260,7 @@ class BreuschGodfreyTest(ValidationTest):
                 _, X = model.formula_parser.build_design_matrices(
                     model.data.data, return_type="array"
                 )
-                return X
+                return np.asarray(X)
             except Exception:
                 pass
 

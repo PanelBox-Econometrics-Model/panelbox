@@ -260,7 +260,7 @@ class IPSTest:
             k = len(X)
             sigma2 = np.sum(resid**2) / n
             aic = n * np.log(sigma2) + 2 * k
-            return aic
+            return float(aic)
         except Exception:
             return np.inf
 
