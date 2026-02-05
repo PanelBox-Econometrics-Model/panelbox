@@ -22,7 +22,7 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 from scipy import stats
@@ -273,7 +273,7 @@ class GMMTests:
         len(unique_ids)
 
         # Store products of residuals and their lags
-        products: list[float] | np.ndarray = []
+        products: Union[list[float], np.ndarray] = []
 
         for group_id in unique_ids:
             # Get residuals for this group

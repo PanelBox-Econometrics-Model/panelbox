@@ -96,7 +96,7 @@ def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame:
     df = pd.read_csv(data_path)
 
     if return_panel_data:
-        from panelbox.core.data import PanelData
+        from panelbox.core.panel_data import PanelData
 
         return PanelData(df, entity_col="firm", time_col="year")
 
@@ -179,7 +179,7 @@ def load_abdata(return_panel_data: bool = False) -> Optional[pd.DataFrame]:
     df = pd.read_csv(data_path)
 
     if return_panel_data:
-        from panelbox.core.data import PanelData
+        from panelbox.core.panel_data import PanelData
 
         # Try to infer entity and time columns
         entity_col = "id" if "id" in df.columns else df.columns[0]

@@ -13,6 +13,8 @@ in Panels. Cambridge Working Papers in Economics No. 0435.
 
 from __future__ import annotations
 
+from typing import Union
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -114,7 +116,7 @@ class BreuschPaganLMTest(ValidationTest):
 
         # Compute pairwise correlations
         # Use pairwise complete observations
-        correlations: list[float] | np.ndarray = []
+        correlations: Union[list[float], np.ndarray] = []
         n_pairs = 0
 
         entity_list = list(resid_wide.columns)

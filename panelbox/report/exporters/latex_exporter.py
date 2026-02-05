@@ -105,7 +105,7 @@ class LaTeXExporter:
             lines.append(r"        \hline")
 
         # Group by category
-        categories = {}
+        categories: dict[str, list] = {}
         for test in tests:
             cat = test["category"]
             if cat not in categories:

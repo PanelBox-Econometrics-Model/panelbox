@@ -16,7 +16,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -252,9 +252,9 @@ class PedroniTest:
             Panel statistics
         """
         # Collect residuals and compute statistics
-        all_resid: list[float] | np.ndarray = []
-        all_resid_lag: list[float] | np.ndarray = []
-        all_delta_resid: list[float] | np.ndarray = []
+        all_resid: Union[list[float], np.ndarray] = []
+        all_resid_lag: Union[list[float], np.ndarray] = []
+        all_delta_resid: Union[list[float], np.ndarray] = []
 
         for entity, resid in residuals_dict.items():
             if len(resid) < 3:
