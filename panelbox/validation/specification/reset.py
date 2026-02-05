@@ -71,17 +71,17 @@ class RESETTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, powers=None, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, powers=None, **kwargs) -> ValidationTestResult:
         """
         Run RESET test for specification errors.
 
         Parameters
         ----------
+        alpha : float, default=0.05
+            Significance level
         powers : list of int, optional
             Powers of fitted values to include in augmented regression.
             Default is [2, 3] (quadratic and cubic terms).
-        alpha : float, default=0.05
-            Significance level
 
         Returns
         -------

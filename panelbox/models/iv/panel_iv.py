@@ -137,12 +137,17 @@ class PanelIV(PanelModel):
         self.weak_instruments = False
         self._fitted_endogenous = None
 
-    def _estimate_coefficients(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _estimate_coefficients(self) -> np.ndarray:
         """
         Implement abstract method from PanelModel.
 
         This is called by the base class but we override fit() completely,
         so this is just a placeholder.
+
+        Returns
+        -------
+        np.ndarray
+            Placeholder - not actually used in Panel IV
         """
         raise NotImplementedError("Use fit() method for Panel IV estimation")
 
