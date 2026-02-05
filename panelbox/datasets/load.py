@@ -12,9 +12,12 @@ Each dataset includes:
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from panelbox.core.panel_data import PanelData
 
 
 def _get_data_path() -> str:
@@ -22,7 +25,7 @@ def _get_data_path() -> str:
     return os.path.join(os.path.dirname(__file__), "data")
 
 
-def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame:
+def load_grunfeld(return_panel_data: bool = False) -> Union[pd.DataFrame, "PanelData"]:
     """
     Load Grunfeld investment data.
 
@@ -103,7 +106,7 @@ def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame:
     return df
 
 
-def load_abdata(return_panel_data: bool = False) -> Optional[pd.DataFrame]:
+def load_abdata(return_panel_data: bool = False) -> Optional[Union[pd.DataFrame, "PanelData"]]:
     """
     Load Arellano-Bond employment data.
 

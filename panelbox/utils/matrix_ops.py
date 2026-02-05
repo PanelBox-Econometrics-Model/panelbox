@@ -130,9 +130,9 @@ def compute_vcov_nonrobust(X: np.ndarray, resid: np.ndarray, df_resid: int) -> n
 
 def compute_rsquared(
     y: np.ndarray, fitted: np.ndarray, resid: np.ndarray, has_intercept: bool = True
-) -> Tuple[float, float]:
+) -> float:
     """
-    Compute R-squared and adjusted R-squared.
+    Compute R-squared.
 
     Parameters
     ----------
@@ -148,9 +148,7 @@ def compute_rsquared(
     Returns
     -------
     rsquared : float
-        R-squared
-    rsquared_adj : float
-        Adjusted R-squared
+        R-squared (adjusted R-squared should be computed separately by caller)
     """
     # Total sum of squares
     if has_intercept:

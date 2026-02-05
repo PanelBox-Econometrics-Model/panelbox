@@ -357,14 +357,14 @@ class CSSManager:
         """
         return self.asset_manager.list_assets(asset_type="css")
 
-    def get_size_estimate(self) -> Dict[str, int]:
+    def get_size_estimate(self) -> Dict[str, Union[int, float]]:
         """
         Estimate size of compiled CSS.
 
         Returns
         -------
         dict
-            Dictionary with size estimates in bytes
+            Dictionary with size estimates (bytes as int, KB as float)
 
         Examples
         --------
