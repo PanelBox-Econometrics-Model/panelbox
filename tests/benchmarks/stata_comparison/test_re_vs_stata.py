@@ -129,9 +129,9 @@ def test_re_vs_stata():
     print("-" * 55)
 
     r2_metrics = [
-        ("R² within", results.r2_within, stata_results["r2_within"]),
-        ("R² between", results.r2_between, stata_results["r2_between"]),
-        ("R² overall", results.r2_overall, stata_results["r2_overall"]),
+        ("R² within", results.rsquared_within, stata_results["r2_within"]),
+        ("R² between", results.rsquared_between, stata_results["r2_between"]),
+        ("R² overall", results.rsquared_overall, stata_results["r2_overall"]),
     ]
 
     for name, pb_val, stata_val in r2_metrics:
