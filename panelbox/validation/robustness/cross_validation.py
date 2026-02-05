@@ -162,6 +162,7 @@ class TimeSeriesCV:
 
         # Extract model information
         self.model = results._model
+        assert self.model is not None, "Results must have a model reference for cross-validation"
         self.formula = results.formula
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col

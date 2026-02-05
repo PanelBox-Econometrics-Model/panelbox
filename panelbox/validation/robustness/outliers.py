@@ -130,6 +130,7 @@ class OutlierDetector:
 
         # Extract model information
         self.model = results._model
+        assert self.model is not None, "Results must have a model reference for outlier detection"
         self.data = self.model.data.data
 
         # Get entity and time columns
