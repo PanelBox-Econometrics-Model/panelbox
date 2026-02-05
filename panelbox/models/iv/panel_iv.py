@@ -163,13 +163,8 @@ class PanelIV(PanelModel):
         instruments_str = self.instruments_formula.replace(" ", "")
         instruments = [var.strip() for var in instruments_str.split("+") if var.strip()]
 
-        # Get data columns - PanelData or DataFrame
-        if hasattr(self.data, "data"):
-            # PanelData object
-            data_columns = self.data.data.columns
-        else:
-            # DataFrame
-            data_columns = self.data.columns
+        # Get data columns - PanelData has data.columns
+        data_columns = self.data.data.columns
 
         # Check that instruments exist in data
         for inst in instruments:
@@ -555,7 +550,7 @@ class PanelIV(PanelModel):
 
         elif cov_type in ["robust", "hc1", "hc0", "hc2", "hc3"]:
             # Robust covariance
-            cov_params = robust_covariance(X, residuals, cov_type=cov_type)
+            cov_params = robust_covariance(X, residuals, method=cov_type)
 
         elif cov_type == "clustered":
             # Clustered by entity
@@ -577,7 +572,7 @@ class PanelIV(PanelModel):
             entity_index = df[self.data.entity_col].values
             time_index = df[self.data.time_col].values
             maxlags = cov_kwds.get("maxlags", None)
-            cov_params = driscoll_kraay(X, residuals, entity_index, time_index, maxlags=maxlags)
+            cov_params = driscoll_kraay(X, residuals, entity_index, time_index, max_lags=maxlags)
 
         else:
             raise ValueError(f"Unknown covariance type: {cov_type}")

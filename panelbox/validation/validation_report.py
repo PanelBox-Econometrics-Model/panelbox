@@ -2,7 +2,7 @@
 Validation report container.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from panelbox.validation.base import ValidationTestResult
 
@@ -27,7 +27,7 @@ class ValidationReport:
 
     def __init__(
         self,
-        model_info: Dict[str, any],
+        model_info: Dict[str, Any],
         specification_tests: Optional[Dict[str, ValidationTestResult]] = None,
         serial_tests: Optional[Dict[str, ValidationTestResult]] = None,
         het_tests: Optional[Dict[str, ValidationTestResult]] = None,

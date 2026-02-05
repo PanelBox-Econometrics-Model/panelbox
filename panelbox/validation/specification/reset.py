@@ -121,7 +121,7 @@ class RESETTest(ValidationTest):
             )
 
         # Get fitted values from original model
-        fitted = self.results.fitted_values
+        fitted = self.results.fittedvalues
         if fitted is None:
             raise ValueError("Fitted values not available from model results")
 

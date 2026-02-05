@@ -127,6 +127,9 @@ class PanelResults:
         # Store reference to model for validation tests
         self._model = model
 
+        # IV/2SLS specific - first stage results (set externally if needed)
+        self.first_stage_results: Optional[Dict[str, Any]] = None
+
         # Compute t-values and p-values (after df_resid is defined)
         self.tvalues = self.params / self.std_errors
         # Ensure pvalues is a pandas Series with the same index as params

@@ -12,7 +12,7 @@ Each dataset includes:
 """
 
 import os
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -218,7 +218,7 @@ def list_datasets() -> List[str]:
     return sorted(datasets)
 
 
-def get_dataset_info(dataset_name: str) -> Dict[str, any]:
+def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
     """
     Get information about a specific dataset.
 
