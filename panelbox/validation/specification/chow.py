@@ -250,6 +250,9 @@ class ChowTest(ValidationTest):
         if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None, None, None
 
+        # Type narrowing: model is not None and has required attributes
+        assert model is not None
+
         try:
             data = model.data.data.copy()
             entity_col = model.data.entity_col

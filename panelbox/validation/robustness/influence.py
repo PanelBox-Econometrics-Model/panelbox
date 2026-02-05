@@ -109,6 +109,9 @@ class InfluenceDiagnostics:
         self.results = results
         self.verbose = verbose
         self.model = results._model
+        assert (
+            self.model is not None
+        ), "Results must have a model reference for influence diagnostics"
         self.data = self.model.data.data
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
@@ -241,6 +244,8 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
+        assert self.influence_results_ is not None, "compute() should have set influence_results_"
+
         if method == "cooks_d":
             if threshold is None:
                 threshold = 4 / len(self.influence_results_.cooks_d)
@@ -293,6 +298,7 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
+        assert self.influence_results_ is not None, "compute() should have set influence_results_"
         return self.influence_results_.summary()
 
     def plot_influence(self, save_path: Optional[str] = None):
@@ -306,6 +312,8 @@ class InfluenceDiagnostics:
         """
         if self.influence_results_ is None:
             self.compute()
+
+        assert self.influence_results_ is not None, "compute() should have set influence_results_"
 
         try:
             import matplotlib.pyplot as plt
