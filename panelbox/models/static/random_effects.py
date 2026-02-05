@@ -30,66 +30,149 @@ class RandomEffects(PanelModel):
     """
     Random Effects (GLS) estimator for panel data.
 
-    This estimator assumes that entity-specific effects are uncorrelated with
-    the regressors and uses Generalized Least Squares to efficiently estimate
-    the model accounting for the variance component structure.
+    Assumes entity-specific effects are uncorrelated with regressors and uses
+    Generalized Least Squares (GLS) to efficiently estimate the model accounting
+    for the variance component structure.
 
-    The key assumption is E[u_i | X_it] = 0, where u_i is the entity-specific effect.
+    The model estimated is:
+
+        y_it = X_it β + u_i + ε_it
+
+    where u_i ~ i.i.d(0, σ²_u) is the entity-specific random effect and
+    ε_it ~ i.i.d(0, σ²_ε) is the idiosyncratic error.
+
+    **Key Assumption:** E[u_i | X_it] = 0 (random effects uncorrelated with X)
+
+    The GLS transformation is:
+
+        y*_it = y_it - θ ȳ_i
+        X*_it = X_it - θ X̄_i
+
+    where θ = 1 - √(σ²_ε / (σ²_ε + T σ²_u)) depends on the variance components.
 
     Parameters
     ----------
     formula : str
         Model formula in R-style syntax (e.g., "y ~ x1 + x2")
     data : pd.DataFrame
-        Panel data in long format
+        Panel data in long format (one row per entity-time observation)
     entity_col : str
-        Name of the column identifying entities
+        Name of the column identifying entities (e.g., 'firm', 'country')
     time_col : str
-        Name of the column identifying time periods
+        Name of the column identifying time periods (e.g., 'year', 'quarter')
     variance_estimator : str, default='swamy-arora'
         Method for estimating variance components:
-        - 'swamy-arora': Swamy-Arora estimator (most common)
+        - 'swamy-arora': Swamy-Arora estimator (most common, default)
         - 'walhus': Wallace-Hussain estimator
         - 'amemiya': Amemiya estimator
         - 'nerlove': Nerlove estimator
     weights : np.ndarray, optional
-        Observation weights
+        Observation weights for WLS estimation
 
     Attributes
     ----------
     variance_estimator : str
-        Variance estimation method
-    sigma2_u : float
-        Estimated variance of entity-specific effects (after fitting)
-    sigma2_e : float
-        Estimated variance of idiosyncratic errors (after fitting)
-    theta : float
-        GLS transformation parameter (after fitting)
+        Variance estimation method used
+    sigma2_u : float or None
+        Estimated variance of entity-specific effects (populated after fit())
+    sigma2_e : float or None
+        Estimated variance of idiosyncratic errors (populated after fit())
+    theta : float or None
+        GLS transformation parameter (populated after fit())
+    formula_parser : FormulaParser
+        Parsed formula object
+    data : PanelData
+        Panel data container
 
     Examples
     --------
     >>> import panelbox as pb
-    >>> import pandas as pd
+    >>> from panelbox.datasets import load_grunfeld
     >>>
-    >>> # Load data
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> # Load example data
+    >>> data = load_grunfeld()
     >>>
     >>> # Estimate Random Effects
-    >>> model = pb.RandomEffects("y ~ x1 + x2", data, "firm", "year")
+    >>> model = pb.RandomEffects("invest ~ value + capital", data, "firm", "year")
     >>> results = model.fit()
     >>> print(results.summary())
     >>>
-    >>> # Access variance components
-    >>> print(f"sigma2_u: {model.sigma2_u:.4f}")
-    >>> print(f"sigma2_e: {model.sigma2_e:.4f}")
-    >>> print(f"theta: {model.theta:.4f}")
+    >>> # Examine variance components
+    >>> print(f"Entity variance (σ²_u): {model.sigma2_u:.4f}")
+    >>> print(f"Idiosyncratic variance (σ²_ε): {model.sigma2_e:.4f}")
+    >>> print(f"Theta: {model.theta:.4f}")
+    >>> print(f"Proportion of variance due to u_i: "
+    ...       f"{model.sigma2_u/(model.sigma2_u + model.sigma2_e):.2%}")
     >>>
     >>> # Use different variance estimator
     >>> model_amemiya = pb.RandomEffects(
-    ...     "y ~ x1 + x2", data, "firm", "year",
+    ...     "invest ~ value + capital",
+    ...     data,
+    ...     "firm",
+    ...     "year",
     ...     variance_estimator='amemiya'
     ... )
     >>> results_amemiya = model_amemiya.fit()
+
+    Notes
+    -----
+    **When to Use:**
+
+    Random Effects is appropriate when:
+
+    - Entity-specific effects are uncorrelated with regressors: E[u_i | X_it] = 0
+    - You want to estimate effects of time-invariant variables
+    - The sample is a random draw from a large population
+    - Efficiency is important (RE is more efficient than FE under correct specification)
+
+    **Advantages over Fixed Effects:**
+
+    - Can estimate coefficients on time-invariant variables
+    - More efficient (lower standard errors) when assumptions hold
+    - Better for small T (few time periods)
+
+    **Limitations:**
+
+    - Inconsistent if E[u_i | X_it] ≠ 0 (correlation between effects and regressors)
+    - Requires stronger assumptions than Fixed Effects
+    - Use Hausman test to check if RE assumptions are valid
+
+    **Variance Estimators:**
+
+    Different methods for estimating σ²_u and σ²_ε:
+
+    - **swamy-arora** (default): Most commonly used, performs well in practice
+    - **walhus**: Wallace-Hussain estimator
+    - **amemiya**: Amemiya's alternative estimator
+    - **nerlove**: Nerlove's estimator
+
+    All produce consistent estimates; differences are typically small.
+
+    **Testing FE vs RE:**
+
+    Use the Hausman test to choose between Fixed and Random Effects:
+
+    >>> from panelbox import FixedEffects, RandomEffects, HausmanTest
+    >>> fe_results = FixedEffects(...).fit()
+    >>> re_results = RandomEffects(...).fit()
+    >>> hausman = HausmanTest(fe_results, re_results)
+    >>> print(hausman)  # p-value < 0.05 suggests FE is preferred
+
+    References
+    ----------
+    .. [1] Baltagi, B. H. (2021). Econometric Analysis of Panel Data
+           (6th ed.). Springer. Chapter 2.
+    .. [2] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
+           and Panel Data (2nd ed.). MIT Press. Chapter 10.
+    .. [3] Swamy, P. A. V. B., & Arora, S. S. (1972). The Exact Finite Sample
+           Properties of the Estimators of Coefficients in the Error Components
+           Regression Models. Econometrica, 40(2), 261-275.
+
+    See Also
+    --------
+    FixedEffects : Fixed Effects (Within) estimator
+    PooledOLS : Pooled OLS without random effects
+    HausmanTest : Test for choosing between FE and RE
     """
 
     def __init__(
