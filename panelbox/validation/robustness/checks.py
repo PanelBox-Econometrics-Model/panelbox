@@ -38,6 +38,7 @@ class RobustnessChecker:
         self.results = results
         self.verbose = verbose
         self.model = results._model
+        assert self.model is not None, "Results must have a model reference for robustness checks"
         self.data = self.model.data.data
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
