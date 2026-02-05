@@ -234,7 +234,7 @@ class MarkdownExporter:
         lines.append("|----------|------|-----------|---------|----|----|")
 
         # Group by category
-        categories = {}
+        categories: dict[str, list] = {}
         for test in tests:
             cat = test["category"]
             if cat not in categories:
