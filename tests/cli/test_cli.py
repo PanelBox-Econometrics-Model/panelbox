@@ -29,12 +29,15 @@ def create_test_data():
 
 def test_cli_help():
     """Test CLI help command."""
+    import pytest
+
     print("Testing CLI help...")
 
-    # Test main help
-    exit_code = main(["--help"])
-    # Help should print and exit (SystemExit with code 0)
-    # But since it's captured, we just test it doesn't crash
+    # Test main help - should raise SystemExit(0)
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--help"])
+
+    assert exc_info.value.code == 0, "Help should exit with code 0"
     print("  ✓ Main help works")
 
 

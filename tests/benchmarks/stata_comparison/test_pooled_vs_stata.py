@@ -124,12 +124,12 @@ def test_pooled_ols_vs_stata():
     print(f"{'Metric':<12} {'PanelBox':>12} {'Stata':>12} {'Diff':>12}")
     print("-" * 50)
 
-    r2_diff = abs(results.r2 - stata_results["r2"])
-    adj_r2_diff = abs(results.r2_adj - stata_results["adj_r2"])
+    r2_diff = abs(results.rsquared - stata_results["r2"])
+    adj_r2_diff = abs(results.rsquared_adj - stata_results["adj_r2"])
 
-    print(f"{'R-squared':<12} {results.r2:>12.6f} {stata_results['r2']:>12.6f} {r2_diff:>12.2e}")
+    print(f"{'R-squared':<12} {results.rsquared:>12.6f} {stata_results['r2']:>12.6f} {r2_diff:>12.2e}")
     print(
-        f"{'Adj R-sq':<12} {results.r2_adj:>12.6f} {stata_results['adj_r2']:>12.6f} {adj_r2_diff:>12.2e}"
+        f"{'Adj R-sq':<12} {results.rsquared_adj:>12.6f} {stata_results['adj_r2']:>12.6f} {adj_r2_diff:>12.2e}"
     )
     print(
         f"{'N':<12} {results.nobs:>12} {stata_results['n']:>12} {results.nobs - stata_results['n']:>12}"
