@@ -69,7 +69,10 @@ class BreuschPaganTest(ValidationTest):
         # Store original design matrix if available
         # We'll need the original X matrix for the auxiliary regression
         self._X = None
-        if hasattr(results, "_model"):
+        if hasattr(results, "_model") and results._model is not None:
+            assert (
+                results._model is not None
+            ), "Model reference should be non-None after hasattr check"
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 
@@ -207,8 +210,9 @@ class BreuschPaganTest(ValidationTest):
             return self._X
 
         # Try to get from model through results
-        if hasattr(self.results, "_model"):
+        if hasattr(self.results, "_model") and self.results._model is not None:
             model = self.results._model
+            assert model is not None, "Model should be non-None after hasattr check"
 
             # Try to rebuild design matrices
             if hasattr(model, "formula_parser") and hasattr(model, "data"):

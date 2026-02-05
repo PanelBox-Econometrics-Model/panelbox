@@ -819,6 +819,10 @@ class PanelBootstrap:
         if not self._fitted:
             raise RuntimeError("Must call run() before summary()")
 
+        assert (
+            self.bootstrap_estimates_ is not None
+        ), "bootstrap_estimates_ should be set after run()"
+
         summary = pd.DataFrame(
             {
                 "Original": self.results.params,

@@ -252,9 +252,9 @@ class PedroniTest:
             Panel statistics
         """
         # Collect residuals and compute statistics
-        all_resid: Union[list[float], np.ndarray] = []
-        all_resid_lag: Union[list[float], np.ndarray] = []
-        all_delta_resid: Union[list[float], np.ndarray] = []
+        all_resid: list[float] = []
+        all_resid_lag: list[float] = []
+        all_delta_resid: list[float] = []
 
         for entity, resid in residuals_dict.items():
             if len(resid) < 3:
