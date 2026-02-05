@@ -519,7 +519,7 @@ class FixedEffects(PanelModel):
         # Sandwich
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
 
-        return vcov
+        return np.asarray(vcov)
 
     def _compute_vcov_clustered(
         self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int

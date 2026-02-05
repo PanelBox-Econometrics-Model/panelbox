@@ -312,7 +312,7 @@ class PooledOLS(PanelModel):
         # Sandwich: (X'X)^{-1} * X'ΩX * (X'X)^{-1}
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
 
-        return vcov
+        return np.asarray(vcov)
 
     def _compute_vcov_clustered(self, X: np.ndarray, resid: np.ndarray) -> np.ndarray:
         """

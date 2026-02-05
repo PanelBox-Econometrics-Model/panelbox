@@ -485,7 +485,7 @@ class RandomEffects(PanelModel):
         XtX_inv = np.linalg.inv(X_gls.T @ X_gls)
         vcov = s2 * XtX_inv
 
-        return vcov
+        return np.asarray(vcov)
 
     def _compute_vcov_robust(self, X: np.ndarray, resid: np.ndarray, df_resid: int) -> np.ndarray:
         """Compute robust covariance matrix."""
@@ -497,7 +497,7 @@ class RandomEffects(PanelModel):
         meat = X.T @ (resid[:, np.newaxis] ** 2 * X)
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
 
-        return vcov
+        return np.asarray(vcov)
 
     def _compute_vcov_clustered(
         self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int
