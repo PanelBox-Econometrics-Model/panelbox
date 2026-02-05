@@ -68,7 +68,7 @@ class BreuschPaganTest(ValidationTest):
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 
-    def run(self, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Breusch-Pagan LM test for heteroskedasticity.
 

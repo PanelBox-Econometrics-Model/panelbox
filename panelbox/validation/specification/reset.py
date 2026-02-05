@@ -71,7 +71,7 @@ class RESETTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, powers=None, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, powers=None, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run RESET test for specification errors.
 

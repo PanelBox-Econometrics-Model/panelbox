@@ -74,7 +74,7 @@ class ModifiedWaldTest(ValidationTest):
                 f"Current model: {self.model_type}"
             )
 
-    def run(self, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Modified Wald test for groupwise heteroskedasticity.
 

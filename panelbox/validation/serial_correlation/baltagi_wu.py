@@ -72,7 +72,7 @@ class BaltagiWuTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Baltagi-Wu test for serial correlation.
 

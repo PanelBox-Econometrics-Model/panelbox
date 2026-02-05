@@ -66,7 +66,7 @@ class WhiteTest(ValidationTest):
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 
-    def run(self, alpha: float = 0.05, cross_terms: bool = True) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, cross_terms: bool = True, **kwargs) -> ValidationTestResult:
         """
         Run White test for heteroskedasticity.
 

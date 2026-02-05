@@ -75,7 +75,7 @@ class BreuschPaganLMTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, alpha: float = 0.05) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Breusch-Pagan LM test for cross-sectional dependence.
 
