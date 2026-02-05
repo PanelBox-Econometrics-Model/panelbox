@@ -267,23 +267,23 @@ class PedroniTest:
             all_resid_lag.extend(resid_lag)
             all_delta_resid.extend(delta_resid)
 
-        all_resid = np.array(all_resid)
-        all_resid_lag = np.array(all_resid_lag)
-        all_delta_resid = np.array(all_delta_resid)
+        all_resid_arr: np.ndarray = np.array(all_resid)
+        all_resid_lag_arr: np.ndarray = np.array(all_resid_lag)
+        all_delta_resid_arr: np.ndarray = np.array(all_delta_resid)
 
         # Panel v-statistic (variance ratio)
-        T = len(all_resid) // self.n_entities
-        var_resid = np.var(all_resid, ddof=1)
-        var_delta = np.var(all_delta_resid, ddof=1)
+        T = len(all_resid_arr) // self.n_entities
+        var_resid = np.var(all_resid_arr, ddof=1)
+        var_delta = np.var(all_delta_resid_arr, ddof=1)
         panel_v = T**2 * self.n_entities * var_delta / var_resid if var_resid > 0 else np.nan
 
         # Panel rho-statistic (PP-type)
-        numerator = np.sum(all_resid_lag * all_delta_resid)
-        denominator = np.sum(all_resid_lag**2)
+        numerator: float = float(np.sum(all_resid_lag_arr * all_delta_resid_arr))
+        denominator = np.sum(all_resid_lag_arr**2)
         panel_rho = numerator / denominator if denominator > 0 else np.nan
 
         # Panel PP-statistic
-        sigma2 = np.var(all_delta_resid, ddof=1)
+        sigma2 = np.var(all_delta_resid_arr, ddof=1)
         panel_pp = (
             (numerator / np.sqrt(sigma2 * denominator))
             if denominator > 0 and sigma2 > 0
@@ -292,11 +292,11 @@ class PedroniTest:
 
         # Panel ADF-statistic (simplified)
         # Δe_t = ρ e_{t-1} + error
-        if len(all_resid_lag) > 0 and len(all_delta_resid) > 0:
-            rho = np.sum(all_delta_resid * all_resid_lag) / np.sum(all_resid_lag**2)
-            resid_adf = all_delta_resid - rho * all_resid_lag
+        if len(all_resid_lag_arr) > 0 and len(all_delta_resid_arr) > 0:
+            rho = np.sum(all_delta_resid_arr * all_resid_lag_arr) / np.sum(all_resid_lag_arr**2)
+            resid_adf = all_delta_resid_arr - rho * all_resid_lag_arr
             sigma2_adf = np.var(resid_adf, ddof=1)
-            se_rho = np.sqrt(sigma2_adf / np.sum(all_resid_lag**2))
+            se_rho = np.sqrt(sigma2_adf / np.sum(all_resid_lag_arr**2))
             panel_adf = rho / se_rho if se_rho > 0 else np.nan
         else:
             panel_adf = np.nan
