@@ -6,7 +6,7 @@ estimators commonly used in panel data applications.
 """
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -140,7 +140,7 @@ class ClusteredStandardErrors:
                 )
 
         # Cache
-        self._bread = None
+        self._bread: Optional[np.ndarray] = None
 
     @property
     def bread(self) -> np.ndarray:

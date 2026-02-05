@@ -188,7 +188,7 @@ class IPSTest:
         self.entities = self.data[entity_col].unique()
         self.n_entities = len(self.entities)
 
-        self.result = None
+        self.result: Optional[IPSTestResult] = None
 
     def _select_lags_for_entity(self, entity_data: np.ndarray, max_lags: int = 12) -> int:
         """

@@ -303,8 +303,8 @@ class GMMResults:
     diff_hansen: Optional[TestResult] = None
 
     # Matrices
-    vcov: np.ndarray = None
-    weight_matrix: np.ndarray = None
+    vcov: Optional[np.ndarray] = None
+    weight_matrix: Optional[np.ndarray] = None
 
     # Flags
     converged: bool = True

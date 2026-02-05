@@ -197,8 +197,8 @@ class DifferenceGMM:
         self.tester = GMMTests()
 
         # Results (populated after fit)
-        self.results = None
-        self.params = None
+        self.results: Optional[GMMResults] = None
+        self.params: Optional[np.ndarray] = None
 
         # Validate inputs
         self._validate_inputs()
