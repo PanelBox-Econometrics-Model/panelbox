@@ -267,11 +267,11 @@ class LLCTest:
         if len(residuals) == 0:
             return np.inf
 
-        residuals = np.array(residuals)
-        n = len(residuals)
+        residuals_arr: np.ndarray = np.array(residuals)
+        n = len(residuals_arr)
         k = lags + 2  # parameters
 
-        sigma2 = np.sum(residuals**2) / n
+        sigma2 = np.sum(residuals_arr**2) / n
         aic = n * np.log(sigma2) + 2 * k
 
         return float(aic)
