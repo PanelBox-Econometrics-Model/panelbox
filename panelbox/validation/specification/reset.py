@@ -230,6 +230,9 @@ class RESETTest(ValidationTest):
         if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None, None, None
 
+        # Type narrowing: model is not None and has required attributes
+        assert model is not None
+
         try:
             # Get original data
             data = model.data.data.copy()
