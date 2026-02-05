@@ -5,7 +5,10 @@ Base classes for validation tests.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
 
 
 class ValidationTestResult:

@@ -5,7 +5,7 @@ This module provides statistical functions for hypothesis testing
 and inference in panel models.
 """
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from scipy import stats

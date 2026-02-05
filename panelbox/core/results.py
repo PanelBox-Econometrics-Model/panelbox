@@ -10,11 +10,14 @@ from __future__ import annotations
 import json
 import pickle
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+if TYPE_CHECKING:
+    from panelbox.validation.validation_suite import ValidationReport
 
 
 class PanelResults:
