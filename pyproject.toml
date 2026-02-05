@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panelbox"
-version = "0.2.0"
-description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond)"
+version = "0.3.0"
+description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Bootstrap, Sensitivity Analysis"
 authors = [
     {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},
     {name = "Paulo Dourado", email = "paulodourado.unb@gmail.com"}
@@ -22,7 +22,10 @@ keywords = [
     "fixed effects",
     "random effects",
     "dynamic panel",
-    "instrumental variables"
+    "instrumental variables",
+    "bootstrap",
+    "sensitivity analysis",
+    "robustness"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

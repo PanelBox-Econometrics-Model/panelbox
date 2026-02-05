@@ -27,6 +27,9 @@ from panelbox.validation.cross_sectional_dependence.pesaran_cd import PesaranCDT
 from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
 from panelbox.validation.cross_sectional_dependence.frees import FreesTest
 
+# Robustness analysis
+from panelbox.validation.robustness.bootstrap import PanelBootstrap
+
 __all__ = [
     # Base classes
     'ValidationTest',
@@ -55,4 +58,7 @@ __all__ = [
     'PesaranCDTest',
     'BreuschPaganLMTest',
     'FreesTest',
+
+    # Robustness analysis
+    'PanelBootstrap',
 ]

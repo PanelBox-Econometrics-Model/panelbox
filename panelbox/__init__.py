@@ -38,6 +38,10 @@ from panelbox.gmm.results import GMMResults
 # Tests
 from panelbox.validation.specification.hausman import HausmanTest, HausmanTestResult
 
+# Robustness analysis
+from panelbox.validation.robustness.bootstrap import PanelBootstrap
+from panelbox.validation.robustness.sensitivity import SensitivityAnalysis, SensitivityResults
+
 __all__ = [
     # Version
     '__version__',
@@ -64,4 +68,9 @@ __all__ = [
     # Tests
     'HausmanTest',
     'HausmanTestResult',
+
+    # Robustness
+    'PanelBootstrap',
+    'SensitivityAnalysis',
+    'SensitivityResults',
 ]

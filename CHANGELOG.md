@@ -8,11 +8,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+- Robust standard errors (HC0-HC3, Driscoll-Kraay, Newey-West)
 - Additional GMM estimators (LIML, CUE)
-- Advanced diagnostics (weak instrument tests, C-statistic)
+- Cross-validation for panel data
+- Jackknife inference
+- Outlier detection and influence diagnostics
 - Panel VAR models
 - Cointegration tests
-- Visualization tools
+
+## [0.3.0] - 2026-01-22
+
+### Added - Advanced Robustness Analysis
+
+**Bootstrap Inference:**
+- **PanelBootstrap** class with 4 bootstrap methods:
+  - **Pairs (Entity) Bootstrap** - Resamples entire entities with all time periods (default, most robust)
+  - **Wild Bootstrap** - Rademacher weights for heteroskedasticity-robust inference
+  - **Block Bootstrap** - Moving blocks for temporal dependence (automatic block size selection)
+  - **Residual Bootstrap** - i.i.d. assumption benchmark
+- Performance: ~95-110 iterations/second on typical panels
+- Progress tracking with optional tqdm integration
+- Methods: `run()`, `conf_int()`, `summary()`
+- Confidence interval methods: percentile, basic, studentized
+- Bootstrap bias and variance estimates
+
+**Sensitivity Analysis:**
+- **SensitivityAnalysis** class with 3 analysis methods:
+  - **Leave-One-Out Entities** - Identifies influential cross-sectional units
+  - **Leave-One-Out Periods** - Identifies influential time periods
+  - **Subset Sensitivity** - Random subsample stability analysis with stratification
+- Influential unit detection (configurable threshold)
+- Comprehensive summary statistics (CV, ranges, deviations)
+- Optional visualization with matplotlib
+- Methods: `leave_one_out_entities()`, `leave_one_out_periods()`, `subset_sensitivity()`, `plot_sensitivity()`, `summary()`
+- Performance: 1-4 seconds for typical panels
+
+**Integration:**
+- Exported `PanelBootstrap`, `SensitivityAnalysis`, and `SensitivityResults` in main module
+- Works seamlessly with all static and dynamic panel models
+- Backward compatible with v0.2.0
+
+### Added - Tests
+
+**Comprehensive Test Suite:**
+- 33 tests for PanelBootstrap (100% passing)
+  - Initialization tests
+  - Method-specific tests (pairs, wild, block, residual)
+  - Reproducibility tests
+  - Integration tests
+- 30 tests for SensitivityAnalysis (100% passing)
+  - Leave-one-out tests
+  - Subset sensitivity tests
+  - Plotting tests (conditional on matplotlib)
+  - Edge case coverage
+- Total: 63 new tests, 100% pass rate
+
+### Added - Documentation
+
+**Module Documentation:**
+- `desenvolvimento/FASE_5_BOOTSTRAP_COMPLETE.md` - Complete bootstrap guide (500 lines)
+- `desenvolvimento/FASE_5_ROBUSTNESS_COMPLETE.md` - Robustness suite documentation (800 lines)
+- `desenvolvimento/FASE_5_SUMMARY.md` - Executive summary (400 lines)
+- `desenvolvimento/PROJECT_STATUS_2026_01_22.md` - Project status overview
+- `desenvolvimento/NEXT_STEPS_RECOMMENDATIONS.md` - Future roadmap
+
+**Example Scripts:**
+- `examples/validation/bootstrap_all_methods.py` - Complete bootstrap demonstration (347 lines)
+  - All 4 methods with comparison
+  - Standard error comparison
+  - Confidence interval analysis
+  - Method-specific recommendations
+- `examples/validation/sensitivity_analysis_complete.py` - Comprehensive sensitivity demo (550 lines)
+  - All 3 sensitivity methods
+  - Planted outlier detection
+  - Stability assessment
+  - Practical interpretation guidelines
+
+**Enhanced Docstrings:**
+- Complete API documentation for all new classes
+- Type hints throughout
+- Usage examples in docstrings
+- Parameter descriptions
+
+### Changed
+
+- Updated main `__init__.py` to export robustness analysis tools
+- Updated package status: v0.2.0 (GMM) → v0.3.0 (GMM + Robustness)
+- Enhanced project documentation structure
+
+### Performance
+
+**Bootstrap Benchmarks (N=20, T=8):**
+- Pairs: ~110 iterations/second (~9s for 1000 bootstrap)
+- Wild: ~98 iterations/second (~10s for 1000 bootstrap)
+- Block: ~73 iterations/second (~14s for 1000 bootstrap)
+- Residual: ~95 iterations/second (~11s for 1000 bootstrap)
+
+**Sensitivity Benchmarks (N=30, T=10):**
+- LOO Entities: ~3.5 seconds (30 re-estimations)
+- LOO Periods: ~1.2 seconds (10 re-estimations)
+- Subset (30 samples): ~3.8 seconds
 
 ## [0.2.0] - 2026-01-21
 
