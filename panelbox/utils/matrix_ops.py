@@ -5,7 +5,7 @@ This module provides optimized matrix operations commonly used in
 panel data estimation.
 """
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -56,7 +56,7 @@ def demean_matrix(X: np.ndarray, groups: np.ndarray) -> np.ndarray:
 
 
 def compute_ols(
-    y: np.ndarray, X: np.ndarray, weights: np.ndarray = None
+    y: np.ndarray, X: np.ndarray, weights: Optional[np.ndarray] = None
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute OLS estimates.

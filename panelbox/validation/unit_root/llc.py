@@ -226,7 +226,7 @@ class LLCTest:
     def _compute_aic(self, lags: int) -> float:
         """Compute AIC for given lag order."""
         # Simplified AIC computation
-        residuals = []
+        residuals: list[float] | np.ndarray = []
 
         for entity in self.entities:
             entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values

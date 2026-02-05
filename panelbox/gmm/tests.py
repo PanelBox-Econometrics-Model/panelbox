@@ -273,7 +273,7 @@ class GMMTests:
         len(unique_ids)
 
         # Store products of residuals and their lags
-        products = []
+        products: list[float] | np.ndarray = []
 
         for group_id in unique_ids:
             # Get residuals for this group

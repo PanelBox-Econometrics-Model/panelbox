@@ -496,7 +496,9 @@ class GMMEstimator:
         diff = np.max(np.abs(beta_new - beta_old))
         return diff < self.tol
 
-    def _compute_gram_matrix_sparse(self, A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
+    def _compute_gram_matrix_sparse(
+        self, A: np.ndarray, B: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """
         Compute A'B handling NaN values properly for sparse GMM instruments.
 
