@@ -11,7 +11,7 @@ GMMResults : Complete results from GMM estimation
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd

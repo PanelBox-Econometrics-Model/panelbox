@@ -36,7 +36,7 @@ References
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -476,7 +476,7 @@ class StandardErrorComparison:
 
         # Count significant coefficients by SE type
         sig_counts = (result.p_values < 0.05).sum()
-        print(f"Coefficients significant at 5% level:")
+        print("Coefficients significant at 5% level:")
         for se_type, count in sig_counts.items():
             print(f"  {se_type:20s}: {count}/{len(self.coef_names)}")
         print()

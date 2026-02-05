@@ -247,7 +247,7 @@ class GMMEstimator:
         Robust: W = (Z'ΩZ)^{-1} where Ω = diag(ε²)
         Non-robust: W = (1/n) (Z'Z)^{-1}
         """
-        n = Z.shape[0]
+        Z.shape[0]
 
         if robust:
             # Heteroskedasticity-robust weight matrix
@@ -302,7 +302,7 @@ class GMMEstimator:
         126(1), 25-51.
         """
         n, k = X.shape
-        n_instruments = Z.shape[1]
+        Z.shape[1]
 
         # Compute moment conditions: g_i = Z_i * ε_i
         g = Z * residuals
@@ -346,7 +346,7 @@ class GMMEstimator:
         accounting for the effect of estimating W.
         """
         n = X.shape[0]
-        n_instruments = Z.shape[1]
+        Z.shape[1]
 
         # Compute H matrices (derivatives of weight matrix)
         # H_jl = ∂W/∂σ_{jl} where σ_{jl} = E[Z_j ε Z_l ε]
@@ -361,8 +361,8 @@ class GMMEstimator:
         # Simplified Windmeijer correction (commonly used)
         # Based on equation (12) in Windmeijer (2005)
 
-        # Compute moment Jacobian weighted by W
-        DWD = D.T @ W @ D  # k x k
+        # Note: DWD = D.T @ W @ D would be used in full correction
+        # Using simplified approach for moment conditions
 
         # Compute correction for estimation of Σ
         # This captures the variability in the weight matrix estimation
@@ -578,7 +578,7 @@ class GMMEstimator:
         # Determine minimum required instruments
         if min_instruments is None:
             k = X.shape[1] if X.ndim > 1 else 1
-            n_instruments_total = Z.shape[1] if Z.ndim > 1 else 1
+            Z.shape[1] if Z.ndim > 1 else 1
             # For unbalanced panels, require at least k+1 for overidentification
             # but don't require half of total instruments (too restrictive)
             min_instruments = k + 1

@@ -11,7 +11,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -218,7 +218,7 @@ class LLCTest:
                 if aic < best_aic:
                     best_aic = aic
                     best_lag = p
-            except:
+            except Exception:
                 continue
 
         return best_lag
@@ -261,7 +261,7 @@ class LLCTest:
                 params = np.linalg.lstsq(X, y, rcond=None)[0]
                 resid = y - X @ params
                 residuals.extend(resid)
-            except:
+            except Exception:
                 continue
 
         if len(residuals) == 0:
@@ -390,7 +390,7 @@ class LLCTest:
                         v_tilde_list.append(v_tilde)
                         sigma_list.append(sigma_i)
                         T_list.append(T_i)
-                except:
+                except Exception:
                     continue
             else:
                 # No regressors - use raw values
@@ -431,19 +431,16 @@ class LLCTest:
 
         # Step 4: Adjust t-statistic using LLC adjustment
         N = len(e_tilde_list)
-        T_avg = np.mean(T_list)
+        np.mean(T_list)
 
         # Asymptotic mean and std from LLC Table 2
         # Note: mu and sigma are for the distribution of the test under H0
         if self.trend == "n":
-            mu_T_star = -1.02
-            sigma_T_star = 0.82
+            pass
         elif self.trend == "c":
-            mu_T_star = -1.38
-            sigma_T_star = 1.02
+            pass
         else:  # 'ct'
-            mu_T_star = -1.91
-            sigma_T_star = 1.20
+            pass
 
         # LLC adjustment formula from LLC (2002):
         # The raw t-statistic needs to be standardized to follow N(0,1) under H0

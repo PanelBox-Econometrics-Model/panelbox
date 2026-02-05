@@ -16,7 +16,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -234,7 +234,7 @@ class PedroniTest:
             params = np.linalg.lstsq(X, y, rcond=None)[0]
             resid = y - X @ params
             return resid
-        except:
+        except Exception:
             return np.full(len(y), np.nan)
 
     def _compute_panel_statistics(self, residuals_dict: Dict) -> Dict[str, float]:
@@ -409,7 +409,7 @@ class PedroniTest:
 
         # All others are left-tailed
         for key in ["panel_rho", "panel_pp", "panel_adf", "group_rho", "group_pp", "group_adf"]:
-            stat_key = key.replace("panel_", "").replace("group_", "")
+            key.replace("panel_", "").replace("group_", "")
             if key.startswith("panel"):
                 stat = panel_stats.get(key.replace("panel_", "panel_"))
             else:

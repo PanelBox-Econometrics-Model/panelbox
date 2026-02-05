@@ -11,6 +11,8 @@ error models when the regressors include lagged dependent variables.
 Econometrica, 46(6), 1293-1301.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy import stats

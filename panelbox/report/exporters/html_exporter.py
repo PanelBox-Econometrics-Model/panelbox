@@ -5,9 +5,8 @@ Exports reports to self-contained HTML files.
 """
 
 import datetime
-import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Union
 
 
 class HTMLExporter:

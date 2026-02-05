@@ -15,7 +15,7 @@ Shao, J., & Tu, D. (1995). The Jackknife and Bootstrap.
 
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -192,7 +192,7 @@ class PanelJackknife:
            - Influence: (N-1) * (original - theta_i)
         """
         if self.verbose:
-            print(f"Starting jackknife procedure...")
+            print("Starting jackknife procedure...")
             print(f"Total entities: {self.n_entities}")
             print("")
 

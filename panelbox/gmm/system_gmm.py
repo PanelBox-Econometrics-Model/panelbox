@@ -272,7 +272,7 @@ class SystemGMM(DifferenceGMM):
 
         # Repeat ids and times for stacked system
         ids_stacked = np.concatenate([ids, ids])
-        times_stacked = np.concatenate([times, times])
+        np.concatenate([times, times])
 
         # Step 5: Estimate GMM on stacked system (using cleaned data)
         if self.gmm_type == "one_step":
@@ -342,7 +342,7 @@ class SystemGMM(DifferenceGMM):
             diff_hansen = None
 
         # Step 9: Create results object
-        valid_mask_results = ~np.isnan(residuals_full.flatten())
+        ~np.isnan(residuals_full.flatten())
         self.results = GMMResults(
             params=pd.Series(beta, index=var_names),
             std_errors=pd.Series(std_errors, index=var_names),

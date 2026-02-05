@@ -9,6 +9,8 @@ MIT Press, Section 10.4.1.
 Stata command: xtserial
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy import stats

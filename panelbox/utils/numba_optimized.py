@@ -10,7 +10,6 @@ operations, primarily targeting:
 Using Numba can provide 10-100x speedups for these operations.
 """
 
-from typing import Tuple
 
 import numpy as np
 
@@ -418,7 +417,7 @@ def get_numba_status() -> dict:
             import numba.config
 
             status["parallel_available"] = numba.config.NUMBA_NUM_THREADS > 0
-        except:
+        except Exception:
             pass
 
     return status

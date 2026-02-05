@@ -18,7 +18,7 @@ Rousseeuw, P. J., & Leroy, A. M. (1987). Robust Regression and Outlier Detection
 
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -288,7 +288,7 @@ class OutlierDetector:
 
         self.outlier_results_ = OutlierResults(
             outliers=outliers_df,
-            method=f"Mahalanobis distance",
+            method="Mahalanobis distance",
             threshold=threshold_value,
             n_outliers=n_outliers,
         )

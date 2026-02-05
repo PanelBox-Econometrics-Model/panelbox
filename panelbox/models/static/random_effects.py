@@ -481,7 +481,7 @@ class RandomEffects(PanelModel):
     def _compute_vcov_robust(self, X: np.ndarray, resid: np.ndarray, df_resid: int) -> np.ndarray:
         """Compute robust covariance matrix."""
         n = len(resid)
-        k = X.shape[1]
+        X.shape[1]
         adjustment = n / df_resid
 
         XtX_inv = np.linalg.inv(X.T @ X)
@@ -494,7 +494,7 @@ class RandomEffects(PanelModel):
         self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int
     ) -> np.ndarray:
         """Compute cluster-robust covariance matrix."""
-        n = len(resid)
+        len(resid)
         k = X.shape[1]
 
         unique_entities = np.unique(entities)

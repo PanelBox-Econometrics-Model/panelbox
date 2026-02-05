@@ -7,7 +7,7 @@ Generates static charts for validation reports using Matplotlib.
 import base64
 import warnings
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 try:
     import matplotlib
@@ -70,7 +70,7 @@ class StaticValidationRenderer:
         # Set style
         try:
             plt.style.use(style)
-        except:
+        except (OSError, KeyError):
             # Fallback to default if style not available
             plt.style.use("default")
 

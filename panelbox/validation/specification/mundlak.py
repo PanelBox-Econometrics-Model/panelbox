@@ -10,8 +10,9 @@ Wooldridge, J. M. (2010). Econometric Analysis of Cross Section and Panel Data
 (2nd ed.). MIT Press.
 """
 
+from __future__ import annotations
+
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult

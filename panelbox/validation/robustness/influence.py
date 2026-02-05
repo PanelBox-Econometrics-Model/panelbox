@@ -14,7 +14,7 @@ Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). Regression Diagnostics:
 
 import warnings
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd

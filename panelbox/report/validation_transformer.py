@@ -4,8 +4,7 @@ Validation Report Transformer.
 Transforms ValidationReport objects into template-friendly data structures.
 """
 
-from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class ValidationTransformer:

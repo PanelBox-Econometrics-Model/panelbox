@@ -10,6 +10,8 @@ Papers in Economics No. 0435.
 Stata command: xtcd
 """
 
+from __future__ import annotations
+
 from itertools import combinations
 
 import numpy as np

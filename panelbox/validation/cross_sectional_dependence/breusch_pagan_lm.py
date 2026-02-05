@@ -11,6 +11,8 @@ Pesaran, M. H. (2004). General Diagnostic Tests for Cross Section Dependence
 in Panels. Cambridge Working Papers in Economics No. 0435.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy import stats

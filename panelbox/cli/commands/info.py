@@ -113,7 +113,7 @@ def print_data_info(
         )
 
     # Data types summary
-    print(f"\nData Types:")
+    print("\nData Types:")
     dtype_counts = data.dtypes.value_counts()
     for dtype, count in dtype_counts.items():
         print(f"  {dtype}: {count} columns")
@@ -125,7 +125,7 @@ def print_data_info(
         elif time_col not in data.columns:
             print(f"\nWarning: Time column '{time_col}' not found", file=sys.stderr)
         else:
-            print(f"\n" + "-" * 80)
+            print("\n" + "-" * 80)
             print("Panel Structure:")
             print("-" * 80)
 
@@ -147,7 +147,7 @@ def print_data_info(
                     f"Panel type:       Balanced (all entities have {obs_per_entity.iloc[0]} obs)"
                 )
             else:
-                print(f"Panel type:       Unbalanced")
+                print("Panel type:       Unbalanced")
                 print(f"  Min obs:        {obs_per_entity.min()}")
                 print(f"  Max obs:        {obs_per_entity.max()}")
                 print(f"  Mean obs:       {obs_per_entity.mean():.1f}")
@@ -155,7 +155,7 @@ def print_data_info(
     # Summary statistics for numeric columns
     numeric_cols = data.select_dtypes(include=["int64", "float64"]).columns
     if len(numeric_cols) > 0 and verbose:
-        print(f"\n" + "-" * 80)
+        print("\n" + "-" * 80)
         print("Summary Statistics (numeric columns):")
         print("-" * 80)
         print(data[numeric_cols].describe())
@@ -189,14 +189,14 @@ def print_results_info(filepath: str, verbose: bool = False) -> None:
     print(f"\nFile path:        {filepath}")
     print(f"File size:        {filepath.stat().st_size:,} bytes")
 
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Model Information:")
     print("-" * 80)
     print(f"Model type:       {results.model_type}")
     print(f"Formula:          {results.formula}")
     print(f"Covariance type:  {results.cov_type}")
 
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Sample Information:")
     print("-" * 80)
     print(f"Observations:     {results.nobs:,}")
@@ -206,7 +206,7 @@ def print_results_info(filepath: str, verbose: bool = False) -> None:
     print(f"DF model:         {results.df_model}")
     print(f"DF residual:      {results.df_resid}")
 
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Fit Statistics:")
     print("-" * 80)
     if not pd.isna(results.rsquared):
@@ -220,7 +220,7 @@ def print_results_info(filepath: str, verbose: bool = False) -> None:
     if not pd.isna(results.rsquared_overall):
         print(f"R² (overall):     {results.rsquared_overall:.4f}")
 
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print(f"Parameters ({len(results.params)}):")
     print("-" * 80)
     for var in results.params.index:
@@ -232,7 +232,7 @@ def print_results_info(filepath: str, verbose: bool = False) -> None:
         print(f"  {var:<15s} coef={coef:>8.4f}  se={se:>6.4f}  t={t:>6.2f}  p={p:>6.4f} {sig}")
 
     if verbose:
-        print(f"\n" + "=" * 80)
+        print("\n" + "=" * 80)
         print("Full Summary:")
         print("=" * 80)
         print(results.summary())

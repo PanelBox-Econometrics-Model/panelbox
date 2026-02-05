@@ -7,10 +7,11 @@ White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator
 and a direct test for heteroskedasticity. Econometrica, 48(4), 817-838.
 """
 
+from __future__ import annotations
+
 from itertools import combinations_with_replacement
 
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult

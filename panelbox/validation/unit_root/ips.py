@@ -11,7 +11,7 @@ Reference:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -221,7 +221,7 @@ class IPSTest:
                 if aic < best_aic:
                     best_aic = aic
                     best_lag = p
-            except:
+            except Exception:
                 continue
 
         return best_lag
@@ -261,7 +261,7 @@ class IPSTest:
             sigma2 = np.sum(resid**2) / n
             aic = n * np.log(sigma2) + 2 * k
             return aic
-        except:
+        except Exception:
             return np.inf
 
     def _adf_test_entity(self, entity_data: np.ndarray, lags: int) -> Tuple[float, int]:
@@ -325,7 +325,7 @@ class IPSTest:
                 t_stat = rho / se_rho
 
                 return t_stat, n
-            except:
+            except Exception:
                 return np.nan, 0
         else:
             # No lags, simple ADF
@@ -340,7 +340,7 @@ class IPSTest:
                 t_stat = params[0] / se_rho
 
                 return t_stat, n
-            except:
+            except Exception:
                 return np.nan, 0
 
     def _get_critical_values(self, T: int) -> Dict[str, float]:

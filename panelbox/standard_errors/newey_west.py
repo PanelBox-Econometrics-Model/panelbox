@@ -191,7 +191,7 @@ class NeweyWestStandardErrors:
         gamma : np.ndarray
             Autocovariance matrix (k x k)
         """
-        k = self.n_params
+        self.n_params
         n = self.n_obs
 
         if lag == 0:

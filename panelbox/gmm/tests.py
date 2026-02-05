@@ -22,7 +22,7 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 from scipy import stats
@@ -174,7 +174,7 @@ class GMMTests:
         resid_clean = residuals[valid_mask]
         Z_clean = Z[valid_mask, :]
 
-        n = len(resid_clean)
+        len(resid_clean)
         n_instruments = Z_clean.shape[1]
 
         # Degrees of freedom
@@ -270,7 +270,7 @@ class GMMTests:
 
         # Compute lagged residuals by group
         unique_ids = np.unique(ids_clean)
-        n_groups = len(unique_ids)
+        len(unique_ids)
 
         # Store products of residuals and their lags
         products = []

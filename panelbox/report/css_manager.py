@@ -5,8 +5,7 @@ Manages compilation and layering of CSS styles with 3-layer architecture.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from .asset_manager import AssetManager
 
@@ -239,9 +238,9 @@ class CSSManager:
         # Add custom inline CSS
         if self.custom_css:
             css_parts.append(
-                f"/* ========================================\n"
-                f" * INLINE CUSTOM CSS\n"
-                f" * ======================================== */\n"
+                "/* ========================================\n"
+                " * INLINE CUSTOM CSS\n"
+                " * ======================================== */\n"
             )
             for custom in self.custom_css:
                 css_parts.append(custom)

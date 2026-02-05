@@ -6,18 +6,15 @@ estimators commonly used in panel data applications.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Union
 
 import numpy as np
-import pandas as pd
 
 from .utils import (
-    clustered_covariance,
     compute_bread,
     compute_clustered_meat,
     compute_twoway_clustered_meat,
     sandwich_covariance,
-    twoway_clustered_covariance,
 )
 
 
@@ -233,7 +230,7 @@ class ClusteredStandardErrors:
             n_clust = len(unique_clusters)
             cluster_sizes = [np.sum(self.clusters == c) for c in unique_clusters]
 
-            lines.append(f"Clustering dimension: 1")
+            lines.append("Clustering dimension: 1")
             lines.append(f"Number of clusters: {n_clust}")
             lines.append(f"Observations: {self.n_obs}")
             lines.append(f"Avg obs per cluster: {self.n_obs / n_clust:.1f}")
@@ -256,7 +253,7 @@ class ClusteredStandardErrors:
             n_clust1 = len(unique_clusters1)
             n_clust2 = len(unique_clusters2)
 
-            lines.append(f"Clustering dimensions: 2")
+            lines.append("Clustering dimensions: 2")
             lines.append(f"Number of clusters (dim 1): {n_clust1}")
             lines.append(f"Number of clusters (dim 2): {n_clust2}")
             lines.append(f"Observations: {self.n_obs}")
