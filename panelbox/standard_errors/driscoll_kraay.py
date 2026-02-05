@@ -213,7 +213,7 @@ class DriscollKraayStandardErrors:
             if lag == 0:
                 return 1.0
             z = 6 * np.pi * lag / (self.max_lags + 1) / 5
-            return 3 / z**2 * (np.sin(z) / z - np.cos(z))
+            return float(3 / z**2 * (np.sin(z) / z - np.cos(z)))
 
         else:
             raise ValueError(f"Unknown kernel: {self.kernel}")

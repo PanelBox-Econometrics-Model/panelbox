@@ -4,7 +4,7 @@ PanelData - Container for panel data with validation and transformations.
 This module provides the core PanelData class for handling panel datasets.
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -164,7 +164,7 @@ class PanelData:
         else:
             raise ValueError("method must be 'entity', 'time', or 'both'")
 
-        return result
+        return cast(pd.DataFrame, result)
 
     def first_difference(self, variables: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
         """
@@ -207,7 +207,7 @@ class PanelData:
         # Drop first observation for each entity (NaN from diff)
         result = result.dropna(subset=variables)
 
-        return result
+        return cast(pd.DataFrame, result)
 
     def lag(self, variable: str, lags: Union[int, List[int]] = 1) -> pd.DataFrame:
         """
@@ -249,7 +249,7 @@ class PanelData:
             lag_name = f"L{lag}.{variable}"
             result[lag_name] = result.groupby(self.entity_col)[variable].shift(lag)
 
-        return result
+        return cast(pd.DataFrame, result)
 
     def lead(self, variable: str, leads: Union[int, List[int]] = 1) -> pd.DataFrame:
         """
@@ -287,7 +287,7 @@ class PanelData:
             lead_name = f"F{lead}.{variable}"
             result[lead_name] = result.groupby(self.entity_col)[variable].shift(-lead)
 
-        return result
+        return cast(pd.DataFrame, result)
 
     def balance(self) -> "PanelData":
         """

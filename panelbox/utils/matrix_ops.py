@@ -125,7 +125,7 @@ def compute_vcov_nonrobust(X: np.ndarray, resid: np.ndarray, df_resid: int) -> n
     XtX_inv = np.linalg.inv(X.T @ X)
     vcov = s2 * XtX_inv
 
-    return vcov
+    return np.asarray(vcov)
 
 
 def compute_rsquared(

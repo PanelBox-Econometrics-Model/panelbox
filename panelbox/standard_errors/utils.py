@@ -48,7 +48,7 @@ def compute_leverage(X: np.ndarray) -> np.ndarray:
     # Ensure leverage is between 0 and 1 (numerical stability)
     leverage = np.clip(leverage, 0, 1)
 
-    return leverage
+    return np.asarray(leverage)
 
 
 def compute_bread(X: np.ndarray) -> np.ndarray:
@@ -145,7 +145,7 @@ def compute_meat_hc(
     X_weighted = X * np.sqrt(weights)[:, np.newaxis]
     meat = X_weighted.T @ X_weighted
 
-    return meat
+    return np.asarray(meat)
 
 
 def sandwich_covariance(bread: np.ndarray, meat: np.ndarray) -> np.ndarray:
@@ -166,7 +166,7 @@ def sandwich_covariance(bread: np.ndarray, meat: np.ndarray) -> np.ndarray:
     cov : np.ndarray
         Covariance matrix (k x k)
     """
-    return bread @ meat @ bread
+    return np.asarray(bread @ meat @ bread)
 
 
 def compute_clustered_meat(
@@ -282,7 +282,7 @@ def compute_twoway_clustered_meat(
     # Two-way clustering: V_1 + V_2 - V_12
     meat = meat1 + meat2 - meat12
 
-    return meat
+    return np.asarray(meat)
 
 
 def hc_covariance(X: np.ndarray, resid: np.ndarray, method: str = "HC1") -> np.ndarray:
