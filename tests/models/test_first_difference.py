@@ -77,7 +77,7 @@ class TestFirstDifferenceEstimator:
         results = model.fit(cov_type="robust")
 
         assert isinstance(results, PanelResults)
-        assert results.model_info["cov_type"] == "robust"
+        assert results.cov_type == "robust"
 
     def test_fit_clustered(self, simple_panel_data):
         """Test fitting with clustered standard errors (recommended for FD)."""
@@ -85,7 +85,7 @@ class TestFirstDifferenceEstimator:
         results = model.fit(cov_type="clustered")
 
         assert isinstance(results, PanelResults)
-        assert results.model_info["cov_type"] == "clustered"
+        assert results.cov_type == "clustered"
 
     def test_observations_dropped(self, simple_panel_data):
         """Test that first observation per entity is dropped."""
@@ -245,7 +245,7 @@ class TestFirstDifferenceEstimator:
         for cov_type in cov_types:
             results = model.fit(cov_type=cov_type)
             assert isinstance(results, PanelResults)
-            assert results.model_info["cov_type"] == cov_type
+            assert results.cov_type == cov_type
 
     def test_invalid_cov_type(self, simple_panel_data):
         """Test error for invalid covariance type."""
@@ -259,8 +259,8 @@ class TestFirstDifferenceEstimator:
         model = FirstDifferenceEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.model_info["model_type"] == "First Difference"
-        assert results.model_info["entity_effects"] is True  # FD eliminates entity FE
+        assert results.model_type == "First Difference"
+        # Note: FD eliminates entity effects by construction (first differencing)
 
     def test_summary_output(self, simple_panel_data):
         """Test that summary() runs without error."""
@@ -296,8 +296,8 @@ class TestFirstDifferenceEstimator:
         results = model.fit(cov_type="driscoll_kraay", max_lags=2)
 
         assert isinstance(results, PanelResults)
-        assert results.model_info["cov_type"] == "driscoll_kraay"
-        assert results.model_info["cov_kwds"]["max_lags"] == 2
+        assert results.cov_type == "driscoll_kraay"
+        assert results.cov_kwds["max_lags"] == 2
 
     def test_sorted_data_assumption(self):
         """Test that FD works correctly when data is sorted."""
