@@ -11,7 +11,7 @@ Greene, W. H. (2018). Econometric Analysis (8th ed.). Pearson.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
@@ -68,7 +68,7 @@ class BreuschPaganTest(ValidationTest):
 
         # Store original design matrix if available
         # We'll need the original X matrix for the auxiliary regression
-        self._X = None
+        self._X: Optional[np.ndarray] = None
         if hasattr(results, "_model") and results._model is not None:
             assert (
                 results._model is not None
@@ -220,7 +220,7 @@ class BreuschPaganTest(ValidationTest):
                     _, X = model.formula_parser.build_design_matrices(
                         model.data.data, return_type="array"
                     )
-                    return X
+                    return np.asarray(X)
                 except Exception:
                     pass
 

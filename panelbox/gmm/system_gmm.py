@@ -646,7 +646,7 @@ class SystemGMM(DifferenceGMM):
 
         Z_valid = n_valid_instruments >= min_instruments
 
-        return y_valid & X_valid & Z_valid
+        return np.asarray(y_valid & X_valid & Z_valid)
 
     def _compute_diff_hansen(
         self,
