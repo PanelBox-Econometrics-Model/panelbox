@@ -37,28 +37,40 @@ class FixedEffects(PanelModel):
     """
     Fixed Effects (Within) estimator for panel data.
 
-    This estimator removes unobserved entity-specific (and optionally time-specific)
-    fixed effects through demeaning (within transformation). This is equivalent to
-    including entity (and time) dummy variables, but more efficient computationally.
+    Removes unobserved entity-specific (and optionally time-specific) fixed
+    effects through demeaning (within transformation). This is equivalent to
+    including entity (and time) dummy variables, but more computationally
+    efficient.
 
-    The within transformation removes time-invariant variables from the model.
+    The model estimated is:
+
+        y_it = α_i + γ_t + X_it β + ε_it
+
+    where α_i are entity fixed effects and γ_t are time fixed effects
+    (if time_effects=True). The within transformation removes these effects
+    by demeaning:
+
+        (y_it - ȳ_i) = (X_it - X̄_i) β + (ε_it - ε̄_i)
+
+    **Important:** Time-invariant variables are automatically dropped from
+    the model as they are absorbed by the fixed effects.
 
     Parameters
     ----------
     formula : str
         Model formula in R-style syntax (e.g., "y ~ x1 + x2")
     data : pd.DataFrame
-        Panel data in long format
+        Panel data in long format (one row per entity-time observation)
     entity_col : str
-        Name of the column identifying entities
+        Name of the column identifying entities (e.g., 'firm', 'country')
     time_col : str
-        Name of the column identifying time periods
+        Name of the column identifying time periods (e.g., 'year', 'quarter')
     entity_effects : bool, default=True
-        Include entity fixed effects
+        Include entity fixed effects (one-way FE if time_effects=False)
     time_effects : bool, default=False
-        Include time fixed effects
+        Include time fixed effects (two-way FE if entity_effects=True)
     weights : np.ndarray, optional
-        Observation weights
+        Observation weights for WLS estimation
 
     Attributes
     ----------
@@ -67,34 +79,93 @@ class FixedEffects(PanelModel):
     time_effects : bool
         Whether time fixed effects are included
     entity_fe : pd.Series, optional
-        Estimated entity fixed effects (after fitting)
+        Estimated entity fixed effects (populated after fit())
     time_fe : pd.Series, optional
-        Estimated time fixed effects (after fitting)
+        Estimated time fixed effects (populated after fit())
+    formula_parser : FormulaParser
+        Parsed formula object
+    data : PanelData
+        Panel data container
 
     Examples
     --------
     >>> import panelbox as pb
-    >>> import pandas as pd
+    >>> from panelbox.datasets import load_grunfeld
     >>>
-    >>> # Load data
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> # Load example data
+    >>> data = load_grunfeld()
     >>>
-    >>> # Entity fixed effects only
-    >>> model = pb.FixedEffects("y ~ x1 + x2", data, "firm", "year")
+    >>> # One-way fixed effects (entity only)
+    >>> model = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
     >>> results = model.fit(cov_type='clustered')
     >>> print(results.summary())
     >>>
     >>> # Two-way fixed effects (entity + time)
     >>> model_twoway = pb.FixedEffects(
-    ...     "y ~ x1 + x2", data, "firm", "year",
+    ...     "invest ~ value + capital",
+    ...     data,
+    ...     "firm",
+    ...     "year",
     ...     entity_effects=True,
     ...     time_effects=True
     ... )
     >>> results_twoway = model_twoway.fit()
     >>>
     >>> # Access estimated fixed effects
-    >>> entity_fe = model.entity_fe
-    >>> time_fe = model_twoway.time_fe
+    >>> print(f"Entity FE: {model.entity_fe.head()}")
+
+    Notes
+    -----
+    **When to Use:**
+
+    Fixed Effects is appropriate when:
+
+    - Unobserved entity heterogeneity exists and is correlated with regressors
+    - You want to control for time-invariant confounders
+    - Strict exogeneity holds: E[ε_it | X_i, α_i] = 0
+
+    **Advantages:**
+
+    - Consistent under correlation between α_i and X_it
+    - Does not require assumptions about distribution of α_i
+    - Controls for all time-invariant unobserved factors
+
+    **Limitations:**
+
+    - Cannot estimate coefficients on time-invariant variables
+    - Inefficient if Random Effects assumptions hold
+    - May amplify measurement error in differenced data
+    - Requires T ≥ 2 observations per entity
+
+    **R-squared Interpretation:**
+
+    - `rsquared_within`: R² for demeaned (within) model
+    - `rsquared_between`: R² for entity means
+    - `rsquared_overall`: Overall R² including fixed effects
+
+    The within R² is the most relevant for FE models.
+
+    **Standard Error Options:**
+
+    Supports the same 9 types as PooledOLS. Clustered standard errors
+    (`cov_type='clustered'`) are recommended to account for within-entity
+    correlation remaining after fixed effects.
+
+    References
+    ----------
+    .. [1] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
+           and Panel Data (2nd ed.). MIT Press. Chapter 10.
+    .. [2] Baltagi, B. H. (2021). Econometric Analysis of Panel Data
+           (6th ed.). Springer. Chapter 2.
+    .. [3] Cameron, A. C., & Trivedi, P. K. (2005). Microeconometrics:
+           Methods and Applications. Cambridge University Press. Chapter 21.
+
+    See Also
+    --------
+    RandomEffects : Random Effects (GLS) estimator
+    PooledOLS : Pooled OLS without fixed effects
+    FirstDifferences : First differences estimator (alternative to FE)
+    HausmanTest : Test for choosing between FE and RE
     """
 
     def __init__(

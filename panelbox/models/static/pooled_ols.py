@@ -34,41 +34,99 @@ class PooledOLS(PanelModel):
 
     This estimator ignores the panel structure and pools all observations
     together, estimating a standard OLS regression. This is often used as
-    a baseline comparison for panel-specific estimators.
+    a baseline comparison for panel-specific estimators like Fixed Effects
+    or Random Effects.
+
+    The model estimated is:
+
+        y_it = X_it β + ε_it
+
+    where i indexes entities, t indexes time, and no entity-specific or
+    time-specific effects are included.
 
     Parameters
     ----------
     formula : str
         Model formula in R-style syntax (e.g., "y ~ x1 + x2")
     data : pd.DataFrame
-        Panel data in long format
+        Panel data in long format (one row per entity-time observation)
     entity_col : str
-        Name of the column identifying entities
+        Name of the column identifying entities (e.g., 'firm', 'country')
     time_col : str
-        Name of the column identifying time periods
+        Name of the column identifying time periods (e.g., 'year', 'quarter')
     weights : np.ndarray, optional
         Observation weights for WLS estimation
 
     Attributes
     ----------
-    All attributes from PanelModel plus model-specific attributes
-    after fitting.
+    formula_parser : FormulaParser
+        Parsed formula object
+    data : PanelData
+        Panel data container
+    entity_col : str
+        Entity identifier column name
+    time_col : str
+        Time identifier column name
+    weights : np.ndarray or None
+        Observation weights
 
     Examples
     --------
     >>> import panelbox as pb
-    >>> import pandas as pd
+    >>> from panelbox.datasets import load_grunfeld
     >>>
-    >>> # Load data
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> # Load example data
+    >>> data = load_grunfeld()
     >>>
     >>> # Estimate Pooled OLS
-    >>> model = pb.PooledOLS("y ~ x1 + x2", data, "firm", "year")
+    >>> model = pb.PooledOLS("invest ~ value + capital", data, "firm", "year")
     >>> results = model.fit(cov_type='robust')
     >>> print(results.summary())
     >>>
-    >>> # With clustered standard errors
+    >>> # With clustered standard errors by entity
     >>> results_cluster = model.fit(cov_type='clustered')
+    >>>
+    >>> # With Driscoll-Kraay standard errors
+    >>> results_dk = model.fit(cov_type='driscoll_kraay', max_lags=3)
+
+    Notes
+    -----
+    **When to Use:**
+
+    Pooled OLS is appropriate when:
+
+    - No unobserved entity-specific heterogeneity exists
+    - The panel structure can be ignored
+    - You want a baseline for comparison with FE or RE models
+
+    **Limitations:**
+
+    - Does not control for unobserved heterogeneity
+    - Standard errors may be biased if errors are correlated within entities
+    - Use clustered standard errors (`cov_type='clustered'`) to account
+      for within-entity correlation
+
+    **Standard Error Options:**
+
+    This implementation supports 9 types of standard errors:
+
+    1. Classical OLS (`nonrobust`)
+    2. Heteroskedasticity-robust: HC0, HC1, HC2, HC3
+    3. Cluster-robust: one-way (`clustered`) and two-way (`twoway`)
+    4. HAC: Driscoll-Kraay (`driscoll_kraay`), Newey-West (`newey_west`)
+    5. Panel-corrected (`pcse`)
+
+    References
+    ----------
+    .. [1] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
+           and Panel Data (2nd ed.). MIT Press.
+    .. [2] Baltagi, B. H. (2021). Econometric Analysis of Panel Data
+           (6th ed.). Springer.
+
+    See Also
+    --------
+    FixedEffects : Fixed Effects (Within) estimator
+    RandomEffects : Random Effects (GLS) estimator
     """
 
     def __init__(
