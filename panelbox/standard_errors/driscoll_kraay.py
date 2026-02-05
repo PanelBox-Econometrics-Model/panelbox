@@ -145,8 +145,8 @@ class DriscollKraayStandardErrors:
             self.max_lags = self.n_periods - 1
 
         # Cache
-        self._bread = None
-        self._time_sorted = None
+        self._bread: Optional[np.ndarray] = None
+        self._time_sorted: Optional[dict] = None
 
     @property
     def bread(self) -> np.ndarray:

@@ -204,7 +204,7 @@ class PedroniTest:
         self.entities = self.data[entity_col].unique()
         self.n_entities = len(self.entities)
 
-        self.result = None
+        self.result: Optional[PedroniTestResult] = None
 
     def _estimate_cointegrating_regression(self, entity_data: pd.DataFrame) -> np.ndarray:
         """

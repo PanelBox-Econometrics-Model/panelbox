@@ -10,12 +10,7 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from .utils import (
-    compute_bread,
-    compute_leverage,
-    compute_meat_hc,
-    sandwich_covariance,
-)
+from .utils import compute_bread, compute_leverage, compute_meat_hc, sandwich_covariance
 
 HC_TYPES = Literal["HC0", "HC1", "HC2", "HC3"]
 
@@ -108,8 +103,8 @@ class RobustStandardErrors:
         self.n_obs, self.n_params = X.shape
 
         # Cache for efficiency
-        self._leverage = None
-        self._bread = None
+        self._leverage: Optional[np.ndarray] = None
+        self._bread: Optional[np.ndarray] = None
 
     @property
     def leverage(self) -> np.ndarray:

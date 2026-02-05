@@ -126,7 +126,7 @@ class NeweyWestStandardErrors:
             self.max_lags = self.n_obs - 1
 
         # Cache
-        self._bread = None
+        self._bread: Optional[np.ndarray] = None
 
     @property
     def bread(self) -> np.ndarray:

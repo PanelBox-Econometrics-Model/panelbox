@@ -189,7 +189,7 @@ class LLCTest:
                 UserWarning,
             )
 
-        self.result = None
+        self.result: Optional[LLCTestResult] = None
 
     def _select_lags(self) -> int:
         """
