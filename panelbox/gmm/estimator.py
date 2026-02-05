@@ -265,7 +265,7 @@ class GMMEstimator:
             warnings.warn("Singular optimal weight matrix, using pseudo-inverse")
             W = linalg.pinv(ZtOmegaZ)
 
-        return W
+        return np.asarray(W)
 
     def windmeijer_correction(
         self, X: np.ndarray, Z: np.ndarray, residuals: np.ndarray, W: np.ndarray, A_inv: np.ndarray
@@ -328,7 +328,7 @@ class GMMEstimator:
         # Ensure symmetry
         vcov_corrected = (vcov_corrected + vcov_corrected.T) / 2
 
-        return vcov_corrected
+        return np.asarray(vcov_corrected)
 
     def _compute_windmeijer_correction_term(
         self,
@@ -494,7 +494,7 @@ class GMMEstimator:
             True if converged
         """
         diff = np.max(np.abs(beta_new - beta_old))
-        return diff < self.tol
+        return bool(diff < self.tol)
 
     def _compute_gram_matrix_sparse(
         self, A: np.ndarray, B: Optional[np.ndarray] = None
@@ -588,4 +588,4 @@ class GMMEstimator:
         # Observation is valid if y, X are valid AND has enough instruments
         Z_valid = n_valid_instruments >= min_instruments
 
-        return y_valid & X_valid & Z_valid
+        return np.asarray(y_valid & X_valid & Z_valid)

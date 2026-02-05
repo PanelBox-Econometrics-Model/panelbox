@@ -49,9 +49,9 @@ def compute_pvalue(tstat: float, df: int, two_sided: bool = True) -> float:
         p-value
     """
     if two_sided:
-        return 2 * (1 - stats.t.cdf(np.abs(tstat), df))
+        return float(2 * (1 - stats.t.cdf(np.abs(tstat), df)))
     else:
-        return 1 - stats.t.cdf(tstat, df)
+        return float(1 - stats.t.cdf(tstat, df))
 
 
 def compute_fstat(
@@ -161,4 +161,4 @@ def compute_chi2_pvalue(statistic: float, df: int) -> float:
     float
         p-value
     """
-    return 1 - stats.chi2.cdf(statistic, df)
+    return float(1 - stats.chi2.cdf(statistic, df))

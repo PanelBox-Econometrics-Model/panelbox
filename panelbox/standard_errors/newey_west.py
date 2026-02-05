@@ -170,7 +170,7 @@ class NeweyWestStandardErrors:
             if lag == 0:
                 return 1.0
             z = 6 * np.pi * lag / (self.max_lags + 1) / 5
-            return 3 / z**2 * (np.sin(z) / z - np.cos(z))
+            return float(3 / z**2 * (np.sin(z) / z - np.cos(z)))
 
         else:
             raise ValueError(f"Unknown kernel: {self.kernel}")
@@ -205,7 +205,7 @@ class NeweyWestStandardErrors:
             X_resid_t_lag = self.X[:-lag] * self.resid[:-lag, np.newaxis]
             gamma = (X_resid_t.T @ X_resid_t_lag) / n
 
-        return gamma
+        return np.asarray(gamma)
 
     def compute(self) -> NeweyWestResult:
         """
