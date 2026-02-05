@@ -96,7 +96,7 @@
   - [x] JSON timestamped e "latest" symlink
 - [x] Documentação completa (README.md ~450 linhas)
 
-### 8.3 Qualidade de Código 🔄 **65% COMPLETO**
+### 8.3 Qualidade de Código 🔄 **75% COMPLETO**
 
 #### Code Coverage ✅ **ANÁLISE COMPLETA**
 - [x] Executar pytest-cov em toda a codebase
@@ -107,20 +107,33 @@
 - [ ] Adicionar testes para atingir target
 - [ ] Configurar coverage reporting em CI/CD
 
-#### Type Checking ✅ **ANÁLISE COMPLETA** - ⏳ **IMPLEMENTAÇÃO PENDENTE**
+#### Type Checking ✅ **FASES 3.1-3.2 COMPLETAS** - ⏳ **FASES 3.3+ PENDENTES**
 - [x] Instalar MyPy (v1.19.1)
 - [x] Resolver issue de nome de pacote (`commands` → `cli_commands`)
 - [x] Executar MyPy em modo padrão
-  - **Resultado**: 395 erros identificados
-  - **Breakdown**: 73 import-untyped, 65 assignment, 56 no-untyped-def, 43 no-any-return, outros
-- [ ] Configurar mypy.ini (Fase 3.1 - 30 min)
-- [ ] Instalar type stubs (pandas-stubs, types-scipy)
-- [ ] Resolver erros críticos (Fase 3.2 - 2-3h)
-  - Forward references (16 erros)
-  - Override signatures (13 erros)
-- [ ] Adicionar type hints principais (Fase 3.3 - 4-5h)
-- [ ] Refinamento (Fase 3.4 - 3-4h)
-- [ ] Executar MyPy em strict mode (Fase 3.5 - opcional, 5-8h)
+  - **Resultado inicial**: 395 erros identificados
+  - **Resultado atual**: 307 erros (-88, -22.3%)
+- [x] **Fase 3.1 - Setup** (30 min) ✅ COMPLETA
+  - [x] Configurar mypy.ini
+  - [x] Instalar type stubs (pandas-stubs, types-setuptools)
+  - [x] Resultado: 395 → 322 erros (-73, -18.5%)
+- [x] **Fase 3.2 - Override Signatures** (2h) ✅ COMPLETA
+  - [x] Adicionado **kwargs em 9 validation tests
+  - [x] Reordenado parâmetros em 3 métodos
+  - [x] Corrigido return type em panel_iv.py
+  - [x] Resultado: 322 → 307 erros (-15, -4.7%)
+  - [x] Override errors: 13 → 0 ✅
+- [ ] **Fase 3.3 - Type Hints Críticos** (4-5h)
+  - Public API type hints
+  - Validation tests
+  - Target: 307 → ~200 erros
+- [ ] **Fase 3.4 - Refinamento** (3-4h)
+  - Assignment fixes
+  - Return types
+  - Target: ~200 → ~100 erros
+- [ ] **Fase 3.5 - Strict Mode** (opcional, 5-8h)
+  - Habilitar strict mode
+  - Target: ~100 → 0 erros
 - [ ] Configurar MyPy em CI/CD
 
 #### Linting e Formatação ✅ **FASE 1 COMPLETA** (Commit `6a9b394`)
