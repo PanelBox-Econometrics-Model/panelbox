@@ -1,8 +1,9 @@
 # Fase 8.3: MyPy Type Checking - Análise Completa
 
-**Data**: 2026-02-05
+**Data**: 2026-02-05 (Última atualização)
 **MyPy Version**: 1.19.1
-**Status**: ✅ **ANÁLISE COMPLETA** - ⏳ **IMPLEMENTAÇÃO PENDENTE**
+**Status**: ✅ **FASES 3.1 E 3.2 COMPLETAS** - ⏳ **FASE 3.3+ PENDENTES**
+**Progresso**: **88 erros resolvidos** (395 → 307, -22.3%)
 
 ---
 
@@ -28,9 +29,17 @@
 
 ### Resumo Executivo
 
-- **Total de erros**: **395**
+**Situação Inicial**:
+- **Total de erros**: 395
 - **Modo**: Padrão (não strict)
 - **Arquivos analisados**: ~90 arquivos Python
+
+**Situação Atual** (após Fases 3.1 e 3.2):
+- **Total de erros**: **307** (-88, -22.3%)
+- **Override errors**: 0 (todos resolvidos ✅)
+- **Import-untyped**: 0 (todos resolvidos ✅)
+- **Config estabelecida**: mypy.ini criado
+- **Type stubs**: pandas-stubs instalado
 
 ### Breakdown por Categoria
 
@@ -685,3 +694,79 @@ grep "error:" /tmp/mypy_full.txt | cut -d: -f1 | sort | uniq -c | sort -rn | hea
 **Documento gerado**: 2026-02-05
 **Tempo de análise**: ~2h
 **MyPy output completo**: `/tmp/mypy_full.txt`
+
+---
+
+## ✅ ATUALIZAÇÃO: Fases 3.1 e 3.2 COMPLETAS
+
+**Data de atualização**: 2026-02-05
+**Commits realizados**: 6 commits
+
+### Fase 3.1 - Setup e Configuração ✅ COMPLETA
+
+**Tempo investido**: 30 minutos
+**Redução**: 395 → 322 erros (-73, -18.5%)
+
+**Ações realizadas**:
+1. ✅ Instalado pandas-stubs e types-setuptools
+2. ✅ Criado mypy.ini com configurações
+3. ✅ Configurado ignore para scipy, statsmodels, patsy
+4. ✅ Resolvido issue do pacote `commands` → `cli_commands`
+
+**Resultado**: Todos os 73 erros `[import-untyped]` resolvidos!
+
+### Fase 3.2 - Override Signatures ✅ COMPLETA
+
+**Tempo investido**: 2 horas
+**Redução**: 322 → 307 erros (-15, -4.7%)
+
+**Ações realizadas**:
+1. ✅ Adicionado `**kwargs` a 9 validation tests
+2. ✅ Reordenado parâmetros em 3 métodos (alpha primeiro)
+3. ✅ Corrigido return type em panel_iv.py
+4. ✅ Todos os 13 override errors resolvidos!
+
+**Breaking Changes**:
+- ⚠️ 3 métodos mudaram ordem de parâmetros
+- ⚠️ Usuários devem usar keyword arguments
+
+### Progresso Total
+
+| Fase | Início | Fim | Redução | % |
+|------|--------|-----|---------|---|
+| Fase 3.1 | 395 | 322 | -73 | -18.5% |
+| Fase 3.2 | 322 | 307 | -15 | -4.7% |
+| **TOTAL** | **395** | **307** | **-88** | **-22.3%** |
+
+### Distribuição Atualizada de Erros (307 total)
+
+| Rank | Tipo | Count | % | Mudança |
+|------|------|-------|---|---------|
+| 1 | `[assignment]` | 70 | 22.8% | ⬆️ +5 |
+| 2 | `[no-any-return]` | 53 | 17.3% | ⬆️ +10 |
+| 3 | `[arg-type]` | 45 | 14.7% | ⬆️ +21 |
+| 4 | `[union-attr]` | 39 | 12.7% | ⬆️ +4 |
+| 5 | `[operator]` | 21 | 6.8% | ⬆️ +8 |
+| - | `[import-untyped]` | 0 | 0% | ⬇️ -73 ✅ |
+| - | `[override]` | 0 | 0% | ⬇️ -13 ✅ |
+
+**Nota**: Alguns erros "aumentaram" porque eliminamos import-untyped, revelando erros subjacentes.
+
+### Próximos Passos Atualizados
+
+**Fase 3.3** (próxima - 4-5h):
+- Target: 307 → ~200 erros (-100)
+- Foco: Type hints em APIs públicas
+- Status: ⏳ Pendente
+
+**Fase 3.4** (3-4h):
+- Target: ~200 → ~100 erros (-100)
+- Foco: Refinamento (assignments, returns)
+- Status: ⏳ Pendente
+
+**Fase 3.5** (5-8h - opcional):
+- Target: ~100 → 0 erros (-100)
+- Foco: Strict mode
+- Status: ⏳ Pendente
+
+---
