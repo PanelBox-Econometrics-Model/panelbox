@@ -157,7 +157,9 @@ class StandardErrorComparison:
         """Extract model information for computing different SEs."""
         # Store original model object if available
         # Check multiple possible attribute names
-        self.model = getattr(self.model_results, "model", None)
+        self.model = getattr(self.model_results, "_model", None)
+        if self.model is None:
+            self.model = getattr(self.model_results, "model", None)
 
         # If model not available, store what we need from results
         if self.model is None:
@@ -276,7 +278,7 @@ class StandardErrorComparison:
 
         # Significance indicators
         significance = p_values.copy()
-        significance = significance.applymap(self._significance_stars)
+        significance = significance.map(self._significance_stars)
 
         # Summary statistics
         summary_stats = pd.DataFrame(

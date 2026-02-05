@@ -68,7 +68,7 @@ class TestInitialization:
         comparison = StandardErrorComparison(fe_results)
 
         assert comparison.model_results is not None
-        assert len(comparison.coef_names) == 2
+        assert len(comparison.coef_names) == 2  # x1 + x2 (no intercept - absorbed by FE)
         assert len(comparison.coefficients) == 2
         assert comparison.df_resid > 0
 
@@ -77,7 +77,7 @@ class TestInitialization:
         comparison = StandardErrorComparison(pooled_results)
 
         assert comparison.model_results is not None
-        assert len(comparison.coef_names) == 2
+        assert len(comparison.coef_names) == 3  # Intercept + x1 + x2
 
     def test_extract_model_info(self, fe_results):
         """Test that model info is extracted correctly."""
@@ -397,8 +397,8 @@ class TestIntegration:
         comparison = StandardErrorComparison(results)
         result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered", "twoway"])
 
-        # Verify results
-        assert result.se_comparison.shape == (2, 4)
+        # Verify results (3 rows: Intercept + x1 + x2 for Pooled OLS)
+        assert result.se_comparison.shape == (3, 4)
         assert (result.se_comparison > 0).all().all()
 
     def test_inference_consistency_check(self, panel_data):
