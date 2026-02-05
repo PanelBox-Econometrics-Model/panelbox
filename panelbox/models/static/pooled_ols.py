@@ -5,7 +5,7 @@ This module provides the Pooled OLS estimator which ignores the panel structure
 and estimates a standard OLS regression.
 """
 
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ from panelbox.standard_errors.clustered import ClusteredCovarianceResult
 from panelbox.standard_errors.driscoll_kraay import DriscollKraayResult
 from panelbox.standard_errors.newey_west import NeweyWestResult
 from panelbox.standard_errors.pcse import PCSEResult
-from panelbox.standard_errors.robust import RobustCovarianceResult
+from panelbox.standard_errors.robust import HC_TYPES, RobustCovarianceResult
 from panelbox.utils.matrix_ops import compute_ols, compute_rsquared, compute_vcov_nonrobust
 
 
@@ -163,7 +163,9 @@ class PooledOLS(PanelModel):
 
         elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # HC robust standard errors
-            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
+            method_str = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
+            # Cast to Literal type for type checking (we've validated the input above)
+            method = cast(HC_TYPES, method_str)
             result = robust_covariance(X, resid, method=method)
             vcov = result.cov_matrix
 
