@@ -13,7 +13,10 @@ in Panels. Cambridge Working Papers in Economics No. 0435.
 
 from __future__ import annotations
 
-from typing import Union
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd

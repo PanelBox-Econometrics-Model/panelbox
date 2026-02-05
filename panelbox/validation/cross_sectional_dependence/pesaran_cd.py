@@ -12,6 +12,11 @@ Stata command: xtcd
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+
 from itertools import combinations
 
 import numpy as np

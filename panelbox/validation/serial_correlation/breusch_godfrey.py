@@ -13,6 +13,11 @@ Econometrica, 46(6), 1293-1301.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+
 import numpy as np
 import pandas as pd
 from scipy import stats

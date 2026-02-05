@@ -12,6 +12,11 @@ Wiley, Chapter 4.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+
 import numpy as np
 from scipy import stats
 

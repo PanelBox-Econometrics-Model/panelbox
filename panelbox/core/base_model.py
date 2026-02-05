@@ -7,13 +7,17 @@ This module provides the abstract base class that all panel models inherit from.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 import pandas as pd
 
 from panelbox.core.formula_parser import FormulaParser
 from panelbox.core.panel_data import PanelData
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+    from panelbox.validation.validation_suite import ValidationReport
 
 
 class PanelModel(ABC):

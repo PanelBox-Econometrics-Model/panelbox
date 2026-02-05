@@ -9,6 +9,11 @@ and a direct test for heteroskedasticity. Econometrica, 48(4), 817-838.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from panelbox.core.results import PanelResults
+
 from itertools import combinations_with_replacement
 
 import numpy as np
