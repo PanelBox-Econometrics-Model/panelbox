@@ -5,9 +5,9 @@ Manages collection, minification, and embedding of assets (CSS, JS, images).
 """
 
 import base64
+import mimetypes
 from pathlib import Path
 from typing import Dict, List, Optional
-import mimetypes
 
 
 class AssetManager:
@@ -40,17 +40,13 @@ class AssetManager:
     >>> js = manager.get_js('tab-navigation.js')
     """
 
-    def __init__(
-        self,
-        asset_dir: Optional[Path] = None,
-        minify: bool = False
-    ):
+    def __init__(self, asset_dir: Optional[Path] = None, minify: bool = False):
         """Initialize Asset Manager."""
         # Determine asset directory
         if asset_dir is None:
             # Use package assets
             package_dir = Path(__file__).parent.parent
-            asset_dir = package_dir / 'templates' / 'assets'
+            asset_dir = package_dir / "templates" / "assets"
         else:
             asset_dir = Path(asset_dir)
 
@@ -86,12 +82,12 @@ class AssetManager:
         if cache_key in self.asset_cache:
             return self.asset_cache[cache_key]
 
-        css_file = self.asset_dir / 'css' / css_path
+        css_file = self.asset_dir / "css" / css_path
 
         if not css_file.exists():
             raise FileNotFoundError(f"CSS file not found: {css_file}")
 
-        content = css_file.read_text(encoding='utf-8')
+        content = css_file.read_text(encoding="utf-8")
 
         if self.minify:
             content = self._minify_css(content)
@@ -124,12 +120,12 @@ class AssetManager:
         if cache_key in self.asset_cache:
             return self.asset_cache[cache_key]
 
-        js_file = self.asset_dir / 'js' / js_path
+        js_file = self.asset_dir / "js" / js_path
 
         if not js_file.exists():
             raise FileNotFoundError(f"JavaScript file not found: {js_file}")
 
-        content = js_file.read_text(encoding='utf-8')
+        content = js_file.read_text(encoding="utf-8")
 
         if self.minify:
             content = self._minify_js(content)
@@ -170,12 +166,12 @@ class AssetManager:
         img_data = img_file.read_bytes()
 
         # Encode as base64
-        b64_data = base64.b64encode(img_data).decode('utf-8')
+        b64_data = base64.b64encode(img_data).decode("utf-8")
 
         # Determine MIME type
         mime_type, _ = mimetypes.guess_type(str(img_file))
         if mime_type is None:
-            mime_type = 'application/octet-stream'
+            mime_type = "application/octet-stream"
 
         # Create data URI
         data_uri = f"data:{mime_type};base64,{b64_data}"
@@ -277,10 +273,7 @@ class AssetManager:
 
         # Use CDN link for now
         # In production, you might want to embed the full library
-        return (
-            '<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" '
-            'charset="utf-8"></script>'
-        )
+        return '<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" ' 'charset="utf-8"></script>'
 
     def _minify_css(self, css: str) -> str:
         """
@@ -305,11 +298,12 @@ class AssetManager:
         # Basic minification
         # Remove comments
         import re
-        css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
+
+        css = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
 
         # Remove extra whitespace
-        css = re.sub(r'\s+', ' ', css)
-        css = re.sub(r'\s*([{}:;,])\s*', r'\1', css)
+        css = re.sub(r"\s+", " ", css)
+        css = re.sub(r"\s*([{}:;,])\s*", r"\1", css)
 
         return css.strip()
 
@@ -336,12 +330,13 @@ class AssetManager:
         # Basic minification
         # Remove comments (simple approach)
         import re
-        js = re.sub(r'//.*?$', '', js, flags=re.MULTILINE)
-        js = re.sub(r'/\*.*?\*/', '', js, flags=re.DOTALL)
+
+        js = re.sub(r"//.*?$", "", js, flags=re.MULTILINE)
+        js = re.sub(r"/\*.*?\*/", "", js, flags=re.DOTALL)
 
         # Remove extra whitespace (but preserve newlines in strings)
         # This is a very basic approach
-        js = re.sub(r'\s+', ' ', js)
+        js = re.sub(r"\s+", " ", js)
 
         return js.strip()
 
@@ -372,32 +367,24 @@ class AssetManager:
         assets = {}
 
         if asset_type in ("css", "all"):
-            css_dir = self.asset_dir / 'css'
+            css_dir = self.asset_dir / "css"
             if css_dir.exists():
-                css_files = [
-                    str(p.relative_to(css_dir))
-                    for p in css_dir.rglob("*.css")
-                ]
-                assets['css'] = sorted(css_files)
+                css_files = [str(p.relative_to(css_dir)) for p in css_dir.rglob("*.css")]
+                assets["css"] = sorted(css_files)
 
         if asset_type in ("js", "all"):
-            js_dir = self.asset_dir / 'js'
+            js_dir = self.asset_dir / "js"
             if js_dir.exists():
-                js_files = [
-                    str(p.relative_to(js_dir))
-                    for p in js_dir.rglob("*.js")
-                ]
-                assets['js'] = sorted(js_files)
+                js_files = [str(p.relative_to(js_dir)) for p in js_dir.rglob("*.js")]
+                assets["js"] = sorted(js_files)
 
         if asset_type in ("images", "all"):
-            img_dir = self.asset_dir / 'images'
+            img_dir = self.asset_dir / "images"
             if img_dir.exists():
                 img_files = [
-                    str(p.relative_to(self.asset_dir))
-                    for p in img_dir.rglob("*")
-                    if p.is_file()
+                    str(p.relative_to(self.asset_dir)) for p in img_dir.rglob("*") if p.is_file()
                 ]
-                assets['images'] = sorted(img_files)
+                assets["images"] = sorted(img_files)
 
         return assets
 

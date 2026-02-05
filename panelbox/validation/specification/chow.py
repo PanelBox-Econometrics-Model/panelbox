@@ -57,7 +57,7 @@ class ChowTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: 'PanelResults'):
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Chow test.
 
@@ -137,12 +137,12 @@ class ChowTest(ValidationTest):
 
         # Create subperiod indicator
         data_aug = data.copy()
-        data_aug['period_1'] = (data_aug[time_col] < break_time).astype(int)
-        data_aug['period_2'] = (data_aug[time_col] >= break_time).astype(int)
+        data_aug["period_1"] = (data_aug[time_col] < break_time).astype(int)
+        data_aug["period_2"] = (data_aug[time_col] >= break_time).astype(int)
 
         # Check sample sizes
-        n1 = data_aug['period_1'].sum()
-        n2 = data_aug['period_2'].sum()
+        n1 = data_aug["period_1"].sum()
+        n2 = data_aug["period_2"].sum()
         k = len(var_names) + 1  # +1 for intercept
 
         if n1 < 2 * k or n2 < 2 * k:
@@ -157,23 +157,23 @@ class ChowTest(ValidationTest):
 
             model_restricted = PooledOLS(formula, data_aug, entity_col, time_col)
             results_restricted = model_restricted.fit()
-            ssr_restricted = np.sum(results_restricted.resid ** 2)
+            ssr_restricted = np.sum(results_restricted.resid**2)
 
         except Exception as e:
             raise ValueError(f"Failed to estimate restricted model: {e}")
 
         # Estimate unrestricted model (separate for each subperiod)
         # Model 1: period < break_time
-        data_period1 = data_aug[data_aug['period_1'] == 1].copy()
+        data_period1 = data_aug[data_aug["period_1"] == 1].copy()
         model_1 = PooledOLS(formula, data_period1, entity_col, time_col)
         results_1 = model_1.fit()
-        ssr_1 = np.sum(results_1.resid ** 2)
+        ssr_1 = np.sum(results_1.resid**2)
 
         # Model 2: period >= break_time
-        data_period2 = data_aug[data_aug['period_2'] == 1].copy()
+        data_period2 = data_aug[data_aug["period_2"] == 1].copy()
         model_2 = PooledOLS(formula, data_period2, entity_col, time_col)
         results_2 = model_2.fit()
-        ssr_2 = np.sum(results_2.resid ** 2)
+        ssr_2 = np.sum(results_2.resid**2)
 
         # Unrestricted SSR (sum of both periods)
         ssr_unrestricted = ssr_1 + ssr_2
@@ -198,19 +198,19 @@ class ChowTest(ValidationTest):
 
         # Metadata
         metadata = {
-            'break_point': break_time,
-            'break_index': break_idx,
-            'n_periods_total': n_periods,
-            'n_obs_period1': n1,
-            'n_obs_period2': n2,
-            'n_obs_total': N,
-            'ssr_restricted': float(ssr_restricted),
-            'ssr_unrestricted': float(ssr_unrestricted),
-            'ssr_period1': float(ssr_1),
-            'ssr_period2': float(ssr_2),
-            'k_parameters': k,
-            'coefficients_period1': results_1.params.to_dict(),
-            'coefficients_period2': results_2.params.to_dict()
+            "break_point": break_time,
+            "break_index": break_idx,
+            "n_periods_total": n_periods,
+            "n_obs_period1": n1,
+            "n_obs_period2": n2,
+            "n_obs_total": N,
+            "ssr_restricted": float(ssr_restricted),
+            "ssr_unrestricted": float(ssr_unrestricted),
+            "ssr_period1": float(ssr_1),
+            "ssr_period2": float(ssr_2),
+            "k_parameters": k,
+            "coefficients_period1": results_1.params.to_dict(),
+            "coefficients_period2": results_2.params.to_dict(),
         }
 
         result = ValidationTestResult(
@@ -221,7 +221,7 @@ class ChowTest(ValidationTest):
             alternative_hypothesis=f"Structural break at t={break_time}",
             alpha=alpha,
             df=(df_num, df_denom),
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
@@ -236,12 +236,12 @@ class ChowTest(ValidationTest):
             (data, formula, entity_col, time_col, var_names) or
             (None, None, None, None, None) if not available
         """
-        if not hasattr(self.results, '_model'):
+        if not hasattr(self.results, "_model"):
             return None, None, None, None, None
 
         model = self.results._model
 
-        if not (hasattr(model, 'formula_parser') and hasattr(model, 'data')):
+        if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None, None, None
 
         try:
@@ -249,23 +249,21 @@ class ChowTest(ValidationTest):
             entity_col = model.data.entity_col
             time_col = model.data.time_col
 
-            if hasattr(model, 'formula'):
+            if hasattr(model, "formula"):
                 formula = model.formula
             else:
                 return None, None, None, None, None
 
-            if hasattr(model.formula_parser, 'rhs_terms'):
+            if hasattr(model.formula_parser, "rhs_terms"):
                 var_names = [
-                    term for term in model.formula_parser.rhs_terms
-                    if term.lower() not in ['intercept', '1']
+                    term
+                    for term in model.formula_parser.rhs_terms
+                    if term.lower() not in ["intercept", "1"]
                 ]
             else:
-                rhs = formula.split('~')[1].strip()
-                terms = [t.strip() for t in rhs.split('+')]
-                var_names = [
-                    t for t in terms
-                    if t.lower() not in ['1', 'intercept', '']
-                ]
+                rhs = formula.split("~")[1].strip()
+                terms = [t.strip() for t in rhs.split("+")]
+                var_names = [t for t in terms if t.lower() not in ["1", "intercept", ""]]
 
             return data, formula, entity_col, time_col, var_names
 

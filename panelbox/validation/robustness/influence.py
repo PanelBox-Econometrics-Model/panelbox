@@ -12,11 +12,12 @@ Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). Regression Diagnostics:
     Identifying Influential Data and Sources of Collinearity.
 """
 
-from typing import Optional, Dict, Tuple
 import warnings
+from dataclasses import dataclass
+from typing import Dict, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from panelbox.core.results import PanelResults
 
@@ -39,6 +40,7 @@ class InfluenceResults:
     standardized_residuals : pd.Series
         Standardized residuals
     """
+
     cooks_d: pd.Series
     dffits: pd.Series
     dfbetas: pd.DataFrame
@@ -54,12 +56,16 @@ class InfluenceResults:
         # Cook's D summary
         cooksd_threshold = 4 / len(self.cooks_d)
         n_influential_cooksd = (self.cooks_d > cooksd_threshold).sum()
-        lines.append(f"Cook's Distance: {n_influential_cooksd} influential obs (threshold: {cooksd_threshold:.4f})")
+        lines.append(
+            f"Cook's Distance: {n_influential_cooksd} influential obs (threshold: {cooksd_threshold:.4f})"
+        )
 
         # DFFITS summary
         dffits_threshold = 2 * np.sqrt(self.dfbetas.shape[1] / len(self.dffits))
         n_influential_dffits = (np.abs(self.dffits) > dffits_threshold).sum()
-        lines.append(f"DFFITS: {n_influential_dffits} influential obs (threshold: {dffits_threshold:.4f})")
+        lines.append(
+            f"DFFITS: {n_influential_dffits} influential obs (threshold: {dffits_threshold:.4f})"
+        )
 
         lines.append("")
         lines.append(f"Top {n_top} observations by Cook's Distance:")
@@ -127,7 +133,7 @@ class InfluenceDiagnostics:
         k = len(self.results.params)
 
         # MSE
-        mse = np.sum(residuals ** 2) / self.results.df_resid
+        mse = np.sum(residuals**2) / self.results.df_resid
 
         # Approximate leverage (exact would need full hat matrix)
         leverage = self._approximate_leverage()
@@ -136,7 +142,7 @@ class InfluenceDiagnostics:
         std_residuals = residuals / np.sqrt(mse * (1 - leverage))
 
         # Cook's Distance: (r_i^2 / (k * MSE)) * (h_i / (1 - h_i)^2)
-        cooks_d = (residuals ** 2 / (k * mse)) * (leverage / (1 - leverage) ** 2)
+        cooks_d = (residuals**2 / (k * mse)) * (leverage / (1 - leverage) ** 2)
 
         # DFFITS: r_i * sqrt(h_i / (1 - h_i))
         dffits = std_residuals * np.sqrt(leverage / (1 - leverage))
@@ -152,7 +158,7 @@ class InfluenceDiagnostics:
             dffits=pd.Series(dffits, index=index),
             dfbetas=dfbetas,
             leverage=pd.Series(leverage, index=index),
-            standardized_residuals=pd.Series(std_residuals, index=index)
+            standardized_residuals=pd.Series(std_residuals, index=index),
         )
 
         if self.verbose:
@@ -164,8 +170,8 @@ class InfluenceDiagnostics:
         """Compute approximate leverage values."""
         from patsy import dmatrix
 
-        formula_rhs = self.results.formula.split('~')[1].strip()
-        X = dmatrix(formula_rhs, self.data, return_type='dataframe')
+        formula_rhs = self.results.formula.split("~")[1].strip()
+        X = dmatrix(formula_rhs, self.data, return_type="dataframe")
 
         n = len(X)
         mean = X.mean().values
@@ -201,7 +207,7 @@ class InfluenceDiagnostics:
         # Approximate DFBETAS using leverage and residuals
         leverage = self._approximate_leverage()
         residuals = self.results.resid
-        mse = np.sum(residuals ** 2) / self.results.df_resid
+        mse = np.sum(residuals**2) / self.results.df_resid
 
         # Simplified DFBETAS approximation
         dfbetas_values = np.zeros((n, k))
@@ -210,17 +216,12 @@ class InfluenceDiagnostics:
             # Approximate influence on parameter j
             dfbetas_values[:, j] = (residuals * leverage) / np.sqrt(mse)
 
-        dfbetas_df = pd.DataFrame(
-            dfbetas_values,
-            columns=self.results.params.index
-        )
+        dfbetas_df = pd.DataFrame(dfbetas_values, columns=self.results.params.index)
 
         return dfbetas_df
 
     def influential_observations(
-        self,
-        method: str = 'cooks_d',
-        threshold: Optional[float] = None
+        self, method: str = "cooks_d", threshold: Optional[float] = None
     ) -> pd.DataFrame:
         """
         Identify influential observations.
@@ -240,18 +241,20 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
-        if method == 'cooks_d':
+        if method == "cooks_d":
             if threshold is None:
                 threshold = 4 / len(self.influence_results_.cooks_d)
 
             mask = self.influence_results_.cooks_d > threshold
-            influential = pd.DataFrame({
-                'observation': mask[mask].index,
-                'cooks_d': self.influence_results_.cooks_d[mask].values,
-                'threshold': threshold
-            })
+            influential = pd.DataFrame(
+                {
+                    "observation": mask[mask].index,
+                    "cooks_d": self.influence_results_.cooks_d[mask].values,
+                    "threshold": threshold,
+                }
+            )
 
-        elif method == 'dffits':
+        elif method == "dffits":
             k = len(self.results.params)
             n = len(self.influence_results_.dffits)
 
@@ -259,23 +262,27 @@ class InfluenceDiagnostics:
                 threshold = 2 * np.sqrt(k / n)
 
             mask = np.abs(self.influence_results_.dffits) > threshold
-            influential = pd.DataFrame({
-                'observation': mask[mask].index,
-                'dffits': self.influence_results_.dffits[mask].values,
-                'threshold': threshold
-            })
+            influential = pd.DataFrame(
+                {
+                    "observation": mask[mask].index,
+                    "dffits": self.influence_results_.dffits[mask].values,
+                    "threshold": threshold,
+                }
+            )
 
-        elif method == 'dfbetas':
+        elif method == "dfbetas":
             if threshold is None:
                 threshold = 2 / np.sqrt(len(self.influence_results_.dfbetas))
 
             # Find observations exceeding threshold for any parameter
             mask = (np.abs(self.influence_results_.dfbetas) > threshold).any(axis=1)
-            influential = pd.DataFrame({
-                'observation': mask[mask].index,
-                'max_dfbetas': np.abs(self.influence_results_.dfbetas[mask]).max(axis=1).values,
-                'threshold': threshold
-            })
+            influential = pd.DataFrame(
+                {
+                    "observation": mask[mask].index,
+                    "max_dfbetas": np.abs(self.influence_results_.dfbetas[mask]).max(axis=1).values,
+                    "threshold": threshold,
+                }
+            )
         else:
             raise ValueError(f"Unknown method: {method}")
 
@@ -311,8 +318,8 @@ class InfluenceDiagnostics:
         ax1 = axes[0, 0]
         ax1.stem(self.influence_results_.cooks_d.values, basefmt=" ")
         threshold = 4 / len(self.influence_results_.cooks_d)
-        ax1.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold ({threshold:.4f})')
-        ax1.set_xlabel('Observation')
+        ax1.axhline(y=threshold, color="r", linestyle="--", label=f"Threshold ({threshold:.4f})")
+        ax1.set_xlabel("Observation")
         ax1.set_ylabel("Cook's Distance")
         ax1.set_title("Cook's Distance")
         ax1.legend()
@@ -324,40 +331,44 @@ class InfluenceDiagnostics:
         k = len(self.results.params)
         n = len(self.influence_results_.dffits)
         threshold = 2 * np.sqrt(k / n)
-        ax2.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold ({threshold:.4f})')
-        ax2.axhline(y=-threshold, color='r', linestyle='--')
-        ax2.set_xlabel('Observation')
-        ax2.set_ylabel('DFFITS')
-        ax2.set_title('DFFITS')
+        ax2.axhline(y=threshold, color="r", linestyle="--", label=f"Threshold ({threshold:.4f})")
+        ax2.axhline(y=-threshold, color="r", linestyle="--")
+        ax2.set_xlabel("Observation")
+        ax2.set_ylabel("DFFITS")
+        ax2.set_title("DFFITS")
         ax2.legend()
         ax2.grid(True, alpha=0.3)
 
         # Plot 3: Leverage vs Residuals
         ax3 = axes[1, 0]
-        ax3.scatter(self.influence_results_.leverage,
-                   self.influence_results_.standardized_residuals,
-                   alpha=0.5, s=20)
-        ax3.set_xlabel('Leverage')
-        ax3.set_ylabel('Standardized Residuals')
-        ax3.set_title('Leverage vs Residuals')
+        ax3.scatter(
+            self.influence_results_.leverage,
+            self.influence_results_.standardized_residuals,
+            alpha=0.5,
+            s=20,
+        )
+        ax3.set_xlabel("Leverage")
+        ax3.set_ylabel("Standardized Residuals")
+        ax3.set_title("Leverage vs Residuals")
         ax3.grid(True, alpha=0.3)
 
         # Plot 4: Index plot of leverage
         ax4 = axes[1, 1]
         ax4.stem(self.influence_results_.leverage.values, basefmt=" ")
         avg_leverage = self.influence_results_.leverage.mean()
-        ax4.axhline(y=2*avg_leverage, color='r', linestyle='--',
-                   label=f'2 × mean ({2*avg_leverage:.4f})')
-        ax4.set_xlabel('Observation')
-        ax4.set_ylabel('Leverage')
-        ax4.set_title('Leverage Values')
+        ax4.axhline(
+            y=2 * avg_leverage, color="r", linestyle="--", label=f"2 × mean ({2*avg_leverage:.4f})"
+        )
+        ax4.set_xlabel("Observation")
+        ax4.set_ylabel("Leverage")
+        ax4.set_title("Leverage Values")
         ax4.legend()
         ax4.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
         if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
             if self.verbose:
                 print(f"Plot saved to {save_path}")
         else:

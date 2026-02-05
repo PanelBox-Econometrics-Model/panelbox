@@ -4,10 +4,10 @@ HTML Exporter for PanelBox Reports.
 Exports reports to self-contained HTML files.
 """
 
+import datetime
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
-import datetime
+from typing import Any, Dict, Optional, Union
 
 
 class HTMLExporter:
@@ -36,11 +36,7 @@ class HTMLExporter:
     >>> exporter.export(html, 'report.html')
     """
 
-    def __init__(
-        self,
-        minify: bool = False,
-        pretty_print: bool = False
-    ):
+    def __init__(self, minify: bool = False, pretty_print: bool = False):
         """Initialize HTML Exporter."""
         self.minify = minify
         self.pretty_print = pretty_print
@@ -50,7 +46,7 @@ class HTMLExporter:
         html_content: str,
         output_path: Union[str, Path],
         overwrite: bool = False,
-        add_metadata: bool = True
+        add_metadata: bool = True,
     ) -> Path:
         """
         Export HTML content to file.
@@ -82,8 +78,7 @@ class HTMLExporter:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. "
-                "Use overwrite=True to replace."
+                f"File already exists: {output_path}. " "Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -97,15 +92,12 @@ class HTMLExporter:
             html_content = self._pretty_print_html(html_content)
 
         # Write file
-        output_path.write_text(html_content, encoding='utf-8')
+        output_path.write_text(html_content, encoding="utf-8")
 
         return output_path
 
     def export_multiple(
-        self,
-        reports: Dict[str, str],
-        output_dir: Union[str, Path],
-        overwrite: bool = False
+        self, reports: Dict[str, str], output_dir: Union[str, Path], overwrite: bool = False
     ) -> Dict[str, Path]:
         """
         Export multiple HTML reports to directory.
@@ -139,11 +131,7 @@ class HTMLExporter:
 
         for filename, html_content in reports.items():
             output_path = output_dir / filename
-            exported[filename] = self.export(
-                html_content,
-                output_path,
-                overwrite=overwrite
-            )
+            exported[filename] = self.export(html_content, output_path, overwrite=overwrite)
 
         return exported
 
@@ -152,7 +140,7 @@ class HTMLExporter:
         reports: Dict[str, str],
         output_dir: Union[str, Path],
         index_title: str = "PanelBox Reports",
-        overwrite: bool = False
+        overwrite: bool = False,
     ) -> Dict[str, Path]:
         """
         Export multiple reports with an index page.
@@ -190,21 +178,14 @@ class HTMLExporter:
         for i, (name, html_content) in enumerate(reports.items()):
             filename = f"report_{i+1}.html"
             output_path = output_dir / filename
-            exported[name] = self.export(
-                html_content,
-                output_path,
-                overwrite=overwrite
-            )
+            exported[name] = self.export(html_content, output_path, overwrite=overwrite)
 
         # Create index page
-        index_html = self._generate_index_page(
-            reports=list(reports.keys()),
-            title=index_title
-        )
+        index_html = self._generate_index_page(reports=list(reports.keys()), title=index_title)
 
         index_path = output_dir / "index.html"
-        index_path.write_text(index_html, encoding='utf-8')
-        exported['_index'] = index_path
+        index_path.write_text(index_html, encoding="utf-8")
+        exported["_index"] = index_path
 
         return exported
 
@@ -234,9 +215,9 @@ Minified: {self.minify}
 """
 
         # Insert after <!DOCTYPE html> or at beginning
-        if '<!DOCTYPE' in html:
-            parts = html.split('>', 1)
-            return parts[0] + '>' + metadata + parts[1]
+        if "<!DOCTYPE" in html:
+            parts = html.split(">", 1)
+            return parts[0] + ">" + metadata + parts[1]
         else:
             return metadata + html
 
@@ -263,11 +244,7 @@ Minified: {self.minify}
         # In production, you'd use BeautifulSoup or similar
         return html
 
-    def _generate_index_page(
-        self,
-        reports: list,
-        title: str
-    ) -> str:
+    def _generate_index_page(self, reports: list, title: str) -> str:
         """
         Generate HTML index page.
 
@@ -283,16 +260,14 @@ Minified: {self.minify}
         str
             HTML content for index page
         """
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         report_links = []
         for i, name in enumerate(reports):
             filename = f"report_{i+1}.html"
-            report_links.append(
-                f'<li><a href="{filename}">{name}</a></li>'
-            )
+            report_links.append(f'<li><a href="{filename}">{name}</a></li>')
 
-        links_html = '\n                '.join(report_links)
+        links_html = "\n                ".join(report_links)
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -423,18 +398,10 @@ Minified: {self.minify}
         >>> sizes = exporter.get_file_size(html)
         >>> print(f"Size: {sizes['kb']:.1f} KB")
         """
-        size_bytes = len(html_content.encode('utf-8'))
+        size_bytes = len(html_content.encode("utf-8"))
 
-        return {
-            'bytes': size_bytes,
-            'kb': size_bytes / 1024,
-            'mb': size_bytes / (1024 * 1024)
-        }
+        return {"bytes": size_bytes, "kb": size_bytes / 1024, "mb": size_bytes / (1024 * 1024)}
 
     def __repr__(self) -> str:
         """String representation."""
-        return (
-            f"HTMLExporter("
-            f"minify={self.minify}, "
-            f"pretty_print={self.pretty_print})"
-        )
+        return f"HTMLExporter(" f"minify={self.minify}, " f"pretty_print={self.pretty_print})"

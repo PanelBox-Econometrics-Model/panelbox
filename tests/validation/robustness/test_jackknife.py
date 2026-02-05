@@ -4,11 +4,11 @@ Tests for jackknife module.
 This test suite validates the PanelJackknife class for panel data models.
 """
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
-from panelbox.validation.robustness.jackknife import PanelJackknife, JackknifeResults
+from panelbox.validation.robustness.jackknife import JackknifeResults, PanelJackknife
 
 
 # Fixtures
@@ -26,13 +26,7 @@ def simple_panel_data():
             x2 = np.random.normal(0, 1)
             y = 2.0 + 1.5 * x1 - 1.0 * x2 + np.random.normal(0, 0.5)
 
-            data.append({
-                'entity': entity,
-                'time': time,
-                'y': y,
-                'x1': x1,
-                'x2': x2
-            })
+            data.append({"entity": entity, "time": time, "y": y, "x1": x1, "x2": x2})
 
     return pd.DataFrame(data)
 
@@ -63,12 +57,12 @@ def test_init_attributes(mock_results):
     """Test that initialization sets correct attributes."""
     jk = PanelJackknife(mock_results, verbose=False)
 
-    assert hasattr(jk, 'model')
-    assert hasattr(jk, 'formula')
-    assert hasattr(jk, 'entity_col')
-    assert hasattr(jk, 'time_col')
-    assert hasattr(jk, 'data')
-    assert hasattr(jk, 'entities')
+    assert hasattr(jk, "model")
+    assert hasattr(jk, "formula")
+    assert hasattr(jk, "entity_col")
+    assert hasattr(jk, "time_col")
+    assert hasattr(jk, "data")
+    assert hasattr(jk, "entities")
 
 
 # Test Jackknife Procedure
@@ -89,13 +83,13 @@ def test_jackknife_results_structure(mock_results):
     jk_results = jk.run()
 
     # Check all required attributes
-    assert hasattr(jk_results, 'jackknife_estimates')
-    assert hasattr(jk_results, 'original_estimates')
-    assert hasattr(jk_results, 'jackknife_mean')
-    assert hasattr(jk_results, 'jackknife_bias')
-    assert hasattr(jk_results, 'jackknife_se')
-    assert hasattr(jk_results, 'influence')
-    assert hasattr(jk_results, 'n_jackknife')
+    assert hasattr(jk_results, "jackknife_estimates")
+    assert hasattr(jk_results, "original_estimates")
+    assert hasattr(jk_results, "jackknife_mean")
+    assert hasattr(jk_results, "jackknife_bias")
+    assert hasattr(jk_results, "jackknife_se")
+    assert hasattr(jk_results, "influence")
+    assert hasattr(jk_results, "n_jackknife")
 
 
 def test_jackknife_sample_count(mock_results):
@@ -154,15 +148,15 @@ def test_confidence_intervals_normal(mock_results):
     jk = PanelJackknife(mock_results, verbose=False)
     jk.run()
 
-    ci = jk.confidence_intervals(alpha=0.05, method='normal')
+    ci = jk.confidence_intervals(alpha=0.05, method="normal")
 
     # Should be DataFrame with lower and upper
     assert isinstance(ci, pd.DataFrame)
-    assert 'lower' in ci.columns
-    assert 'upper' in ci.columns
+    assert "lower" in ci.columns
+    assert "upper" in ci.columns
 
     # Upper should be greater than lower
-    assert (ci['upper'] > ci['lower']).all()
+    assert (ci["upper"] > ci["lower"]).all()
 
 
 def test_confidence_intervals_percentile(mock_results):
@@ -170,12 +164,12 @@ def test_confidence_intervals_percentile(mock_results):
     jk = PanelJackknife(mock_results, verbose=False)
     jk.run()
 
-    ci = jk.confidence_intervals(alpha=0.05, method='percentile')
+    ci = jk.confidence_intervals(alpha=0.05, method="percentile")
 
     assert isinstance(ci, pd.DataFrame)
-    assert 'lower' in ci.columns
-    assert 'upper' in ci.columns
-    assert (ci['upper'] >= ci['lower']).all()
+    assert "lower" in ci.columns
+    assert "upper" in ci.columns
+    assert (ci["upper"] >= ci["lower"]).all()
 
 
 def test_confidence_intervals_invalid_method(mock_results):
@@ -184,7 +178,7 @@ def test_confidence_intervals_invalid_method(mock_results):
     jk.run()
 
     with pytest.raises(ValueError, match="Unknown method"):
-        jk.confidence_intervals(method='invalid')
+        jk.confidence_intervals(method="invalid")
 
 
 def test_confidence_intervals_before_run(mock_results):
@@ -201,15 +195,15 @@ def test_influential_entities(mock_results):
     jk = PanelJackknife(mock_results, verbose=False)
     jk.run()
 
-    influential = jk.influential_entities(threshold=2.0, metric='max')
+    influential = jk.influential_entities(threshold=2.0, metric="max")
 
     # Should be DataFrame
     assert isinstance(influential, pd.DataFrame)
 
     # Should have required columns
-    assert 'entity' in influential.columns
-    assert 'influence' in influential.columns
-    assert 'threshold' in influential.columns
+    assert "entity" in influential.columns
+    assert "influence" in influential.columns
+    assert "threshold" in influential.columns
 
 
 def test_influential_entities_metrics(mock_results):
@@ -218,9 +212,9 @@ def test_influential_entities_metrics(mock_results):
     jk.run()
 
     # Test all metrics
-    infl_max = jk.influential_entities(metric='max')
-    infl_mean = jk.influential_entities(metric='mean')
-    infl_sum = jk.influential_entities(metric='sum')
+    infl_max = jk.influential_entities(metric="max")
+    infl_mean = jk.influential_entities(metric="mean")
+    infl_sum = jk.influential_entities(metric="sum")
 
     # All should be DataFrames
     assert isinstance(infl_max, pd.DataFrame)
@@ -234,7 +228,7 @@ def test_influential_entities_invalid_metric(mock_results):
     jk.run()
 
     with pytest.raises(ValueError, match="Unknown metric"):
-        jk.influential_entities(metric='invalid')
+        jk.influential_entities(metric="invalid")
 
 
 def test_influential_entities_before_run(mock_results):
@@ -254,9 +248,9 @@ def test_summary(mock_results):
     summary = jk.summary()
 
     assert isinstance(summary, str)
-    assert 'Jackknife Results' in summary
-    assert 'Parameter Estimates' in summary
-    assert 'Influential Entities' in summary
+    assert "Jackknife Results" in summary
+    assert "Parameter Estimates" in summary
+    assert "Influential Entities" in summary
 
 
 def test_summary_before_run(mock_results):
@@ -275,7 +269,7 @@ def test_jackknife_results_summary(mock_results):
     summary = jk_results.summary()
 
     assert isinstance(summary, str)
-    assert 'Jackknife Results' in summary
+    assert "Jackknife Results" in summary
 
 
 # Test Statistical Properties
@@ -289,11 +283,7 @@ def test_jackknife_bias_formula(mock_results):
     # Bias = (N-1) * (mean_jackknife - original)
     expected_bias = (N - 1) * (jk_results.jackknife_mean - jk_results.original_estimates)
 
-    pd.testing.assert_series_equal(
-        jk_results.jackknife_bias,
-        expected_bias,
-        check_names=False
-    )
+    pd.testing.assert_series_equal(jk_results.jackknife_bias, expected_bias, check_names=False)
 
 
 def test_jackknife_se_positive(mock_results):
@@ -326,11 +316,12 @@ def test_jackknife_small_sample():
         for time in range(3):
             x1 = np.random.normal(0, 1)
             y = 2.0 + 1.5 * x1 + np.random.normal(0, 0.5)
-            data.append({'entity': entity, 'time': time, 'y': y, 'x1': x1})
+            data.append({"entity": entity, "time": time, "y": y, "x1": x1})
 
     df = pd.DataFrame(data)
 
     from panelbox import FixedEffects
+
     fe = FixedEffects("y ~ x1", df, "entity", "time")
     results = fe.fit()
 
@@ -388,8 +379,8 @@ def test_jackknife_integration_full_workflow(mock_results):
     assert len(bias_corrected) == len(mock_results.params)
 
     # Get confidence intervals
-    ci_normal = jk.confidence_intervals(method='normal')
-    ci_percentile = jk.confidence_intervals(method='percentile')
+    ci_normal = jk.confidence_intervals(method="normal")
+    ci_percentile = jk.confidence_intervals(method="percentile")
 
     assert len(ci_normal) == len(mock_results.params)
     assert len(ci_percentile) == len(mock_results.params)
@@ -399,7 +390,7 @@ def test_jackknife_integration_full_workflow(mock_results):
 
     # Generate summary
     summary = jk.summary()
-    assert 'Jackknife Results' in summary
+    assert "Jackknife Results" in summary
 
 
 def test_jackknife_different_models():
@@ -413,12 +404,13 @@ def test_jackknife_different_models():
         for time in range(n_periods):
             x1 = np.random.normal(0, 1)
             y = 2.0 + 1.5 * x1 + np.random.normal(0, 0.5)
-            data.append({'entity': entity, 'time': time, 'y': y, 'x1': x1})
+            data.append({"entity": entity, "time": time, "y": y, "x1": x1})
 
     df = pd.DataFrame(data)
 
     # Test with Pooled OLS
     from panelbox import PooledOLS
+
     pooled = PooledOLS("y ~ x1", df, "entity", "time")
     pooled_results = pooled.fit()
 
@@ -428,5 +420,5 @@ def test_jackknife_different_models():
     assert jk_results_pooled.n_jackknife > 0
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

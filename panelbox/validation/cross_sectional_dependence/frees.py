@@ -61,7 +61,7 @@ class FreesTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: 'PanelResults'):
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Frees test.
 
@@ -96,21 +96,17 @@ class FreesTest(ValidationTest):
         resid_df = self._prepare_residual_data()
 
         # Create wide format: rows = time, columns = entities
-        resid_wide = resid_df.pivot(index='time', columns='entity', values='resid')
+        resid_wide = resid_df.pivot(index="time", columns="entity", values="resid")
 
         # Get dimensions
         T = resid_wide.shape[0]  # Number of time periods
         N = resid_wide.shape[1]  # Number of entities
 
         if N < 2:
-            raise ValueError(
-                "Need at least 2 entities for cross-sectional dependence test"
-            )
+            raise ValueError("Need at least 2 entities for cross-sectional dependence test")
 
         if T < 3:
-            raise ValueError(
-                "Need at least 3 time periods for Frees test"
-            )
+            raise ValueError("Need at least 3 time periods for Frees test")
 
         # Compute pairwise Spearman correlations
         rank_correlations = []
@@ -152,7 +148,7 @@ class FreesTest(ValidationTest):
         # Compute Frees statistic
         # Q_F = mean of squared rank correlations
         rank_correlations = np.array(rank_correlations)
-        q_frees = np.mean(rank_correlations ** 2)
+        q_frees = np.mean(rank_correlations**2)
 
         # Asymptotic distribution
         # Under H0: E[Q_F] = 1/(T-1)
@@ -177,7 +173,7 @@ class FreesTest(ValidationTest):
         # Simple interpretation
         interpretation = (
             "Reject H0 (cross-sectional dependence detected)"
-            if q_frees > critical_values.get('alpha_0.05', float('inf'))
+            if q_frees > critical_values.get("alpha_0.05", float("inf"))
             else "Do not reject H0 (no evidence of cross-sectional dependence)"
         )
 
@@ -186,20 +182,20 @@ class FreesTest(ValidationTest):
         max_abs_rank_corr = np.max(np.abs(rank_correlations))
 
         metadata = {
-            'q_frees_statistic': float(q_frees),
-            'z_statistic': float(z_stat),
-            'expected_qf_under_h0': float(expected_qf),
-            'n_entities': int(N),
-            'n_time_periods': int(T),
-            'n_pairs': int(n_pairs),
-            'mean_abs_rank_correlation': float(mean_abs_rank_corr),
-            'max_abs_rank_correlation': float(max_abs_rank_corr),
-            'critical_values': critical_values,
-            'interpretation': interpretation,
-            'note': (
-                'Frees test is non-parametric and robust to non-normality. '
-                'Critical values are approximate for unbalanced panels.'
-            )
+            "q_frees_statistic": float(q_frees),
+            "z_statistic": float(z_stat),
+            "expected_qf_under_h0": float(expected_qf),
+            "n_entities": int(N),
+            "n_time_periods": int(T),
+            "n_pairs": int(n_pairs),
+            "mean_abs_rank_correlation": float(mean_abs_rank_corr),
+            "max_abs_rank_correlation": float(max_abs_rank_corr),
+            "critical_values": critical_values,
+            "interpretation": interpretation,
+            "note": (
+                "Frees test is non-parametric and robust to non-normality. "
+                "Critical values are approximate for unbalanced panels."
+            ),
         }
 
         result = ValidationTestResult(
@@ -210,7 +206,7 @@ class FreesTest(ValidationTest):
             alternative_hypothesis="Cross-sectional dependence present",
             alpha=alpha,
             df=None,  # Non-parametric test
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
@@ -264,12 +260,12 @@ class FreesTest(ValidationTest):
             cv_0_01 = 2.58 * np.sqrt(2 * (T - 3) / ((T + 1) * (T - 1) ** 2)) + 1 / (T - 1)
 
         return {
-            'alpha_0.10': cv_0_10,
-            'alpha_0.05': cv_0_05,
-            'alpha_0.01': cv_0_01,
-            'T': T,
-            'N': N,
-            'note': 'Approximate critical values from Frees (1995)'
+            "alpha_0.10": cv_0_10,
+            "alpha_0.05": cv_0_05,
+            "alpha_0.01": cv_0_01,
+            "T": T,
+            "N": N,
+            "note": "Approximate critical values from Frees (1995)",
         }
 
     def _prepare_residual_data(self) -> pd.DataFrame:
@@ -281,14 +277,16 @@ class FreesTest(ValidationTest):
         pd.DataFrame
             DataFrame with columns: entity, time, resid
         """
-        if hasattr(self.results, 'entity_index') and hasattr(self.results, 'time_index'):
-            resid_flat = self.resid.ravel() if hasattr(self.resid, 'ravel') else self.resid
+        if hasattr(self.results, "entity_index") and hasattr(self.results, "time_index"):
+            resid_flat = self.resid.ravel() if hasattr(self.resid, "ravel") else self.resid
 
-            resid_df = pd.DataFrame({
-                'entity': self.results.entity_index,
-                'time': self.results.time_index,
-                'resid': resid_flat
-            })
+            resid_df = pd.DataFrame(
+                {
+                    "entity": self.results.entity_index,
+                    "time": self.results.time_index,
+                    "resid": resid_flat,
+                }
+            )
 
             return resid_df
         else:

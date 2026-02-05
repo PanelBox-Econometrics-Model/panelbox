@@ -11,7 +11,8 @@ GMMResults : Complete results from GMM estimation
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -60,9 +61,9 @@ class TestResult:
     statistic: float
     pvalue: float
     df: Optional[int] = None
-    distribution: str = 'chi2'
-    null_hypothesis: str = ''
-    conclusion: str = ''
+    distribution: str = "chi2"
+    null_hypothesis: str = ""
+    conclusion: str = ""
     details: Dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -79,50 +80,54 @@ class TestResult:
         str
             'PASS', 'REJECT', or 'WARNING'
         """
-        if self.name.startswith('Hansen') or self.name.startswith('Sargan'):
+        if self.name.startswith("Hansen") or self.name.startswith("Sargan"):
             # For overid tests: reject if p-value too low OR too high
             if self.pvalue < 0.10:
-                return 'REJECT'
+                return "REJECT"
             elif self.pvalue > 0.25:
-                return 'WARNING'
+                return "WARNING"
             else:
-                return 'PASS'
-        elif 'AR(2)' in self.name:
+                return "PASS"
+        elif "AR(2)" in self.name:
             # For AR(2): should NOT reject (p-value > 0.10)
             if self.pvalue < 0.10:
-                return 'REJECT'
+                return "REJECT"
             else:
-                return 'PASS'
-        elif 'AR(1)' in self.name:
+                return "PASS"
+        elif "AR(1)" in self.name:
             # For AR(1): expected to reject (informational only)
             if self.pvalue < 0.10:
-                return 'EXPECTED'
+                return "EXPECTED"
             else:
-                return 'PASS'
+                return "PASS"
         else:
             # Generic: reject if p-value < 0.05
             if self.pvalue < 0.05:
-                return 'REJECT'
+                return "REJECT"
             else:
-                return 'PASS'
+                return "PASS"
 
     def __str__(self) -> str:
         """String representation."""
         if self.df is not None:
-            return (f"{self.name}: statistic={self.statistic:.3f}, "
-                    f"p-value={self.pvalue:.4f}, df={self.df} [{self.conclusion}]")
+            return (
+                f"{self.name}: statistic={self.statistic:.3f}, "
+                f"p-value={self.pvalue:.4f}, df={self.df} [{self.conclusion}]"
+            )
         else:
-            return (f"{self.name}: statistic={self.statistic:.3f}, "
-                    f"p-value={self.pvalue:.4f} [{self.conclusion}]")
+            return (
+                f"{self.name}: statistic={self.statistic:.3f}, "
+                f"p-value={self.pvalue:.4f} [{self.conclusion}]"
+            )
 
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
-            'name': self.name,
-            'statistic': self.statistic,
-            'pvalue': self.pvalue,
-            'df': self.df,
-            'conclusion': self.conclusion
+            "name": self.name,
+            "statistic": self.statistic,
+            "pvalue": self.pvalue,
+            "df": self.df,
+            "conclusion": self.conclusion,
         }
 
 
@@ -307,8 +312,8 @@ class GMMResults:
     windmeijer_corrected: bool = False
 
     # Model metadata
-    model_type: str = 'difference'
-    transformation: str = 'fd'
+    model_type: str = "difference"
+    transformation: str = "fd"
 
     # Additional data
     residuals: Optional[np.ndarray] = None
@@ -346,10 +351,7 @@ class GMMResults:
         lower = self.params - z_crit * self.std_errors
         upper = self.params + z_crit * self.std_errors
 
-        return pd.DataFrame({
-            'lower': lower,
-            'upper': upper
-        }, index=self.params.index)
+        return pd.DataFrame({"lower": lower, "upper": upper}, index=self.params.index)
 
     def summary(self, title: Optional[str] = None) -> str:
         """
@@ -367,7 +369,7 @@ class GMMResults:
         """
         if title is None:
             title = f"{self.model_type.capitalize()} GMM"
-            if self.transformation == 'fod':
+            if self.transformation == "fod":
                 title += " (FOD)"
 
         # Build table
@@ -389,8 +391,10 @@ class GMMResults:
         lines.append("-" * 78)
 
         # Coefficients table
-        lines.append(f"{'Variable':<20} {'Coef.':>12} {'Std.Err.':>12} "
-                     f"{'z':>8} {'P>|z|':>8} {'[95% Conf. Int.]':>20}")
+        lines.append(
+            f"{'Variable':<20} {'Coef.':>12} {'Std.Err.':>12} "
+            f"{'z':>8} {'P>|z|':>8} {'[95% Conf. Int.]':>20}"
+        )
         lines.append("-" * 78)
 
         ci = self.conf_int()
@@ -399,21 +403,23 @@ class GMMResults:
             se = self.std_errors[var]
             t = self.tvalues[var]
             p = self.pvalues[var]
-            ci_lower = ci.loc[var, 'lower']
-            ci_upper = ci.loc[var, 'upper']
+            ci_lower = ci.loc[var, "lower"]
+            ci_upper = ci.loc[var, "upper"]
 
             # Significance stars
-            stars = ''
+            stars = ""
             if p < 0.001:
-                stars = '***'
+                stars = "***"
             elif p < 0.01:
-                stars = '**'
+                stars = "**"
             elif p < 0.05:
-                stars = '*'
+                stars = "*"
 
-            lines.append(f"{var:<20} {coef:>12.6f} {se:>12.6f} "
-                        f"{t:>8.2f} {p:>8.4f} "
-                        f"[{ci_lower:>9.6f}, {ci_upper:>9.6f}] {stars}")
+            lines.append(
+                f"{var:<20} {coef:>12.6f} {se:>12.6f} "
+                f"{t:>8.2f} {p:>8.4f} "
+                f"[{ci_lower:>9.6f}, {ci_upper:>9.6f}] {stars}"
+            )
 
         lines.append("=" * 78)
 
@@ -431,9 +437,9 @@ class GMMResults:
         # Legend
         lines.append("Significance: * p<0.05, ** p<0.01, *** p<0.001")
 
-        if self.model_type == 'difference':
+        if self.model_type == "difference":
             lines.append("Transformation: First-differences")
-        elif self.transformation == 'fod':
+        elif self.transformation == "fod":
             lines.append("Transformation: Forward Orthogonal Deviations")
 
         if self.windmeijer_corrected:
@@ -443,11 +449,9 @@ class GMMResults:
 
         lines.append("=" * 78)
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def to_latex(self,
-                 caption: str = "GMM Estimation Results",
-                 label: str = "tab:gmm") -> str:
+    def to_latex(self, caption: str = "GMM Estimation Results", label: str = "tab:gmm") -> str:
         """
         Generate LaTeX table.
 
@@ -480,29 +484,35 @@ class GMMResults:
             p = self.pvalues[var]
 
             # Significance stars
-            stars = ''
+            stars = ""
             if p < 0.001:
-                stars = r'^{***}'
+                stars = r"^{***}"
             elif p < 0.01:
-                stars = r'^{**}'
+                stars = r"^{**}"
             elif p < 0.05:
-                stars = r'^{*}'
+                stars = r"^{*}"
 
             # Escape underscores in variable names
-            var_escaped = var.replace('_', r'\_')
+            var_escaped = var.replace("_", r"\_")
 
-            lines.append(f"        {var_escaped} & "
-                        f"{coef:.4f}{stars} & "
-                        f"{se:.4f} & "
-                        f"{t:.2f} & "
-                        f"{p:.4f} \\\\")
+            lines.append(
+                f"        {var_escaped} & "
+                f"{coef:.4f}{stars} & "
+                f"{se:.4f} & "
+                f"{t:.2f} & "
+                f"{p:.4f} \\\\"
+            )
 
         lines.append(r"        \midrule")
         lines.append(f"        Observations & \\multicolumn{{4}}{{c}}{{{self.nobs:,}}} \\\\")
         lines.append(f"        Groups & \\multicolumn{{4}}{{c}}{{{self.n_groups:,}}} \\\\")
         lines.append(f"        Instruments & \\multicolumn{{4}}{{c}}{{{self.n_instruments}}} \\\\")
-        lines.append(f"        Hansen J (p-val) & \\multicolumn{{4}}{{c}}{{{self.hansen_j.pvalue:.4f}}} \\\\")
-        lines.append(f"        AR(2) (p-val) & \\multicolumn{{4}}{{c}}{{{self.ar2_test.pvalue:.4f}}} \\\\")
+        lines.append(
+            f"        Hansen J (p-val) & \\multicolumn{{4}}{{c}}{{{self.hansen_j.pvalue:.4f}}} \\\\"
+        )
+        lines.append(
+            f"        AR(2) (p-val) & \\multicolumn{{4}}{{c}}{{{self.ar2_test.pvalue:.4f}}} \\\\"
+        )
         lines.append(r"        \bottomrule")
         lines.append(r"    \end{tabular}")
         lines.append(r"    \begin{tablenotes}")
@@ -517,7 +527,7 @@ class GMMResults:
         lines.append(r"    \end{tablenotes}")
         lines.append(r"\end{table}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def to_dict(self) -> Dict:
         """
@@ -529,22 +539,24 @@ class GMMResults:
             Dictionary with all results
         """
         return {
-            'params': self.params.to_dict(),
-            'std_errors': self.std_errors.to_dict(),
-            'pvalues': self.pvalues.to_dict(),
-            'nobs': self.nobs,
-            'n_groups': self.n_groups,
-            'n_instruments': self.n_instruments,
-            'hansen_j': self.hansen_j.to_dict(),
-            'sargan': self.sargan.to_dict(),
-            'ar1_test': self.ar1_test.to_dict(),
-            'ar2_test': self.ar2_test.to_dict(),
-            'instrument_ratio': self.instrument_ratio,
-            'converged': self.converged
+            "params": self.params.to_dict(),
+            "std_errors": self.std_errors.to_dict(),
+            "pvalues": self.pvalues.to_dict(),
+            "nobs": self.nobs,
+            "n_groups": self.n_groups,
+            "n_instruments": self.n_instruments,
+            "hansen_j": self.hansen_j.to_dict(),
+            "sargan": self.sargan.to_dict(),
+            "ar1_test": self.ar1_test.to_dict(),
+            "ar2_test": self.ar2_test.to_dict(),
+            "instrument_ratio": self.instrument_ratio,
+            "converged": self.converged,
         }
 
     def __repr__(self) -> str:
         """Repr showing key info."""
-        return (f"GMMResults(model='{self.model_type}', "
-                f"nobs={self.nobs}, n_groups={self.n_groups}, "
-                f"n_instruments={self.n_instruments})")
+        return (
+            f"GMMResults(model='{self.model_type}', "
+            f"nobs={self.nobs}, n_groups={self.n_groups}, "
+            f"n_instruments={self.n_instruments})"
+        )

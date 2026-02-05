@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-02-05T09:59:30.039826",
+  "stata": {
+    "Pooled OLS": {
+      "status": "failed",
+      "exit_code": 1,
+      "output_length": 2945,
+      "has_placeholders": false
+    },
+    "Fixed Effects": {
+      "status": "failed",
+      "exit_code": 1,
+      "output_length": 2827,
+      "has_placeholders": false
+    },
+    "Random Effects": {
+      "status": "failed",
+      "exit_code": 1,
+      "output_length": 3051,
+      "has_placeholders": false
+    },
+    "Difference GMM": {
+      "status": "failed",
+      "exit_code": 1,
+      "output_length": 2291,
+      "has_placeholders": false
+    },
+    "System GMM": {
+      "status": "failed",
+      "exit_code": 1,
+      "output_length": 2358,
+      "has_placeholders": false
+    }
+  },
+  "r": {},
+  "summary": {
+    "total_tests": 5,
+    "passed": 0,
+    "failed": 5,
+    "skipped": 0,
+    "errors": 0,
+    "pass_rate": 0.0,
+    "needs_stata_run": false,
+    "placeholder_count": 0
+  }
+}

@@ -11,16 +11,18 @@ Author: PanelBox Development Team
 Date: 2026-01-22
 """
 
+import warnings
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
-import warnings
-from typing import Optional, Union, Dict, List, Tuple, Callable
-from dataclasses import dataclass
 
 # Optional matplotlib import
 try:
     import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
+
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -49,6 +51,7 @@ class SensitivityResults:
     subsample_info : pd.DataFrame
         Information about each subsample used
     """
+
     method: str
     estimates: pd.DataFrame
     std_errors: pd.DataFrame
@@ -105,11 +108,7 @@ class SensitivityAnalysis:
     >>> plt.show()
     """
 
-    def __init__(
-        self,
-        results: PanelResults,
-        show_progress: bool = False
-    ):
+    def __init__(self, results: PanelResults, show_progress: bool = False):
         """Initialize sensitivity analysis."""
         self.results = results
 
@@ -137,10 +136,7 @@ class SensitivityAnalysis:
         self.n_entities = len(self.entities)
         self.n_periods = len(self.time_periods)
 
-    def leave_one_out_entities(
-        self,
-        influence_threshold: float = 2.0
-    ) -> SensitivityResults:
+    def leave_one_out_entities(self, influence_threshold: float = 2.0) -> SensitivityResults:
         """
         Leave-one-out analysis by entities.
 
@@ -173,6 +169,7 @@ class SensitivityAnalysis:
         if self.show_progress:
             try:
                 from tqdm import tqdm
+
                 iterator = tqdm(self.entities, desc="LOO Entities")
             except ImportError:
                 iterator = self.entities
@@ -196,66 +193,49 @@ class SensitivityAnalysis:
                 estimates_list.append(subsample_results.params.values)
                 std_errors_list.append(subsample_results.std_errors.values)
 
-                subsample_info.append({
-                    'excluded': entity,
-                    'n_obs': len(subsample),
-                    'converged': True
-                })
+                subsample_info.append(
+                    {"excluded": entity, "n_obs": len(subsample), "converged": True}
+                )
 
             except Exception as e:
                 # If estimation fails, use NaN
                 estimates_list.append(np.full(len(self.params), np.nan))
                 std_errors_list.append(np.full(len(self.params), np.nan))
 
-                subsample_info.append({
-                    'excluded': entity,
-                    'n_obs': len(subsample),
-                    'converged': False
-                })
+                subsample_info.append(
+                    {"excluded": entity, "n_obs": len(subsample), "converged": False}
+                )
 
                 if self.show_progress:
                     warnings.warn(f"Failed to estimate without entity {entity}: {e}")
 
         # Convert to DataFrames
         estimates_df = pd.DataFrame(
-            estimates_list,
-            index=[f"excl_{e}" for e in self.entities],
-            columns=self.params.index
+            estimates_list, index=[f"excl_{e}" for e in self.entities], columns=self.params.index
         )
 
         std_errors_df = pd.DataFrame(
-            std_errors_list,
-            index=[f"excl_{e}" for e in self.entities],
-            columns=self.params.index
+            std_errors_list, index=[f"excl_{e}" for e in self.entities], columns=self.params.index
         )
 
         subsample_info_df = pd.DataFrame(subsample_info)
 
         # Calculate statistics
-        statistics = self._calculate_statistics(
-            estimates_df,
-            influence_threshold
-        )
+        statistics = self._calculate_statistics(estimates_df, influence_threshold)
 
         # Identify influential entities
-        influential_units = self._identify_influential_units(
-            estimates_df,
-            influence_threshold
-        )
+        influential_units = self._identify_influential_units(estimates_df, influence_threshold)
 
         return SensitivityResults(
-            method='leave_one_out_entities',
+            method="leave_one_out_entities",
             estimates=estimates_df,
             std_errors=std_errors_df,
             statistics=statistics,
             influential_units=influential_units,
-            subsample_info=subsample_info_df
+            subsample_info=subsample_info_df,
         )
 
-    def leave_one_out_periods(
-        self,
-        influence_threshold: float = 2.0
-    ) -> SensitivityResults:
+    def leave_one_out_periods(self, influence_threshold: float = 2.0) -> SensitivityResults:
         """
         Leave-one-out analysis by time periods.
 
@@ -288,6 +268,7 @@ class SensitivityAnalysis:
         if self.show_progress:
             try:
                 from tqdm import tqdm
+
                 iterator = tqdm(self.time_periods, desc="LOO Periods")
             except ImportError:
                 iterator = self.time_periods
@@ -311,22 +292,18 @@ class SensitivityAnalysis:
                 estimates_list.append(subsample_results.params.values)
                 std_errors_list.append(subsample_results.std_errors.values)
 
-                subsample_info.append({
-                    'excluded': period,
-                    'n_obs': len(subsample),
-                    'converged': True
-                })
+                subsample_info.append(
+                    {"excluded": period, "n_obs": len(subsample), "converged": True}
+                )
 
             except Exception as e:
                 # If estimation fails, use NaN
                 estimates_list.append(np.full(len(self.params), np.nan))
                 std_errors_list.append(np.full(len(self.params), np.nan))
 
-                subsample_info.append({
-                    'excluded': period,
-                    'n_obs': len(subsample),
-                    'converged': False
-                })
+                subsample_info.append(
+                    {"excluded": period, "n_obs": len(subsample), "converged": False}
+                )
 
                 if self.show_progress:
                     warnings.warn(f"Failed to estimate without period {period}: {e}")
@@ -335,36 +312,30 @@ class SensitivityAnalysis:
         estimates_df = pd.DataFrame(
             estimates_list,
             index=[f"excl_{t}" for t in self.time_periods],
-            columns=self.params.index
+            columns=self.params.index,
         )
 
         std_errors_df = pd.DataFrame(
             std_errors_list,
             index=[f"excl_{t}" for t in self.time_periods],
-            columns=self.params.index
+            columns=self.params.index,
         )
 
         subsample_info_df = pd.DataFrame(subsample_info)
 
         # Calculate statistics
-        statistics = self._calculate_statistics(
-            estimates_df,
-            influence_threshold
-        )
+        statistics = self._calculate_statistics(estimates_df, influence_threshold)
 
         # Identify influential periods
-        influential_units = self._identify_influential_units(
-            estimates_df,
-            influence_threshold
-        )
+        influential_units = self._identify_influential_units(estimates_df, influence_threshold)
 
         return SensitivityResults(
-            method='leave_one_out_periods',
+            method="leave_one_out_periods",
             estimates=estimates_df,
             std_errors=std_errors_df,
             statistics=statistics,
             influential_units=influential_units,
-            subsample_info=subsample_info_df
+            subsample_info=subsample_info_df,
         )
 
     def subset_sensitivity(
@@ -372,7 +343,7 @@ class SensitivityAnalysis:
         n_subsamples: int = 20,
         subsample_size: float = 0.8,
         stratify: bool = True,
-        random_state: Optional[int] = None
+        random_state: Optional[int] = None,
     ) -> SensitivityResults:
         """
         Subsample sensitivity analysis.
@@ -422,6 +393,7 @@ class SensitivityAnalysis:
         if self.show_progress:
             try:
                 from tqdm import tqdm
+
                 iterator = tqdm(range(n_subsamples), desc="Subsamples")
             except ImportError:
                 iterator = range(n_subsamples)
@@ -437,16 +409,10 @@ class SensitivityAnalysis:
 
         for i in iterator:
             # Sample entities
-            sampled_entities = rng.choice(
-                self.entities,
-                size=n_entities_subsample,
-                replace=False
-            )
+            sampled_entities = rng.choice(self.entities, size=n_entities_subsample, replace=False)
 
             # Create subsample
-            subsample = self.data[
-                self.data[self.entity_col].isin(sampled_entities)
-            ].copy()
+            subsample = self.data[self.data[self.entity_col].isin(sampled_entities)].copy()
 
             try:
                 # Refit model on subsample
@@ -456,24 +422,28 @@ class SensitivityAnalysis:
                 estimates_list.append(subsample_results.params.values)
                 std_errors_list.append(subsample_results.std_errors.values)
 
-                subsample_info.append({
-                    'subsample_id': i,
-                    'n_entities': len(sampled_entities),
-                    'n_obs': len(subsample),
-                    'converged': True
-                })
+                subsample_info.append(
+                    {
+                        "subsample_id": i,
+                        "n_entities": len(sampled_entities),
+                        "n_obs": len(subsample),
+                        "converged": True,
+                    }
+                )
 
             except Exception as e:
                 # If estimation fails, use NaN
                 estimates_list.append(np.full(len(self.params), np.nan))
                 std_errors_list.append(np.full(len(self.params), np.nan))
 
-                subsample_info.append({
-                    'subsample_id': i,
-                    'n_entities': len(sampled_entities),
-                    'n_obs': len(subsample),
-                    'converged': False
-                })
+                subsample_info.append(
+                    {
+                        "subsample_id": i,
+                        "n_entities": len(sampled_entities),
+                        "n_obs": len(subsample),
+                        "converged": False,
+                    }
+                )
 
                 if self.show_progress:
                     warnings.warn(f"Failed to estimate subsample {i}: {e}")
@@ -482,13 +452,13 @@ class SensitivityAnalysis:
         estimates_df = pd.DataFrame(
             estimates_list,
             index=[f"subsample_{i}" for i in range(n_subsamples)],
-            columns=self.params.index
+            columns=self.params.index,
         )
 
         std_errors_df = pd.DataFrame(
             std_errors_list,
             index=[f"subsample_{i}" for i in range(n_subsamples)],
-            columns=self.params.index
+            columns=self.params.index,
         )
 
         subsample_info_df = pd.DataFrame(subsample_info)
@@ -497,12 +467,12 @@ class SensitivityAnalysis:
         statistics = self._calculate_statistics(estimates_df, threshold=2.0)
 
         return SensitivityResults(
-            method='subset_sensitivity',
+            method="subset_sensitivity",
             estimates=estimates_df,
             std_errors=std_errors_df,
             statistics=statistics,
             influential_units=[],  # Not applicable for subset analysis
-            subsample_info=subsample_info_df
+            subsample_info=subsample_info_df,
         )
 
     def plot_sensitivity(
@@ -512,7 +482,7 @@ class SensitivityAnalysis:
         figsize: Tuple[float, float] = (12, 6),
         reference_line: bool = True,
         confidence_band: bool = True,
-        **kwargs
+        **kwargs,
     ) -> Figure:
         """
         Plot sensitivity analysis results.
@@ -549,8 +519,7 @@ class SensitivityAnalysis:
         """
         if not HAS_MATPLOTLIB:
             raise ImportError(
-                "Matplotlib is required for plotting. "
-                "Install it with: pip install matplotlib"
+                "Matplotlib is required for plotting. " "Install it with: pip install matplotlib"
             )
 
         if params is None:
@@ -559,12 +528,7 @@ class SensitivityAnalysis:
         n_params = len(params)
 
         # Create subplots
-        fig, axes = plt.subplots(
-            1, n_params,
-            figsize=figsize,
-            squeeze=False,
-            **kwargs
-        )
+        fig, axes = plt.subplots(1, n_params, figsize=figsize, squeeze=False, **kwargs)
         axes = axes.flatten()
 
         for idx, param in enumerate(params):
@@ -582,45 +546,42 @@ class SensitivityAnalysis:
                 original_value = self.params[param]
                 ax.axhline(
                     original_value,
-                    color='red',
-                    linestyle='--',
+                    color="red",
+                    linestyle="--",
                     linewidth=2,
-                    label='Original',
-                    alpha=0.7
+                    label="Original",
+                    alpha=0.7,
                 )
 
             # Confidence band
             if confidence_band:
                 mean_est = estimates.mean()
                 std_est = estimates.std()
-                ax.axhline(mean_est, color='blue', linestyle='-', alpha=0.5, label='Mean')
+                ax.axhline(mean_est, color="blue", linestyle="-", alpha=0.5, label="Mean")
                 ax.fill_between(
                     x,
                     mean_est - 1.96 * std_est,
                     mean_est + 1.96 * std_est,
                     alpha=0.2,
-                    color='blue',
-                    label='95% Band'
+                    color="blue",
+                    label="95% Band",
                 )
 
-            ax.set_xlabel('Subsample/Exclusion')
-            ax.set_ylabel('Estimate')
-            ax.set_title(f'{param}')
+            ax.set_xlabel("Subsample/Exclusion")
+            ax.set_ylabel("Estimate")
+            ax.set_title(f"{param}")
             ax.legend(fontsize=8)
             ax.grid(True, alpha=0.3)
 
         # Overall title
-        method_title = sensitivity_results.method.replace('_', ' ').title()
-        fig.suptitle(f'Sensitivity Analysis: {method_title}', fontsize=14, y=1.02)
+        method_title = sensitivity_results.method.replace("_", " ").title()
+        fig.suptitle(f"Sensitivity Analysis: {method_title}", fontsize=14, y=1.02)
 
         plt.tight_layout()
 
         return fig
 
-    def summary(
-        self,
-        sensitivity_results: SensitivityResults
-    ) -> pd.DataFrame:
+    def summary(self, sensitivity_results: SensitivityResults) -> pd.DataFrame:
         """
         Generate summary table of sensitivity analysis results.
 
@@ -658,18 +619,20 @@ class SensitivityAnalysis:
             max_dev = np.abs(param_estimates - original).max()
             max_dev_std = max_dev / self.std_errors[param]
 
-            summary_data.append({
-                'Parameter': param,
-                'Original': original,
-                'Mean': mean_est,
-                'Std': std_est,
-                'Min': min_est,
-                'Max': max_est,
-                'Range': max_est - min_est,
-                'Max Deviation': max_dev,
-                'Max Dev (SE)': max_dev_std,
-                'N Valid': len(param_estimates)
-            })
+            summary_data.append(
+                {
+                    "Parameter": param,
+                    "Original": original,
+                    "Mean": mean_est,
+                    "Std": std_est,
+                    "Min": min_est,
+                    "Max": max_est,
+                    "Range": max_est - min_est,
+                    "Max Deviation": max_dev,
+                    "Max Dev (SE)": max_dev_std,
+                    "N Valid": len(param_estimates),
+                }
+            )
 
         return pd.DataFrame(summary_data)
 
@@ -683,19 +646,12 @@ class SensitivityAnalysis:
 
         # Create new model
         new_model = model_class(
-            formula=formula,
-            data=data,
-            entity_col=self.entity_col,
-            time_col=self.time_col
+            formula=formula, data=data, entity_col=self.entity_col, time_col=self.time_col
         )
 
         return new_model
 
-    def _calculate_statistics(
-        self,
-        estimates_df: pd.DataFrame,
-        threshold: float
-    ) -> Dict:
+    def _calculate_statistics(self, estimates_df: pd.DataFrame, threshold: float) -> Dict:
         """Calculate summary statistics from estimates."""
         statistics = {}
 
@@ -713,25 +669,21 @@ class SensitivityAnalysis:
             std_deviations = deviations / original_se
 
             statistics[param] = {
-                'mean': param_estimates.mean(),
-                'std': param_estimates.std(),
-                'min': param_estimates.min(),
-                'max': param_estimates.max(),
-                'range': param_estimates.max() - param_estimates.min(),
-                'max_abs_deviation': abs_deviations.max(),
-                'mean_abs_deviation': abs_deviations.mean(),
-                'max_std_deviation': np.abs(std_deviations).max(),
-                'n_beyond_threshold': (np.abs(std_deviations) > threshold).sum(),
-                'pct_beyond_threshold': (np.abs(std_deviations) > threshold).mean() * 100
+                "mean": param_estimates.mean(),
+                "std": param_estimates.std(),
+                "min": param_estimates.min(),
+                "max": param_estimates.max(),
+                "range": param_estimates.max() - param_estimates.min(),
+                "max_abs_deviation": abs_deviations.max(),
+                "mean_abs_deviation": abs_deviations.mean(),
+                "max_std_deviation": np.abs(std_deviations).max(),
+                "n_beyond_threshold": (np.abs(std_deviations) > threshold).sum(),
+                "pct_beyond_threshold": (np.abs(std_deviations) > threshold).mean() * 100,
             }
 
         return statistics
 
-    def _identify_influential_units(
-        self,
-        estimates_df: pd.DataFrame,
-        threshold: float
-    ) -> List:
+    def _identify_influential_units(self, estimates_df: pd.DataFrame, threshold: float) -> List:
         """Identify influential units based on threshold."""
         influential = []
 
@@ -762,9 +714,7 @@ class SensitivityAnalysis:
 
 
 def dfbetas(
-    results: PanelResults,
-    entity_col: Optional[str] = None,
-    time_col: Optional[str] = None
+    results: PanelResults, entity_col: Optional[str] = None, time_col: Optional[str] = None
 ) -> pd.DataFrame:
     """
     Calculate DFBETAS influence statistics.

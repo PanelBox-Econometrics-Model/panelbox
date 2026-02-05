@@ -6,24 +6,21 @@ capturing variation between entities rather than within entities.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
-from panelbox.utils.matrix_ops import (
-    compute_ols,
-    compute_vcov_nonrobust,
-    compute_panel_rsquared
-)
 from panelbox.standard_errors import (
-    robust_covariance,
     cluster_by_entity,
-    twoway_cluster,
     driscoll_kraay,
     newey_west,
-    pcse
+    pcse,
+    robust_covariance,
+    twoway_cluster,
 )
+from panelbox.utils.matrix_ops import compute_ols, compute_panel_rsquared, compute_vcov_nonrobust
 
 
 class BetweenEstimator(PanelModel):
@@ -122,18 +119,14 @@ class BetweenEstimator(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None
+        weights: Optional[np.ndarray] = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
         # Entity means (computed after fitting)
         self.entity_means: Optional[pd.DataFrame] = None
 
-    def fit(
-        self,
-        cov_type: str = 'nonrobust',
-        **cov_kwds
-    ) -> PanelResults:
+    def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
         Fit the Between estimator.
 
@@ -177,8 +170,7 @@ class BetweenEstimator(PanelModel):
         """
         # Build design matrices from original data
         y_orig, X_orig = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
+            self.data.data, return_type="array"
         )
 
         # Get variable names
@@ -204,7 +196,7 @@ class BetweenEstimator(PanelModel):
             X_between[i] = X_orig[mask].mean(axis=0)
 
         # Store entity means for user access
-        entity_means_dict = {'entity': unique_entities}
+        entity_means_dict = {"entity": unique_entities}
 
         # Add dependent variable mean
         dep_var_name = self.formula_parser.dependent
@@ -212,10 +204,10 @@ class BetweenEstimator(PanelModel):
 
         # Add independent variable means (excluding intercept)
         for j, var_name in enumerate(var_names):
-            if var_name != 'Intercept':
+            if var_name != "Intercept":
                 # Find the corresponding column in X_orig
                 # var_names includes 'Intercept' if present, so adjust index
-                if 'Intercept' in var_names:
+                if "Intercept" in var_names:
                     X_col_idx = j
                 else:
                     X_col_idx = j
@@ -228,7 +220,7 @@ class BetweenEstimator(PanelModel):
 
         # Degrees of freedom
         n = n_entities  # Number of entity-level observations
-        df_model = k - 1 if 'Intercept' in var_names else k  # Slopes only
+        df_model = k - 1 if "Intercept" in var_names else k  # Slopes only
         df_resid = n - k
 
         # Ensure df_resid is positive
@@ -241,23 +233,23 @@ class BetweenEstimator(PanelModel):
         # Compute covariance matrix
         cov_type_lower = cov_type.lower()
 
-        if cov_type_lower == 'nonrobust':
+        if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X_between, resid, df_resid)
 
-        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # Map 'robust' to 'hc1'
-            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             result = robust_covariance(X_between, resid, method=method)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'clustered':
+        elif cov_type_lower == "clustered":
             # For between estimator, clustering is less common but supported
             # Default: cluster by entity (though each entity appears once)
             # Could cluster by another grouping variable if specified
-            cluster_col = cov_kwds.get('cluster_col', None)
+            cluster_col = cov_kwds.get("cluster_col", None)
             if cluster_col is None:
                 # Each entity is its own cluster - equivalent to robust
-                result = robust_covariance(X_between, resid, method='HC1')
+                result = robust_covariance(X_between, resid, method="HC1")
             else:
                 # Use custom clustering variable from entity_means
                 if cluster_col not in self.entity_means.columns:
@@ -266,38 +258,46 @@ class BetweenEstimator(PanelModel):
                 result = cluster_by_entity(X_between, resid, cluster_ids, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'twoway':
+        elif cov_type_lower == "twoway":
             # Two-way clustering at entity level
             # This is unusual for between estimator but technically possible
             # Would need entity-level time groupings
-            cluster_col1 = cov_kwds.get('cluster_col1', 'entity')
-            cluster_col2 = cov_kwds.get('cluster_col2', None)
+            cluster_col1 = cov_kwds.get("cluster_col1", "entity")
+            cluster_col2 = cov_kwds.get("cluster_col2", None)
 
             if cluster_col2 is None:
                 raise ValueError("twoway clustering requires cluster_col2 in cov_kwds")
 
-            cluster_ids1 = self.entity_means[cluster_col1].values if cluster_col1 in self.entity_means.columns else unique_entities
+            cluster_ids1 = (
+                self.entity_means[cluster_col1].values
+                if cluster_col1 in self.entity_means.columns
+                else unique_entities
+            )
             cluster_ids2 = self.entity_means[cluster_col2].values
 
-            result = twoway_cluster(X_between, resid, cluster_ids1, cluster_ids2, df_correction=True)
+            result = twoway_cluster(
+                X_between, resid, cluster_ids1, cluster_ids2, df_correction=True
+            )
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'driscoll_kraay':
+        elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay at entity level
             # Use entity index as "time" dimension
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
-            result = driscoll_kraay(X_between, resid, unique_entities, max_lags=max_lags, kernel=kernel)
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
+            result = driscoll_kraay(
+                X_between, resid, unique_entities, max_lags=max_lags, kernel=kernel
+            )
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'newey_west':
+        elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X_between, resid, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'pcse':
+        elif cov_type_lower == "pcse":
             # Panel-Corrected Standard Errors
             # For between estimator, each entity appears once
             # PCSE is less meaningful but technically computable
@@ -321,7 +321,7 @@ class BetweenEstimator(PanelModel):
 
         # Between R² (on entity means)
         tss_between = np.sum((y_between - y_between.mean()) ** 2)
-        ess_between = np.sum(resid ** 2)
+        ess_between = np.sum(resid**2)
         rsquared_between = 1 - ess_between / tss_between if tss_between > 0 else 0.0
 
         # Map fitted values back to original observations for overall R²
@@ -334,7 +334,7 @@ class BetweenEstimator(PanelModel):
 
         # Overall R² (on all NT observations)
         tss_overall = np.sum((y_orig - y_orig.mean()) ** 2)
-        ess_overall = np.sum(resid_all ** 2)
+        ess_overall = np.sum(resid_all**2)
         rsquared_overall = 1 - ess_overall / tss_overall if tss_overall > 0 else 0.0
 
         # Within R² is not meaningful for between estimator
@@ -351,32 +351,32 @@ class BetweenEstimator(PanelModel):
 
         # Model information
         model_info = {
-            'model_type': 'Between Estimator',
-            'formula': self.formula,
-            'cov_type': cov_type,
-            'cov_kwds': cov_kwds,
-            'entity_effects': False,
-            'time_effects': False,
+            "model_type": "Between Estimator",
+            "formula": self.formula,
+            "cov_type": cov_type,
+            "cov_kwds": cov_kwds,
+            "entity_effects": False,
+            "time_effects": False,
         }
 
         # Data information
         data_info = {
-            'nobs': n,  # Number of entity-level observations
-            'n_entities': self.data.n_entities,
-            'n_periods': self.data.n_periods,
-            'df_model': df_model,
-            'df_resid': df_resid,
-            'entity_index': unique_entities,
-            'time_index': None,  # Not applicable for between estimator
+            "nobs": n,  # Number of entity-level observations
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "entity_index": unique_entities,
+            "time_index": None,  # Not applicable for between estimator
         }
 
         # R-squared dictionary
         rsquared_dict = {
-            'rsquared': rsquared_between,  # For BE, R² = between R²
-            'rsquared_adj': rsquared_adj,
-            'rsquared_within': rsquared_within,
-            'rsquared_between': rsquared_between,
-            'rsquared_overall': rsquared_overall
+            "rsquared": rsquared_between,  # For BE, R² = between R²
+            "rsquared_adj": rsquared_adj,
+            "rsquared_within": rsquared_within,
+            "rsquared_between": rsquared_between,
+            "rsquared_overall": rsquared_overall,
         }
 
         # Create results object
@@ -389,7 +389,7 @@ class BetweenEstimator(PanelModel):
             model_info=model_info,
             data_info=data_info,
             rsquared_dict=rsquared_dict,
-            model=self
+            model=self,
         )
 
         # Store results and update state
@@ -408,10 +408,7 @@ class BetweenEstimator(PanelModel):
             Estimated coefficients
         """
         # Build design matrices
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         # Get entity identifiers
         entities = self.data.data[self.data.entity_col].values

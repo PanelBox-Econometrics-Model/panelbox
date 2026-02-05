@@ -7,15 +7,15 @@ They are particularly useful for macro panel data with potential cross-
 sectional correlation.
 """
 
-from typing import Optional, Literal
+from dataclasses import dataclass
+from typing import Literal, Optional
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from .utils import compute_bread, sandwich_covariance
 
-
-KernelType = Literal['bartlett', 'parzen', 'quadratic_spectral']
+KernelType = Literal["bartlett", "parzen", "quadratic_spectral"]
 
 
 @dataclass
@@ -42,6 +42,7 @@ class DriscollKraayResult:
     bandwidth : Optional[float]
         Bandwidth parameter (for some kernels)
     """
+
     cov_matrix: np.ndarray
     std_errors: np.ndarray
     max_lags: int
@@ -114,7 +115,7 @@ class DriscollKraayStandardErrors:
         resid: np.ndarray,
         time_ids: np.ndarray,
         max_lags: Optional[int] = None,
-        kernel: KernelType = 'bartlett'
+        kernel: KernelType = "bartlett",
     ):
         self.X = X
         self.resid = resid
@@ -126,8 +127,7 @@ class DriscollKraayStandardErrors:
         # Validate dimensions
         if len(self.time_ids) != self.n_obs:
             raise ValueError(
-                f"time_ids dimension mismatch: expected {self.n_obs}, "
-                f"got {len(self.time_ids)}"
+                f"time_ids dimension mismatch: expected {self.n_obs}, " f"got {len(self.time_ids)}"
             )
 
         # Count time periods
@@ -137,7 +137,7 @@ class DriscollKraayStandardErrors:
         # Set max_lags
         if max_lags is None:
             # Newey-West rule: floor(4(T/100)^(2/9))
-            self.max_lags = int(np.floor(4 * (self.n_periods / 100) ** (2/9)))
+            self.max_lags = int(np.floor(4 * (self.n_periods / 100) ** (2 / 9)))
         else:
             self.max_lags = max_lags
 
@@ -170,11 +170,11 @@ class DriscollKraayStandardErrors:
             sort_idx = np.argsort(time_indices)
 
             self._time_sorted = {
-                'X': self.X[sort_idx],
-                'resid': self.resid[sort_idx],
-                'time_ids': self.time_ids[sort_idx],
-                'sort_idx': sort_idx,
-                'unique_times': unique_times
+                "X": self.X[sort_idx],
+                "resid": self.resid[sort_idx],
+                "time_ids": self.time_ids[sort_idx],
+                "sort_idx": sort_idx,
+                "unique_times": unique_times,
             }
 
         return self._time_sorted
@@ -196,20 +196,20 @@ class DriscollKraayStandardErrors:
         if lag > self.max_lags:
             return 0.0
 
-        if self.kernel == 'bartlett':
+        if self.kernel == "bartlett":
             # Bartlett (triangular) kernel
             # w(l) = 1 - l/(max_lags + 1)
             return 1.0 - lag / (self.max_lags + 1)
 
-        elif self.kernel == 'parzen':
+        elif self.kernel == "parzen":
             # Parzen kernel
             z = lag / (self.max_lags + 1)
             if z <= 0.5:
                 return 1 - 6 * z**2 + 6 * z**3
             else:
-                return 2 * (1 - z)**3
+                return 2 * (1 - z) ** 3
 
-        elif self.kernel == 'quadratic_spectral':
+        elif self.kernel == "quadratic_spectral":
             # Quadratic Spectral kernel
             if lag == 0:
                 return 1.0
@@ -236,7 +236,7 @@ class DriscollKraayStandardErrors:
             Autocovariance matrix (k x k)
         """
         sorted_data = self._sort_by_time()
-        unique_times = sorted_data['unique_times']
+        unique_times = sorted_data["unique_times"]
         k = self.n_params
 
         gamma = np.zeros((k, k))
@@ -247,23 +247,20 @@ class DriscollKraayStandardErrors:
             t_lag = unique_times[t_idx - lag]
 
             # Get observations for time t
-            mask_t = sorted_data['time_ids'] == t
-            X_t = sorted_data['X'][mask_t]
-            resid_t = sorted_data['resid'][mask_t]
+            mask_t = sorted_data["time_ids"] == t
+            X_t = sorted_data["X"][mask_t]
+            resid_t = sorted_data["resid"][mask_t]
 
             # Get observations for time t-lag
-            mask_t_lag = sorted_data['time_ids'] == t_lag
-            X_t_lag = sorted_data['X'][mask_t_lag]
-            resid_t_lag = sorted_data['resid'][mask_t_lag]
+            mask_t_lag = sorted_data["time_ids"] == t_lag
+            X_t_lag = sorted_data["X"][mask_t_lag]
+            resid_t_lag = sorted_data["resid"][mask_t_lag]
 
             # Compute cross-product
             # For each pair of observations
             for i in range(len(X_t)):
                 for j in range(len(X_t_lag)):
-                    gamma += np.outer(
-                        X_t[i] * resid_t[i],
-                        X_t_lag[j] * resid_t_lag[j]
-                    )
+                    gamma += np.outer(X_t[i] * resid_t[i], X_t_lag[j] * resid_t_lag[j])
 
         return gamma
 
@@ -314,7 +311,7 @@ class DriscollKraayStandardErrors:
             kernel=self.kernel,
             n_obs=self.n_obs,
             n_params=self.n_params,
-            n_periods=self.n_periods
+            n_periods=self.n_periods,
         )
 
     def diagnostic_summary(self) -> str:
@@ -353,7 +350,7 @@ def driscoll_kraay(
     resid: np.ndarray,
     time_ids: np.ndarray,
     max_lags: Optional[int] = None,
-    kernel: KernelType = 'bartlett'
+    kernel: KernelType = "bartlett",
 ) -> DriscollKraayResult:
     """
     Convenience function for Driscoll-Kraay standard errors.

@@ -25,7 +25,7 @@ class TestPanelBootstrapInitialization:
 
         assert bootstrap.results == results
         assert bootstrap.n_bootstrap == 100
-        assert bootstrap.method == 'pairs'
+        assert bootstrap.method == "pairs"
         assert bootstrap.random_state == 42
         assert bootstrap._fitted is False
 
@@ -48,7 +48,7 @@ class TestPanelBootstrapInitialization:
         results = fe.fit()
 
         with pytest.raises(ValueError, match="method must be one of"):
-            PanelBootstrap(results, n_bootstrap=100, method='invalid')
+            PanelBootstrap(results, n_bootstrap=100, method="invalid")
 
     def test_init_parallel_warning(self, balanced_panel_data):
         """Test warning for parallel processing."""
@@ -70,11 +70,7 @@ class TestPanelBootstrapPairsMethod:
 
         # Run bootstrap (small number for speed)
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            method='pairs',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, method="pairs", random_state=42, show_progress=False
         )
         bootstrap.run()
 
@@ -92,11 +88,7 @@ class TestPanelBootstrapPairsMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=n_boot,
-            method='pairs',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=n_boot, method="pairs", random_state=42, show_progress=False
         )
         bootstrap.run()
 
@@ -110,25 +102,13 @@ class TestPanelBootstrapPairsMethod:
         results = fe.fit()
 
         # Run twice with same random_state
-        boot1 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            random_state=42,
-            show_progress=False
-        ).run()
+        boot1 = PanelBootstrap(results, n_bootstrap=30, random_state=42, show_progress=False).run()
 
-        boot2 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            random_state=42,
-            show_progress=False
-        ).run()
+        boot2 = PanelBootstrap(results, n_bootstrap=30, random_state=42, show_progress=False).run()
 
         # Should get same estimates
         np.testing.assert_array_almost_equal(
-            boot1.bootstrap_estimates_,
-            boot2.bootstrap_estimates_,
-            decimal=10
+            boot1.bootstrap_estimates_, boot2.bootstrap_estimates_, decimal=10
         )
 
     def test_pairs_bootstrap_different_seeds(self, balanced_panel_data):
@@ -136,25 +116,12 @@ class TestPanelBootstrapPairsMethod:
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()
 
-        boot1 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            random_state=42,
-            show_progress=False
-        ).run()
+        boot1 = PanelBootstrap(results, n_bootstrap=30, random_state=42, show_progress=False).run()
 
-        boot2 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            random_state=123,
-            show_progress=False
-        ).run()
+        boot2 = PanelBootstrap(results, n_bootstrap=30, random_state=123, show_progress=False).run()
 
         # Should get different estimates
-        assert not np.allclose(
-            boot1.bootstrap_estimates_,
-            boot2.bootstrap_estimates_
-        )
+        assert not np.allclose(boot1.bootstrap_estimates_, boot2.bootstrap_estimates_)
 
     def test_bootstrap_se_positive(self, balanced_panel_data):
         """Test that bootstrap SEs are positive."""
@@ -162,10 +129,7 @@ class TestPanelBootstrapPairsMethod:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, random_state=42, show_progress=False
         ).run()
 
         assert np.all(bootstrap.bootstrap_se_ > 0)
@@ -180,21 +144,18 @@ class TestPanelBootstrapConfidenceIntervals:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=100,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=100, random_state=42, show_progress=False
         ).run()
 
-        ci = bootstrap.conf_int(alpha=0.05, method='percentile')
+        ci = bootstrap.conf_int(alpha=0.05, method="percentile")
 
         # Check shape and structure
         assert ci.shape == (len(results.params), 2)
-        assert list(ci.columns) == ['lower', 'upper']
+        assert list(ci.columns) == ["lower", "upper"]
         assert all(ci.index == results.params.index)
 
         # Check that lower < upper
-        assert np.all(ci['lower'] < ci['upper'])
+        assert np.all(ci["lower"] < ci["upper"])
 
     def test_conf_int_basic(self, balanced_panel_data):
         """Test basic (reflection) confidence intervals."""
@@ -202,17 +163,14 @@ class TestPanelBootstrapConfidenceIntervals:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=100,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=100, random_state=42, show_progress=False
         ).run()
 
-        ci = bootstrap.conf_int(alpha=0.05, method='basic')
+        ci = bootstrap.conf_int(alpha=0.05, method="basic")
 
         # Check shape
         assert ci.shape == (len(results.params), 2)
-        assert np.all(ci['lower'] < ci['upper'])
+        assert np.all(ci["lower"] < ci["upper"])
 
     def test_conf_int_before_run_raises(self, balanced_panel_data):
         """Test that conf_int before run raises error."""
@@ -230,14 +188,11 @@ class TestPanelBootstrapConfidenceIntervals:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, random_state=42, show_progress=False
         ).run()
 
         with pytest.raises(ValueError, match="method must be"):
-            bootstrap.conf_int(method='invalid')
+            bootstrap.conf_int(method="invalid")
 
     def test_conf_int_alpha_levels(self, balanced_panel_data):
         """Test different alpha levels."""
@@ -245,18 +200,15 @@ class TestPanelBootstrapConfidenceIntervals:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=100,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=100, random_state=42, show_progress=False
         ).run()
 
         # 95% CI should be wider than 90% CI
         ci_95 = bootstrap.conf_int(alpha=0.05)
         ci_90 = bootstrap.conf_int(alpha=0.10)
 
-        width_95 = (ci_95['upper'] - ci_95['lower']).values
-        width_90 = (ci_90['upper'] - ci_90['lower']).values
+        width_95 = (ci_95["upper"] - ci_95["lower"]).values
+        width_90 = (ci_90["upper"] - ci_90["lower"]).values
 
         assert np.all(width_95 >= width_90)
 
@@ -270,22 +222,19 @@ class TestPanelBootstrapSummary:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, random_state=42, show_progress=False
         ).run()
 
         summary = bootstrap.summary()
 
         # Check columns
         expected_cols = [
-            'Original',
-            'Bootstrap Mean',
-            'Bootstrap Bias',
-            'Original SE',
-            'Bootstrap SE',
-            'SE Ratio'
+            "Original",
+            "Bootstrap Mean",
+            "Bootstrap Bias",
+            "Original SE",
+            "Bootstrap SE",
+            "SE Ratio",
         ]
         assert list(summary.columns) == expected_cols
 
@@ -319,29 +268,20 @@ class TestPanelBootstrapSummary:
         x2 = np.random.randn(n_entities * n_periods)
         y = beta_true[0] * x1 + beta_true[1] * x2 + np.random.randn(n_entities * n_periods) * 0.5
 
-        data = pd.DataFrame({
-            'entity': entities,
-            'time': times,
-            'y': y,
-            'x1': x1,
-            'x2': x2
-        })
+        data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
 
         # Fit and bootstrap
         ols = PooledOLS("y ~ x1 + x2 - 1", data, "entity", "time")
         results = ols.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=200,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=200, random_state=42, show_progress=False
         ).run()
 
         summary = bootstrap.summary()
 
         # Bootstrap bias should be small (less than 10% of SE)
-        relative_bias = np.abs(summary['Bootstrap Bias'] / summary['Bootstrap SE'])
+        relative_bias = np.abs(summary["Bootstrap Bias"] / summary["Bootstrap SE"])
         assert np.all(relative_bias < 0.1)
 
 
@@ -354,11 +294,7 @@ class TestPanelBootstrapWildMethod:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            method='wild',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, method="wild", random_state=42, show_progress=False
         )
         bootstrap.run()
 
@@ -375,11 +311,7 @@ class TestPanelBootstrapWildMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=n_boot,
-            method='wild',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=n_boot, method="wild", random_state=42, show_progress=False
         ).run()
 
         assert bootstrap.bootstrap_estimates_.shape[1] == n_params
@@ -391,25 +323,15 @@ class TestPanelBootstrapWildMethod:
         results = fe.fit()
 
         boot1 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            method='wild',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=30, method="wild", random_state=42, show_progress=False
         ).run()
 
         boot2 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            method='wild',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=30, method="wild", random_state=42, show_progress=False
         ).run()
 
         np.testing.assert_array_almost_equal(
-            boot1.bootstrap_estimates_,
-            boot2.bootstrap_estimates_,
-            decimal=10
+            boot1.bootstrap_estimates_, boot2.bootstrap_estimates_, decimal=10
         )
 
 
@@ -424,10 +346,10 @@ class TestPanelBootstrapBlockMethod:
         bootstrap = PanelBootstrap(
             results,
             n_bootstrap=50,
-            method='block',
+            method="block",
             block_size=2,
             random_state=42,
-            show_progress=False
+            show_progress=False,
         )
         bootstrap.run()
 
@@ -442,10 +364,10 @@ class TestPanelBootstrapBlockMethod:
         bootstrap = PanelBootstrap(
             results,
             n_bootstrap=30,
-            method='block',
+            method="block",
             block_size=None,  # Automatic
             random_state=42,
-            show_progress=False
+            show_progress=False,
         ).run()
 
         assert bootstrap._fitted is True
@@ -458,25 +380,23 @@ class TestPanelBootstrapBlockMethod:
         boot1 = PanelBootstrap(
             results,
             n_bootstrap=30,
-            method='block',
+            method="block",
             block_size=2,
             random_state=42,
-            show_progress=False
+            show_progress=False,
         ).run()
 
         boot2 = PanelBootstrap(
             results,
             n_bootstrap=30,
-            method='block',
+            method="block",
             block_size=2,
             random_state=42,
-            show_progress=False
+            show_progress=False,
         ).run()
 
         np.testing.assert_array_almost_equal(
-            boot1.bootstrap_estimates_,
-            boot2.bootstrap_estimates_,
-            decimal=10
+            boot1.bootstrap_estimates_, boot2.bootstrap_estimates_, decimal=10
         )
 
 
@@ -489,11 +409,7 @@ class TestPanelBootstrapResidualMethod:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            method='residual',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, method="residual", random_state=42, show_progress=False
         )
         bootstrap.run()
 
@@ -509,11 +425,7 @@ class TestPanelBootstrapResidualMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=n_boot,
-            method='residual',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=n_boot, method="residual", random_state=42, show_progress=False
         ).run()
 
         assert bootstrap.bootstrap_estimates_.shape[1] == n_params
@@ -525,25 +437,15 @@ class TestPanelBootstrapResidualMethod:
         results = fe.fit()
 
         boot1 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            method='residual',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=30, method="residual", random_state=42, show_progress=False
         ).run()
 
         boot2 = PanelBootstrap(
-            results,
-            n_bootstrap=30,
-            method='residual',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=30, method="residual", random_state=42, show_progress=False
         ).run()
 
         np.testing.assert_array_almost_equal(
-            boot1.bootstrap_estimates_,
-            boot2.bootstrap_estimates_,
-            decimal=10
+            boot1.bootstrap_estimates_, boot2.bootstrap_estimates_, decimal=10
         )
 
 
@@ -555,15 +457,15 @@ class TestPanelBootstrapMethodComparison:
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()
 
-        methods = ['pairs', 'wild', 'block', 'residual']
+        methods = ["pairs", "wild", "block", "residual"]
         for method in methods:
             bootstrap = PanelBootstrap(
                 results,
                 n_bootstrap=20,
                 method=method,
-                block_size=2 if method == 'block' else None,
+                block_size=2 if method == "block" else None,
                 random_state=42,
-                show_progress=False
+                show_progress=False,
             ).run()
 
             assert bootstrap._fitted is True, f"{method} bootstrap failed"
@@ -575,26 +477,15 @@ class TestPanelBootstrapMethodComparison:
         results = fe.fit()
 
         boot_pairs = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            method='pairs',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, method="pairs", random_state=42, show_progress=False
         ).run()
 
         boot_wild = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            method='wild',
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, method="wild", random_state=42, show_progress=False
         ).run()
 
         # Should give different estimates
-        assert not np.allclose(
-            boot_pairs.bootstrap_estimates_,
-            boot_wild.bootstrap_estimates_
-        )
+        assert not np.allclose(boot_pairs.bootstrap_estimates_, boot_wild.bootstrap_estimates_)
 
 
 class TestPanelBootstrapRepr:
@@ -605,7 +496,7 @@ class TestPanelBootstrapRepr:
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()
 
-        bootstrap = PanelBootstrap(results, n_bootstrap=100, method='pairs')
+        bootstrap = PanelBootstrap(results, n_bootstrap=100, method="pairs")
         repr_str = repr(bootstrap)
 
         assert "method='pairs'" in repr_str
@@ -618,10 +509,7 @@ class TestPanelBootstrapRepr:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, random_state=42, show_progress=False
         ).run()
 
         repr_str = repr(bootstrap)
@@ -640,10 +528,7 @@ class TestPanelBootstrapUnbalancedPanel:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=50,
-            random_state=42,
-            show_progress=False
+            results, n_bootstrap=50, random_state=42, show_progress=False
         ).run()
 
         # Should run successfully
@@ -661,18 +546,13 @@ class TestPanelBootstrapEdgeCases:
     def test_bootstrap_with_single_entity_warning(self, balanced_panel_data):
         """Test bootstrap with very few entities."""
         # Keep only 2 entities
-        small_data = balanced_panel_data[balanced_panel_data['entity'] <= 2]
+        small_data = balanced_panel_data[balanced_panel_data["entity"] <= 2]
 
         fe = FixedEffects("y ~ x1 + x2", small_data, "entity", "time")
         results = fe.fit()
 
         # Should work but might have failures
-        bootstrap = PanelBootstrap(
-            results,
-            n_bootstrap=20,
-            random_state=42,
-            show_progress=False
-        )
+        bootstrap = PanelBootstrap(results, n_bootstrap=20, random_state=42, show_progress=False)
 
         # May have some failures due to resampling same entity multiple times
         bootstrap.run()

@@ -5,25 +5,26 @@ This module provides the Fixed Effects estimator which removes entity-specific
 (and optionally time-specific) fixed effects through demeaning.
 """
 
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 import numpy as np
 import pandas as pd
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
-from panelbox.utils.matrix_ops import (
-    compute_ols,
-    compute_vcov_nonrobust,
-    compute_panel_rsquared,
-    demean_matrix
-)
 from panelbox.standard_errors import (
-    robust_covariance,
     cluster_by_entity,
-    twoway_cluster,
     driscoll_kraay,
     newey_west,
-    pcse
+    pcse,
+    robust_covariance,
+    twoway_cluster,
+)
+from panelbox.utils.matrix_ops import (
+    compute_ols,
+    compute_panel_rsquared,
+    compute_vcov_nonrobust,
+    demean_matrix,
 )
 
 
@@ -99,7 +100,7 @@ class FixedEffects(PanelModel):
         time_col: str,
         entity_effects: bool = True,
         time_effects: bool = False,
-        weights: Optional[np.ndarray] = None
+        weights: Optional[np.ndarray] = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
@@ -116,11 +117,7 @@ class FixedEffects(PanelModel):
         self.entity_fe: Optional[pd.Series] = None
         self.time_fe: Optional[pd.Series] = None
 
-    def fit(
-        self,
-        cov_type: str = 'nonrobust',
-        **cov_kwds
-    ) -> PanelResults:
+    def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
         Fit the Fixed Effects model.
 
@@ -173,16 +170,15 @@ class FixedEffects(PanelModel):
         """
         # Build design matrices
         y_orig, X_orig = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
+            self.data.data, return_type="array"
         )
 
         # Get variable names before demeaning
         var_names = self.formula_parser.get_variable_names(self.data.data)
 
         # Remove intercept from variable names (FE absorbs it)
-        if 'Intercept' in var_names:
-            var_names = [v for v in var_names if v != 'Intercept']
+        if "Intercept" in var_names:
+            var_names = [v for v in var_names if v != "Intercept"]
             # Remove intercept column from X
             X_orig = X_orig[:, 1:]
 
@@ -248,40 +244,40 @@ class FixedEffects(PanelModel):
         # Compute covariance matrix (on demeaned data)
         cov_type_lower = cov_type.lower()
 
-        if cov_type_lower == 'nonrobust':
+        if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X, resid_demeaned, df_resid)
 
-        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # Map 'robust' to 'hc1' (default robust method)
-            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             result = robust_covariance(X, resid_demeaned, method=method)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'clustered':
+        elif cov_type_lower == "clustered":
             # Default: cluster by entity
             result = cluster_by_entity(X, resid_demeaned, entities, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'twoway':
+        elif cov_type_lower == "twoway":
             # Two-way clustering: entity and time
             result = twoway_cluster(X, resid_demeaned, entities, times, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'driscoll_kraay':
+        elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(X, resid_demeaned, times, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'newey_west':
+        elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X, resid_demeaned, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'pcse':
+        elif cov_type_lower == "pcse":
             # Panel-Corrected Standard Errors
             result = pcse(X, resid_demeaned, entities, times)
             vcov = result.cov_matrix
@@ -319,34 +315,34 @@ class FixedEffects(PanelModel):
             model_type = "Fixed Effects (Time)"
 
         model_info = {
-            'model_type': model_type,
-            'formula': self.formula,
-            'cov_type': cov_type,
-            'cov_kwds': cov_kwds,
-            'entity_effects': self.entity_effects,
-            'time_effects': self.time_effects,
+            "model_type": model_type,
+            "formula": self.formula,
+            "cov_type": cov_type,
+            "cov_kwds": cov_kwds,
+            "entity_effects": self.entity_effects,
+            "time_effects": self.time_effects,
         }
 
         # Data information
         data_info = {
-            'nobs': n,
-            'n_entities': self.data.n_entities,
-            'n_periods': self.data.n_periods,
-            'df_model': df_model,
-            'df_resid': df_resid,
-            'n_fe_entity': n_fe_entity if self.entity_effects else 0,
-            'n_fe_time': n_fe_time if self.time_effects else 0,
-            'entity_index': entities.ravel() if hasattr(entities, 'ravel') else entities,
-            'time_index': times.ravel() if hasattr(times, 'ravel') else times,
+            "nobs": n,
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "n_fe_entity": n_fe_entity if self.entity_effects else 0,
+            "n_fe_time": n_fe_time if self.time_effects else 0,
+            "entity_index": entities.ravel() if hasattr(entities, "ravel") else entities,
+            "time_index": times.ravel() if hasattr(times, "ravel") else times,
         }
 
         # R-squared dictionary
         rsquared_dict = {
-            'rsquared': rsquared_within,  # For FE, R² = within R²
-            'rsquared_adj': rsquared_adj,
-            'rsquared_within': rsquared_within,
-            'rsquared_between': rsquared_between,
-            'rsquared_overall': rsquared_overall
+            "rsquared": rsquared_within,  # For FE, R² = within R²
+            "rsquared_adj": rsquared_adj,
+            "rsquared_within": rsquared_within,
+            "rsquared_between": rsquared_between,
+            "rsquared_overall": rsquared_overall,
         }
 
         # Create results object
@@ -359,7 +355,7 @@ class FixedEffects(PanelModel):
             model_info=model_info,
             data_info=data_info,
             rsquared_dict=rsquared_dict,
-            model=self
+            model=self,
         )
 
         # Store results and update state
@@ -368,12 +364,7 @@ class FixedEffects(PanelModel):
 
         return results
 
-    def _demean_both(
-        self,
-        X: np.ndarray,
-        entities: np.ndarray,
-        times: np.ndarray
-    ) -> np.ndarray:
+    def _demean_both(self, X: np.ndarray, entities: np.ndarray, times: np.ndarray) -> np.ndarray:
         """
         Apply two-way demeaning (entity and time).
 
@@ -424,11 +415,7 @@ class FixedEffects(PanelModel):
                 entity_mean_resid = overall_resid[mask].mean()
                 entity_fe_values.append(entity_mean_resid)
 
-            self.entity_fe = pd.Series(
-                entity_fe_values,
-                index=unique_entities,
-                name='entity_fe'
-            )
+            self.entity_fe = pd.Series(entity_fe_values, index=unique_entities, name="entity_fe")
 
         if self.time_effects:
             # Time fixed effects: mean residual by time (after removing entity FE if present)
@@ -449,11 +436,7 @@ class FixedEffects(PanelModel):
                 time_mean_resid = base_resid[mask].mean()
                 time_fe_values.append(time_mean_resid)
 
-            self.time_fe = pd.Series(
-                time_fe_values,
-                index=unique_times,
-                name='time_fe'
-            )
+            self.time_fe = pd.Series(time_fe_values, index=unique_times, name="time_fe")
 
     def _estimate_coefficients(self) -> np.ndarray:
         """
@@ -465,10 +448,7 @@ class FixedEffects(PanelModel):
             Estimated coefficients
         """
         # Build design matrices
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         # Remove intercept
         if self.formula_parser.has_intercept:
@@ -492,12 +472,7 @@ class FixedEffects(PanelModel):
         beta, _, _ = compute_ols(y_dm, X_dm, self.weights)
         return beta
 
-    def _compute_vcov_robust(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        df_resid: int
-    ) -> np.ndarray:
+    def _compute_vcov_robust(self, X: np.ndarray, resid: np.ndarray, df_resid: int) -> np.ndarray:
         """
         Compute heteroskedasticity-robust covariance matrix (HC1).
 
@@ -525,7 +500,7 @@ class FixedEffects(PanelModel):
         XtX_inv = np.linalg.inv(X.T @ X)
 
         # Meat: X' diag(resid^2) X
-        meat = X.T @ (resid[:, np.newaxis]**2 * X)
+        meat = X.T @ (resid[:, np.newaxis] ** 2 * X)
 
         # Sandwich
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
@@ -533,11 +508,7 @@ class FixedEffects(PanelModel):
         return vcov
 
     def _compute_vcov_clustered(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        entities: np.ndarray,
-        df_resid: int
+        self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int
     ) -> np.ndarray:
         """
         Compute cluster-robust covariance matrix.

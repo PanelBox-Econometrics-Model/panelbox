@@ -13,6 +13,7 @@ Date: 2026-01-22
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 # Set random seed
@@ -51,13 +52,7 @@ errors = np.random.randn(n_obs) * (1 + 0.3 * np.abs(x1))
 
 y = beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
-data = pd.DataFrame({
-    'entity': entities,
-    'time': times,
-    'y': y,
-    'x1': x1,
-    'x2': x2
-})
+data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
 
 print(f"   Panel: {n_entities} entities × {n_periods} periods = {n_obs} observations")
 print(f"   True parameters: β₁={beta_1}, β₂={beta_2}")
@@ -69,7 +64,7 @@ print(f"   True parameters: β₁={beta_1}, β₂={beta_2}")
 print("\n2. Fitting Fixed Effects model...")
 
 model = pb.FixedEffects("y ~ x1 + x2", data, "entity", "time")
-results = model.fit(cov_type='robust')
+results = model.fit(cov_type="robust")
 
 print("\nEstimated coefficients:")
 print(results.params.to_string())
@@ -81,7 +76,7 @@ print(results.params.to_string())
 print("\n3. Running all bootstrap methods...")
 print("   (This may take 1-2 minutes for 1000 replications each)")
 
-methods = ['pairs', 'wild', 'block', 'residual']
+methods = ["pairs", "wild", "block", "residual"]
 bootstrap_results = {}
 
 for method in methods:
@@ -91,18 +86,18 @@ for method in methods:
         results,
         n_bootstrap=1000,
         method=method,
-        block_size=3 if method == 'block' else None,
+        block_size=3 if method == "block" else None,
         random_state=42,
-        show_progress=False  # Set to True to see progress bars
+        show_progress=False,  # Set to True to see progress bars
     )
 
     bootstrap.run()
 
     bootstrap_results[method] = {
-        'bootstrap': bootstrap,
-        'se': bootstrap.bootstrap_se_,
-        'ci': bootstrap.conf_int(alpha=0.05, method='percentile'),
-        'summary': bootstrap.summary()
+        "bootstrap": bootstrap,
+        "se": bootstrap.bootstrap_se_,
+        "ci": bootstrap.conf_int(alpha=0.05, method="percentile"),
+        "summary": bootstrap.summary(),
     }
 
     print(f"   ✓ {method.upper()} complete: {1000 - bootstrap.n_failed_}/1000 successful")
@@ -114,13 +109,15 @@ for method in methods:
 print("\n4. Comparing Standard Errors Across Methods:")
 print("=" * 80)
 
-se_comparison = pd.DataFrame({
-    'Asymptotic': results.std_errors,
-    'Pairs': bootstrap_results['pairs']['se'],
-    'Wild': bootstrap_results['wild']['se'],
-    'Block': bootstrap_results['block']['se'],
-    'Residual': bootstrap_results['residual']['se']
-})
+se_comparison = pd.DataFrame(
+    {
+        "Asymptotic": results.std_errors,
+        "Pairs": bootstrap_results["pairs"]["se"],
+        "Wild": bootstrap_results["wild"]["se"],
+        "Block": bootstrap_results["block"]["se"],
+        "Residual": bootstrap_results["residual"]["se"],
+    }
+)
 
 print(se_comparison.to_string())
 
@@ -144,7 +141,7 @@ print("\nAsymptotic (Robust SE):")
 print(ci_asymp.to_string())
 
 for method in methods:
-    ci = bootstrap_results[method]['ci']
+    ci = bootstrap_results[method]["ci"]
     print(f"\n{method.upper()} Bootstrap:")
     print(ci.to_string())
 
@@ -155,13 +152,11 @@ for method in methods:
 print("\n6. Confidence Interval Widths:")
 print("=" * 80)
 
-widths = pd.DataFrame({
-    'Asymptotic': ci_asymp['upper'] - ci_asymp['lower']
-})
+widths = pd.DataFrame({"Asymptotic": ci_asymp["upper"] - ci_asymp["lower"]})
 
 for method in methods:
-    ci = bootstrap_results[method]['ci']
-    widths[method.capitalize()] = ci['upper'] - ci['lower']
+    ci = bootstrap_results[method]["ci"]
+    widths[method.capitalize()] = ci["upper"] - ci["lower"]
 
 print(widths.to_string())
 
@@ -177,13 +172,11 @@ print("  - Compare with asymptotic to assess adequacy")
 print("\n7. Bootstrap Bias Estimates:")
 print("=" * 80)
 
-bias_comparison = pd.DataFrame({
-    'Estimate': results.params
-})
+bias_comparison = pd.DataFrame({"Estimate": results.params})
 
 for method in methods:
-    summary = bootstrap_results[method]['summary']
-    bias_comparison[f'{method.capitalize()} Bias'] = summary['Bootstrap Bias']
+    summary = bootstrap_results[method]["summary"]
+    bias_comparison[f"{method.capitalize()} Bias"] = summary["Bootstrap Bias"]
 
 print(bias_comparison.to_string())
 
@@ -202,9 +195,7 @@ print("=" * 80)
 se_ratios = pd.DataFrame(index=results.params.index)
 
 for method in methods:
-    se_ratios[method.capitalize()] = (
-        bootstrap_results[method]['se'] / results.std_errors.values
-    )
+    se_ratios[method.capitalize()] = bootstrap_results[method]["se"] / results.std_errors.values
 
 print(se_ratios.to_string())
 
@@ -289,7 +280,7 @@ else:
     print("   → Either approach is defensible")
 
 # Check consistency across bootstrap methods
-bootstrap_se_std = se_comparison[['Pairs', 'Wild', 'Block', 'Residual']].std(axis=1).mean()
+bootstrap_se_std = se_comparison[["Pairs", "Wild", "Block", "Residual"]].std(axis=1).mean()
 if bootstrap_se_std > 0.1:
     print("\n⚠️  Bootstrap methods show substantial variation")
     print("   → Data may violate some method's assumptions")
@@ -308,11 +299,21 @@ print("=" * 80)
 
 print("\n✅ All four bootstrap methods completed successfully")
 print(f"\n📊 Results Summary:")
-print(f"   - Asymptotic SE (robust): {results.std_errors['x1']:.4f}, {results.std_errors['x2']:.4f}")
-print(f"   - Pairs Bootstrap SE:     {bootstrap_results['pairs']['se'][0]:.4f}, {bootstrap_results['pairs']['se'][1]:.4f}")
-print(f"   - Wild Bootstrap SE:      {bootstrap_results['wild']['se'][0]:.4f}, {bootstrap_results['wild']['se'][1]:.4f}")
-print(f"   - Block Bootstrap SE:     {bootstrap_results['block']['se'][0]:.4f}, {bootstrap_results['block']['se'][1]:.4f}")
-print(f"   - Residual Bootstrap SE:  {bootstrap_results['residual']['se'][0]:.4f}, {bootstrap_results['residual']['se'][1]:.4f}")
+print(
+    f"   - Asymptotic SE (robust): {results.std_errors['x1']:.4f}, {results.std_errors['x2']:.4f}"
+)
+print(
+    f"   - Pairs Bootstrap SE:     {bootstrap_results['pairs']['se'][0]:.4f}, {bootstrap_results['pairs']['se'][1]:.4f}"
+)
+print(
+    f"   - Wild Bootstrap SE:      {bootstrap_results['wild']['se'][0]:.4f}, {bootstrap_results['wild']['se'][1]:.4f}"
+)
+print(
+    f"   - Block Bootstrap SE:     {bootstrap_results['block']['se'][0]:.4f}, {bootstrap_results['block']['se'][1]:.4f}"
+)
+print(
+    f"   - Residual Bootstrap SE:  {bootstrap_results['residual']['se'][0]:.4f}, {bootstrap_results['residual']['se'][1]:.4f}"
+)
 
 print("\n💡 General Guidance:")
 print("   1. Start with pairs bootstrap (most robust)")
@@ -339,8 +340,8 @@ save_results = False  # Set to True to save
 
 if save_results:
     # Save comparison tables
-    se_comparison.to_csv('bootstrap_se_comparison.csv')
-    widths.to_csv('bootstrap_ci_widths.csv')
-    se_ratios.to_csv('bootstrap_se_ratios.csv')
+    se_comparison.to_csv("bootstrap_se_comparison.csv")
+    widths.to_csv("bootstrap_ci_widths.csv")
+    se_ratios.to_csv("bootstrap_se_ratios.csv")
 
     print("\n💾 Results saved to CSV files")

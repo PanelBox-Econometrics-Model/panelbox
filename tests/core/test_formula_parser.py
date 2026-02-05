@@ -111,91 +111,84 @@ class TestDesignMatrices:
 
     def test_build_simple_design_matrix(self):
         """Test building design matrix for simple formula."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [10, 20, 30, 40, 50],
-            'x2': [5, 10, 15, 20, 25]
-        })
+        data = pd.DataFrame(
+            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+        )
 
         parser = FormulaParser("y ~ x1 + x2").parse()
-        y, X = parser.build_design_matrices(data, return_type='dataframe')
+        y, X = parser.build_design_matrices(data, return_type="dataframe")
 
         assert len(y) == 5
-        assert 'Intercept' in X.columns
-        assert 'x1' in X.columns
-        assert 'x2' in X.columns
+        assert "Intercept" in X.columns
+        assert "x1" in X.columns
+        assert "x2" in X.columns
         assert X.shape == (5, 3)  # 5 rows, 3 columns (Intercept, x1, x2)
 
     def test_build_without_intercept(self):
         """Test building design matrix without intercept."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [10, 20, 30, 40, 50],
-            'x2': [5, 10, 15, 20, 25]
-        })
+        data = pd.DataFrame(
+            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+        )
 
         parser = FormulaParser("y ~ x1 + x2 - 1").parse()
-        y, X = parser.build_design_matrices(data, return_type='dataframe')
+        y, X = parser.build_design_matrices(data, return_type="dataframe")
 
-        assert 'Intercept' not in X.columns
-        assert 'x1' in X.columns
-        assert 'x2' in X.columns
+        assert "Intercept" not in X.columns
+        assert "x1" in X.columns
+        assert "x2" in X.columns
         assert X.shape == (5, 2)  # No intercept
 
     def test_build_with_transformation(self):
         """Test building design matrix with transformations."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [1, 2, 3, 4, 5],
-        })
+        data = pd.DataFrame(
+            {
+                "y": [1, 2, 3, 4, 5],
+                "x1": [1, 2, 3, 4, 5],
+            }
+        )
 
         parser = FormulaParser("y ~ I(x1**2)").parse()
-        y, X = parser.build_design_matrices(data, return_type='dataframe')
+        y, X = parser.build_design_matrices(data, return_type="dataframe")
 
         # Check that x1**2 was computed correctly
-        expected = data['x1'] ** 2
-        np.testing.assert_array_almost_equal(X['I(x1 ** 2)'].values, expected.values)
+        expected = data["x1"] ** 2
+        np.testing.assert_array_almost_equal(X["I(x1 ** 2)"].values, expected.values)
 
     def test_build_with_interaction(self):
         """Test building design matrix with interaction."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [1, 2, 3, 4, 5],
-            'x2': [2, 3, 4, 5, 6]
-        })
+        data = pd.DataFrame({"y": [1, 2, 3, 4, 5], "x1": [1, 2, 3, 4, 5], "x2": [2, 3, 4, 5, 6]})
 
         parser = FormulaParser("y ~ x1 * x2").parse()
-        y, X = parser.build_design_matrices(data, return_type='dataframe')
+        y, X = parser.build_design_matrices(data, return_type="dataframe")
 
         # Should have Intercept, x1, x2, and x1:x2
-        assert 'Intercept' in X.columns
-        assert 'x1' in X.columns
-        assert 'x2' in X.columns
-        assert 'x1:x2' in X.columns
+        assert "Intercept" in X.columns
+        assert "x1" in X.columns
+        assert "x2" in X.columns
+        assert "x1:x2" in X.columns
 
         # Check interaction was computed correctly
-        expected_interaction = data['x1'] * data['x2']
-        np.testing.assert_array_almost_equal(
-            X['x1:x2'].values,
-            expected_interaction.values
-        )
+        expected_interaction = data["x1"] * data["x2"]
+        np.testing.assert_array_almost_equal(X["x1:x2"].values, expected_interaction.values)
 
     def test_build_return_types(self):
         """Test different return types."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [10, 20, 30, 40, 50],
-        })
+        data = pd.DataFrame(
+            {
+                "y": [1, 2, 3, 4, 5],
+                "x1": [10, 20, 30, 40, 50],
+            }
+        )
 
         parser = FormulaParser("y ~ x1").parse()
 
         # Test dataframe return
-        y_df, X_df = parser.build_design_matrices(data, return_type='dataframe')
+        y_df, X_df = parser.build_design_matrices(data, return_type="dataframe")
         assert isinstance(y_df, pd.Series)
         assert isinstance(X_df, pd.DataFrame)
 
         # Test array return
-        y_arr, X_arr = parser.build_design_matrices(data, return_type='array')
+        y_arr, X_arr = parser.build_design_matrices(data, return_type="array")
         assert isinstance(y_arr, np.ndarray)
         assert isinstance(X_arr, np.ndarray)
         assert y_arr.ndim == 1
@@ -203,15 +196,17 @@ class TestDesignMatrices:
 
     def test_invalid_return_type(self):
         """Test that invalid return_type raises ValueError."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3],
-            'x1': [10, 20, 30],
-        })
+        data = pd.DataFrame(
+            {
+                "y": [1, 2, 3],
+                "x1": [10, 20, 30],
+            }
+        )
 
         parser = FormulaParser("y ~ x1").parse()
 
         with pytest.raises(ValueError, match="return_type must be"):
-            parser.build_design_matrices(data, return_type='invalid')
+            parser.build_design_matrices(data, return_type="invalid")
 
 
 class TestVariableNames:
@@ -219,35 +214,29 @@ class TestVariableNames:
 
     def test_get_variable_names(self):
         """Test getting variable names from design matrix."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [10, 20, 30, 40, 50],
-            'x2': [5, 10, 15, 20, 25]
-        })
+        data = pd.DataFrame(
+            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+        )
 
         parser = FormulaParser("y ~ x1 + x2").parse()
         var_names = parser.get_variable_names(data)
 
-        assert 'Intercept' in var_names
-        assert 'x1' in var_names
-        assert 'x2' in var_names
+        assert "Intercept" in var_names
+        assert "x1" in var_names
+        assert "x2" in var_names
         assert len(var_names) == 3
 
     def test_get_variable_names_with_interaction(self):
         """Test getting variable names with interaction."""
-        data = pd.DataFrame({
-            'y': [1, 2, 3, 4, 5],
-            'x1': [1, 2, 3, 4, 5],
-            'x2': [2, 3, 4, 5, 6]
-        })
+        data = pd.DataFrame({"y": [1, 2, 3, 4, 5], "x1": [1, 2, 3, 4, 5], "x2": [2, 3, 4, 5, 6]})
 
         parser = FormulaParser("y ~ x1 * x2").parse()
         var_names = parser.get_variable_names(data)
 
-        assert 'Intercept' in var_names
-        assert 'x1' in var_names
-        assert 'x2' in var_names
-        assert 'x1:x2' in var_names
+        assert "Intercept" in var_names
+        assert "x1" in var_names
+        assert "x2" in var_names
+        assert "x1:x2" in var_names
 
 
 class TestConvenienceFunction:

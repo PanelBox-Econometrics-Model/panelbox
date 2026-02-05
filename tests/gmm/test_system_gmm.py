@@ -5,11 +5,12 @@ Unit tests for System GMM estimator
 Tests for the SystemGMM class (Blundell-Bond 1998).
 """
 
-import pytest
 import numpy as np
 import pandas as pd
-from panelbox.gmm.system_gmm import SystemGMM
+import pytest
+
 from panelbox.gmm.results import GMMResults
+from panelbox.gmm.system_gmm import SystemGMM
 
 
 def try_fit_system_gmm(model):
@@ -28,6 +29,7 @@ def try_fit_system_gmm(model):
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def balanced_panel_data():
@@ -49,15 +51,10 @@ def balanced_panel_data():
 
         for t in range(1, n_periods):
             epsilon = np.random.normal(0, 0.3)
-            y[t] = 0.8 * y[t-1] + 0.2 * x[t] + eta_i + epsilon
+            y[t] = 0.8 * y[t - 1] + 0.2 * x[t] + eta_i + epsilon
 
         for t in range(n_periods):
-            data_list.append({
-                'id': i,
-                'year': t,
-                'y': y[t],
-                'x': x[t]
-            })
+            data_list.append({"id": i, "year": t, "y": y[t], "x": x[t]})
 
     return pd.DataFrame(data_list)
 
@@ -65,18 +62,21 @@ def balanced_panel_data():
 @pytest.fixture
 def minimal_data():
     """Minimal dataset for quick tests."""
-    data = pd.DataFrame({
-        'id': [1, 1, 1, 1, 2, 2, 2, 2],
-        'year': [1, 2, 3, 4, 1, 2, 3, 4],
-        'y': [1.0, 1.5, 2.0, 2.3, 0.5, 1.0, 1.5, 1.8],
-        'x': [0.5, 0.8, 1.2, 1.5, 0.3, 0.6, 0.9, 1.1]
-    })
+    data = pd.DataFrame(
+        {
+            "id": [1, 1, 1, 1, 2, 2, 2, 2],
+            "year": [1, 2, 3, 4, 1, 2, 3, 4],
+            "y": [1.0, 1.5, 2.0, 2.3, 0.5, 1.0, 1.5, 1.8],
+            "x": [0.5, 0.8, 1.2, 1.5, 0.3, 0.6, 0.9, 1.1],
+        }
+    )
     return data
 
 
 # ============================================================================
 # Test Initialization
 # ============================================================================
+
 
 class TestSystemGMMInitialization:
     """Test SystemGMM initialization."""
@@ -85,18 +85,18 @@ class TestSystemGMMInitialization:
         """Test basic initialization."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x']
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
         )
 
-        assert model.dep_var == 'y'
+        assert model.dep_var == "y"
         assert model.lags == [1]
-        assert model.id_var == 'id'
-        assert model.time_var == 'year'
-        assert model.exog_vars == ['x']
+        assert model.id_var == "id"
+        assert model.time_var == "year"
+        assert model.exog_vars == ["x"]
         assert model.collapse is False
         assert model.two_step is True
         assert model.robust is True
@@ -105,27 +105,27 @@ class TestSystemGMMInitialization:
         """Test initialization with level instruments configuration."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
-            level_instruments={'max_lags': 1}
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
+            level_instruments={"max_lags": 1},
         )
 
         assert model.level_instruments is not None
-        assert model.level_instruments['max_lags'] == 1
+        assert model.level_instruments["max_lags"] == 1
 
     def test_init_with_collapse(self, balanced_panel_data):
         """Test initialization with collapse option."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
-            collapse=True
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
+            collapse=True,
         )
 
         assert model.collapse is True
@@ -136,11 +136,11 @@ class TestSystemGMMInitialization:
 
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x']
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
         )
 
         assert isinstance(model, DifferenceGMM)
@@ -150,6 +150,7 @@ class TestSystemGMMInitialization:
 # Test Input Validation
 # ============================================================================
 
+
 class TestSystemGMMValidation:
     """Test input validation (inherited from DifferenceGMM)."""
 
@@ -158,10 +159,10 @@ class TestSystemGMMValidation:
         with pytest.raises(ValueError, match="Dependent variable .* not found"):
             SystemGMM(
                 data=balanced_panel_data,
-                dep_var='nonexistent',
+                dep_var="nonexistent",
                 lags=1,
-                id_var='id',
-                time_var='year'
+                id_var="id",
+                time_var="year",
             )
 
     def test_invalid_gmm_type(self, balanced_panel_data):
@@ -169,11 +170,11 @@ class TestSystemGMMValidation:
         with pytest.raises(ValueError, match="gmm_type must be one of"):
             SystemGMM(
                 data=balanced_panel_data,
-                dep_var='y',
+                dep_var="y",
                 lags=1,
-                id_var='id',
-                time_var='year',
-                gmm_type='invalid'
+                id_var="id",
+                time_var="year",
+                gmm_type="invalid",
             )
 
     def test_warning_no_collapse(self, balanced_panel_data):
@@ -181,18 +182,19 @@ class TestSystemGMMValidation:
         with pytest.warns(UserWarning, match="collapse=True"):
             SystemGMM(
                 data=balanced_panel_data,
-                dep_var='y',
+                dep_var="y",
                 lags=1,
-                id_var='id',
-                time_var='year',
-                exog_vars=['x'],
-                collapse=False
+                id_var="id",
+                time_var="year",
+                exog_vars=["x"],
+                collapse=False,
             )
 
 
 # ============================================================================
 # Test Estimation
 # ============================================================================
+
 
 class TestSystemGMMEstimation:
     """Test System GMM estimation."""
@@ -201,13 +203,13 @@ class TestSystemGMMEstimation:
         """Test basic System GMM estimation."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -218,14 +220,14 @@ class TestSystemGMMEstimation:
         """Test one-step System GMM."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
-            gmm_type='one_step',
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
+            gmm_type="one_step",
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -235,15 +237,15 @@ class TestSystemGMMEstimation:
         """Test two-step System GMM with Windmeijer correction."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
-            gmm_type='two_step',
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
+            gmm_type="two_step",
             robust=True,
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -261,26 +263,26 @@ class TestSystemGMMEstimation:
         # Difference GMM
         diff_model = DifferenceGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         diff_results = diff_model.fit()
 
         # System GMM
         sys_model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         sys_results = try_fit_system_gmm(sys_model)
 
@@ -294,13 +296,13 @@ class TestSystemGMMEstimation:
         """Test System GMM with multiple lags."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=[1, 2],
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -314,34 +316,34 @@ class TestSystemGMMEstimation:
         # True model: y_t = 0.8 * y_{t-1} + 0.2 * x_t + ...
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
 
         # Both coefficients should be positive
         # Variable names use Stata convention: L1.y for first lag
-        assert results.params['L1.y'] > 0
-        assert results.params['x'] > 0
+        assert results.params["L1.y"] > 0
+        assert results.params["x"] > 0
 
     def test_fit_high_persistence(self, balanced_panel_data):
         """Test that System GMM captures high persistence correctly."""
         # True AR coefficient is 0.8 (high persistence)
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -349,12 +351,13 @@ class TestSystemGMMEstimation:
         # Estimated coefficient should be reasonably close to 0.8
         # Allow wide range due to finite sample variation
         # Variable name uses Stata convention: L1.y for first lag
-        assert 0.5 < results.params['L1.y'] < 1.0
+        assert 0.5 < results.params["L1.y"] < 1.0
 
 
 # ============================================================================
 # Test Results and Diagnostics
 # ============================================================================
+
 
 class TestSystemGMMResults:
     """Test System GMM results."""
@@ -363,70 +366,70 @@ class TestSystemGMMResults:
         """Test that results have all expected attributes."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
 
         # Check basic attributes
-        assert hasattr(results, 'params')
-        assert hasattr(results, 'std_errors')
-        assert hasattr(results, 'nobs')
-        assert hasattr(results, 'n_instruments')
-        assert hasattr(results, 'n_groups')
+        assert hasattr(results, "params")
+        assert hasattr(results, "std_errors")
+        assert hasattr(results, "nobs")
+        assert hasattr(results, "n_instruments")
+        assert hasattr(results, "n_groups")
 
         # Check specification tests
-        assert hasattr(results, 'hansen_j')
-        assert hasattr(results, 'sargan')  # Note: attribute is 'sargan' not 'sargan_test'
-        assert hasattr(results, 'ar1_test')
-        assert hasattr(results, 'ar2_test')
+        assert hasattr(results, "hansen_j")
+        assert hasattr(results, "sargan")  # Note: attribute is 'sargan' not 'sargan_test'
+        assert hasattr(results, "ar1_test")
+        assert hasattr(results, "ar2_test")
 
     def test_results_summary(self, balanced_panel_data):
         """Test that summary() method works."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
         summary = results.summary()
 
         assert isinstance(summary, str)
-        assert 'Number of observations' in summary
-        assert 'Number of instruments' in summary
-        assert 'Hansen J-test' in summary
+        assert "Number of observations" in summary
+        assert "Number of instruments" in summary
+        assert "Hansen J-test" in summary
 
     def test_specification_tests(self, balanced_panel_data):
         """Test that specification tests are computed."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
 
         # Hansen J test
         assert results.hansen_j is not None
-        assert hasattr(results.hansen_j, 'statistic')
-        assert hasattr(results.hansen_j, 'pvalue')
+        assert hasattr(results.hansen_j, "statistic")
+        assert hasattr(results.hansen_j, "pvalue")
 
         # AR tests
         assert results.ar1_test is not None
@@ -436,13 +439,13 @@ class TestSystemGMMResults:
         """Test instrument ratio with collapsed instruments."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -459,6 +462,7 @@ class TestSystemGMMResults:
 # Test Comparison with Difference GMM
 # ============================================================================
 
+
 class TestSystemVsDifferenceGMM:
     """Test comparisons between System and Difference GMM."""
 
@@ -469,26 +473,26 @@ class TestSystemVsDifferenceGMM:
         # Difference GMM
         diff_model = DifferenceGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         diff_results = diff_model.fit()
 
         # System GMM
         sys_model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         sys_results = try_fit_system_gmm(sys_model)
 
@@ -503,26 +507,26 @@ class TestSystemVsDifferenceGMM:
         # Difference GMM
         diff_model = DifferenceGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         diff_results = diff_model.fit()
 
         # System GMM
         sys_model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
         sys_results = try_fit_system_gmm(sys_model)
 
@@ -539,6 +543,7 @@ class TestSystemVsDifferenceGMM:
 # Test Edge Cases
 # ============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -546,13 +551,13 @@ class TestEdgeCases:
         """Test with small panel."""
         model = SystemGMM(
             data=minimal_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         # Should complete without error
@@ -563,13 +568,13 @@ class TestEdgeCases:
         """Test with only lagged dependent variable."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
+            id_var="id",
+            time_var="year",
             exog_vars=[],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         results = try_fit_system_gmm(model)
@@ -581,13 +586,13 @@ class TestEdgeCases:
         """Test System GMM with time dummies."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             time_dummies=True,
-            collapse=True
+            collapse=True,
         )
 
         results = try_fit_system_gmm(model)
@@ -601,6 +606,7 @@ class TestEdgeCases:
 # Test Level Instruments
 # ============================================================================
 
+
 class TestLevelInstruments:
     """Test level instruments configuration."""
 
@@ -608,13 +614,13 @@ class TestLevelInstruments:
         """Test that default level instruments are used."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
-            time_dummies=False
+            time_dummies=False,
         )
 
         # Should have default level_instruments
@@ -624,17 +630,17 @@ class TestLevelInstruments:
         """Test custom level instruments configuration."""
         model = SystemGMM(
             data=balanced_panel_data,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='id',
-            time_var='year',
-            exog_vars=['x'],
+            id_var="id",
+            time_var="year",
+            exog_vars=["x"],
             collapse=True,
             time_dummies=False,
-            level_instruments={'max_lags': 2}
+            level_instruments={"max_lags": 2},
         )
 
         results = try_fit_system_gmm(model)
 
         assert isinstance(results, GMMResults)
-        assert model.level_instruments['max_lags'] == 2
+        assert model.level_instruments["max_lags"] == 2

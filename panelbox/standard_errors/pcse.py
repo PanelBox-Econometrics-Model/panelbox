@@ -8,10 +8,11 @@ the errors and use FGLS to obtain efficient standard errors.
 PCSE requires T > N (more time periods than entities).
 """
 
+from dataclasses import dataclass
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from .utils import compute_bread
 
@@ -38,6 +39,7 @@ class PCSEResult:
     n_periods : int
         Number of time periods
     """
+
     cov_matrix: np.ndarray
     std_errors: np.ndarray
     sigma_matrix: np.ndarray
@@ -108,11 +110,7 @@ class PanelCorrectedStandardErrors:
     """
 
     def __init__(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        entity_ids: np.ndarray,
-        time_ids: np.ndarray
+        self, X: np.ndarray, resid: np.ndarray, entity_ids: np.ndarray, time_ids: np.ndarray
     ):
         self.X = X
         self.resid = resid
@@ -129,8 +127,7 @@ class PanelCorrectedStandardErrors:
             )
         if len(self.time_ids) != self.n_obs:
             raise ValueError(
-                f"time_ids dimension mismatch: expected {self.n_obs}, "
-                f"got {len(self.time_ids)}"
+                f"time_ids dimension mismatch: expected {self.n_obs}, " f"got {len(self.time_ids)}"
             )
 
         # Get unique entities and periods
@@ -142,11 +139,12 @@ class PanelCorrectedStandardErrors:
         # Check T > N requirement
         if self.n_periods <= self.n_entities:
             import warnings
+
             warnings.warn(
                 f"PCSE requires T > N. Got T={self.n_periods}, N={self.n_entities}. "
                 f"The estimated Σ matrix may be singular or poorly estimated. "
                 f"Consider using cluster-robust or Driscoll-Kraay SEs instead.",
-                UserWarning
+                UserWarning,
             )
 
     def _reshape_panel(self) -> np.ndarray:
@@ -228,10 +226,10 @@ class PanelCorrectedStandardErrors:
             sigma_inv = np.linalg.inv(sigma)
         except np.linalg.LinAlgError:
             import warnings
+
             warnings.warn(
-                "Σ matrix is singular. Using pseudoinverse. "
-                "Results may be unreliable.",
-                UserWarning
+                "Σ matrix is singular. Using pseudoinverse. " "Results may be unreliable.",
+                UserWarning,
             )
             sigma_inv = np.linalg.pinv(sigma)
 
@@ -269,10 +267,8 @@ class PanelCorrectedStandardErrors:
             cov_matrix = np.linalg.inv(XtOmegaX)
         except np.linalg.LinAlgError:
             import warnings
-            warnings.warn(
-                "X'ΩX matrix is singular. Using pseudoinverse.",
-                UserWarning
-            )
+
+            warnings.warn("X'ΩX matrix is singular. Using pseudoinverse.", UserWarning)
             cov_matrix = np.linalg.pinv(XtOmegaX)
 
         std_errors = np.sqrt(np.diag(cov_matrix))
@@ -284,7 +280,7 @@ class PanelCorrectedStandardErrors:
             n_obs=self.n_obs,
             n_params=self.n_params,
             n_entities=self.n_entities,
-            n_periods=self.n_periods
+            n_periods=self.n_periods,
         )
 
     def diagnostic_summary(self) -> str:
@@ -324,10 +320,7 @@ class PanelCorrectedStandardErrors:
 
 
 def pcse(
-    X: np.ndarray,
-    resid: np.ndarray,
-    entity_ids: np.ndarray,
-    time_ids: np.ndarray
+    X: np.ndarray, resid: np.ndarray, entity_ids: np.ndarray, time_ids: np.ndarray
 ) -> PCSEResult:
     """
     Convenience function for Panel-Corrected Standard Errors.

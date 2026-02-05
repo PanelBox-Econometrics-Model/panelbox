@@ -35,27 +35,23 @@ Custom report generation:
 ... )
 """
 
-from .report_manager import ReportManager
-from .template_manager import TemplateManager
 from .asset_manager import AssetManager
-from .css_manager import CSSManager, CSSLayer
-from .validation_transformer import ValidationTransformer
+from .css_manager import CSSLayer, CSSManager
 
 # Exporters
-from .exporters import (
-    HTMLExporter,
-    LaTeXExporter,
-    MarkdownExporter
-)
+from .exporters import HTMLExporter, LaTeXExporter, MarkdownExporter
+from .report_manager import ReportManager
+from .template_manager import TemplateManager
+from .validation_transformer import ValidationTransformer
 
 __all__ = [
-    'ReportManager',
-    'TemplateManager',
-    'AssetManager',
-    'CSSManager',
-    'CSSLayer',
-    'ValidationTransformer',
-    'HTMLExporter',
-    'LaTeXExporter',
-    'MarkdownExporter',
+    "ReportManager",
+    "TemplateManager",
+    "AssetManager",
+    "CSSManager",
+    "CSSLayer",
+    "ValidationTransformer",
+    "HTMLExporter",
+    "LaTeXExporter",
+    "MarkdownExporter",
 ]

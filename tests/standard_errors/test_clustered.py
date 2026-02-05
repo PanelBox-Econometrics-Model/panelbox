@@ -9,22 +9,22 @@ Tests cover:
 - Cameron-Gelbach-Miller (2011) formula
 """
 
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose, assert_array_less
 
 from panelbox.standard_errors import (
-    ClusteredStandardErrors,
     ClusteredCovarianceResult,
+    ClusteredStandardErrors,
     cluster_by_entity,
     cluster_by_time,
-    twoway_cluster
+    twoway_cluster,
 )
 from panelbox.standard_errors.utils import (
+    compute_bread,
     compute_clustered_meat,
     compute_twoway_clustered_meat,
-    compute_bread,
-    sandwich_covariance
+    sandwich_covariance,
 )
 
 
@@ -146,9 +146,7 @@ class TestTwoWayClusteredMeat:
         meat2 = compute_clustered_meat(X, resid, time_ids, df_correction=False)
 
         # Intersection clusters
-        clusters_12 = np.array([
-            f"{e}_{t}" for e, t in zip(entity_ids, time_ids)
-        ])
+        clusters_12 = np.array([f"{e}_{t}" for e, t in zip(entity_ids, time_ids)])
         meat12 = compute_clustered_meat(X, resid, clusters_12, df_correction=False)
 
         expected = meat1 + meat2 - meat12
@@ -204,8 +202,8 @@ class TestClusteredStandardErrors:
         clustered = ClusteredStandardErrors(X, resid, (entity_ids, time_ids))
 
         assert clustered.cluster_dims == 2
-        assert hasattr(clustered, 'clusters1')
-        assert hasattr(clustered, 'clusters2')
+        assert hasattr(clustered, "clusters1")
+        assert hasattr(clustered, "clusters2")
 
     def test_invalid_cluster_dims(self, setup_panel):
         """Test that invalid cluster dimensions raise error."""
@@ -455,9 +453,7 @@ class TestClusterPatterns:
         X = np.random.randn(n, 3)
         resid = np.random.randn(n)
 
-        clusters = np.concatenate([
-            np.full(size, i) for i, size in enumerate(cluster_sizes)
-        ])
+        clusters = np.concatenate([np.full(size, i) for i, size in enumerate(cluster_sizes)])
 
         result = cluster_by_entity(X, resid, clusters)
         assert result.n_clusters == len(cluster_sizes)
@@ -470,10 +466,9 @@ class TestClusterPatterns:
         resid = np.random.randn(n)
 
         # Half singletons, half in one cluster
-        clusters = np.concatenate([
-            np.arange(10),  # 10 singletons
-            np.full(10, 10)  # 1 cluster of size 10
-        ])
+        clusters = np.concatenate(
+            [np.arange(10), np.full(10, 10)]  # 10 singletons  # 1 cluster of size 10
+        )
 
         result = cluster_by_entity(X, resid, clusters)
         assert result.n_clusters == 11
@@ -486,7 +481,7 @@ class TestClusterPatterns:
         resid = np.random.randn(n)
 
         # String cluster IDs
-        clusters = np.array(['A', 'B', 'C'] * 10)
+        clusters = np.array(["A", "B", "C"] * 10)
 
         result = cluster_by_entity(X, resid, clusters)
         assert result.n_clusters == 3
@@ -511,7 +506,8 @@ class TestComparisonWithRobust:
 
         # Clustered SEs
         from panelbox.standard_errors import robust_covariance
-        result_robust = robust_covariance(X, resid, method='HC1')
+
+        result_robust = robust_covariance(X, resid, method="HC1")
         result_clustered = cluster_by_entity(X, resid, entity_ids)
 
         # Clustered SEs should be larger (accounting for within-cluster correlation)
@@ -595,5 +591,5 @@ class TestNumericalStability:
         assert np.all(np.isfinite(result.std_errors))
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

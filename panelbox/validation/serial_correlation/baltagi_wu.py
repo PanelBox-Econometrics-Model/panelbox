@@ -59,7 +59,7 @@ class BaltagiWuTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: 'PanelResults'):
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Baltagi-Wu test.
 
@@ -103,16 +103,16 @@ class BaltagiWuTest(ValidationTest):
         resid_df = self._prepare_residual_data()
 
         # Sort by entity and time
-        resid_df = resid_df.sort_values(['entity', 'time'])
+        resid_df = resid_df.sort_values(["entity", "time"])
 
         # Compute lagged residuals within each entity
-        resid_df['resid_lag'] = resid_df.groupby('entity')['resid'].shift(1)
+        resid_df["resid_lag"] = resid_df.groupby("entity")["resid"].shift(1)
 
         # Compute differences
-        resid_df['resid_diff'] = resid_df['resid'] - resid_df['resid_lag']
+        resid_df["resid_diff"] = resid_df["resid"] - resid_df["resid_lag"]
 
         # Drop missing values (first observation of each entity)
-        resid_df_clean = resid_df.dropna(subset=['resid_diff', 'resid_lag'])
+        resid_df_clean = resid_df.dropna(subset=["resid_diff", "resid_lag"])
 
         if len(resid_df_clean) == 0:
             raise ValueError(
@@ -122,8 +122,8 @@ class BaltagiWuTest(ValidationTest):
 
         # Compute LBI statistic
         # LBI = sum(diff²) / sum(resid²)
-        numerator = np.sum(resid_df_clean['resid_diff'] ** 2)
-        denominator = np.sum(resid_df['resid'] ** 2)  # Use all residuals
+        numerator = np.sum(resid_df_clean["resid_diff"] ** 2)
+        denominator = np.sum(resid_df["resid"] ** 2)  # Use all residuals
 
         if denominator == 0:
             raise ValueError("Sum of squared residuals is zero (perfect fit)")
@@ -133,13 +133,13 @@ class BaltagiWuTest(ValidationTest):
         # Compute approximate variance of LBI
         # Under H0: E[LBI] ≈ 2
         # Var(LBI) ≈ 4 / (N*T_bar) where T_bar is average time periods
-        n_entities = resid_df['entity'].nunique()
+        n_entities = resid_df["entity"].nunique()
         n_obs_total = len(resid_df)
         t_bar = n_obs_total / n_entities
 
         # More refined variance estimate
         # Account for unbalanced structure
-        entity_counts = resid_df.groupby('entity').size()
+        entity_counts = resid_df.groupby("entity").size()
         t_i = entity_counts.values
 
         # Variance formula for unbalanced panels
@@ -164,22 +164,22 @@ class BaltagiWuTest(ValidationTest):
         rho_estimate = 1 - lbi_stat / 2
 
         metadata = {
-            'lbi_statistic': float(lbi_stat),
-            'z_statistic': float(z_stat),
-            'rho_estimate': float(rho_estimate),
-            'n_entities': int(n_entities),
-            'n_obs_total': int(n_obs_total),
-            'n_obs_used': len(resid_df_clean),
-            'avg_time_periods': float(t_bar),
-            'min_time_periods': int(t_i.min()),
-            'max_time_periods': int(t_i.max()),
-            'variance_lbi': float(var_lbi),
-            'se_lbi': float(se_lbi),
-            'interpretation': (
-                'LBI < 2: positive autocorrelation, '
-                'LBI ≈ 2: no autocorrelation, '
-                'LBI > 2: negative autocorrelation'
-            )
+            "lbi_statistic": float(lbi_stat),
+            "z_statistic": float(z_stat),
+            "rho_estimate": float(rho_estimate),
+            "n_entities": int(n_entities),
+            "n_obs_total": int(n_obs_total),
+            "n_obs_used": len(resid_df_clean),
+            "avg_time_periods": float(t_bar),
+            "min_time_periods": int(t_i.min()),
+            "max_time_periods": int(t_i.max()),
+            "variance_lbi": float(var_lbi),
+            "se_lbi": float(se_lbi),
+            "interpretation": (
+                "LBI < 2: positive autocorrelation, "
+                "LBI ≈ 2: no autocorrelation, "
+                "LBI > 2: negative autocorrelation"
+            ),
         }
 
         result = ValidationTestResult(
@@ -190,7 +190,7 @@ class BaltagiWuTest(ValidationTest):
             alternative_hypothesis="First-order serial correlation present",
             alpha=alpha,
             df=None,  # Asymptotic test, no df
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
@@ -204,14 +204,16 @@ class BaltagiWuTest(ValidationTest):
         pd.DataFrame
             DataFrame with columns: entity, time, resid
         """
-        if hasattr(self.results, 'entity_index') and hasattr(self.results, 'time_index'):
-            resid_flat = self.resid.ravel() if hasattr(self.resid, 'ravel') else self.resid
+        if hasattr(self.results, "entity_index") and hasattr(self.results, "time_index"):
+            resid_flat = self.resid.ravel() if hasattr(self.resid, "ravel") else self.resid
 
-            resid_df = pd.DataFrame({
-                'entity': self.results.entity_index,
-                'time': self.results.time_index,
-                'resid': resid_flat
-            })
+            resid_df = pd.DataFrame(
+                {
+                    "entity": self.results.entity_index,
+                    "time": self.results.time_index,
+                    "resid": resid_flat,
+                }
+            )
 
             return resid_df
         else:

@@ -9,20 +9,16 @@ Tests cover:
 - Comparison with statsmodels (when available)
 """
 
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
-from panelbox.standard_errors import (
-    RobustStandardErrors,
-    RobustCovarianceResult,
-    robust_covariance
-)
+from panelbox.standard_errors import RobustCovarianceResult, RobustStandardErrors, robust_covariance
 from panelbox.standard_errors.utils import (
-    compute_leverage,
     compute_bread,
+    compute_leverage,
     compute_meat_hc,
-    sandwich_covariance
+    sandwich_covariance,
 )
 
 
@@ -36,7 +32,7 @@ class TestLeverageComputation:
         leverage = compute_leverage(X)
 
         assert_array_less(-0.0001, leverage)  # >= 0
-        assert_array_less(leverage, 1.0001)   # <= 1
+        assert_array_less(leverage, 1.0001)  # <= 1
 
     def test_leverage_sum(self):
         """Sum of leverage values should equal number of parameters."""
@@ -56,7 +52,7 @@ class TestLeverageComputation:
 
         # Expected leverage for this case
         x_centered = x - x.mean()
-        expected = 1/5 + (x_centered**2) / np.sum(x_centered**2)
+        expected = 1 / 5 + (x_centered**2) / np.sum(x_centered**2)
 
         assert_allclose(leverage, expected, rtol=1e-10)
 
@@ -124,7 +120,7 @@ class TestMeatComputation:
         X, resid = setup_data
         k = X.shape[1]
 
-        for method in ['HC0', 'HC1', 'HC2', 'HC3']:
+        for method in ["HC0", "HC1", "HC2", "HC3"]:
             meat = compute_meat_hc(X, resid, method=method)
             assert meat.shape == (k, k)
 
@@ -132,17 +128,17 @@ class TestMeatComputation:
         """Meat should be symmetric."""
         X, resid = setup_data
 
-        for method in ['HC0', 'HC1', 'HC2', 'HC3']:
+        for method in ["HC0", "HC1", "HC2", "HC3"]:
             meat = compute_meat_hc(X, resid, method=method)
             assert_allclose(meat, meat.T, rtol=1e-10)
 
     def test_hc0_formula(self, setup_data):
         """Verify HC0: X'ΩX where Ω = diag(ε²)."""
         X, resid = setup_data
-        meat = compute_meat_hc(X, resid, method='HC0')
+        meat = compute_meat_hc(X, resid, method="HC0")
 
         # Manual computation
-        omega = np.diag(resid ** 2)
+        omega = np.diag(resid**2)
         expected = X.T @ omega @ X
 
         assert_allclose(meat, expected, rtol=1e-10)
@@ -152,8 +148,8 @@ class TestMeatComputation:
         X, resid = setup_data
         n, k = X.shape
 
-        meat_hc0 = compute_meat_hc(X, resid, method='HC0')
-        meat_hc1 = compute_meat_hc(X, resid, method='HC1')
+        meat_hc0 = compute_meat_hc(X, resid, method="HC0")
+        meat_hc1 = compute_meat_hc(X, resid, method="HC1")
 
         expected = (n / (n - k)) * meat_hc0
         assert_allclose(meat_hc1, expected, rtol=1e-10)
@@ -163,10 +159,10 @@ class TestMeatComputation:
         X, resid = setup_data
         leverage = compute_leverage(X)
 
-        meat_hc2 = compute_meat_hc(X, resid, method='HC2', leverage=leverage)
+        meat_hc2 = compute_meat_hc(X, resid, method="HC2", leverage=leverage)
 
         # Manual computation
-        weights = (resid ** 2) / (1 - leverage)
+        weights = (resid**2) / (1 - leverage)
         X_weighted = X * np.sqrt(weights)[:, np.newaxis]
         expected = X_weighted.T @ X_weighted
 
@@ -177,10 +173,10 @@ class TestMeatComputation:
         X, resid = setup_data
         leverage = compute_leverage(X)
 
-        meat_hc3 = compute_meat_hc(X, resid, method='HC3', leverage=leverage)
+        meat_hc3 = compute_meat_hc(X, resid, method="HC3", leverage=leverage)
 
         # Manual computation
-        weights = (resid ** 2) / ((1 - leverage) ** 2)
+        weights = (resid**2) / ((1 - leverage) ** 2)
         X_weighted = X * np.sqrt(weights)[:, np.newaxis]
         expected = X_weighted.T @ X_weighted
 
@@ -192,10 +188,10 @@ class TestMeatComputation:
 
         # Compute covariances
         bread = compute_bread(X)
-        cov_hc0 = sandwich_covariance(bread, compute_meat_hc(X, resid, 'HC0'))
-        cov_hc1 = sandwich_covariance(bread, compute_meat_hc(X, resid, 'HC1'))
-        cov_hc2 = sandwich_covariance(bread, compute_meat_hc(X, resid, 'HC2'))
-        cov_hc3 = sandwich_covariance(bread, compute_meat_hc(X, resid, 'HC3'))
+        cov_hc0 = sandwich_covariance(bread, compute_meat_hc(X, resid, "HC0"))
+        cov_hc1 = sandwich_covariance(bread, compute_meat_hc(X, resid, "HC1"))
+        cov_hc2 = sandwich_covariance(bread, compute_meat_hc(X, resid, "HC2"))
+        cov_hc3 = sandwich_covariance(bread, compute_meat_hc(X, resid, "HC3"))
 
         # Extract standard errors
         se_hc0 = np.sqrt(np.diag(cov_hc0))
@@ -275,7 +271,7 @@ class TestRobustStandardErrors:
         result = robust.hc0()
 
         assert isinstance(result, RobustCovarianceResult)
-        assert result.method == 'HC0'
+        assert result.method == "HC0"
         assert result.cov_matrix.shape == (5, 5)
         assert result.std_errors.shape == (5,)
         assert result.n_obs == 100
@@ -288,7 +284,7 @@ class TestRobustStandardErrors:
         robust = RobustStandardErrors(X, resid)
         result = robust.hc1()
 
-        assert result.method == 'HC1'
+        assert result.method == "HC1"
         assert result.cov_matrix.shape == (5, 5)
         assert result.std_errors.shape == (5,)
 
@@ -298,7 +294,7 @@ class TestRobustStandardErrors:
         robust = RobustStandardErrors(X, resid)
         result = robust.hc2()
 
-        assert result.method == 'HC2'
+        assert result.method == "HC2"
         assert result.leverage is not None
         assert result.leverage.shape == (100,)
 
@@ -308,7 +304,7 @@ class TestRobustStandardErrors:
         robust = RobustStandardErrors(X, resid)
         result = robust.hc3()
 
-        assert result.method == 'HC3'
+        assert result.method == "HC3"
         assert result.leverage is not None
 
     def test_compute_method(self, setup_regression):
@@ -316,7 +312,7 @@ class TestRobustStandardErrors:
         X, resid, _ = setup_regression
         robust = RobustStandardErrors(X, resid)
 
-        for method in ['HC0', 'HC1', 'HC2', 'HC3']:
+        for method in ["HC0", "HC1", "HC2", "HC3"]:
             result = robust.compute(method)
             assert result.method == method
 
@@ -325,8 +321,8 @@ class TestRobustStandardErrors:
         X, resid, _ = setup_regression
         robust = RobustStandardErrors(X, resid)
 
-        result_lower = robust.compute('hc1')
-        result_upper = robust.compute('HC1')
+        result_lower = robust.compute("hc1")
+        result_upper = robust.compute("HC1")
 
         assert_allclose(result_lower.std_errors, result_upper.std_errors)
 
@@ -336,7 +332,7 @@ class TestRobustStandardErrors:
         robust = RobustStandardErrors(X, resid)
 
         with pytest.raises(ValueError, match="Unknown HC method"):
-            robust.compute('HC4')
+            robust.compute("HC4")
 
     def test_leverage_caching(self, setup_regression):
         """Test that leverage is cached."""
@@ -373,7 +369,7 @@ class TestRobustStandardErrors:
         X, resid, _ = setup_regression
         robust = RobustStandardErrors(X, resid)
 
-        for method in ['HC0', 'HC1', 'HC2', 'HC3']:
+        for method in ["HC0", "HC1", "HC2", "HC3"]:
             result = robust.compute(method)
             assert np.all(result.std_errors > 0)
 
@@ -382,7 +378,7 @@ class TestRobustStandardErrors:
         X, resid, _ = setup_regression
         robust = RobustStandardErrors(X, resid)
 
-        for method in ['HC0', 'HC1', 'HC2', 'HC3']:
+        for method in ["HC0", "HC1", "HC2", "HC3"]:
             result = robust.compute(method)
             assert_allclose(result.cov_matrix, result.cov_matrix.T, rtol=1e-10)
 
@@ -397,10 +393,10 @@ class TestRobustCovarianceFunction:
         X = np.random.randn(n, k)
         resid = np.random.randn(n)
 
-        result = robust_covariance(X, resid, method='HC1')
+        result = robust_covariance(X, resid, method="HC1")
 
         assert isinstance(result, RobustCovarianceResult)
-        assert result.method == 'HC1'
+        assert result.method == "HC1"
         assert result.cov_matrix.shape == (k, k)
 
     def test_convenience_matches_class(self):
@@ -414,7 +410,7 @@ class TestRobustCovarianceFunction:
         result1 = robust.hc1()
 
         # Using function
-        result2 = robust_covariance(X, resid, method='HC1')
+        result2 = robust_covariance(X, resid, method="HC1")
 
         assert_allclose(result1.std_errors, result2.std_errors)
         assert_allclose(result1.cov_matrix, result2.cov_matrix)
@@ -502,5 +498,5 @@ class TestNumericalStability:
         assert np.all(result.std_errors > 0)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

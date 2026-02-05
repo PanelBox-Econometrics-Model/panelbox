@@ -9,15 +9,16 @@ researchers to compare different types of standard errors for the same model.
 import numpy as np
 import pandas as pd
 import pytest
-from panelbox.models.static.fixed_effects import FixedEffects
-from panelbox.models.static.random_effects import RandomEffects
-from panelbox.models.static.pooled_ols import PooledOLS
-from panelbox.standard_errors import StandardErrorComparison, ComparisonResult
 
+from panelbox.models.static.fixed_effects import FixedEffects
+from panelbox.models.static.pooled_ols import PooledOLS
+from panelbox.models.static.random_effects import RandomEffects
+from panelbox.standard_errors import ComparisonResult, StandardErrorComparison
 
 # ===========================
 # Fixtures
 # ===========================
+
 
 @pytest.fixture
 def panel_data():
@@ -27,13 +28,15 @@ def panel_data():
     n_periods = 8
     n = n_entities * n_periods
 
-    data = pd.DataFrame({
-        'entity': np.repeat(range(n_entities), n_periods),
-        'time': np.tile(range(n_periods), n_entities),
-        'y': np.random.randn(n),
-        'x1': np.random.randn(n),
-        'x2': np.random.randn(n)
-    })
+    data = pd.DataFrame(
+        {
+            "entity": np.repeat(range(n_entities), n_periods),
+            "time": np.tile(range(n_periods), n_entities),
+            "y": np.random.randn(n),
+            "x1": np.random.randn(n),
+            "x2": np.random.randn(n),
+        }
+    )
 
     return data
 
@@ -41,20 +44,21 @@ def panel_data():
 @pytest.fixture
 def fe_results(panel_data):
     """Fit Fixed Effects model for testing."""
-    fe = FixedEffects('y ~ x1 + x2', panel_data, 'entity', 'time')
+    fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
     return fe.fit()
 
 
 @pytest.fixture
 def pooled_results(panel_data):
     """Fit Pooled OLS model for testing."""
-    pooled = PooledOLS('y ~ x1 + x2', panel_data, 'entity', 'time')
+    pooled = PooledOLS("y ~ x1 + x2", panel_data, "entity", "time")
     return pooled.fit()
 
 
 # ===========================
 # Test Initialization
 # ===========================
+
 
 class TestInitialization:
     """Test StandardErrorComparison initialization."""
@@ -80,13 +84,14 @@ class TestInitialization:
         comparison = StandardErrorComparison(fe_results)
 
         # Should have stored the model object
-        assert hasattr(comparison, 'model')
+        assert hasattr(comparison, "model")
         assert comparison.model is not None
 
 
 # ===========================
 # Test compare_all
 # ===========================
+
 
 class TestCompareAll:
     """Test compare_all method."""
@@ -110,13 +115,13 @@ class TestCompareAll:
     def test_compare_all_custom_types(self, fe_results):
         """Test compare_all with custom SE types."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered"])
 
         # Should only have the 3 requested types
         assert len(result.se_comparison.columns) == 3
-        assert 'nonrobust' in result.se_comparison.columns
-        assert 'robust' in result.se_comparison.columns
-        assert 'clustered' in result.se_comparison.columns
+        assert "nonrobust" in result.se_comparison.columns
+        assert "robust" in result.se_comparison.columns
+        assert "clustered" in result.se_comparison.columns
 
     def test_se_comparison_shape(self, fe_results):
         """Test that SE comparison has correct shape."""
@@ -132,14 +137,14 @@ class TestCompareAll:
     def test_se_ratios_relative_to_baseline(self, fe_results):
         """Test that SE ratios are computed correctly."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered"])
 
         # If nonrobust is included, it should have ratio of 1.0
-        if 'nonrobust' in result.se_ratios.columns:
+        if "nonrobust" in result.se_ratios.columns:
             np.testing.assert_array_almost_equal(
-                result.se_ratios['nonrobust'].values,
+                result.se_ratios["nonrobust"].values,
                 np.ones(len(comparison.coef_names)),
-                decimal=10
+                decimal=10,
             )
 
         # All ratios should be positive
@@ -148,15 +153,13 @@ class TestCompareAll:
     def test_t_stats_computation(self, fe_results):
         """Test that t-statistics are computed correctly."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust"])
 
         # t-stats should be coef / se
         for se_type in result.t_stats.columns:
             expected_t = comparison.coefficients / result.se_comparison[se_type].values
             np.testing.assert_array_almost_equal(
-                result.t_stats[se_type].values,
-                expected_t,
-                decimal=10
+                result.t_stats[se_type].values, expected_t, decimal=10
             )
 
     def test_p_values_range(self, fe_results):
@@ -179,9 +182,8 @@ class TestCompareAll:
 
         # Coefficients should be within CI
         for se_type in result.ci_lower.columns:
-            within_ci = (
-                (result.ci_lower[se_type].values <= comparison.coefficients) &
-                (comparison.coefficients <= result.ci_upper[se_type].values)
+            within_ci = (result.ci_lower[se_type].values <= comparison.coefficients) & (
+                comparison.coefficients <= result.ci_upper[se_type].values
             )
             # At 95% level, most should be within CI (but not necessarily all in small sample)
             # Just check that at least some are within
@@ -193,7 +195,7 @@ class TestCompareAll:
         result = comparison.compare_all()
 
         # Check that significance contains only valid values
-        valid_values = {'', '*', '**', '***'}
+        valid_values = {"", "*", "**", "***"}
         for se_type in result.significance.columns:
             assert set(result.significance[se_type].unique()).issubset(valid_values)
 
@@ -203,27 +205,23 @@ class TestCompareAll:
         result = comparison.compare_all()
 
         # Check that summary stats has expected columns
-        assert 'mean_se' in result.summary_stats.columns
-        assert 'std_se' in result.summary_stats.columns
-        assert 'min_se' in result.summary_stats.columns
-        assert 'max_se' in result.summary_stats.columns
-        assert 'range_se' in result.summary_stats.columns
-        assert 'cv_se' in result.summary_stats.columns
+        assert "mean_se" in result.summary_stats.columns
+        assert "std_se" in result.summary_stats.columns
+        assert "min_se" in result.summary_stats.columns
+        assert "max_se" in result.summary_stats.columns
+        assert "range_se" in result.summary_stats.columns
+        assert "cv_se" in result.summary_stats.columns
 
         # Check that computations are correct
         mean_manual = result.se_comparison.mean(axis=1)
         np.testing.assert_array_almost_equal(
-            result.summary_stats['mean_se'].values,
-            mean_manual.values,
-            decimal=10
+            result.summary_stats["mean_se"].values, mean_manual.values, decimal=10
         )
 
         # Range should be max - min
         range_manual = result.se_comparison.max(axis=1) - result.se_comparison.min(axis=1)
         np.testing.assert_array_almost_equal(
-            result.summary_stats['range_se'].values,
-            range_manual.values,
-            decimal=10
+            result.summary_stats["range_se"].values, range_manual.values, decimal=10
         )
 
 
@@ -231,23 +229,24 @@ class TestCompareAll:
 # Test compare_pair
 # ===========================
 
+
 class TestComparePair:
     """Test compare_pair method."""
 
     def test_compare_pair_basic(self, fe_results):
         """Test comparing two specific SE types."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_pair('nonrobust', 'robust')
+        result = comparison.compare_pair("nonrobust", "robust")
 
         # Should only have 2 SE types
         assert len(result.se_comparison.columns) == 2
-        assert 'nonrobust' in result.se_comparison.columns
-        assert 'robust' in result.se_comparison.columns
+        assert "nonrobust" in result.se_comparison.columns
+        assert "robust" in result.se_comparison.columns
 
     def test_compare_pair_structure(self, fe_results):
         """Test that pair comparison has same structure as compare_all."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_pair('nonrobust', 'clustered')
+        result = comparison.compare_pair("nonrobust", "clustered")
 
         # Should have all the same attributes
         assert isinstance(result, ComparisonResult)
@@ -261,6 +260,7 @@ class TestComparePair:
 # Test plot_comparison (optional, if matplotlib available)
 # ===========================
 
+
 class TestPlotComparison:
     """Test plot_comparison method."""
 
@@ -273,7 +273,7 @@ class TestPlotComparison:
 
         # Should return a figure
         assert fig is not None
-        assert hasattr(fig, 'axes')
+        assert hasattr(fig, "axes")
         assert len(fig.axes) == 2  # Two subplots
 
     def test_plot_comparison_custom_result(self, fe_results):
@@ -281,7 +281,7 @@ class TestPlotComparison:
         pytest.importorskip("matplotlib")
 
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered"])
         fig = comparison.plot_comparison(result=result)
 
         assert fig is not None
@@ -297,6 +297,7 @@ class TestPlotComparison:
 # ===========================
 # Test summary
 # ===========================
+
 
 class TestSummary:
     """Test summary method."""
@@ -316,7 +317,7 @@ class TestSummary:
     def test_summary_with_result(self, fe_results, capsys):
         """Test summary with pre-computed result."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust"])
         comparison.summary(result)
 
         captured = capsys.readouterr()
@@ -335,6 +336,7 @@ class TestSummary:
 # Test Edge Cases
 # ===========================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -350,7 +352,7 @@ class TestEdgeCases:
     def test_with_pooled_ols(self, pooled_results):
         """Test comparison with Pooled OLS results."""
         comparison = StandardErrorComparison(pooled_results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered"])
 
         assert result is not None
         assert len(result.se_comparison.columns) == 3
@@ -358,17 +360,15 @@ class TestEdgeCases:
     def test_compare_all_with_lag_parameters(self, fe_results):
         """Test compare_all with lag parameters for HAC estimators."""
         comparison = StandardErrorComparison(fe_results)
-        result = comparison.compare_all(
-            se_types=['nonrobust', 'driscoll_kraay'],
-            max_lags=2
-        )
+        result = comparison.compare_all(se_types=["nonrobust", "driscoll_kraay"], max_lags=2)
 
-        assert 'driscoll_kraay' in result.se_comparison.columns
+        assert "driscoll_kraay" in result.se_comparison.columns
 
 
 # ===========================
 # Test Integration
 # ===========================
+
 
 class TestIntegration:
     """Test integration with different model types."""
@@ -376,12 +376,12 @@ class TestIntegration:
     def test_with_fixed_effects_multiple_se(self, panel_data):
         """Test complete workflow with Fixed Effects."""
         # Fit model
-        fe = FixedEffects('y ~ x1 + x2', panel_data, 'entity', 'time')
+        fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
         results = fe.fit()
 
         # Compare SEs
         comparison = StandardErrorComparison(results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'hc3', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "hc3", "clustered"])
 
         # Verify results
         assert result.se_comparison.shape == (2, 4)
@@ -390,12 +390,12 @@ class TestIntegration:
     def test_with_pooled_ols_multiple_se(self, panel_data):
         """Test complete workflow with Pooled OLS."""
         # Fit model
-        pooled = PooledOLS('y ~ x1 + x2', panel_data, 'entity', 'time')
+        pooled = PooledOLS("y ~ x1 + x2", panel_data, "entity", "time")
         results = pooled.fit()
 
         # Compare SEs
         comparison = StandardErrorComparison(results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered', 'twoway'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered", "twoway"])
 
         # Verify results
         assert result.se_comparison.shape == (2, 4)
@@ -404,11 +404,11 @@ class TestIntegration:
     def test_inference_consistency_check(self, panel_data):
         """Test that inference consistency is detected."""
         # Create dataset where we know there will be inconsistency
-        fe = FixedEffects('y ~ x1 + x2', panel_data, 'entity', 'time')
+        fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
         results = fe.fit()
 
         comparison = StandardErrorComparison(results)
-        result = comparison.compare_all(se_types=['nonrobust', 'robust', 'clustered'])
+        result = comparison.compare_all(se_types=["nonrobust", "robust", "clustered"])
 
         # Check that we can identify which coefficients have consistent inference
         sig_matrix = result.p_values < 0.05
@@ -422,5 +422,5 @@ class TestIntegration:
 # Run Tests
 # ===========================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

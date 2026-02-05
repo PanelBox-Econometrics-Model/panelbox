@@ -6,24 +6,21 @@ entity fixed effects through first-differencing.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
-from panelbox.utils.matrix_ops import (
-    compute_ols,
-    compute_vcov_nonrobust,
-    compute_panel_rsquared
-)
 from panelbox.standard_errors import (
-    robust_covariance,
     cluster_by_entity,
-    twoway_cluster,
     driscoll_kraay,
     newey_west,
-    pcse
+    pcse,
+    robust_covariance,
+    twoway_cluster,
 )
+from panelbox.utils.matrix_ops import compute_ols, compute_panel_rsquared, compute_vcov_nonrobust
 
 
 class FirstDifferenceEstimator(PanelModel):
@@ -133,7 +130,7 @@ class FirstDifferenceEstimator(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None
+        weights: Optional[np.ndarray] = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
@@ -141,11 +138,7 @@ class FirstDifferenceEstimator(PanelModel):
         self.n_obs_original = len(data)
         self.n_obs_differenced: Optional[int] = None
 
-    def fit(
-        self,
-        cov_type: str = 'nonrobust',
-        **cov_kwds
-    ) -> PanelResults:
+    def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
         Fit the First Difference estimator.
 
@@ -196,8 +189,7 @@ class FirstDifferenceEstimator(PanelModel):
         """
         # Build design matrices from original data
         y_orig, X_orig = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
+            self.data.data, return_type="array"
         )
 
         # Get variable names
@@ -205,8 +197,8 @@ class FirstDifferenceEstimator(PanelModel):
 
         # Remove intercept from variable names (differencing eliminates it)
         # First differences remove constant terms
-        if 'Intercept' in var_names:
-            var_names = [v for v in var_names if v != 'Intercept']
+        if "Intercept" in var_names:
+            var_names = [v for v in var_names if v != "Intercept"]
             # Remove intercept column from X
             X_orig = X_orig[:, 1:]
 
@@ -241,8 +233,7 @@ class FirstDifferenceEstimator(PanelModel):
         # Ensure df_resid is positive
         if df_resid <= 0:
             raise ValueError(
-                f"Insufficient degrees of freedom: df_resid = {df_resid}. "
-                f"n={n}, k={k}"
+                f"Insufficient degrees of freedom: df_resid = {df_resid}. " f"n={n}, k={k}"
             )
 
         # Compute fitted values and residuals in original scale (levels)
@@ -256,40 +247,44 @@ class FirstDifferenceEstimator(PanelModel):
         # Compute covariance matrix (on differenced data)
         cov_type_lower = cov_type.lower()
 
-        if cov_type_lower == 'nonrobust':
+        if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X_diff, resid_diff, df_resid)
 
-        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # Map 'robust' to 'hc1'
-            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             result = robust_covariance(X_diff, resid_diff, method=method)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'clustered':
+        elif cov_type_lower == "clustered":
             # Cluster by entity (recommended for FD)
             result = cluster_by_entity(X_diff, resid_diff, entities_diff, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'twoway':
+        elif cov_type_lower == "twoway":
             # Two-way clustering: entity and time
-            result = twoway_cluster(X_diff, resid_diff, entities_diff, times_diff, df_correction=True)
+            result = twoway_cluster(
+                X_diff, resid_diff, entities_diff, times_diff, df_correction=True
+            )
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'driscoll_kraay':
+        elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for serial correlation (recommended for FD)
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
-            result = driscoll_kraay(X_diff, resid_diff, times_diff, max_lags=max_lags, kernel=kernel)
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
+            result = driscoll_kraay(
+                X_diff, resid_diff, times_diff, max_lags=max_lags, kernel=kernel
+            )
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'newey_west':
+        elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X_diff, resid_diff, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'pcse':
+        elif cov_type_lower == "pcse":
             # Panel-Corrected Standard Errors
             result = pcse(X_diff, resid_diff, entities_diff, times_diff)
             vcov = result.cov_matrix
@@ -306,7 +301,7 @@ class FirstDifferenceEstimator(PanelModel):
         # Compute R-squared measures on differenced data
         # For FD, R² measures fit of differenced model
         tss_diff = np.sum((y_diff - y_diff.mean()) ** 2)
-        ess_diff = np.sum(resid_diff ** 2)
+        ess_diff = np.sum(resid_diff**2)
         rsquared = 1 - ess_diff / tss_diff if tss_diff > 0 else 0.0
 
         # Adjusted R-squared
@@ -325,34 +320,34 @@ class FirstDifferenceEstimator(PanelModel):
 
         # Model information
         model_info = {
-            'model_type': 'First Difference',
-            'formula': self.formula,
-            'cov_type': cov_type,
-            'cov_kwds': cov_kwds,
-            'entity_effects': True,  # FD eliminates entity FE
-            'time_effects': False,
+            "model_type": "First Difference",
+            "formula": self.formula,
+            "cov_type": cov_type,
+            "cov_kwds": cov_kwds,
+            "entity_effects": True,  # FD eliminates entity FE
+            "time_effects": False,
         }
 
         # Data information
         data_info = {
-            'nobs': n,  # Number of differenced observations
-            'n_entities': self.data.n_entities,
-            'n_periods': self.data.n_periods,
-            'n_obs_original': self.n_obs_original,
-            'n_obs_dropped': self.n_obs_original - n,
-            'df_model': df_model,
-            'df_resid': df_resid,
-            'entity_index': entities_diff,
-            'time_index': times_diff,
+            "nobs": n,  # Number of differenced observations
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "n_obs_original": self.n_obs_original,
+            "n_obs_dropped": self.n_obs_original - n,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "entity_index": entities_diff,
+            "time_index": times_diff,
         }
 
         # R-squared dictionary
         rsquared_dict = {
-            'rsquared': rsquared,  # R² of differenced model
-            'rsquared_adj': rsquared_adj,
-            'rsquared_within': rsquared_within,
-            'rsquared_between': rsquared_between,
-            'rsquared_overall': rsquared_overall
+            "rsquared": rsquared,  # R² of differenced model
+            "rsquared_adj": rsquared_adj,
+            "rsquared_within": rsquared_within,
+            "rsquared_between": rsquared_between,
+            "rsquared_overall": rsquared_overall,
         }
 
         # Create results object
@@ -365,7 +360,7 @@ class FirstDifferenceEstimator(PanelModel):
             model_info=model_info,
             data_info=data_info,
             rsquared_dict=rsquared_dict,
-            model=self
+            model=self,
         )
 
         # Store results and update state
@@ -375,11 +370,7 @@ class FirstDifferenceEstimator(PanelModel):
         return results
 
     def _first_difference(
-        self,
-        y: np.ndarray,
-        X: np.ndarray,
-        entities: np.ndarray,
-        times: np.ndarray
+        self, y: np.ndarray, X: np.ndarray, entities: np.ndarray, times: np.ndarray
     ) -> tuple:
         """
         Apply first difference transformation.
@@ -473,10 +464,7 @@ class FirstDifferenceEstimator(PanelModel):
             Estimated coefficients
         """
         # Build design matrices
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         # Remove intercept
         if self.formula_parser.has_intercept:

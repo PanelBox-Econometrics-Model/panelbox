@@ -9,6 +9,7 @@ This example demonstrates the validation testing system:
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 # Set random seed
@@ -30,18 +31,20 @@ n_years = 10
 n_obs = n_firms * n_years
 
 # Create panel structure
-data = pd.DataFrame({
-    'firm': np.repeat(range(1, n_firms + 1), n_years),
-    'year': np.tile(range(2010, 2010 + n_years), n_firms),
-})
+data = pd.DataFrame(
+    {
+        "firm": np.repeat(range(1, n_firms + 1), n_years),
+        "year": np.tile(range(2010, 2010 + n_years), n_firms),
+    }
+)
 
 # Add firm-specific fixed effects
 firm_effect = {i: np.random.normal(0, 5) for i in range(1, n_firms + 1)}
-data['firm_effect'] = data['firm'].map(firm_effect)
+data["firm_effect"] = data["firm"].map(firm_effect)
 
 # Generate regressors
-data['capital'] = np.random.uniform(100, 1000, n_obs)
-data['labor'] = np.random.uniform(50, 500, n_obs)
+data["capital"] = np.random.uniform(100, 1000, n_obs)
+data["labor"] = np.random.uniform(50, 500, n_obs)
 
 # Generate errors with serial correlation (AR(1) structure)
 # This will be detected by Wooldridge test
@@ -53,20 +56,14 @@ for i in range(n_firms):
     firm_errors = np.zeros(n_years)
     firm_errors[0] = np.random.normal(0, 10)
     for t in range(1, n_years):
-        firm_errors[t] = rho * firm_errors[t-1] + np.random.normal(0, 10)
+        firm_errors[t] = rho * firm_errors[t - 1] + np.random.normal(0, 10)
     errors[start_idx:end_idx] = firm_errors
 
 # Generate dependent variable
-data['output'] = (
-    10 +
-    data['firm_effect'] +
-    0.5 * data['capital'] +
-    0.3 * data['labor'] +
-    errors
-)
+data["output"] = 10 + data["firm_effect"] + 0.5 * data["capital"] + 0.3 * data["labor"] + errors
 
 # Drop the true firm_effect
-data = data.drop('firm_effect', axis=1)
+data = data.drop("firm_effect", axis=1)
 
 print(f"Panel: {n_firms} firms, {n_years} years")
 print(f"Introduced AR(1) serial correlation (rho={rho})")
@@ -79,7 +76,7 @@ print("2. Estimating Fixed Effects model...")
 print("-" * 80)
 
 fe = pb.FixedEffects("output ~ capital + labor", data, "firm", "year")
-fe_results = fe.fit(cov_type='clustered')
+fe_results = fe.fit(cov_type="clustered")
 
 print(fe_results.summary())
 print()
@@ -92,7 +89,7 @@ print("-" * 80)
 print()
 
 # Run all available tests
-validation = fe_results.validate(tests='default', alpha=0.05, verbose=True)
+validation = fe_results.validate(tests="default", alpha=0.05, verbose=True)
 
 print()
 print("=" * 80)
@@ -117,19 +114,19 @@ if failed_tests:
         print(f"  - {test_name}")
     print()
     print("Recommendations:")
-    
-    if any('serial' in t for t in failed_tests):
+
+    if any("serial" in t for t in failed_tests):
         print("  • Serial correlation detected:")
         print("    - Use clustered standard errors (already using)")
         print("    - Or use HAC standard errors")
         print("    - Consider dynamic panel models (Arellano-Bond)")
-    
-    if any('het' in t for t in failed_tests):
+
+    if any("het" in t for t in failed_tests):
         print("  • Heteroskedasticity detected:")
         print("    - Use robust standard errors")
         print("    - Or use WLS (weighted least squares)")
-    
-    if any('cd' in t for t in failed_tests):
+
+    if any("cd" in t for t in failed_tests):
         print("  • Cross-sectional dependence detected:")
         print("    - Use Driscoll-Kraay standard errors")
         print("    - Or use spatial/factor models")
@@ -147,31 +144,37 @@ print("-" * 80)
 print()
 
 # Wooldridge test
-if 'Wooldridge' in validation.serial_tests:
-    wooldridge = validation.serial_tests['Wooldridge']
+if "Wooldridge" in validation.serial_tests:
+    wooldridge = validation.serial_tests["Wooldridge"]
     print(f"Wooldridge AR Test:")
     print(f"  Statistic: {wooldridge.statistic:.4f}")
     print(f"  P-value:   {wooldridge.pvalue:.4f}")
-    print(f"  Result:    {'REJECT H0 - Serial correlation detected' if wooldridge.reject_null else 'PASS - No serial correlation'}")
+    print(
+        f"  Result:    {'REJECT H0 - Serial correlation detected' if wooldridge.reject_null else 'PASS - No serial correlation'}"
+    )
     print()
 
 # Modified Wald test
-if 'Modified Wald' in validation.het_tests:
-    wald = validation.het_tests['Modified Wald']
+if "Modified Wald" in validation.het_tests:
+    wald = validation.het_tests["Modified Wald"]
     print(f"Modified Wald Test:")
     print(f"  Statistic: {wald.statistic:.4f}")
     print(f"  P-value:   {wald.pvalue:.4f}")
-    print(f"  Result:    {'REJECT H0 - Heteroskedasticity detected' if wald.reject_null else 'PASS - Homoskedastic'}")
+    print(
+        f"  Result:    {'REJECT H0 - Heteroskedasticity detected' if wald.reject_null else 'PASS - Homoskedastic'}"
+    )
     print()
 
 # Pesaran CD test
-if 'Pesaran CD' in validation.cd_tests:
-    pesaran = validation.cd_tests['Pesaran CD']
+if "Pesaran CD" in validation.cd_tests:
+    pesaran = validation.cd_tests["Pesaran CD"]
     print(f"Pesaran CD Test:")
     print(f"  Statistic:  {pesaran.statistic:.4f}")
     print(f"  P-value:    {pesaran.pvalue:.4f}")
     print(f"  Avg |corr|: {pesaran.metadata['avg_abs_correlation']:.4f}")
-    print(f"  Result:     {'REJECT H0 - Cross-sectional dependence' if pesaran.reject_null else 'PASS - No cross-sectional dependence'}")
+    print(
+        f"  Result:     {'REJECT H0 - Cross-sectional dependence' if pesaran.reject_null else 'PASS - No cross-sectional dependence'}"
+    )
     print()
 
 print("=" * 80)

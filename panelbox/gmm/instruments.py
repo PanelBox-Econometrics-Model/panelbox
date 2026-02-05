@@ -16,22 +16,25 @@ References
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Tuple
+from enum import Enum
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from enum import Enum
 
 
 class InstrumentStyle(Enum):
     """Style of instrument generation."""
-    IV = 'iv'  # IV-style: one column per lag
-    GMM = 'gmm'  # GMM-style: separate columns per time period
+
+    IV = "iv"  # IV-style: one column per lag
+    GMM = "gmm"  # GMM-style: separate columns per time period
 
 
 class EquationType(Enum):
     """Type of equation for instruments."""
-    DIFF = 'diff'  # Differenced equation
-    LEVEL = 'level'  # Level equation
+
+    DIFF = "diff"  # Differenced equation
+    LEVEL = "level"  # Level equation
 
 
 @dataclass
@@ -58,8 +61,8 @@ class InstrumentSet:
     Z: np.ndarray
     variable_names: List[str] = field(default_factory=list)
     instrument_names: List[str] = field(default_factory=list)
-    equation: str = 'diff'
-    style: str = 'gmm'
+    equation: str = "diff"
+    style: str = "gmm"
     collapsed: bool = False
 
     @property
@@ -73,9 +76,11 @@ class InstrumentSet:
         return self.Z.shape[0] if self.Z is not None else 0
 
     def __repr__(self) -> str:
-        return (f"InstrumentSet(n_instruments={self.n_instruments}, "
-                f"n_obs={self.n_obs}, equation='{self.equation}', "
-                f"style='{self.style}', collapsed={self.collapsed})")
+        return (
+            f"InstrumentSet(n_instruments={self.n_instruments}, "
+            f"n_obs={self.n_obs}, equation='{self.equation}', "
+            f"style='{self.style}', collapsed={self.collapsed})"
+        )
 
 
 class InstrumentBuilder:
@@ -119,10 +124,7 @@ class InstrumentBuilder:
     ... )
     """
 
-    def __init__(self,
-                 data: pd.DataFrame,
-                 id_var: str,
-                 time_var: str):
+    def __init__(self, data: pd.DataFrame, id_var: str, time_var: str):
         """Initialize instrument builder."""
         self.data = data.copy()
         self.id_var = id_var
@@ -137,11 +139,9 @@ class InstrumentBuilder:
         self.time_periods = np.sort(self.data[time_var].unique())
         self.n_periods = len(self.time_periods)
 
-    def create_iv_style_instruments(self,
-                                   var: str,
-                                   min_lag: int,
-                                   max_lag: int,
-                                   equation: str = 'diff') -> InstrumentSet:
+    def create_iv_style_instruments(
+        self, var: str, min_lag: int, max_lag: int, equation: str = "diff"
+    ) -> InstrumentSet:
         """
         Create IV-style instruments (one column per lag).
 
@@ -188,7 +188,7 @@ class InstrumentBuilder:
         # Create instrument names
         instrument_names = []
         for lag in range(min_lag, max_lag + 1):
-            if equation == 'diff':
+            if equation == "diff":
                 instrument_names.append(f"{var}_L{lag}")
             else:
                 instrument_names.append(f"D.{var}_L{lag}")
@@ -200,7 +200,7 @@ class InstrumentBuilder:
                 mask = (ids == current_id) & (times == current_time - lag)
                 if np.any(mask):
                     lag_idx_data = np.where(mask)[0][0]
-                    if equation == 'diff':
+                    if equation == "diff":
                         Z[i, lag_idx] = var_data[lag_idx_data]
                     else:
                         # For level equation, use differences as instruments
@@ -215,16 +215,18 @@ class InstrumentBuilder:
             variable_names=[var],
             instrument_names=instrument_names,
             equation=equation,
-            style='iv',
-            collapsed=False
+            style="iv",
+            collapsed=False,
         )
 
-    def create_gmm_style_instruments(self,
-                                    var: str,
-                                    min_lag: int,
-                                    max_lag: Optional[int] = None,
-                                    equation: str = 'diff',
-                                    collapse: bool = False) -> InstrumentSet:
+    def create_gmm_style_instruments(
+        self,
+        var: str,
+        min_lag: int,
+        max_lag: Optional[int] = None,
+        equation: str = "diff",
+        collapse: bool = False,
+    ) -> InstrumentSet:
         """
         Create GMM-style instruments (separate column per time period).
 
@@ -270,11 +272,9 @@ class InstrumentBuilder:
         else:
             return self._create_gmm_standard(var, min_lag, max_lag, equation)
 
-    def _create_gmm_standard(self,
-                            var: str,
-                            min_lag: int,
-                            max_lag: Optional[int],
-                            equation: str) -> InstrumentSet:
+    def _create_gmm_standard(
+        self, var: str, min_lag: int, max_lag: Optional[int], equation: str
+    ) -> InstrumentSet:
         """Create GMM-style instruments without collapse."""
         var_data = self.data[var].values
         ids = self.data[self.id_var].values
@@ -315,7 +315,7 @@ class InstrumentBuilder:
                     mask_lag = (ids == current_id) & (times == t - lag)
                     if np.any(mask_lag):
                         lag_idx = np.where(mask_lag)[0][0]
-                        if equation == 'diff':
+                        if equation == "diff":
                             col[i] = var_data[lag_idx]
                         else:
                             # For level equation, use differences
@@ -335,15 +335,13 @@ class InstrumentBuilder:
             variable_names=[var],
             instrument_names=instrument_names,
             equation=equation,
-            style='gmm',
-            collapsed=False
+            style="gmm",
+            collapsed=False,
         )
 
-    def _analyze_lag_availability(self,
-                                 var: str,
-                                 min_lag: int,
-                                 max_lag: int,
-                                 min_coverage: float = 0.10) -> List[int]:
+    def _analyze_lag_availability(
+        self, var: str, min_lag: int, max_lag: int, min_coverage: float = 0.10
+    ) -> List[int]:
         """
         Analyze which lags have sufficient data coverage.
 
@@ -395,11 +393,9 @@ class InstrumentBuilder:
 
         return valid_lags
 
-    def _create_gmm_collapsed(self,
-                             var: str,
-                             min_lag: int,
-                             max_lag: Optional[int],
-                             equation: str) -> InstrumentSet:
+    def _create_gmm_collapsed(
+        self, var: str, min_lag: int, max_lag: Optional[int], equation: str
+    ) -> InstrumentSet:
         """
         Create collapsed GMM-style instruments.
 
@@ -426,17 +422,16 @@ class InstrumentBuilder:
 
         # Smart selection: Filter lags with sufficient data coverage
         # This helps with unbalanced panels by excluding mostly-NaN lags
-        possible_lags = self._analyze_lag_availability(
-            var, min_lag, max_lag, min_coverage=0.10
-        )
+        possible_lags = self._analyze_lag_availability(var, min_lag, max_lag, min_coverage=0.10)
 
         # If no lags meet the coverage threshold, use at least min_lag and min_lag+1
         if not possible_lags and min_lag <= max_lag:
             import warnings
+
             warnings.warn(
                 f"No lags for variable '{var}' meet the 10% coverage threshold. "
                 f"Using lags {min_lag} and {min(min_lag+1, max_lag)} anyway.",
-                UserWarning
+                UserWarning,
             )
             possible_lags = [min_lag]
             if min_lag + 1 <= max_lag:
@@ -458,7 +453,7 @@ class InstrumentBuilder:
                 mask_lag = (ids == current_id) & (times == current_time - lag)
                 if np.any(mask_lag):
                     lag_idx = np.where(mask_lag)[0][0]
-                    if equation == 'diff':
+                    if equation == "diff":
                         col[i] = var_data[lag_idx]
                     else:
                         # For level equation, use differences
@@ -478,8 +473,8 @@ class InstrumentBuilder:
             variable_names=[var],
             instrument_names=instrument_names,
             equation=equation,
-            style='gmm',
-            collapsed=True
+            style="gmm",
+            collapsed=True,
         )
 
     def combine_instruments(self, *instrument_sets: InstrumentSet) -> InstrumentSet:
@@ -520,8 +515,8 @@ class InstrumentBuilder:
             variable_names=var_names,
             instrument_names=inst_names,
             equation=instrument_sets[0].equation,
-            style='mixed',
-            collapsed=False
+            style="mixed",
+            collapsed=False,
         )
 
     def instrument_count_analysis(self, Z: InstrumentSet) -> pd.DataFrame:
@@ -545,20 +540,22 @@ class InstrumentBuilder:
         >>> print(analysis)
         """
         analysis = {
-            'Total instruments': Z.n_instruments,
-            'Observations': Z.n_obs,
-            'Groups': self.n_groups,
-            'Instrument ratio': Z.n_instruments / self.n_groups,
-            'Style': Z.style,
-            'Collapsed': Z.collapsed,
-            'Variables': ', '.join(Z.variable_names)
+            "Total instruments": Z.n_instruments,
+            "Observations": Z.n_obs,
+            "Groups": self.n_groups,
+            "Instrument ratio": Z.n_instruments / self.n_groups,
+            "Style": Z.style,
+            "Collapsed": Z.collapsed,
+            "Variables": ", ".join(Z.variable_names),
         }
 
         # Warning if too many instruments
         if Z.n_instruments > self.n_groups:
-            analysis['Warning'] = f"Too many instruments ({Z.n_instruments} > {self.n_groups} groups)"
+            analysis["Warning"] = (
+                f"Too many instruments ({Z.n_instruments} > {self.n_groups} groups)"
+            )
         else:
-            analysis['Warning'] = 'OK'
+            analysis["Warning"] = "OK"
 
         return pd.DataFrame([analysis]).T
 

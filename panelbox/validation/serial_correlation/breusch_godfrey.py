@@ -21,69 +21,69 @@ from panelbox.validation.base import ValidationTest, ValidationTestResult
 class BreuschGodfreyTest(ValidationTest):
     """
     Breusch-Godfrey LM test for serial correlation.
-    
+
     Tests the null hypothesis of no serial correlation against the
     alternative of AR(p) serial correlation in the errors.
-    
+
     H0: No serial correlation
     H1: AR(p) serial correlation present
-    
+
     The test regresses the residuals on lagged residuals and the original
     regressors, then tests if the lagged residuals are jointly significant.
-    
+
     Notes
     -----
     Unlike the Durbin-Watson test, the BG test:
     - Can test for higher-order serial correlation
     - Is valid when regressors include lagged dependent variables
     - Provides an LM test statistic ~ Chi2(p)
-    
+
     For panel data, the test is applied accounting for the panel structure.
-    
+
     Examples
     --------
     >>> from panelbox.models.static.fixed_effects import FixedEffects
     >>> fe = FixedEffects("y ~ x1 + x2", data, "entity", "time")
     >>> results = fe.fit()
-    >>> 
+    >>>
     >>> from panelbox.validation.serial_correlation.breusch_godfrey import BreuschGodfreyTest
     >>> test = BreuschGodfreyTest(results)
     >>> result = test.run(lags=1)  # Test for AR(1)
     >>> print(result)
     """
-    
-    def __init__(self, results: 'PanelResults'):
+
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Breusch-Godfrey test.
-        
+
         Parameters
         ----------
         results : PanelResults
             Results from panel model estimation
         """
         super().__init__(results)
-    
+
     def run(self, lags: int = 1, alpha: float = 0.05) -> ValidationTestResult:
         """
         Run Breusch-Godfrey LM test for serial correlation.
-        
+
         Parameters
         ----------
         lags : int, default=1
             Number of lags to test (order of AR process)
         alpha : float, default=0.05
             Significance level
-        
+
         Returns
         -------
         ValidationTestResult
             Test results
-        
+
         Raises
         ------
         ValueError
             If required data is not available or lags < 1
-        
+
         Notes
         -----
         The test procedure:
@@ -94,61 +94,59 @@ class BreuschGodfreyTest(ValidationTest):
         """
         if lags < 1:
             raise ValueError(f"lags must be >= 1, got {lags}")
-        
+
         # Get residuals with entity and time structure
         resid_df = self._prepare_residual_data()
-        
+
         # Get design matrix
         X = self._get_design_matrix()
-        
+
         if X is None:
-            raise ValueError(
-                "Design matrix not available for Breusch-Godfrey test"
-            )
-        
+            raise ValueError("Design matrix not available for Breusch-Godfrey test")
+
         # Create lagged residuals
-        resid_df = resid_df.sort_values(['entity', 'time'])
-        
+        resid_df = resid_df.sort_values(["entity", "time"])
+
         for lag in range(1, lags + 1):
-            resid_df[f'resid_lag{lag}'] = resid_df.groupby('entity')['resid'].shift(lag)
-        
+            resid_df[f"resid_lag{lag}"] = resid_df.groupby("entity")["resid"].shift(lag)
+
         # Drop missing values (first lags obs per entity)
-        lag_cols = [f'resid_lag{i}' for i in range(1, lags + 1)]
+        lag_cols = [f"resid_lag{i}" for i in range(1, lags + 1)]
         resid_df = resid_df.dropna(subset=lag_cols)
-        
+
         if len(resid_df) == 0:
             raise ValueError("No valid observations after creating lags")
-        
+
         # Get residuals and lagged residuals as arrays
-        resid = resid_df['resid'].values
+        resid = resid_df["resid"].values
         X_lags = resid_df[lag_cols].values
-        
+
         # Match X to the reduced sample (after dropping NAs)
         # We need to align X with the residuals we kept
         # This is tricky - we need the original indices
-        
+
         # Simpler approach: use all X but only for non-missing resid indices
-        if len(X) == len(resid) + lags * resid_df['entity'].nunique():
+        if len(X) == len(resid) + lags * resid_df["entity"].nunique():
             # Need to match indices properly
             # For now, assume X already matches the full data
             # and we need to select the rows that correspond to non-missing resid
-            
+
             # Get indices of non-missing residuals
             valid_indices = resid_df.index.values
-            
+
             # This assumes resid_df index corresponds to original data indices
             if max(valid_indices) < len(X):
                 X_matched = X[valid_indices, :]
             else:
                 # Fallback: use last len(resid) rows
-                X_matched = X[-len(resid):, :]
+                X_matched = X[-len(resid) :, :]
         else:
             # Assume X and resid are aligned
-            X_matched = X[:len(resid), :]
-        
+            X_matched = X[: len(resid), :]
+
         # Auxiliary regression: resid on [X, resid_lag1, ..., resid_lagp]
         X_aug = np.column_stack([X_matched, X_lags])
-        
+
         # OLS
         try:
             XtX = X_aug.T @ X_aug
@@ -156,7 +154,7 @@ class BreuschGodfreyTest(ValidationTest):
             beta_aux = np.linalg.solve(XtX, Xty)
         except np.linalg.LinAlgError:
             beta_aux = np.linalg.lstsq(X_aug, resid, rcond=None)[0]
-        
+
         # Fitted values
         fitted_aux = X_aug @ beta_aux
 
@@ -187,7 +185,7 @@ class BreuschGodfreyTest(ValidationTest):
         # Reference: Baltagi & Li (1995), "Testing AR(1) against MA(1) disturbances
         # in an error component model"
 
-        n_entities = resid_df['entity'].nunique()
+        n_entities = resid_df["entity"].nunique()
         lm_stat = n_entities * R2_aux
 
         # Sanity check
@@ -196,20 +194,20 @@ class BreuschGodfreyTest(ValidationTest):
 
         # Degrees of freedom = number of lags
         df = lags
-        
+
         # P-value
         pvalue = 1 - stats.chi2.cdf(lm_stat, df)
-        
+
         # Metadata
         n_obs = len(resid)
         metadata = {
-            'lags': lags,
-            'R2_auxiliary': R2_aux,
-            'n_obs_auxiliary': n_obs,
-            'n_entities': n_entities,
-            'note': 'Panel BG test uses LM = N * R² where N = number of entities'
+            "lags": lags,
+            "R2_auxiliary": R2_aux,
+            "n_obs_auxiliary": n_obs,
+            "n_entities": n_entities,
+            "note": "Panel BG test uses LM = N * R² where N = number of entities",
         }
-        
+
         result = ValidationTestResult(
             test_name=f"Breusch-Godfrey LM Test for Serial Correlation (AR({lags}))",
             statistic=lm_stat,
@@ -218,43 +216,44 @@ class BreuschGodfreyTest(ValidationTest):
             alternative_hypothesis=f"AR({lags}) serial correlation present",
             alpha=alpha,
             df=df,
-            metadata=metadata
+            metadata=metadata,
         )
-        
+
         return result
-    
+
     def _prepare_residual_data(self) -> pd.DataFrame:
         """Prepare residual data with entity and time identifiers."""
-        if hasattr(self.results, 'entity_index') and hasattr(self.results, 'time_index'):
-            resid_flat = self.resid.ravel() if hasattr(self.resid, 'ravel') else self.resid
-            
-            resid_df = pd.DataFrame({
-                'entity': self.results.entity_index,
-                'time': self.results.time_index,
-                'resid': resid_flat
-            })
-            
+        if hasattr(self.results, "entity_index") and hasattr(self.results, "time_index"):
+            resid_flat = self.resid.ravel() if hasattr(self.resid, "ravel") else self.resid
+
+            resid_df = pd.DataFrame(
+                {
+                    "entity": self.results.entity_index,
+                    "time": self.results.time_index,
+                    "resid": resid_flat,
+                }
+            )
+
             return resid_df
         else:
             raise AttributeError(
                 "Results object must have 'entity_index' and 'time_index' attributes"
             )
-    
+
     def _get_design_matrix(self) -> np.ndarray:
         """Get the design matrix X."""
-        if not hasattr(self.results, '_model'):
+        if not hasattr(self.results, "_model"):
             return None
-        
+
         model = self.results._model
-        
-        if hasattr(model, 'formula_parser') and hasattr(model, 'data'):
+
+        if hasattr(model, "formula_parser") and hasattr(model, "data"):
             try:
                 _, X = model.formula_parser.build_design_matrices(
-                    model.data.data,
-                    return_type='array'
+                    model.data.data, return_type="array"
                 )
                 return X
             except Exception:
                 pass
-        
+
         return None

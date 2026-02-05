@@ -16,13 +16,15 @@ def balanced_panel_data():
     n_periods = 5
     n_obs = n_entities * n_periods
 
-    data = pd.DataFrame({
-        'entity': np.repeat(range(1, n_entities + 1), n_periods),
-        'time': np.tile(range(2020, 2020 + n_periods), n_entities),
-        'y': np.random.randn(n_obs) * 10 + 100,
-        'x1': np.random.randn(n_obs) * 5 + 50,
-        'x2': np.random.randn(n_obs) * 3 + 30,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": np.repeat(range(1, n_entities + 1), n_periods),
+            "time": np.tile(range(2020, 2020 + n_periods), n_entities),
+            "y": np.random.randn(n_obs) * 10 + 100,
+            "x1": np.random.randn(n_obs) * 5 + 50,
+            "x2": np.random.randn(n_obs) * 3 + 30,
+        }
+    )
 
     return data
 
@@ -35,15 +37,15 @@ def unbalanced_panel_data():
     # Entity 1: 5 periods
     # Entity 2: 4 periods
     # Entity 3: 3 periods
-    data = pd.DataFrame({
-        'entity': [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
-        'time': [2020, 2021, 2022, 2023, 2024,
-                 2020, 2021, 2022, 2023,
-                 2020, 2021, 2022],
-        'y': np.random.randn(12) * 10 + 100,
-        'x1': np.random.randn(12) * 5 + 50,
-        'x2': np.random.randn(12) * 3 + 30,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
+            "time": [2020, 2021, 2022, 2023, 2024, 2020, 2021, 2022, 2023, 2020, 2021, 2022],
+            "y": np.random.randn(12) * 10 + 100,
+            "x1": np.random.randn(12) * 5 + 50,
+            "x2": np.random.randn(12) * 3 + 30,
+        }
+    )
 
     return data
 
@@ -58,17 +60,19 @@ def grunfeld_data():
     """
     np.random.seed(42)
 
-    firms = ['GM', 'CH', 'GE', 'WE', 'US']
+    firms = ["GM", "CH", "GE", "WE", "US"]
     years = range(1935, 1955)
     n_obs = len(firms) * len(years)
 
-    data = pd.DataFrame({
-        'firm': np.repeat(firms, len(years)),
-        'year': np.tile(years, len(firms)),
-        'invest': np.random.uniform(0, 500, n_obs),
-        'value': np.random.uniform(500, 5000, n_obs),
-        'capital': np.random.uniform(100, 3000, n_obs),
-    })
+    data = pd.DataFrame(
+        {
+            "firm": np.repeat(firms, len(years)),
+            "year": np.tile(years, len(firms)),
+            "invest": np.random.uniform(0, 500, n_obs),
+            "value": np.random.uniform(500, 5000, n_obs),
+            "capital": np.random.uniform(100, 3000, n_obs),
+        }
+    )
 
     return data
 
@@ -76,6 +80,7 @@ def grunfeld_data():
 # ============================================================================
 # Validation Test Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def panel_with_ar1():
@@ -124,13 +129,15 @@ def panel_with_ar1():
     # Generate y with AR(1) errors
     y = beta_0 + beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": entities,
+            "time": times,
+            "y": y,
+            "x1": x1,
+            "x2": x2,
+        }
+    )
 
     return data
 
@@ -174,13 +181,15 @@ def panel_with_heteroskedasticity():
     # Generate y
     y = beta_0 + beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": entities,
+            "time": times,
+            "y": y,
+            "x1": x1,
+            "x2": x2,
+        }
+    )
 
     return data
 
@@ -225,13 +234,15 @@ def panel_with_cross_sectional_dependence():
     entities = np.repeat(range(1, n_entities + 1), n_periods)
     times = np.tile(range(1, n_periods + 1), n_entities)
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": entities,
+            "time": times,
+            "y": y,
+            "x1": x1,
+            "x2": x2,
+        }
+    )
 
     return data
 
@@ -271,13 +282,15 @@ def clean_panel_data():
     # Generate y
     y = beta_0 + beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": entities,
+            "time": times,
+            "y": y,
+            "x1": x1,
+            "x2": x2,
+        }
+    )
 
     return data
 
@@ -319,12 +332,14 @@ def panel_for_mundlak():
     # Generate y
     y = beta_0 + beta_1 * x1 + beta_2 * x2 + entity_effects_expanded + errors
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-    })
+    data = pd.DataFrame(
+        {
+            "entity": entities,
+            "time": times,
+            "y": y,
+            "x1": x1,
+            "x2": x2,
+        }
+    )
 
     return data

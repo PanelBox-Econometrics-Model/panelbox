@@ -10,6 +10,7 @@ This example demonstrates the basic workflow of the PanelBox library:
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 # Set random seed for reproducibility
@@ -32,30 +33,32 @@ n_years = 10
 n_obs = n_firms * n_years
 
 # Generate data
-data = pd.DataFrame({
-    'firm': np.repeat(range(1, n_firms + 1), n_years),
-    'year': np.tile(range(2010, 2010 + n_years), n_firms),
-})
+data = pd.DataFrame(
+    {
+        "firm": np.repeat(range(1, n_firms + 1), n_years),
+        "year": np.tile(range(2010, 2010 + n_years), n_firms),
+    }
+)
 
 # Add firm-specific fixed effect
 firm_effect = {i: np.random.normal(0, 5) for i in range(1, n_firms + 1)}
-data['firm_effect'] = data['firm'].map(firm_effect)
+data["firm_effect"] = data["firm"].map(firm_effect)
 
 # Generate regressors
-data['capital'] = np.random.uniform(100, 1000, n_obs)
-data['labor'] = np.random.uniform(50, 500, n_obs)
+data["capital"] = np.random.uniform(100, 1000, n_obs)
+data["labor"] = np.random.uniform(50, 500, n_obs)
 
 # Generate dependent variable with firm fixed effects
-data['output'] = (
-    10 +                              # Intercept
-    data['firm_effect'] +             # Firm-specific effect
-    0.5 * data['capital'] +           # Capital coefficient
-    0.3 * data['labor'] +             # Labor coefficient
-    np.random.normal(0, 10, n_obs)    # Random error
+data["output"] = (
+    10  # Intercept
+    + data["firm_effect"]  # Firm-specific effect
+    + 0.5 * data["capital"]  # Capital coefficient
+    + 0.3 * data["labor"]  # Labor coefficient
+    + np.random.normal(0, 10, n_obs)  # Random error
 )
 
 # Drop the true firm_effect (we pretend we don't observe it)
-data = data.drop('firm_effect', axis=1)
+data = data.drop("firm_effect", axis=1)
 
 print(f"Panel structure: {n_firms} firms, {n_years} years, {n_obs} observations")
 print(f"\nFirst few rows:")
@@ -68,7 +71,7 @@ print()
 print("\n2. Exploring panel data structure...")
 print("-" * 80)
 
-panel = pb.PanelData(data, entity_col='firm', time_col='year')
+panel = pb.PanelData(data, entity_col="firm", time_col="year")
 print(panel.summary())
 print()
 
@@ -79,7 +82,7 @@ print("\n3. Estimating Pooled OLS (ignoring panel structure)...")
 print("-" * 80)
 
 pooled = pb.PooledOLS("output ~ capital + labor", data, "firm", "year")
-pooled_results = pooled.fit(cov_type='robust')
+pooled_results = pooled.fit(cov_type="robust")
 
 print(pooled_results.summary())
 print()
@@ -91,7 +94,7 @@ print("\n4. Estimating Fixed Effects model...")
 print("-" * 80)
 
 fe = pb.FixedEffects("output ~ capital + labor", data, "firm", "year")
-fe_results = fe.fit(cov_type='clustered')
+fe_results = fe.fit(cov_type="clustered")
 
 print(fe_results.summary())
 print()
@@ -139,27 +142,23 @@ print("\n7. Model Comparison Summary...")
 print("-" * 80)
 
 comparison_data = {
-    'Model': ['Pooled OLS', 'Fixed Effects', 'Random Effects'],
-    'capital_coef': [
-        pooled_results.params['capital'],
-        fe_results.params['capital'],
-        re_results.params['capital']
+    "Model": ["Pooled OLS", "Fixed Effects", "Random Effects"],
+    "capital_coef": [
+        pooled_results.params["capital"],
+        fe_results.params["capital"],
+        re_results.params["capital"],
     ],
-    'labor_coef': [
-        pooled_results.params['labor'],
-        fe_results.params['labor'],
-        re_results.params['labor']
+    "labor_coef": [
+        pooled_results.params["labor"],
+        fe_results.params["labor"],
+        re_results.params["labor"],
     ],
-    'R2_overall': [
+    "R2_overall": [
         pooled_results.rsquared_overall,
         fe_results.rsquared_overall,
-        re_results.rsquared_overall
+        re_results.rsquared_overall,
     ],
-    'R2_within': [
-        np.nan,
-        fe_results.rsquared_within,
-        re_results.rsquared_within
-    ],
+    "R2_within": [np.nan, fe_results.rsquared_within, re_results.rsquared_within],
 }
 
 comparison_df = pd.DataFrame(comparison_data)
@@ -187,7 +186,7 @@ for var, coef in final_model.params.items():
     se = final_model.std_errors[var]
     t = final_model.tvalues[var]
     p = final_model.pvalues[var]
-    stars = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else ''
+    stars = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
     print(f"  {var:<12} {coef:>8.4f} ({se:>6.4f})  t={t:>6.2f}  p={p:.4f} {stars}")
 
 print()

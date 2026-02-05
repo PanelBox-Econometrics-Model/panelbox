@@ -6,22 +6,20 @@ to account for the variance component structure in panel data.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
-from panelbox.utils.matrix_ops import (
-    compute_ols,
-    compute_panel_rsquared
-)
 from panelbox.standard_errors import (
-    robust_covariance,
     cluster_by_entity,
-    twoway_cluster,
     driscoll_kraay,
-    newey_west
+    newey_west,
+    robust_covariance,
+    twoway_cluster,
 )
+from panelbox.utils.matrix_ops import compute_ols, compute_panel_rsquared
 
 
 class RandomEffects(PanelModel):
@@ -96,12 +94,12 @@ class RandomEffects(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        variance_estimator: str = 'swamy-arora',
-        weights: Optional[np.ndarray] = None
+        variance_estimator: str = "swamy-arora",
+        weights: Optional[np.ndarray] = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
-        valid_estimators = ['swamy-arora', 'walhus', 'amemiya', 'nerlove']
+        valid_estimators = ["swamy-arora", "walhus", "amemiya", "nerlove"]
         if variance_estimator not in valid_estimators:
             raise ValueError(
                 f"variance_estimator must be one of {valid_estimators}, "
@@ -113,13 +111,9 @@ class RandomEffects(PanelModel):
         # Variance components (computed after fitting)
         self.sigma2_u: Optional[float] = None  # Variance of entity effects
         self.sigma2_e: Optional[float] = None  # Variance of idiosyncratic errors
-        self.theta: Optional[float] = None      # GLS transformation parameter
+        self.theta: Optional[float] = None  # GLS transformation parameter
 
-    def fit(
-        self,
-        cov_type: str = 'nonrobust',
-        **cov_kwds
-    ) -> PanelResults:
+    def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
         Fit the Random Effects model.
 
@@ -150,10 +144,7 @@ class RandomEffects(PanelModel):
         >>> results_robust = model.fit(cov_type='robust')
         """
         # Build design matrices
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         # Get variable names
         var_names = self.formula_parser.get_variable_names(self.data.data)
@@ -184,36 +175,36 @@ class RandomEffects(PanelModel):
         # Compute covariance matrix
         cov_type_lower = cov_type.lower()
 
-        if cov_type_lower == 'nonrobust':
+        if cov_type_lower == "nonrobust":
             vcov = self._compute_vcov_gls(X, resid_gls, entities, df_resid)
 
-        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # Map 'robust' to 'hc1' (default robust method)
-            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             result = robust_covariance(X_gls, resid_gls, method=method)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'clustered':
+        elif cov_type_lower == "clustered":
             # Default: cluster by entity
             result = cluster_by_entity(X_gls, resid_gls, entities, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'twoway':
+        elif cov_type_lower == "twoway":
             # Two-way clustering: entity and time
             result = twoway_cluster(X_gls, resid_gls, entities, times, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'driscoll_kraay':
+        elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(X_gls, resid_gls, times, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'newey_west':
+        elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X_gls, resid_gls, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
@@ -241,31 +232,31 @@ class RandomEffects(PanelModel):
 
         # Model information
         model_info = {
-            'model_type': 'Random Effects (GLS)',
-            'formula': self.formula,
-            'cov_type': cov_type,
-            'cov_kwds': cov_kwds,
-            'variance_estimator': self.variance_estimator,
+            "model_type": "Random Effects (GLS)",
+            "formula": self.formula,
+            "cov_type": cov_type,
+            "cov_kwds": cov_kwds,
+            "variance_estimator": self.variance_estimator,
         }
 
         # Data information
         data_info = {
-            'nobs': n,
-            'n_entities': self.data.n_entities,
-            'n_periods': self.data.n_periods,
-            'df_model': df_model,
-            'df_resid': df_resid,
-            'entity_index': entities.ravel() if hasattr(entities, 'ravel') else entities,
-            'time_index': times.ravel() if hasattr(times, 'ravel') else times,
+            "nobs": n,
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "entity_index": entities.ravel() if hasattr(entities, "ravel") else entities,
+            "time_index": times.ravel() if hasattr(times, "ravel") else times,
         }
 
         # R-squared dictionary
         rsquared_dict = {
-            'rsquared': rsquared_overall,  # For RE, main R² is overall
-            'rsquared_adj': rsquared_adj,
-            'rsquared_within': rsquared_within,
-            'rsquared_between': rsquared_between,
-            'rsquared_overall': rsquared_overall
+            "rsquared": rsquared_overall,  # For RE, main R² is overall
+            "rsquared_adj": rsquared_adj,
+            "rsquared_within": rsquared_within,
+            "rsquared_between": rsquared_between,
+            "rsquared_overall": rsquared_overall,
         }
 
         # Create results object
@@ -278,7 +269,7 @@ class RandomEffects(PanelModel):
             model_info=model_info,
             data_info=data_info,
             rsquared_dict=rsquared_dict,
-            model=self
+            model=self,
         )
 
         # Store results and update state
@@ -288,10 +279,7 @@ class RandomEffects(PanelModel):
         return results
 
     def _estimate_variance_components(
-        self,
-        y: np.ndarray,
-        X: np.ndarray,
-        entities: np.ndarray
+        self, y: np.ndarray, X: np.ndarray, entities: np.ndarray
     ) -> None:
         """
         Estimate variance components.
@@ -308,22 +296,17 @@ class RandomEffects(PanelModel):
         n = len(y)
         k = X.shape[1]
 
-        if self.variance_estimator == 'swamy-arora':
+        if self.variance_estimator == "swamy-arora":
             self._swamy_arora_variance(y, X, entities, n, k)
-        elif self.variance_estimator == 'walhus':
+        elif self.variance_estimator == "walhus":
             self._walhus_variance(y, X, entities, n, k)
-        elif self.variance_estimator == 'amemiya':
+        elif self.variance_estimator == "amemiya":
             self._amemiya_variance(y, X, entities, n, k)
-        elif self.variance_estimator == 'nerlove':
+        elif self.variance_estimator == "nerlove":
             self._nerlove_variance(y, X, entities, n, k)
 
     def _swamy_arora_variance(
-        self,
-        y: np.ndarray,
-        X: np.ndarray,
-        entities: np.ndarray,
-        n: int,
-        k: int
+        self, y: np.ndarray, X: np.ndarray, entities: np.ndarray, n: int, k: int
     ) -> None:
         """
         Swamy-Arora variance component estimator.
@@ -341,7 +324,7 @@ class RandomEffects(PanelModel):
         # Estimate sigma2_e from within residuals
         N = self.data.n_entities
         df_within = n - N - k  # Account for absorbed entity dummies
-        self.sigma2_e = np.sum(resid_within ** 2) / df_within
+        self.sigma2_e = np.sum(resid_within**2) / df_within
 
         # Step 2: Estimate between model (on entity means)
         unique_entities = np.unique(entities)
@@ -363,7 +346,7 @@ class RandomEffects(PanelModel):
         T_bar = n / N
 
         # Variance of between residuals
-        var_between = np.sum(resid_between ** 2) / (N - k)
+        var_between = np.sum(resid_between**2) / (N - k)
 
         # sigma2_u = var_between - sigma2_e / T_bar
         self.sigma2_u = max(0, var_between - self.sigma2_e / T_bar)
@@ -390,12 +373,7 @@ class RandomEffects(PanelModel):
         # For simplicity, use Swamy-Arora (can be refined later)
         self._swamy_arora_variance(y, X, entities, n, k)
 
-    def _gls_transform(
-        self,
-        y: np.ndarray,
-        X: np.ndarray,
-        entities: np.ndarray
-    ) -> tuple:
+    def _gls_transform(self, y: np.ndarray, X: np.ndarray, entities: np.ndarray) -> tuple:
         """
         Apply GLS transformation.
 
@@ -445,10 +423,7 @@ class RandomEffects(PanelModel):
         np.ndarray
             Estimated coefficients
         """
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         entities = self.data.data[self.data.entity_col].values
 
@@ -463,11 +438,7 @@ class RandomEffects(PanelModel):
         return beta
 
     def _compute_vcov_gls(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        entities: np.ndarray,
-        df_resid: int
+        self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int
     ) -> np.ndarray:
         """
         Compute GLS covariance matrix.
@@ -489,7 +460,7 @@ class RandomEffects(PanelModel):
             Covariance matrix
         """
         # Estimate of error variance from GLS residuals
-        s2 = np.sum(resid ** 2) / df_resid
+        s2 = np.sum(resid**2) / df_resid
 
         # Build Omega matrix (variance-covariance of errors)
         # For RE: Omega_i = sigma2_e * I + sigma2_u * J
@@ -507,29 +478,20 @@ class RandomEffects(PanelModel):
 
         return vcov
 
-    def _compute_vcov_robust(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        df_resid: int
-    ) -> np.ndarray:
+    def _compute_vcov_robust(self, X: np.ndarray, resid: np.ndarray, df_resid: int) -> np.ndarray:
         """Compute robust covariance matrix."""
         n = len(resid)
         k = X.shape[1]
         adjustment = n / df_resid
 
         XtX_inv = np.linalg.inv(X.T @ X)
-        meat = X.T @ (resid[:, np.newaxis]**2 * X)
+        meat = X.T @ (resid[:, np.newaxis] ** 2 * X)
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
 
         return vcov
 
     def _compute_vcov_clustered(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray,
-        entities: np.ndarray,
-        df_resid: int
+        self, X: np.ndarray, resid: np.ndarray, entities: np.ndarray, df_resid: int
     ) -> np.ndarray:
         """Compute cluster-robust covariance matrix."""
         n = len(resid)

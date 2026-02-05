@@ -62,7 +62,7 @@ class BreuschPaganLMTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: 'PanelResults'):
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Breusch-Pagan LM test.
 
@@ -101,16 +101,14 @@ class BreuschPaganLMTest(ValidationTest):
         resid_df = self._prepare_residual_data()
 
         # Create wide format: rows = time, columns = entities
-        resid_wide = resid_df.pivot(index='time', columns='entity', values='resid')
+        resid_wide = resid_df.pivot(index="time", columns="entity", values="resid")
 
         # Get dimensions
         T = resid_wide.shape[0]  # Number of time periods
         N = resid_wide.shape[1]  # Number of entities
 
         if N < 2:
-            raise ValueError(
-                "Need at least 2 entities for cross-sectional dependence test"
-            )
+            raise ValueError("Need at least 2 entities for cross-sectional dependence test")
 
         # Compute pairwise correlations
         # Use pairwise complete observations
@@ -152,7 +150,7 @@ class BreuschPaganLMTest(ValidationTest):
         # Compute LM statistic
         # LM = T * sum(rho_ij²)
         correlations = np.array(correlations)
-        lm_stat = T * np.sum(correlations ** 2)
+        lm_stat = T * np.sum(correlations**2)
 
         # Degrees of freedom = number of pairs
         # For complete data: N(N-1)/2
@@ -169,19 +167,19 @@ class BreuschPaganLMTest(ValidationTest):
         negative_corrs = np.sum(correlations < 0)
 
         metadata = {
-            'n_entities': int(N),
-            'n_time_periods': int(T),
-            'n_pairs': int(n_pairs),
-            'n_pairs_expected': int(N * (N - 1) // 2),
-            'mean_abs_correlation': float(mean_abs_corr),
-            'max_abs_correlation': float(max_abs_corr),
-            'n_positive_correlations': int(positive_corrs),
-            'n_negative_correlations': int(negative_corrs),
-            'warning': (
-                'Test may be over-sized for large N. '
-                'Consider Pesaran CD test if N > 30.'
-                if N > 30 else None
-            )
+            "n_entities": int(N),
+            "n_time_periods": int(T),
+            "n_pairs": int(n_pairs),
+            "n_pairs_expected": int(N * (N - 1) // 2),
+            "mean_abs_correlation": float(mean_abs_corr),
+            "max_abs_correlation": float(max_abs_corr),
+            "n_positive_correlations": int(positive_corrs),
+            "n_negative_correlations": int(negative_corrs),
+            "warning": (
+                "Test may be over-sized for large N. " "Consider Pesaran CD test if N > 30."
+                if N > 30
+                else None
+            ),
         }
 
         result = ValidationTestResult(
@@ -192,7 +190,7 @@ class BreuschPaganLMTest(ValidationTest):
             alternative_hypothesis="Cross-sectional dependence present",
             alpha=alpha,
             df=df,
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
@@ -206,14 +204,16 @@ class BreuschPaganLMTest(ValidationTest):
         pd.DataFrame
             DataFrame with columns: entity, time, resid
         """
-        if hasattr(self.results, 'entity_index') and hasattr(self.results, 'time_index'):
-            resid_flat = self.resid.ravel() if hasattr(self.resid, 'ravel') else self.resid
+        if hasattr(self.results, "entity_index") and hasattr(self.results, "time_index"):
+            resid_flat = self.resid.ravel() if hasattr(self.resid, "ravel") else self.resid
 
-            resid_df = pd.DataFrame({
-                'entity': self.results.entity_index,
-                'time': self.results.time_index,
-                'resid': resid_flat
-            })
+            resid_df = pd.DataFrame(
+                {
+                    "entity": self.results.entity_index,
+                    "time": self.results.time_index,
+                    "resid": resid_flat,
+                }
+            )
 
             return resid_df
         else:

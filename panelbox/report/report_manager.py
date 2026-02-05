@@ -4,15 +4,14 @@ Report Manager for PanelBox.
 Main orchestrator for report generation across all report types.
 """
 
-import sys
 import datetime
+import sys
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
 
-from .template_manager import TemplateManager
 from .asset_manager import AssetManager
 from .css_manager import CSSManager
-
+from .template_manager import TemplateManager
 
 # Version info
 try:
@@ -64,24 +63,17 @@ class ReportManager:
         template_dir: Optional[Path] = None,
         asset_dir: Optional[Path] = None,
         enable_cache: bool = True,
-        minify: bool = False
+        minify: bool = False,
     ):
         """Initialize Report Manager."""
         # Initialize managers
         self.template_manager = TemplateManager(
-            template_dir=template_dir,
-            enable_cache=enable_cache
+            template_dir=template_dir, enable_cache=enable_cache
         )
 
-        self.asset_manager = AssetManager(
-            asset_dir=asset_dir,
-            minify=minify
-        )
+        self.asset_manager = AssetManager(asset_dir=asset_dir, minify=minify)
 
-        self.css_manager = CSSManager(
-            asset_manager=self.asset_manager,
-            minify=minify
-        )
+        self.css_manager = CSSManager(asset_manager=self.asset_manager, minify=minify)
 
         self.minify = minify
         self.enable_cache = enable_cache
@@ -94,7 +86,7 @@ class ReportManager:
         embed_assets: bool = True,
         include_plotly: bool = True,
         custom_css: Optional[List[str]] = None,
-        custom_js: Optional[List[str]] = None
+        custom_js: Optional[List[str]] = None,
     ) -> str:
         """
         Generate a complete HTML report.
@@ -140,28 +132,26 @@ class ReportManager:
         # Compile CSS
         if embed_assets:
             compiled_css = self.css_manager.compile_for_report_type(report_type)
-            full_context['css_inline'] = compiled_css
+            full_context["css_inline"] = compiled_css
         else:
-            full_context['css_files'] = self._get_css_files()
+            full_context["css_files"] = self._get_css_files()
 
         # Collect JavaScript
         if embed_assets:
-            js_files = ['utils.js', 'tab-navigation.js']
+            js_files = ["utils.js", "tab-navigation.js"]
             if custom_js:
                 js_files.extend(custom_js)
 
             compiled_js = self.asset_manager.collect_js(js_files)
-            full_context['js_inline'] = compiled_js
+            full_context["js_inline"] = compiled_js
         else:
-            full_context['js_files'] = self._get_js_files(custom_js)
+            full_context["js_files"] = self._get_js_files(custom_js)
 
         # Plotly
         if include_plotly:
-            full_context['plotly_js'] = self.asset_manager.embed_plotly(
-                include_plotly=True
-            )
+            full_context["plotly_js"] = self.asset_manager.embed_plotly(include_plotly=True)
         else:
-            full_context['plotly_js'] = ""
+            full_context["plotly_js"] = ""
 
         # Render template
         html = self.template_manager.render_template(template, full_context)
@@ -173,7 +163,7 @@ class ReportManager:
         validation_data: Dict[str, Any],
         interactive: bool = True,
         title: Optional[str] = None,
-        subtitle: Optional[str] = None
+        subtitle: Optional[str] = None,
     ) -> str:
         """
         Generate a validation report.
@@ -205,35 +195,32 @@ class ReportManager:
         """
         # Determine template
         if interactive:
-            template = 'validation/interactive/index.html'
+            template = "validation/interactive/index.html"
         else:
-            template = 'validation/static/index.html'
+            template = "validation/static/index.html"
 
         # Build context
         # Spread model_info to top level for easy access in templates
-        model_info = validation_data.get('model_info', {})
+        model_info = validation_data.get("model_info", {})
 
         context = {
-            'report_title': title or 'Panel Data Validation Report',
-            'report_subtitle': subtitle,
+            "report_title": title or "Panel Data Validation Report",
+            "report_subtitle": subtitle,
             **validation_data,
             # Spread model_info for template convenience
-            **model_info
+            **model_info,
         }
 
         # Generate
         return self.generate_report(
-            report_type='validation',
-            template=template,
-            context=context,
-            include_plotly=interactive
+            report_type="validation", template=template, context=context, include_plotly=interactive
         )
 
     def generate_regression_report(
         self,
         regression_data: Dict[str, Any],
         title: Optional[str] = None,
-        subtitle: Optional[str] = None
+        subtitle: Optional[str] = None,
     ) -> str:
         """
         Generate a regression results report.
@@ -261,26 +248,20 @@ class ReportManager:
         ...     title='Fixed Effects Results'
         ... )
         """
-        template = 'regression/index.html'
+        template = "regression/index.html"
 
         context = {
-            'report_title': title or 'Regression Results',
-            'report_subtitle': subtitle,
-            **regression_data
+            "report_title": title or "Regression Results",
+            "report_subtitle": subtitle,
+            **regression_data,
         }
 
         return self.generate_report(
-            report_type='regression',
-            template=template,
-            context=context,
-            include_plotly=True
+            report_type="regression", template=template, context=context, include_plotly=True
         )
 
     def generate_gmm_report(
-        self,
-        gmm_data: Dict[str, Any],
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None
+        self, gmm_data: Dict[str, Any], title: Optional[str] = None, subtitle: Optional[str] = None
     ) -> str:
         """
         Generate a GMM results report.
@@ -308,26 +289,16 @@ class ReportManager:
         ...     title='System GMM Results'
         ... )
         """
-        template = 'gmm/index.html'
+        template = "gmm/index.html"
 
-        context = {
-            'report_title': title or 'GMM Results',
-            'report_subtitle': subtitle,
-            **gmm_data
-        }
+        context = {"report_title": title or "GMM Results", "report_subtitle": subtitle, **gmm_data}
 
         return self.generate_report(
-            report_type='gmm',
-            template=template,
-            context=context,
-            include_plotly=True
+            report_type="gmm", template=template, context=context, include_plotly=True
         )
 
     def save_report(
-        self,
-        html: str,
-        output_path: Union[str, Path],
-        overwrite: bool = False
+        self, html: str, output_path: Union[str, Path], overwrite: bool = False
     ) -> Path:
         """
         Save HTML report to file.
@@ -357,23 +328,18 @@ class ReportManager:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. "
-                "Use overwrite=True to replace."
+                f"File already exists: {output_path}. " "Use overwrite=True to replace."
             )
 
         # Create parent directories
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write file
-        output_path.write_text(html, encoding='utf-8')
+        output_path.write_text(html, encoding="utf-8")
 
         return output_path
 
-    def _prepare_context(
-        self,
-        report_type: str,
-        context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _prepare_context(self, report_type: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Prepare base context with metadata.
 
@@ -395,19 +361,17 @@ class ReportManager:
         # Base context
         base_context = {
             # Metadata
-            'panelbox_version': PANELBOX_VERSION,
-            'python_version': f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-            'report_type': report_type,
-            'generation_date': now.strftime('%Y-%m-%d %H:%M:%S'),
-            'generation_timestamp': now.isoformat(),
-
+            "panelbox_version": PANELBOX_VERSION,
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            "report_type": report_type,
+            "generation_date": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "generation_timestamp": now.isoformat(),
             # Report display options
-            'show_export_buttons': True,
-            'show_navigation': True,
-
+            "show_export_buttons": True,
+            "show_navigation": True,
             # Defaults (can be overridden)
-            'report_title': f"PanelBox {report_type.title()} Report",
-            'report_subtitle': None,
+            "report_title": f"PanelBox {report_type.title()} Report",
+            "report_subtitle": None,
         }
 
         # Merge with user context (user context takes precedence)
@@ -426,10 +390,7 @@ class ReportManager:
         """
         css_files = []
 
-        for layer in sorted(
-            self.css_manager.layers.values(),
-            key=lambda l: l.priority
-        ):
+        for layer in sorted(self.css_manager.layers.values(), key=lambda l: l.priority):
             css_files.extend(layer.files)
 
         return css_files
@@ -448,7 +409,7 @@ class ReportManager:
         list of str
             JS file paths
         """
-        js_files = ['utils.js', 'tab-navigation.js']
+        js_files = ["utils.js", "tab-navigation.js"]
 
         if custom_js:
             js_files.extend(custom_js)
@@ -482,14 +443,14 @@ class ReportManager:
         >>> print(f"Templates cached: {info['templates_cached']}")
         """
         return {
-            'panelbox_version': PANELBOX_VERSION,
-            'template_dir': str(self.template_manager.template_dir),
-            'asset_dir': str(self.asset_manager.asset_dir),
-            'templates_cached': len(self.template_manager.template_cache),
-            'assets_cached': len(self.asset_manager.asset_cache),
-            'css_layers': len(self.css_manager.layers),
-            'minify_enabled': self.minify,
-            'cache_enabled': self.enable_cache
+            "panelbox_version": PANELBOX_VERSION,
+            "template_dir": str(self.template_manager.template_dir),
+            "asset_dir": str(self.asset_manager.asset_dir),
+            "templates_cached": len(self.template_manager.template_cache),
+            "assets_cached": len(self.asset_manager.asset_cache),
+            "css_layers": len(self.css_manager.layers),
+            "minify_enabled": self.minify,
+            "cache_enabled": self.enable_cache,
         }
 
     def __repr__(self) -> str:
