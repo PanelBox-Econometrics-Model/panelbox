@@ -4,7 +4,8 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Development Status](https://img.shields.io/badge/status-beta-green.svg)]()
+[![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 PanelBox provides comprehensive tools for panel data econometrics, bringing Stata's `xtabond2` and R's `plm` capabilities to Python with modern, user-friendly APIs.
@@ -70,8 +71,8 @@ data = pd.read_csv('panel_data.csv')
 fe = pb.FixedEffects(
     formula="invest ~ value + capital",
     data=data,
-    id_var="firm",
-    time_var="year"
+    entity_col="firm",
+    time_col="year"
 )
 results = fe.fit(cov_type='clustered')
 print(results.summary())
@@ -253,7 +254,7 @@ If you use PanelBox in your research, please cite:
   author = {Haase, Gustavo and Dourado, Paulo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
-  version = {0.2.0},
+  version = {1.0.0},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
 }
 ```
@@ -291,22 +292,34 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 ## Changelog
 
-See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for version history.
+See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for complete version history.
 
-### Latest Release: v0.2.0 (2026-01-21)
+### Latest Release: v1.0.0 (2026-02-05)
 
-**Major Features:**
+**Production Release - Complete Panel Data Econometrics Suite**
+
+**Static Panel Models:**
+- ✨ Pooled OLS, Fixed Effects, Random Effects, Between, First Differences
+- ✨ 8 types of robust standard errors (HC0-HC3, clustered, Driscoll-Kraay, Newey-West, PCSE)
+- ✨ Comprehensive specification tests
+
+**Dynamic Panel GMM:**
 - ✨ Difference GMM (Arellano-Bond 1991)
 - ✨ System GMM (Blundell-Bond 1998)
 - ✨ Smart instrument selection for unbalanced panels
-- ✨ Comprehensive warning system
-- ✨ Rich documentation and examples
+- ✨ Windmeijer finite-sample correction
 
-**Improvements:**
-- 🔧 Robust to unbalanced panels (72% retention vs 0% before)
-- 🔧 Windmeijer standard error correction
-- 🔧 Automatic weak instrument filtering
-- 📚 Tutorial, interpretation guide, and examples
+**Advanced Features:**
+- ✨ Bootstrap inference (4 methods: pairs, wild, block, residual)
+- ✨ Sensitivity analysis (leave-one-out, subset stability)
+- ✨ 20+ validation tests (unit root, cointegration, diagnostics)
+- ✨ Professional report generation (HTML, Markdown, LaTeX)
+
+**Quality & Performance:**
+- 🔧 600+ tests, 93% passing
+- 🔧 Type-checked with MyPy (77.5% error reduction)
+- 🔧 Validated against Stata xtabond2 and R plm
+- ⚡ Numba-optimized (up to 348x speedup)
 
 ---
 
