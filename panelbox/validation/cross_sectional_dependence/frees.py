@@ -116,7 +116,7 @@ class FreesTest(ValidationTest):
             raise ValueError("Need at least 3 time periods for Frees test")
 
         # Compute pairwise Spearman correlations
-        rank_correlations: Union[list[float], np.ndarray] = []
+        rank_correlations: list[float] = []
         n_pairs = 0
 
         entity_list = list(resid_wide.columns)

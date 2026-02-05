@@ -249,10 +249,11 @@ class BreuschGodfreyTest(ValidationTest):
 
     def _get_design_matrix(self) -> np.ndarray:
         """Get the design matrix X."""
-        if not hasattr(self.results, "_model"):
+        if not hasattr(self.results, "_model") or self.results._model is None:
             return None
 
         model = self.results._model
+        assert model is not None, "Model should be non-None after hasattr check"
 
         if hasattr(model, "formula_parser") and hasattr(model, "data"):
             try:

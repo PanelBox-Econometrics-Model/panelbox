@@ -271,7 +271,7 @@ class PanelIV(PanelModel):
         # Run first stage for each endogenous variable
         for endog_var in endogenous_vars:
             # Get endogenous variable
-            endog_data = self._get_dataframe()[endog_var].values
+            endog_data = np.asarray(self._get_dataframe()[endog_var].values)
 
             # Apply FE transformation if needed
             if self.model_type_iv == "fe":
@@ -357,7 +357,7 @@ class PanelIV(PanelModel):
         X = np.column_stack(X_parts)
 
         # Get y
-        y = df[self.formula_parser.dependent].values
+        y = np.asarray(df[self.formula_parser.dependent].values)
 
         # Apply FE transformation if needed
         if self.model_type_iv == "fe":
