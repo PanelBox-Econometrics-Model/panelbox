@@ -85,7 +85,7 @@ class TestBetweenEstimator:
         results = model.fit(cov_type="robust")
 
         assert isinstance(results, PanelResults)
-        assert results.model_info["cov_type"] == "robust"
+        assert results.cov_type == "robust"
 
     def test_fit_clustered(self, simple_panel_data):
         """Test fitting with clustered standard errors."""
@@ -93,7 +93,7 @@ class TestBetweenEstimator:
         results = model.fit(cov_type="clustered")
 
         assert isinstance(results, PanelResults)
-        assert results.model_info["cov_type"] == "clustered"
+        assert results.cov_type == "clustered"
 
     def test_rsquared_between(self, simple_panel_data):
         """Test that R-squared measures are computed correctly."""
@@ -228,7 +228,7 @@ class TestBetweenEstimator:
         for cov_type in cov_types:
             results = model.fit(cov_type=cov_type)
             assert isinstance(results, PanelResults)
-            assert results.model_info["cov_type"] == cov_type
+            assert results.cov_type == cov_type
 
     def test_invalid_cov_type(self, simple_panel_data):
         """Test error for invalid covariance type."""
@@ -242,7 +242,7 @@ class TestBetweenEstimator:
         model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.model_info["model_type"] == "Between Estimator"
+        assert results.model_type == "Between Estimator"
 
     def test_summary_output(self, simple_panel_data):
         """Test that summary() runs without error."""
