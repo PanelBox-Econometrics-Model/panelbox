@@ -9,7 +9,7 @@ from .latex_exporter import LaTeXExporter
 from .markdown_exporter import MarkdownExporter
 
 __all__ = [
-    'HTMLExporter',
-    'LaTeXExporter',
-    'MarkdownExporter',
+    "HTMLExporter",
+    "LaTeXExporter",
+    "MarkdownExporter",
 ]

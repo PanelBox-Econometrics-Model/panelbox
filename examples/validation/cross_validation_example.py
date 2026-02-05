@@ -10,11 +10,12 @@ essential for time series applications.
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
-print("="*80)
+print("=" * 80)
 print("Time-Series Cross-Validation Example")
-print("="*80)
+print("=" * 80)
 print()
 
 # Generate sample panel data
@@ -34,13 +35,7 @@ for entity in range(n_entities):
         # DGP: y = 2.0 + 1.5*x1 - 1.0*x2 + alpha_i + error
         y = 2.0 + 1.5 * x1 - 1.0 * x2 + alpha_i + np.random.normal(0, 0.5)
 
-        data.append({
-            'entity': entity,
-            'time': time,
-            'y': y,
-            'x1': x1,
-            'x2': x2
-        })
+        data.append({"entity": entity, "time": time, "y": y, "x1": x1, "x2": x2})
 
 df = pd.DataFrame(data)
 
@@ -62,12 +57,7 @@ print()
 # Expanding Window Cross-Validation
 print("3. Expanding Window Cross-Validation:")
 print("=" * 80)
-cv_expanding = pb.TimeSeriesCV(
-    results,
-    method='expanding',
-    min_train_periods=5,
-    verbose=True
-)
+cv_expanding = pb.TimeSeriesCV(results, method="expanding", min_train_periods=5, verbose=True)
 
 cv_results_expanding = cv_expanding.cross_validate()
 print()
@@ -78,11 +68,7 @@ print()
 print("\n4. Rolling Window Cross-Validation:")
 print("=" * 80)
 cv_rolling = pb.TimeSeriesCV(
-    results,
-    method='rolling',
-    window_size=6,
-    min_train_periods=5,
-    verbose=True
+    results, method="rolling", window_size=6, min_train_periods=5, verbose=True
 )
 
 cv_results_rolling = cv_rolling.cross_validate()
@@ -95,22 +81,26 @@ print("\n5. Comparing CV Methods:")
 print("=" * 80)
 print(f"{'Method':<20} {'R² (OOS)':<12} {'RMSE':<12} {'MAE':<12}")
 print("-" * 80)
-print(f"{'Expanding':<20} {cv_results_expanding.metrics['r2_oos']:>11.4f} "
-      f"{cv_results_expanding.metrics['rmse']:>11.4f} "
-      f"{cv_results_expanding.metrics['mae']:>11.4f}")
-print(f"{'Rolling (w=6)':<20} {cv_results_rolling.metrics['r2_oos']:>11.4f} "
-      f"{cv_results_rolling.metrics['rmse']:>11.4f} "
-      f"{cv_results_rolling.metrics['mae']:>11.4f}")
+print(
+    f"{'Expanding':<20} {cv_results_expanding.metrics['r2_oos']:>11.4f} "
+    f"{cv_results_expanding.metrics['rmse']:>11.4f} "
+    f"{cv_results_expanding.metrics['mae']:>11.4f}"
+)
+print(
+    f"{'Rolling (w=6)':<20} {cv_results_rolling.metrics['r2_oos']:>11.4f} "
+    f"{cv_results_rolling.metrics['rmse']:>11.4f} "
+    f"{cv_results_rolling.metrics['mae']:>11.4f}"
+)
 print()
 
 # Interpretation
 print("\n6. Interpretation:")
 print("=" * 80)
 print("Out-of-Sample R²:")
-if cv_results_expanding.metrics['r2_oos'] > 0.5:
+if cv_results_expanding.metrics["r2_oos"] > 0.5:
     print("   ✓ Strong out-of-sample predictive performance (R² > 0.5)")
     print("   → Model generalizes well to unseen data")
-elif cv_results_expanding.metrics['r2_oos'] > 0:
+elif cv_results_expanding.metrics["r2_oos"] > 0:
     print("   ⚠ Moderate out-of-sample performance (0 < R² < 0.5)")
     print("   → Some predictive power, but room for improvement")
 else:
@@ -120,7 +110,7 @@ print()
 
 print("RMSE:")
 in_sample_rmse = np.std(results.resid)
-oos_rmse = cv_results_expanding.metrics['rmse']
+oos_rmse = cv_results_expanding.metrics["rmse"]
 rmse_ratio = oos_rmse / in_sample_rmse
 
 print(f"   In-sample RMSE:  {in_sample_rmse:.4f}")
@@ -147,16 +137,16 @@ try:
 
     print("\n7. Plotting Predictions:")
     print("=" * 80)
-    cv_expanding.plot_predictions(save_path='cv_predictions.png')
+    cv_expanding.plot_predictions(save_path="cv_predictions.png")
     print("   Plot saved to: cv_predictions.png")
 except ImportError:
     print("\n7. Plotting skipped (matplotlib not installed)")
     print("   Install with: pip install matplotlib")
 
 print()
-print("="*80)
+print("=" * 80)
 print("Cross-Validation Complete!")
-print("="*80)
+print("=" * 80)
 print()
 print("Key Takeaways:")
 print("- Expanding window CV trains on growing history")

@@ -16,13 +16,14 @@ Author: PanelBox Development Team
 Date: January 2026
 """
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 
 # Add panelbox to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from panelbox.gmm import DifferenceGMM
 
@@ -62,8 +63,8 @@ def create_unbalanced_panel(n_firms=200, max_periods=10, missing_rate=0.20, seed
                 continue
 
             # Lagged value (if exists)
-            if len(data) > 0 and data[-1]['firm_id'] == i and data[-1]['year'] == 1999 + t:
-                y_lag = data[-1]['y']
+            if len(data) > 0 and data[-1]["firm_id"] == i and data[-1]["year"] == 1999 + t:
+                y_lag = data[-1]["y"]
             else:
                 y_lag = eta_i + np.random.normal(0, 0.5)
 
@@ -75,19 +76,13 @@ def create_unbalanced_panel(n_firms=200, max_periods=10, missing_rate=0.20, seed
             epsilon = np.random.normal(0, 0.4)
             y = 0.6 * y_lag + 0.3 * x1 + 0.2 * x2 + eta_i + epsilon
 
-            data.append({
-                'firm_id': i,
-                'year': 2000 + t,
-                'y': y,
-                'x1': x1,
-                'x2': x2
-            })
+            data.append({"firm_id": i, "year": 2000 + t, "y": y, "x1": x1, "x2": x2})
 
     df = pd.DataFrame(data)
 
-    print("="*70)
+    print("=" * 70)
     print("UNBALANCED PANEL DATA CREATED")
-    print("="*70)
+    print("=" * 70)
     print()
     print(f"Firms: {df['firm_id'].nunique()}")
     print(f"Time periods: {df['year'].nunique()} (2000-{df['year'].max()})")
@@ -96,7 +91,7 @@ def create_unbalanced_panel(n_firms=200, max_periods=10, missing_rate=0.20, seed
     print()
 
     # Panel structure analysis
-    obs_per_firm = df.groupby('firm_id').size()
+    obs_per_firm = df.groupby("firm_id").size()
     print("Panel structure:")
     print(f"  Min observations per firm: {obs_per_firm.min()}")
     print(f"  Max observations per firm: {obs_per_firm.max()}")
@@ -111,9 +106,9 @@ def example_1_simple_specification(df):
     """
     Example 1: Simple specification (works well).
     """
-    print("="*70)
+    print("=" * 70)
     print("EXAMPLE 1: Simple Specification (WORKS)")
-    print("="*70)
+    print("=" * 70)
     print()
 
     print("Specification:")
@@ -125,15 +120,15 @@ def example_1_simple_specification(df):
 
     gmm = DifferenceGMM(
         data=df,
-        dep_var='y',
+        dep_var="y",
         lags=1,
-        id_var='firm_id',
-        time_var='year',
-        exog_vars=['x1', 'x2'],
+        id_var="firm_id",
+        time_var="year",
+        exog_vars=["x1", "x2"],
         time_dummies=False,  # KEY: No time dummies
-        collapse=True,       # KEY: Always collapse
+        collapse=True,  # KEY: Always collapse
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     results = gmm.fit()
@@ -160,9 +155,9 @@ def example_2_with_time_dummies(df):
     """
     Example 2: With time dummies (MAY FAIL).
     """
-    print("="*70)
+    print("=" * 70)
     print("EXAMPLE 2: With Time Dummies (PROBLEMATIC)")
-    print("="*70)
+    print("=" * 70)
     print()
 
     print("Specification:")
@@ -178,15 +173,15 @@ def example_2_with_time_dummies(df):
     try:
         gmm = DifferenceGMM(
             data=df,
-            dep_var='y',
+            dep_var="y",
             lags=1,
-            id_var='firm_id',
-            time_var='year',
-            exog_vars=['x1', 'x2'],
+            id_var="firm_id",
+            time_var="year",
+            exog_vars=["x1", "x2"],
             time_dummies=True,  # ← Problem!
             collapse=True,
             two_step=True,
-            robust=True
+            robust=True,
         )
 
         results = gmm.fit()
@@ -218,14 +213,14 @@ def example_3_workaround_trend(df):
     """
     Example 3: Workaround - use trend instead of dummies.
     """
-    print("="*70)
+    print("=" * 70)
     print("EXAMPLE 3: Workaround - Linear Trend (RECOMMENDED)")
-    print("="*70)
+    print("=" * 70)
     print()
 
     # Add linear trend
     df_trend = df.copy()
-    df_trend['trend'] = df_trend['year'] - df_trend['year'].min()
+    df_trend["trend"] = df_trend["year"] - df_trend["year"].min()
 
     print("Specification:")
     print("  - 1 lag of y")
@@ -236,15 +231,15 @@ def example_3_workaround_trend(df):
 
     gmm = DifferenceGMM(
         data=df_trend,
-        dep_var='y',
+        dep_var="y",
         lags=1,
-        id_var='firm_id',
-        time_var='year',
-        exog_vars=['x1', 'x2', 'trend'],  # Include trend as exog
+        id_var="firm_id",
+        time_var="year",
+        exog_vars=["x1", "x2", "trend"],  # Include trend as exog
         time_dummies=False,  # No dummies
         collapse=True,
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     results = gmm.fit()
@@ -276,15 +271,15 @@ def example_4_subset_dummies(df):
     """
     Example 4: Use subset of time dummies.
     """
-    print("="*70)
+    print("=" * 70)
     print("EXAMPLE 4: Subset of Time Dummies")
-    print("="*70)
+    print("=" * 70)
     print()
 
     # Create dummies for specific years only
     df_subset = df.copy()
-    df_subset['crisis_2008'] = (df_subset['year'] == 2008).astype(int)
-    df_subset['crisis_2009'] = (df_subset['year'] == 2009).astype(int)
+    df_subset["crisis_2008"] = (df_subset["year"] == 2008).astype(int)
+    df_subset["crisis_2009"] = (df_subset["year"] == 2009).astype(int)
 
     print("Specification:")
     print("  - 1 lag of y")
@@ -295,15 +290,15 @@ def example_4_subset_dummies(df):
 
     gmm = DifferenceGMM(
         data=df_subset,
-        dep_var='y',
+        dep_var="y",
         lags=1,
-        id_var='firm_id',
-        time_var='year',
-        exog_vars=['x1', 'x2', 'crisis_2008', 'crisis_2009'],
+        id_var="firm_id",
+        time_var="year",
+        exog_vars=["x1", "x2", "crisis_2008", "crisis_2009"],
         time_dummies=False,  # Not using automatic dummies
         collapse=True,
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     results = gmm.fit()
@@ -328,9 +323,9 @@ def best_practices_summary():
     """
     Summary of best practices for unbalanced panels.
     """
-    print("="*70)
+    print("=" * 70)
     print("BEST PRACTICES FOR UNBALANCED PANELS")
-    print("="*70)
+    print("=" * 70)
     print()
 
     print("1. ALWAYS use collapse=True")
@@ -380,15 +375,17 @@ def diagnostic_checklist(results, df_original):
     """
     Checklist for unbalanced panel GMM results.
     """
-    print("="*70)
+    print("=" * 70)
     print("DIAGNOSTIC CHECKLIST FOR UNBALANCED PANELS")
-    print("="*70)
+    print("=" * 70)
     print()
 
     retention_rate = results.nobs / len(df_original)
 
     # 1. Observation retention
-    print(f"1. Observation retention: {results.nobs}/{len(df_original)} ({retention_rate*100:.1f}%)")
+    print(
+        f"1. Observation retention: {results.nobs}/{len(df_original)} ({retention_rate*100:.1f}%)"
+    )
     if retention_rate > 0.70:
         print("   ✓ Good retention")
     elif retention_rate > 0.50:
@@ -431,10 +428,12 @@ def diagnostic_checklist(results, df_original):
 
     # Overall assessment
     print("Overall Assessment:")
-    all_good = (retention_rate > 0.50 and
-                results.instrument_ratio < 1.0 and
-                0.10 < hansen_p < 0.50 and
-                ar2_p > 0.10)
+    all_good = (
+        retention_rate > 0.50
+        and results.instrument_ratio < 1.0
+        and 0.10 < hansen_p < 0.50
+        and ar2_p > 0.10
+    )
 
     if all_good:
         print("  ✓ Results are reliable")
@@ -448,9 +447,9 @@ def main():
     Run complete unbalanced panel guide.
     """
     print()
-    print("="*70)
+    print("=" * 70)
     print("UNBALANCED PANEL DATA: PRACTICAL GUIDE")
-    print("="*70)
+    print("=" * 70)
     print()
     print("This guide demonstrates:")
     print("  - Challenges with unbalanced panels")
@@ -479,12 +478,12 @@ def main():
     # Diagnostic checklist (using simple specification)
     diagnostic_checklist(results_simple, df)
 
-    print("="*70)
+    print("=" * 70)
     print("KEY TAKEAWAYS")
-    print("="*70)
+    print("=" * 70)
     print()
     print("1. Unbalanced panels are COMMON in real data")
-    print("   → Don't try to \"fix\" by dropping observations")
+    print('   → Don\'t try to "fix" by dropping observations')
     print("   → GMM can handle unbalanced structure")
     print()
     print("2. The main challenge: sparse instrument matrices")
@@ -507,10 +506,10 @@ def main():
     print("   → Level instruments more affected by unbalanced structure")
     print("   → Difference GMM often more robust")
     print()
-    print("="*70)
+    print("=" * 70)
     print("✓ Guide completed successfully!")
-    print("="*70)
+    print("=" * 70)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

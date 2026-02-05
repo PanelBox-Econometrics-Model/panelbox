@@ -2,10 +2,11 @@
 Tests for outlier detection module.
 """
 
-import pytest
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
+import pytest
 
 from panelbox.validation.robustness.outliers import OutlierDetector, OutlierResults
 
@@ -28,13 +29,7 @@ def simple_panel_data():
             if entity == 0 and time == 0:
                 y += 10  # Outlier
 
-            data.append({
-                'entity': entity,
-                'time': time,
-                'y': y,
-                'x1': x1,
-                'x2': x2
-            })
+            data.append({"entity": entity, "time": time, "y": y, "x1": x1, "x2": x2})
 
     return pd.DataFrame(data)
 
@@ -43,6 +38,7 @@ def simple_panel_data():
 def mock_results(simple_panel_data):
     """Create mock PanelResults."""
     from panelbox import FixedEffects
+
     fe = FixedEffects("y ~ x1 + x2", simple_panel_data, "entity", "time")
     return fe.fit()
 
@@ -59,17 +55,17 @@ def test_init(mock_results):
 def test_detect_outliers_iqr(mock_results):
     """Test IQR method."""
     detector = OutlierDetector(mock_results, verbose=False)
-    results = detector.detect_outliers_univariate(method='iqr', threshold=1.5)
+    results = detector.detect_outliers_univariate(method="iqr", threshold=1.5)
 
     assert isinstance(results, OutlierResults)
-    assert 'is_outlier' in results.outliers.columns
+    assert "is_outlier" in results.outliers.columns
     assert results.n_outliers >= 0
 
 
 def test_detect_outliers_zscore(mock_results):
     """Test Z-score method."""
     detector = OutlierDetector(mock_results, verbose=False)
-    results = detector.detect_outliers_univariate(method='zscore', threshold=2.5)
+    results = detector.detect_outliers_univariate(method="zscore", threshold=2.5)
 
     assert isinstance(results, OutlierResults)
     assert results.n_outliers >= 0
@@ -80,7 +76,7 @@ def test_detect_outliers_invalid_method(mock_results):
     detector = OutlierDetector(mock_results, verbose=False)
 
     with pytest.raises(ValueError, match="Unknown method"):
-        detector.detect_outliers_univariate(method='invalid')
+        detector.detect_outliers_univariate(method="invalid")
 
 
 # Test Multivariate Detection
@@ -90,7 +86,7 @@ def test_detect_outliers_multivariate(mock_results):
     results = detector.detect_outliers_multivariate(threshold=3.0)
 
     assert isinstance(results, OutlierResults)
-    assert 'mahalanobis_distance' in results.outliers.columns
+    assert "mahalanobis_distance" in results.outliers.columns
     assert results.n_outliers >= 0
 
 
@@ -98,19 +94,19 @@ def test_detect_outliers_multivariate(mock_results):
 def test_detect_outliers_standardized_residuals(mock_results):
     """Test standardized residuals method."""
     detector = OutlierDetector(mock_results, verbose=False)
-    results = detector.detect_outliers_residuals(method='standardized', threshold=2.5)
+    results = detector.detect_outliers_residuals(method="standardized", threshold=2.5)
 
     assert isinstance(results, OutlierResults)
-    assert 'standardized_residual' in results.outliers.columns
+    assert "standardized_residual" in results.outliers.columns
 
 
 def test_detect_outliers_studentized_residuals(mock_results):
     """Test studentized residuals method."""
     detector = OutlierDetector(mock_results, verbose=False)
-    results = detector.detect_outliers_residuals(method='studentized', threshold=2.5)
+    results = detector.detect_outliers_residuals(method="studentized", threshold=2.5)
 
     assert isinstance(results, OutlierResults)
-    assert 'studentized_residual' in results.outliers.columns
+    assert "studentized_residual" in results.outliers.columns
 
 
 # Test Leverage Detection
@@ -120,8 +116,8 @@ def test_detect_leverage_points(mock_results):
     leverage_df = detector.detect_leverage_points()
 
     assert isinstance(leverage_df, pd.DataFrame)
-    assert 'leverage' in leverage_df.columns
-    assert 'is_high_leverage' in leverage_df.columns
+    assert "leverage" in leverage_df.columns
+    assert "is_high_leverage" in leverage_df.columns
     assert len(leverage_df) == len(mock_results.resid)
 
 
@@ -136,42 +132,41 @@ def test_detect_leverage_custom_threshold(mock_results):
 # Test Results Summary
 def test_outlier_results_summary():
     """Test OutlierResults summary."""
-    outliers_df = pd.DataFrame({
-        'entity': [0, 1, 2],
-        'time': [0, 1, 2],
-        'value': [1.0, 5.0, 2.0],
-        'is_outlier': [False, True, False],
-        'distance': [0.5, 2.5, 0.3]
-    })
+    outliers_df = pd.DataFrame(
+        {
+            "entity": [0, 1, 2],
+            "time": [0, 1, 2],
+            "value": [1.0, 5.0, 2.0],
+            "is_outlier": [False, True, False],
+            "distance": [0.5, 2.5, 0.3],
+        }
+    )
 
     results = OutlierResults(
-        outliers=outliers_df,
-        method="Test method",
-        threshold=2.0,
-        n_outliers=1
+        outliers=outliers_df, method="Test method", threshold=2.0, n_outliers=1
     )
 
     summary = results.summary()
     assert isinstance(summary, str)
-    assert 'Outlier Detection Results' in summary
+    assert "Outlier Detection Results" in summary
 
 
 # Test Plotting
 @pytest.mark.skipif(
     not pytest.importorskip("matplotlib", reason="matplotlib not installed"),
-    reason="matplotlib required for plotting tests"
+    reason="matplotlib required for plotting tests",
 )
 def test_plot_diagnostics(mock_results):
     """Test plotting diagnostics."""
     detector = OutlierDetector(mock_results, verbose=False)
 
-    with patch('matplotlib.pyplot.show'):
+    with patch("matplotlib.pyplot.show"):
         detector.plot_diagnostics()
 
 
 @pytest.mark.skipif(
     not pytest.importorskip("matplotlib", reason="matplotlib not installed"),
-    reason="matplotlib required for plotting tests"
+    reason="matplotlib required for plotting tests",
 )
 def test_plot_diagnostics_save(mock_results, tmp_path):
     """Test saving diagnostic plots."""
@@ -187,7 +182,7 @@ def test_plot_without_matplotlib(mock_results):
     """Test that plotting without matplotlib gives error."""
     detector = OutlierDetector(mock_results, verbose=False)
 
-    with patch.dict('sys.modules', {'matplotlib': None, 'matplotlib.pyplot': None}):
+    with patch.dict("sys.modules", {"matplotlib": None, "matplotlib.pyplot": None}):
         with pytest.raises(ImportError, match="matplotlib is required"):
             detector.plot_diagnostics()
 
@@ -198,7 +193,7 @@ def test_full_workflow(mock_results):
     detector = OutlierDetector(mock_results, verbose=False)
 
     # Univariate
-    iqr_results = detector.detect_outliers_univariate(method='iqr')
+    iqr_results = detector.detect_outliers_univariate(method="iqr")
     assert iqr_results.n_outliers >= 0
 
     # Multivariate
@@ -214,5 +209,5 @@ def test_full_workflow(mock_results):
     assert len(leverage) > 0
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

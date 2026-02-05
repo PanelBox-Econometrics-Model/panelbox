@@ -1,9 +1,10 @@
 """Tests for influence diagnostics module."""
 
-import pytest
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
+import pytest
 
 from panelbox.validation.robustness.influence import InfluenceDiagnostics, InfluenceResults
 
@@ -19,7 +20,7 @@ def simple_panel_data():
         for time in range(n_periods):
             x1, x2 = np.random.normal(0, 1, 2)
             y = 2.0 + 1.5 * x1 - 1.0 * x2 + np.random.normal(0, 0.5)
-            data.append({'entity': entity, 'time': time, 'y': y, 'x1': x1, 'x2': x2})
+            data.append({"entity": entity, "time": time, "y": y, "x1": x1, "x2": x2})
 
     return pd.DataFrame(data)
 
@@ -28,6 +29,7 @@ def simple_panel_data():
 def mock_results(simple_panel_data):
     """Create mock PanelResults."""
     from panelbox import FixedEffects
+
     return FixedEffects("y ~ x1 + x2", simple_panel_data, "entity", "time").fit()
 
 
@@ -43,10 +45,10 @@ def test_compute(mock_results):
     results = infl.compute()
 
     assert isinstance(results, InfluenceResults)
-    assert hasattr(results, 'cooks_d')
-    assert hasattr(results, 'dffits')
-    assert hasattr(results, 'dfbetas')
-    assert hasattr(results, 'leverage')
+    assert hasattr(results, "cooks_d")
+    assert hasattr(results, "dffits")
+    assert hasattr(results, "dfbetas")
+    assert hasattr(results, "leverage")
 
 
 def test_influential_observations_cooks_d(mock_results):
@@ -54,7 +56,7 @@ def test_influential_observations_cooks_d(mock_results):
     infl = InfluenceDiagnostics(mock_results, verbose=False)
     infl.compute()
 
-    influential = infl.influential_observations(method='cooks_d')
+    influential = infl.influential_observations(method="cooks_d")
     assert isinstance(influential, pd.DataFrame)
 
 
@@ -63,7 +65,7 @@ def test_influential_observations_dffits(mock_results):
     infl = InfluenceDiagnostics(mock_results, verbose=False)
     infl.compute()
 
-    influential = infl.influential_observations(method='dffits')
+    influential = infl.influential_observations(method="dffits")
     assert isinstance(influential, pd.DataFrame)
 
 
@@ -72,7 +74,7 @@ def test_influential_observations_dfbetas(mock_results):
     infl = InfluenceDiagnostics(mock_results, verbose=False)
     infl.compute()
 
-    influential = infl.influential_observations(method='dfbetas')
+    influential = infl.influential_observations(method="dfbetas")
     assert isinstance(influential, pd.DataFrame)
 
 
@@ -83,19 +85,19 @@ def test_summary(mock_results):
 
     summary = infl.summary()
     assert isinstance(summary, str)
-    assert 'Influence Diagnostics' in summary
+    assert "Influence Diagnostics" in summary
 
 
 @pytest.mark.skipif(
     not pytest.importorskip("matplotlib", reason="matplotlib not installed"),
-    reason="matplotlib required"
+    reason="matplotlib required",
 )
 def test_plot_influence(mock_results):
     """Test plotting."""
     infl = InfluenceDiagnostics(mock_results, verbose=False)
     infl.compute()
 
-    with patch('matplotlib.pyplot.show'):
+    with patch("matplotlib.pyplot.show"):
         infl.plot_influence()
 
 
@@ -105,8 +107,8 @@ def test_invalid_method(mock_results):
     infl.compute()
 
     with pytest.raises(ValueError, match="Unknown method"):
-        infl.influential_observations(method='invalid')
+        infl.influential_observations(method="invalid")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

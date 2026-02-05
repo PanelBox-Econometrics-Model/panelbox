@@ -5,11 +5,12 @@ This module provides formula parsing functionality similar to R's formula syntax
 adapted for panel data econometrics.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
 import re
-import patsy
-import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
+import pandas as pd
+import patsy
 
 
 class FormulaParser:
@@ -57,8 +58,10 @@ class FormulaParser:
         if not isinstance(formula, str):
             raise TypeError("formula must be a string")
 
-        if '~' not in formula:
-            raise ValueError("formula must contain '~' separating dependent and independent variables")
+        if "~" not in formula:
+            raise ValueError(
+                "formula must contain '~' separating dependent and independent variables"
+            )
 
         self.formula = formula.strip()
         self.dependent: Optional[str] = None
@@ -68,7 +71,7 @@ class FormulaParser:
         self._instrument_spec: Optional[str] = None
         self._parsed: bool = False
 
-    def parse(self) -> 'FormulaParser':
+    def parse(self) -> "FormulaParser":
         """
         Parse the formula string.
 
@@ -82,7 +85,7 @@ class FormulaParser:
         >>> parser = FormulaParser("y ~ x1 + x2").parse()
         """
         # Split on ~ to get LHS and RHS
-        parts = self.formula.split('~')
+        parts = self.formula.split("~")
         if len(parts) != 2:
             raise ValueError("formula must have exactly one '~'")
 
@@ -92,17 +95,17 @@ class FormulaParser:
         self.dependent = lhs
 
         # Check for instruments (for GMM - future)
-        if '|' in rhs:
+        if "|" in rhs:
             self.has_instruments = True
-            rhs_parts = rhs.split('|')
+            rhs_parts = rhs.split("|")
             rhs = rhs_parts[0].strip()
             self._instrument_spec = rhs_parts[1].strip()
 
         # Check for no intercept
-        if '-1' in rhs or '- 1' in rhs or '+0' in rhs or '+ 0' in rhs:
+        if "-1" in rhs or "- 1" in rhs or "+0" in rhs or "+ 0" in rhs:
             self.has_intercept = False
             # Remove the -1 or +0 from RHS
-            rhs = re.sub(r'[+-]\s*[01]', '', rhs)
+            rhs = re.sub(r"[+-]\s*[01]", "", rhs)
 
         # Store RHS for later use with patsy
         self._rhs = rhs.strip()
@@ -133,33 +136,33 @@ class FormulaParser:
         """
         # Split on + but respect parentheses
         # This is a simplified version - patsy will do the heavy lifting
-        terms = re.split(r'\s*\+\s*', rhs)
+        terms = re.split(r"\s*\+\s*", rhs)
         variables = []
 
         for term in terms:
             term = term.strip()
-            if not term or term in ['-1', '- 1', '0', '1']:
+            if not term or term in ["-1", "- 1", "0", "1"]:
                 continue
 
             # Extract variable names from term
             # Handle simple cases: x, log(x), I(x**2), x:y, x*y
             # Check for function calls first (before checking for : or *)
-            func_match = re.match(r'(?:\w+\.)*(\w+)\((.*)\)', term)
+            func_match = re.match(r"(?:\w+\.)*(\w+)\((.*)\)", term)
             if func_match:
                 # This is a function call - extract variable from it
                 var = self._extract_var_from_term(term)
                 if var and var not in variables:
                     variables.append(var)
-            elif ':' in term:
+            elif ":" in term:
                 # Interaction term
-                parts = term.split(':')
+                parts = term.split(":")
                 for part in parts:
                     var = self._extract_var_from_term(part.strip())
                     if var and var not in variables:
                         variables.append(var)
-            elif '*' in term:
+            elif "*" in term:
                 # Interaction with expansion (not inside parentheses)
-                parts = term.split('*')
+                parts = term.split("*")
                 for part in parts:
                     var = self._extract_var_from_term(part.strip())
                     if var and var not in variables:
@@ -188,32 +191,30 @@ class FormulaParser:
         term = term.strip()
 
         # Function call like log(x), np.log(x), I(x**2)
-        func_match = re.match(r'(?:\w+\.)*(\w+)\((.*)\)', term)
+        func_match = re.match(r"(?:\w+\.)*(\w+)\((.*)\)", term)
         if func_match:
             func_name = func_match.group(1)
             arg = func_match.group(2)
 
             # For I(), extract variable from expression
-            if func_name == 'I':
+            if func_name == "I":
                 # Extract variable names from expression
-                var_matches = re.findall(r'\b([a-zA-Z_]\w*)\b', arg)
+                var_matches = re.findall(r"\b([a-zA-Z_]\w*)\b", arg)
                 return var_matches[0] if var_matches else None
             else:
                 # For other functions, return argument if it's a variable name
-                if re.match(r'^[a-zA-Z_]\w*$', arg.strip()):
+                if re.match(r"^[a-zA-Z_]\w*$", arg.strip()):
                     return arg.strip()
                 return None
 
         # Simple variable name
-        if re.match(r'^[a-zA-Z_]\w*$', term):
+        if re.match(r"^[a-zA-Z_]\w*$", term):
             return term
 
         return None
 
     def build_design_matrices(
-        self,
-        data: pd.DataFrame,
-        return_type: str = 'dataframe'
+        self, data: pd.DataFrame, return_type: str = "dataframe"
     ) -> Tuple[Any, Any]:
         """
         Build design matrices using patsy.
@@ -251,18 +252,18 @@ class FormulaParser:
             patsy_formula = f"{self.dependent} ~ {self._rhs} - 1"
 
         # Use patsy to build design matrices
-        y_mat, X_mat = patsy.dmatrices(patsy_formula, data, return_type='dataframe')
+        y_mat, X_mat = patsy.dmatrices(patsy_formula, data, return_type="dataframe")
 
-        if return_type == 'dataframe':
+        if return_type == "dataframe":
             # y_mat is a DataFrame with one column, extract as Series
             y = y_mat.iloc[:, 0]
             X = X_mat
-        elif return_type == 'matrix':
+        elif return_type == "matrix":
             # Return patsy DesignMatrix objects
-            y, X = patsy.dmatrices(patsy_formula, data, return_type='matrix')
-        elif return_type == 'array':
+            y, X = patsy.dmatrices(patsy_formula, data, return_type="matrix")
+        elif return_type == "array":
             # Return numpy arrays
-            y, X = patsy.dmatrices(patsy_formula, data, return_type='dataframe')
+            y, X = patsy.dmatrices(patsy_formula, data, return_type="dataframe")
             y = y.values.ravel()
             X = X.values
         else:
@@ -291,7 +292,7 @@ class FormulaParser:
         >>> print(var_names)
         ['Intercept', 'x1', 'x2']
         """
-        _, X = self.build_design_matrices(data, return_type='dataframe')
+        _, X = self.build_design_matrices(data, return_type="dataframe")
         return list(X.columns)
 
     def __repr__(self) -> str:

@@ -13,6 +13,7 @@ This is useful for:
 
 import numpy as np
 import pandas as pd
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.standard_errors import StandardErrorComparison
@@ -37,25 +38,27 @@ n_periods = 10
 n = n_entities * n_periods
 
 # Create panel structure
-data = pd.DataFrame({
-    'entity': np.repeat(range(n_entities), n_periods),
-    'time': np.tile(range(n_periods), n_entities),
-})
+data = pd.DataFrame(
+    {
+        "entity": np.repeat(range(n_entities), n_periods),
+        "time": np.tile(range(n_periods), n_entities),
+    }
+)
 
 # Generate y with heteroskedasticity and entity-level effects
 entity_effects = np.random.randn(n_entities)
-data['y'] = (
-    entity_effects[data['entity']] +  # Fixed effect
-    0.5 * np.random.randn(n) +         # Heteroskedastic error
-    0.3 * np.random.randn(n) * (data['entity'] % 5)  # Group-level heterosked
+data["y"] = (
+    entity_effects[data["entity"]]  # Fixed effect
+    + 0.5 * np.random.randn(n)  # Heteroskedastic error
+    + 0.3 * np.random.randn(n) * (data["entity"] % 5)  # Group-level heterosked
 )
 
 # Generate x1 and x2
-data['x1'] = np.random.randn(n)
-data['x2'] = np.random.randn(n)
+data["x1"] = np.random.randn(n)
+data["x2"] = np.random.randn(n)
 
 # Add x1 and x2 effects to y
-data['y'] += 0.8 * data['x1'] + 1.2 * data['x2']
+data["y"] += 0.8 * data["x1"] + 1.2 * data["x2"]
 
 print(f"Panel structure: {n_entities} entities × {n_periods} periods = {n} observations")
 print()
@@ -69,7 +72,7 @@ print("-" * 80)
 
 # Fixed Effects
 print("Fitting Fixed Effects model...")
-fe = FixedEffects('y ~ x1 + x2', data, 'entity', 'time')
+fe = FixedEffects("y ~ x1 + x2", data, "entity", "time")
 fe_results = fe.fit()
 
 print(f"Fixed Effects coefficients:")
@@ -78,7 +81,7 @@ print()
 
 # Pooled OLS (for comparison)
 print("Fitting Pooled OLS model...")
-pooled = PooledOLS('y ~ x1 + x2', data, 'entity', 'time')
+pooled = PooledOLS("y ~ x1 + x2", data, "entity", "time")
 pooled_results = pooled.fit()
 
 print(f"Pooled OLS coefficients:")
@@ -97,7 +100,7 @@ print()
 print("Method 1: Manual Comparison by Refitting")
 print("-" * 80)
 
-se_types_to_compare = ['nonrobust', 'robust', 'hc3', 'clustered', 'twoway']
+se_types_to_compare = ["nonrobust", "robust", "hc3", "clustered", "twoway"]
 se_results = {}
 
 for se_type in se_types_to_compare:
@@ -111,7 +114,7 @@ print(se_comparison_df)
 print()
 
 # Compute ratios relative to nonrobust
-se_ratios = se_comparison_df.div(se_comparison_df['nonrobust'], axis=0)
+se_ratios = se_comparison_df.div(se_comparison_df["nonrobust"], axis=0)
 print("SE Ratios (relative to nonrobust):")
 print(se_ratios.round(3))
 print()
@@ -125,12 +128,12 @@ print("=" * 80)
 print()
 
 # Pooled OLS comparison
-pooled_se_types = ['nonrobust', 'robust', 'hc3', 'clustered', 'twoway', 'driscoll_kraay']
+pooled_se_types = ["nonrobust", "robust", "hc3", "clustered", "twoway", "driscoll_kraay"]
 pooled_se_results = {}
 
 for se_type in pooled_se_types:
     try:
-        if se_type == 'driscoll_kraay':
+        if se_type == "driscoll_kraay":
             result = pooled.fit(cov_type=se_type, max_lags=2)
         else:
             result = pooled.fit(cov_type=se_type)
@@ -145,7 +148,7 @@ print(pooled_se_df)
 print()
 
 # Compute ratios
-pooled_se_ratios = pooled_se_df.div(pooled_se_df['nonrobust'], axis=0)
+pooled_se_ratios = pooled_se_df.div(pooled_se_df["nonrobust"], axis=0)
 print("SE Ratios (relative to nonrobust):")
 print(pooled_se_ratios.round(3))
 print()
@@ -171,15 +174,17 @@ for se_type in se_types_to_compare:
     result = fe.fit(cov_type=se_type)
     t_stats = result.params / result.std_errors
     p_values = 2 * (1 - stats.t.cdf(np.abs(t_stats), df))
-    significant = (p_values < alpha).values if hasattr(p_values, 'values') else (p_values < alpha)
+    significant = (p_values < alpha).values if hasattr(p_values, "values") else (p_values < alpha)
 
     print(f"\n{se_type}:")
     for i, coef_name in enumerate(result.params.index):
         sig_marker = "***" if significant[i] else ""
-        pval = p_values.iloc[i] if hasattr(p_values, 'iloc') else p_values[i]
-        print(f"  {coef_name:10s}: coef={result.params.iloc[i]:7.4f}, "
-              f"se={result.std_errors.iloc[i]:7.4f}, "
-              f"p={pval:6.4f} {sig_marker}")
+        pval = p_values.iloc[i] if hasattr(p_values, "iloc") else p_values[i]
+        print(
+            f"  {coef_name:10s}: coef={result.params.iloc[i]:7.4f}, "
+            f"se={result.std_errors.iloc[i]:7.4f}, "
+            f"p={pval:6.4f} {sig_marker}"
+        )
 
 print()
 
@@ -195,8 +200,8 @@ print("Key Findings:")
 print("-" * 80)
 
 # Compare robust vs nonrobust
-robust_ratio_mean = se_ratios['robust'].mean()
-clustered_ratio_mean = se_ratios['clustered'].mean()
+robust_ratio_mean = se_ratios["robust"].mean()
+clustered_ratio_mean = se_ratios["clustered"].mean()
 
 print(f"1. Heteroskedasticity Impact:")
 print(f"   - Average robust SE is {robust_ratio_mean:.2f}× nonrobust SE")
@@ -265,24 +270,24 @@ try:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
     # Plot 1: SE comparison
-    se_comparison_df.plot(kind='bar', ax=ax1)
-    ax1.set_title('Standard Error Comparison (Fixed Effects)', fontsize=14, fontweight='bold')
-    ax1.set_xlabel('Coefficient')
-    ax1.set_ylabel('Standard Error')
-    ax1.legend(title='SE Type')
-    ax1.grid(axis='y', alpha=0.3)
+    se_comparison_df.plot(kind="bar", ax=ax1)
+    ax1.set_title("Standard Error Comparison (Fixed Effects)", fontsize=14, fontweight="bold")
+    ax1.set_xlabel("Coefficient")
+    ax1.set_ylabel("Standard Error")
+    ax1.legend(title="SE Type")
+    ax1.grid(axis="y", alpha=0.3)
 
     # Plot 2: SE ratios
-    se_ratios.drop('nonrobust', axis=1).plot(kind='bar', ax=ax2)
-    ax2.set_title('SE Ratios (relative to nonrobust)', fontsize=14, fontweight='bold')
-    ax2.set_xlabel('Coefficient')
-    ax2.set_ylabel('Ratio')
-    ax2.axhline(y=1, color='black', linestyle='--', alpha=0.5, label='Baseline')
-    ax2.legend(title='SE Type')
-    ax2.grid(axis='y', alpha=0.3)
+    se_ratios.drop("nonrobust", axis=1).plot(kind="bar", ax=ax2)
+    ax2.set_title("SE Ratios (relative to nonrobust)", fontsize=14, fontweight="bold")
+    ax2.set_xlabel("Coefficient")
+    ax2.set_ylabel("Ratio")
+    ax2.axhline(y=1, color="black", linestyle="--", alpha=0.5, label="Baseline")
+    ax2.legend(title="SE Type")
+    ax2.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('se_comparison_example.png', dpi=300, bbox_inches='tight')
+    plt.savefig("se_comparison_example.png", dpi=300, bbox_inches="tight")
     print("✓ Plot saved as 'se_comparison_example.png'")
     print()
 

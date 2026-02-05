@@ -15,12 +15,14 @@ References
        87(1), 115-143.
 """
 
-from typing import Union, List, Optional, Dict
+from typing import Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
+
 from panelbox.gmm.difference_gmm import DifferenceGMM
+from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
 from panelbox.gmm.results import GMMResults
-from panelbox.gmm.instruments import InstrumentSet, InstrumentBuilder
 
 
 class SystemGMM(DifferenceGMM):
@@ -184,21 +186,23 @@ class SystemGMM(DifferenceGMM):
     Blundell, R., & Bond, S. (1998). Journal of Econometrics, 87(1), 115-143.
     """
 
-    def __init__(self,
-                 data: pd.DataFrame,
-                 dep_var: str,
-                 lags: Union[int, List[int]],
-                 id_var: str = 'id',
-                 time_var: str = 'year',
-                 exog_vars: Optional[List[str]] = None,
-                 endogenous_vars: Optional[List[str]] = None,
-                 predetermined_vars: Optional[List[str]] = None,
-                 time_dummies: bool = True,
-                 collapse: bool = False,
-                 two_step: bool = True,
-                 robust: bool = True,
-                 gmm_type: str = 'two_step',
-                 level_instruments: Optional[Dict] = None):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        dep_var: str,
+        lags: Union[int, List[int]],
+        id_var: str = "id",
+        time_var: str = "year",
+        exog_vars: Optional[List[str]] = None,
+        endogenous_vars: Optional[List[str]] = None,
+        predetermined_vars: Optional[List[str]] = None,
+        time_dummies: bool = True,
+        collapse: bool = False,
+        two_step: bool = True,
+        robust: bool = True,
+        gmm_type: str = "two_step",
+        level_instruments: Optional[Dict] = None,
+    ):
         """Initialize System GMM model."""
         # Initialize parent Difference GMM
         super().__init__(
@@ -214,11 +218,11 @@ class SystemGMM(DifferenceGMM):
             collapse=collapse,
             two_step=two_step,
             robust=robust,
-            gmm_type=gmm_type
+            gmm_type=gmm_type,
         )
 
         # Level instruments configuration
-        self.level_instruments = level_instruments or {'max_lags': 1}
+        self.level_instruments = level_instruments or {"max_lags": 1}
 
     def fit(self) -> GMMResults:
         """
@@ -271,13 +275,13 @@ class SystemGMM(DifferenceGMM):
         times_stacked = np.concatenate([times, times])
 
         # Step 5: Estimate GMM on stacked system (using cleaned data)
-        if self.gmm_type == 'one_step':
+        if self.gmm_type == "one_step":
             beta, W, residuals_clean = self.estimator.one_step(
                 y_stacked_clean, X_stacked_clean, Z_stacked_clean
             )
             vcov = self._compute_one_step_vcov(X_stacked_clean, Z_stacked_clean, residuals_clean, W)
             converged = True
-        elif self.gmm_type == 'two_step':
+        elif self.gmm_type == "two_step":
             beta, vcov, W, residuals_clean = self.estimator.two_step(
                 y_stacked_clean, X_stacked_clean, Z_stacked_clean, robust=self.robust
             )
@@ -301,6 +305,7 @@ class SystemGMM(DifferenceGMM):
         std_errors = np.sqrt(np.diag(vcov))
         tvalues = beta / std_errors
         from scipy import stats as scipy_stats
+
         pvalues = 2 * (1 - scipy_stats.norm.cdf(np.abs(tvalues)))
 
         # Step 7: Get variable names
@@ -310,14 +315,10 @@ class SystemGMM(DifferenceGMM):
         n_params = len(beta)
 
         # Hansen J-test on full system (use cleaned data)
-        hansen = self.tester.hansen_j_test(
-            residuals_clean, Z_stacked_clean, W, n_params
-        )
+        hansen = self.tester.hansen_j_test(residuals_clean, Z_stacked_clean, W, n_params)
 
         # Sargan test
-        sargan = self.tester.sargan_test(
-            residuals_clean, Z_stacked_clean, n_params
-        )
+        sargan = self.tester.sargan_test(residuals_clean, Z_stacked_clean, n_params)
 
         # AR tests (on difference residuals only)
         n_diff = len(y_diff)
@@ -328,20 +329,14 @@ class SystemGMM(DifferenceGMM):
         resid_diff_clean = residuals_diff_only.flatten()[valid_mask_diff]
         ids_diff_clean = ids_diff_only[valid_mask_diff]
 
-        ar1 = self.tester.arellano_bond_ar_test(
-            resid_diff_clean, ids_diff_clean, order=1
-        )
-        ar2 = self.tester.arellano_bond_ar_test(
-            resid_diff_clean, ids_diff_clean, order=2
-        )
+        ar1 = self.tester.arellano_bond_ar_test(resid_diff_clean, ids_diff_clean, order=1)
+        ar2 = self.tester.arellano_bond_ar_test(resid_diff_clean, ids_diff_clean, order=2)
 
         # Difference-in-Hansen test for level instruments
         # Note: Disabled when instrument columns are filtered due to dimension mismatches
         # This is a known limitation when dealing with sparse instrument coverage
         try:
-            diff_hansen = self._compute_diff_hansen(
-                residuals_full, Z_diff, Z_level, W, n_params
-            )
+            diff_hansen = self._compute_diff_hansen(residuals_full, Z_diff, Z_level, W, n_params)
         except (ValueError, np.linalg.LinAlgError):
             # If dimensions don't match (due to column filtering), skip test
             diff_hansen = None
@@ -367,9 +362,9 @@ class SystemGMM(DifferenceGMM):
             converged=converged,
             two_step=self.two_step,
             windmeijer_corrected=self.robust and self.two_step,
-            model_type='system',
-            transformation='fd',
-            residuals=residuals_full
+            model_type="system",
+            transformation="fd",
+            residuals=residuals_full,
         )
 
         self.params = self.results.params
@@ -378,6 +373,7 @@ class SystemGMM(DifferenceGMM):
         retention_rate = self.results.nobs / len(self.data)
         if retention_rate < 0.30:
             import warnings
+
             warnings.warn(
                 f"\nLow observation retention: {self.results.nobs}/{len(self.data)} "
                 f"({retention_rate*100:.1f}%).\n"
@@ -389,7 +385,7 @@ class SystemGMM(DifferenceGMM):
                 f"  4. Check data for excessive missing values\n"
                 f"  5. Consider using DifferenceGMM (more robust for weak instruments)\n\n"
                 f"See examples/gmm/unbalanced_panel_guide.py for detailed guidance.",
-                UserWarning
+                UserWarning,
             )
 
         return self.results
@@ -421,20 +417,20 @@ class SystemGMM(DifferenceGMM):
 
         # Create lagged dependent variable for levels
         for lag in self.lags:
-            lag_name = f'{self.dep_var}_L{lag}'
+            lag_name = f"{self.dep_var}_L{lag}"
             df[lag_name] = df.groupby(self.id_var)[self.dep_var].shift(lag)
 
         # Build regressor list (same as difference)
         regressors = []
         for lag in self.lags:
-            regressors.append(f'{self.dep_var}_L{lag}')
+            regressors.append(f"{self.dep_var}_L{lag}")
         regressors.extend(self.exog_vars)
         regressors.extend(self.endogenous_vars)
         regressors.extend(self.predetermined_vars)
 
         # Add time dummies if requested
         if self.time_dummies:
-            time_dummies = pd.get_dummies(df[self.time_var], prefix='year', drop_first=True)
+            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", drop_first=True)
             for col in time_dummies.columns:
                 df[col] = time_dummies[col]
                 if col not in regressors:
@@ -465,16 +461,16 @@ class SystemGMM(DifferenceGMM):
 
         # Create differences of lagged dependent variable
         for lag in self.lags:
-            lag_name = f'{self.dep_var}_L{lag}'
+            lag_name = f"{self.dep_var}_L{lag}"
             if lag_name in df.columns:
-                df[f'{lag_name}_diff'] = df.groupby(self.id_var)[lag_name].diff()
-                self.data[f'{lag_name}_diff'] = df[f'{lag_name}_diff']
+                df[f"{lag_name}_diff"] = df.groupby(self.id_var)[lag_name].diff()
+                self.data[f"{lag_name}_diff"] = df[f"{lag_name}_diff"]
 
         # Create differences of predetermined/endogenous variables
         for var in self.predetermined_vars + self.endogenous_vars:
             if var in df.columns:
-                df[f'{var}_diff'] = df.groupby(self.id_var)[var].diff()
-                self.data[f'{var}_diff'] = df[f'{var}_diff']
+                df[f"{var}_diff"] = df.groupby(self.id_var)[var].diff()
+                self.data[f"{var}_diff"] = df[f"{var}_diff"]
 
         # SECOND: Recreate InstrumentBuilder with updated data
         self.instrument_builder = InstrumentBuilder(self.data, self.id_var, self.time_var)
@@ -484,39 +480,36 @@ class SystemGMM(DifferenceGMM):
 
         # For lagged dependent variable in levels, use differences as instruments
         for lag in self.lags:
-            lag_name = f'{self.dep_var}_L{lag}'
+            lag_name = f"{self.dep_var}_L{lag}"
 
             # Use lagged differences as instruments for levels
-            max_lags_level = self.level_instruments.get('max_lags', 1)
+            max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_lag = self.instrument_builder.create_gmm_style_instruments(
-                var=f'{lag_name}_diff',
+                var=f"{lag_name}_diff",
                 min_lag=0,  # Can use contemporaneous difference
                 max_lag=max_lags_level,
-                equation='level',
-                collapse=self.collapse
+                equation="level",
+                collapse=self.collapse,
             )
             instrument_sets_level.append(Z_level_lag)
 
         # For exogenous variables in levels, use themselves
         for var in self.exog_vars:
             Z_level_exog = self.instrument_builder.create_iv_style_instruments(
-                var=var,
-                min_lag=0,
-                max_lag=0,
-                equation='level'
+                var=var, min_lag=0, max_lag=0, equation="level"
             )
             instrument_sets_level.append(Z_level_exog)
 
         # For predetermined/endogenous in levels, use lagged differences
         for var in self.predetermined_vars + self.endogenous_vars:
             # Variable differences already created above
-            max_lags_level = self.level_instruments.get('max_lags', 1)
+            max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_var = self.instrument_builder.create_gmm_style_instruments(
-                var=f'{var}_diff',
+                var=f"{var}_diff",
                 min_lag=1,
                 max_lag=max_lags_level,
-                equation='level',
-                collapse=self.collapse
+                equation="level",
+                collapse=self.collapse,
             )
             instrument_sets_level.append(Z_level_var)
 
@@ -529,16 +522,14 @@ class SystemGMM(DifferenceGMM):
                 Z=np.empty((len(self.data), 0)),
                 variable_names=[],
                 instrument_names=[],
-                equation='level',
-                style='mixed',
-                collapsed=False
+                equation="level",
+                style="mixed",
+                collapsed=False,
             )
 
         return Z_diff, Z_level
 
-    def _stack_instruments(self,
-                          Z_diff: InstrumentSet,
-                          Z_level: InstrumentSet) -> np.ndarray:
+    def _stack_instruments(self, Z_diff: InstrumentSet, Z_level: InstrumentSet) -> np.ndarray:
         """
         Stack instruments for System GMM.
 
@@ -573,10 +564,10 @@ class SystemGMM(DifferenceGMM):
         Z_stacked = np.zeros((2 * n_obs, n_instruments_total))
 
         # Fill difference block
-        Z_stacked[:n_obs, :Z_diff_clean.shape[1]] = Z_diff_clean
+        Z_stacked[:n_obs, : Z_diff_clean.shape[1]] = Z_diff_clean
 
         # Fill level block
-        Z_stacked[n_obs:, Z_diff_clean.shape[1]:] = Z_level_clean
+        Z_stacked[n_obs:, Z_diff_clean.shape[1] :] = Z_level_clean
 
         return Z_stacked
 
@@ -613,16 +604,15 @@ class SystemGMM(DifferenceGMM):
         # This prevents dimension errors, though estimation may fail later
         if not valid_cols.any():
             import warnings
+
             warnings.warn("No valid instrument columns found. System GMM may fail.")
             return np.zeros((n_obs, 1))
 
         return Z[:, valid_cols]
 
-    def _get_valid_mask_system(self,
-                              y: np.ndarray,
-                              X: np.ndarray,
-                              Z: np.ndarray,
-                              min_instruments: Optional[int] = None) -> np.ndarray:
+    def _get_valid_mask_system(
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: Optional[int] = None
+    ) -> np.ndarray:
         """
         Get mask of observations with sufficient valid data for System GMM.
 
@@ -658,12 +648,14 @@ class SystemGMM(DifferenceGMM):
 
         return y_valid & X_valid & Z_valid
 
-    def _compute_diff_hansen(self,
-                            residuals: np.ndarray,
-                            Z_diff: InstrumentSet,
-                            Z_level: InstrumentSet,
-                            W_full: np.ndarray,
-                            n_params: int):
+    def _compute_diff_hansen(
+        self,
+        residuals: np.ndarray,
+        Z_diff: InstrumentSet,
+        Z_level: InstrumentSet,
+        W_full: np.ndarray,
+        n_params: int,
+    ):
         """
         Compute Difference-in-Hansen test for level instruments.
 
@@ -700,7 +692,7 @@ class SystemGMM(DifferenceGMM):
 
         # Compute weight matrix for subset
         # (simplified - in practice should re-estimate)
-        W_subset = W_full[:Z_diff.n_instruments, :Z_diff.n_instruments]
+        W_subset = W_full[: Z_diff.n_instruments, : Z_diff.n_instruments]
 
         # Compute Difference-in-Hansen test
         diff_hansen = self.tester.difference_in_hansen(
@@ -710,7 +702,7 @@ class SystemGMM(DifferenceGMM):
             W_full=W_full,
             W_subset=W_subset,
             n_params=n_params,
-            subset_name='level instruments'
+            subset_name="level instruments",
         )
 
         return diff_hansen
@@ -727,10 +719,9 @@ class SystemGMM(DifferenceGMM):
         if self.results is None:
             raise ValueError("Model has not been fit yet. Call fit() first.")
 
-        return self.results.summary(title='System GMM (Blundell-Bond)')
+        return self.results.summary(title="System GMM (Blundell-Bond)")
 
     def __repr__(self) -> str:
         """Representation of the model."""
         status = "fitted" if self.results is not None else "not fitted"
-        return (f"SystemGMM(dep_var='{self.dep_var}', lags={self.lags}, "
-                f"status='{status}')")
+        return f"SystemGMM(dep_var='{self.dep_var}', lags={self.lags}, " f"status='{status}')"

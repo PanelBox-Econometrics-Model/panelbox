@@ -13,13 +13,14 @@ Author: PanelBox Development Team
 Date: January 2026
 """
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 
 # Add panelbox to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from panelbox.gmm import DifferenceGMM
 
@@ -49,7 +50,7 @@ def generate_synthetic_data(n_groups=100, n_periods=10, seed=42):
 
     # Parameters
     gamma = 0.5  # AR(1) coefficient
-    beta = 0.3   # Effect of x on y
+    beta = 0.3  # Effect of x on y
 
     # Generate panel structure
     data = []
@@ -68,16 +69,11 @@ def generate_synthetic_data(n_groups=100, n_periods=10, seed=42):
         # Generate y recursively
         for t in range(1, n_periods):
             epsilon_it = np.random.normal(0, 0.5)
-            y_it[t] = gamma * y_it[t-1] + beta * x_it[t] + eta_i + epsilon_it
+            y_it[t] = gamma * y_it[t - 1] + beta * x_it[t] + eta_i + epsilon_it
 
         # Store data
         for t in range(n_periods):
-            data.append({
-                'id': i,
-                'year': t + 1,
-                'y': y_it[t],
-                'x': x_it[t]
-            })
+            data.append({"id": i, "year": t + 1, "y": y_it[t], "x": x_it[t]})
 
     df = pd.DataFrame(data)
 
@@ -107,15 +103,15 @@ def main():
 
     model = DifferenceGMM(
         data=data,
-        dep_var='y',
+        dep_var="y",
         lags=1,
-        id_var='id',
-        time_var='year',
-        exog_vars=['x'],
+        id_var="id",
+        time_var="year",
+        exog_vars=["x"],
         time_dummies=False,
         collapse=True,
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     # Fit the model
@@ -147,14 +143,17 @@ def main():
     print()
     print(f"{'Parameter':<15} {'True':>10} {'Estimated':>12} {'Std.Err':>10}")
     print("-" * 50)
-    print(f"{'L1.y':<15} {0.5:>10.3f} {results.params['L1.y']:>12.3f} "
-          f"{results.std_errors['L1.y']:>10.3f}")
-    print(f"{'x':<15} {0.3:>10.3f} {results.params['x']:>12.3f} "
-          f"{results.std_errors['x']:>10.3f}")
+    print(
+        f"{'L1.y':<15} {0.5:>10.3f} {results.params['L1.y']:>12.3f} "
+        f"{results.std_errors['L1.y']:>10.3f}"
+    )
+    print(
+        f"{'x':<15} {0.3:>10.3f} {results.params['x']:>12.3f} " f"{results.std_errors['x']:>10.3f}"
+    )
     print()
 
     print("✓ Example completed successfully!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

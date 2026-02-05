@@ -24,16 +24,6 @@ Examples
 >>> pb.list_datasets()
 """
 
-from .load import (
-    load_grunfeld,
-    load_abdata,
-    list_datasets,
-    get_dataset_info
-)
+from .load import get_dataset_info, list_datasets, load_abdata, load_grunfeld
 
-__all__ = [
-    'load_grunfeld',
-    'load_abdata',
-    'list_datasets',
-    'get_dataset_info'
-]
+__all__ = ["load_grunfeld", "load_abdata", "list_datasets", "get_dataset_info"]

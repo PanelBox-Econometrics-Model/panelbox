@@ -39,11 +39,7 @@ def format_pvalue(pvalue: float, digits: int = 4) -> str:
         return f"{pvalue:.{digits}f}"
 
 
-def format_number(
-    value: Union[int, float],
-    decimals: int = 4,
-    width: int = 10
-) -> str:
+def format_number(value: Union[int, float], decimals: int = 4, width: int = 10) -> str:
     """
     Format number for tabular display.
 
@@ -95,24 +91,18 @@ def significance_stars(pvalue: float) -> str:
     ''
     """
     if pvalue < 0.001:
-        return '***'
+        return "***"
     elif pvalue < 0.01:
-        return '**'
+        return "**"
     elif pvalue < 0.05:
-        return '*'
+        return "*"
     elif pvalue < 0.10:
-        return '.'
+        return "."
     else:
-        return ''
+        return ""
 
 
-def format_coefficient_table(
-    params,
-    std_errors,
-    tvalues,
-    pvalues,
-    conf_int=None
-) -> str:
+def format_coefficient_table(params, std_errors, tvalues, pvalues, conf_int=None) -> str:
     """
     Format coefficient table for display.
 
@@ -143,9 +133,7 @@ def format_coefficient_table(
             f"{'P>|t|':<8} {'[0.025':<10} {'0.975]':<10}"
         )
     else:
-        lines.append(
-            f"{'Variable':<15} {'Coef.':<12} {'Std.Err.':<12} {'t':<8} {'P>|t|':<8}"
-        )
+        lines.append(f"{'Variable':<15} {'Coef.':<12} {'Std.Err.':<12} {'t':<8} {'P>|t|':<8}")
 
     lines.append("-" * 78)
 
@@ -158,15 +146,13 @@ def format_coefficient_table(
         stars = significance_stars(p)
 
         if conf_int is not None:
-            ci_lower = conf_int.loc[var, 'lower']
-            ci_upper = conf_int.loc[var, 'upper']
+            ci_lower = conf_int.loc[var, "lower"]
+            ci_upper = conf_int.loc[var, "upper"]
             lines.append(
                 f"{var:<15} {coef:>11.4f} {se:>11.4f} {t:>7.3f} "
                 f"{p:>7.4f} {ci_lower:>9.4f} {ci_upper:>9.4f} {stars}"
             )
         else:
-            lines.append(
-                f"{var:<15} {coef:>11.4f} {se:>11.4f} {t:>7.3f} {p:>7.4f} {stars}"
-            )
+            lines.append(f"{var:<15} {coef:>11.4f} {se:>11.4f} {t:>7.3f} {p:>7.4f} {stars}")
 
     return "\n".join(lines)

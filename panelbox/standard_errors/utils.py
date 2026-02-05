@@ -6,6 +6,7 @@ matrices and their components (bread and meat).
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 from scipy import sparse
@@ -81,10 +82,7 @@ def compute_bread(X: np.ndarray) -> np.ndarray:
 
 
 def compute_meat_hc(
-    X: np.ndarray,
-    resid: np.ndarray,
-    method: str = 'HC1',
-    leverage: Optional[np.ndarray] = None
+    X: np.ndarray, resid: np.ndarray, method: str = "HC1", leverage: Optional[np.ndarray] = None
 ) -> np.ndarray:
     """
     Compute the "meat" of the sandwich for heteroskedasticity-robust SEs.
@@ -121,25 +119,25 @@ def compute_meat_hc(
     n, k = X.shape
 
     # Compute adjustment factors
-    if method == 'HC0':
+    if method == "HC0":
         # No adjustment
-        weights = resid ** 2
+        weights = resid**2
 
-    elif method == 'HC1':
+    elif method == "HC1":
         # Degrees of freedom correction
-        weights = (n / (n - k)) * (resid ** 2)
+        weights = (n / (n - k)) * (resid**2)
 
-    elif method == 'HC2':
+    elif method == "HC2":
         # Leverage adjustment: ε²/(1-h)
         if leverage is None:
             leverage = compute_leverage(X)
-        weights = (resid ** 2) / (1 - leverage)
+        weights = (resid**2) / (1 - leverage)
 
-    elif method == 'HC3':
+    elif method == "HC3":
         # Leverage adjustment: ε²/(1-h)²
         if leverage is None:
             leverage = compute_leverage(X)
-        weights = (resid ** 2) / ((1 - leverage) ** 2)
+        weights = (resid**2) / ((1 - leverage) ** 2)
 
     else:
         raise ValueError(f"Unknown HC method: {method}")
@@ -174,10 +172,7 @@ def sandwich_covariance(bread: np.ndarray, meat: np.ndarray) -> np.ndarray:
 
 
 def compute_clustered_meat(
-    X: np.ndarray,
-    resid: np.ndarray,
-    clusters: np.ndarray,
-    df_correction: bool = True
+    X: np.ndarray, resid: np.ndarray, clusters: np.ndarray, df_correction: bool = True
 ) -> np.ndarray:
     """
     Compute meat matrix for cluster-robust standard errors.
@@ -242,7 +237,7 @@ def compute_twoway_clustered_meat(
     resid: np.ndarray,
     clusters1: np.ndarray,
     clusters2: np.ndarray,
-    df_correction: bool = True
+    df_correction: bool = True,
 ) -> np.ndarray:
     """
     Compute meat matrix for two-way cluster-robust standard errors.
@@ -283,9 +278,7 @@ def compute_twoway_clustered_meat(
 
     # Create intersection clusters
     # Combine cluster IDs as tuples
-    clusters_12 = np.array([
-        f"{c1}_{c2}" for c1, c2 in zip(clusters1, clusters2)
-    ])
+    clusters_12 = np.array([f"{c1}_{c2}" for c1, c2 in zip(clusters1, clusters2)])
     meat12 = compute_clustered_meat(X, resid, clusters_12, df_correction)
 
     # Two-way clustering: V_1 + V_2 - V_12
@@ -294,11 +287,7 @@ def compute_twoway_clustered_meat(
     return meat
 
 
-def hc_covariance(
-    X: np.ndarray,
-    resid: np.ndarray,
-    method: str = 'HC1'
-) -> np.ndarray:
+def hc_covariance(X: np.ndarray, resid: np.ndarray, method: str = "HC1") -> np.ndarray:
     """
     Compute heteroskedasticity-robust covariance matrix.
 
@@ -324,10 +313,7 @@ def hc_covariance(
 
 
 def clustered_covariance(
-    X: np.ndarray,
-    resid: np.ndarray,
-    clusters: np.ndarray,
-    df_correction: bool = True
+    X: np.ndarray, resid: np.ndarray, clusters: np.ndarray, df_correction: bool = True
 ) -> np.ndarray:
     """
     Compute cluster-robust covariance matrix.
@@ -360,7 +346,7 @@ def twoway_clustered_covariance(
     resid: np.ndarray,
     clusters1: np.ndarray,
     clusters2: np.ndarray,
-    df_correction: bool = True
+    df_correction: bool = True,
 ) -> np.ndarray:
     """
     Compute two-way cluster-robust covariance matrix.

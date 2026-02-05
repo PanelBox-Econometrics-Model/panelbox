@@ -9,13 +9,10 @@ Date: January 2026
 """
 
 from pathlib import Path
+
 from panelbox.report import ReportManager
+from panelbox.report.exporters import HTMLExporter, LaTeXExporter, MarkdownExporter
 from panelbox.report.validation_transformer import ValidationTransformer
-from panelbox.report.exporters import (
-    HTMLExporter,
-    LaTeXExporter,
-    MarkdownExporter
-)
 
 
 def create_mock_validation_report():
@@ -31,6 +28,7 @@ def create_mock_validation_report():
     dict
         Mock validation report structure
     """
+
     class MockTestResult:
         def __init__(self, statistic, pvalue, df, reject_null, conclusion, metadata=None):
             self.statistic = statistic
@@ -44,77 +42,77 @@ def create_mock_validation_report():
         def __init__(self):
             # Model information
             self.model_info = {
-                'model_type': 'Fixed Effects',
-                'formula': 'y ~ x1 + x2 + x3',
-                'nobs': 1000,
-                'n_entities': 100,
-                'n_periods': 10,
-                'balanced': True
+                "model_type": "Fixed Effects",
+                "formula": "y ~ x1 + x2 + x3",
+                "nobs": 1000,
+                "n_entities": 100,
+                "n_periods": 10,
+                "balanced": True,
             }
 
             # Specification tests
             self.specification_tests = {
-                'Hausman Test': MockTestResult(
+                "Hausman Test": MockTestResult(
                     statistic=15.234,
                     pvalue=0.002,
                     df=3,
                     reject_null=True,
-                    conclusion='Reject H0: Random Effects are inconsistent. Use Fixed Effects.'
+                    conclusion="Reject H0: Random Effects are inconsistent. Use Fixed Effects.",
                 ),
-                'Mundlak Test': MockTestResult(
+                "Mundlak Test": MockTestResult(
                     statistic=12.876,
                     pvalue=0.005,
                     df=3,
                     reject_null=True,
-                    conclusion='Reject H0: Entity means are correlated with unobserved effect.'
-                )
+                    conclusion="Reject H0: Entity means are correlated with unobserved effect.",
+                ),
             }
 
             # Serial correlation tests
             self.serial_tests = {
-                'Wooldridge Test': MockTestResult(
+                "Wooldridge Test": MockTestResult(
                     statistic=2.345,
                     pvalue=0.128,
                     df=1,
                     reject_null=False,
-                    conclusion='Accept H0: No first-order autocorrelation detected.'
+                    conclusion="Accept H0: No first-order autocorrelation detected.",
                 ),
-                'Baltagi-Wu Test': MockTestResult(
+                "Baltagi-Wu Test": MockTestResult(
                     statistic=1.987,
                     pvalue=0.156,
                     df=None,
                     reject_null=False,
-                    conclusion='Accept H0: No serial correlation detected.'
-                )
+                    conclusion="Accept H0: No serial correlation detected.",
+                ),
             }
 
             # Heteroskedasticity tests
             self.het_tests = {
-                'Breusch-Pagan LM Test': MockTestResult(
+                "Breusch-Pagan LM Test": MockTestResult(
                     statistic=18.456,
                     pvalue=0.001,
                     df=3,
                     reject_null=True,
-                    conclusion='Reject H0: Heteroskedasticity detected. Use robust SE.'
+                    conclusion="Reject H0: Heteroskedasticity detected. Use robust SE.",
                 )
             }
 
             # Cross-sectional dependence tests
             self.cd_tests = {
-                'Pesaran CD Test': MockTestResult(
+                "Pesaran CD Test": MockTestResult(
                     statistic=3.789,
                     pvalue=0.0002,
                     df=None,
                     reject_null=True,
-                    conclusion='Reject H0: Cross-sectional dependence detected.'
+                    conclusion="Reject H0: Cross-sectional dependence detected.",
                 ),
-                'Frees Test': MockTestResult(
+                "Frees Test": MockTestResult(
                     statistic=2.456,
                     pvalue=0.032,
                     df=None,
                     reject_null=True,
-                    conclusion='Reject H0: Cross-sectional dependence detected.'
-                )
+                    conclusion="Reject H0: Cross-sectional dependence detected.",
+                ),
             }
 
     return MockValidationReport()
@@ -128,7 +126,7 @@ def main():
     print()
 
     # Create output directory
-    output_dir = Path('output/reports')
+    output_dir = Path("output/reports")
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir.absolute()}")
     print()
@@ -159,16 +157,13 @@ def main():
     html = report_mgr.generate_validation_report(
         validation_data=validation_data,
         interactive=True,
-        title='Panel Data Validation Report',
-        subtitle='Example demonstration with mock data'
+        title="Panel Data Validation Report",
+        subtitle="Example demonstration with mock data",
     )
 
     html_exporter = HTMLExporter()
     html_path = html_exporter.export(
-        html,
-        output_dir / 'validation_report.html',
-        overwrite=True,
-        add_metadata=True
+        html, output_dir / "validation_report.html", overwrite=True, add_metadata=True
     )
 
     html_size = html_exporter.get_file_size(html)
@@ -178,19 +173,16 @@ def main():
 
     # Step 4: Generate LaTeX table
     print("Step 4: Generating LaTeX table...")
-    latex_exporter = LaTeXExporter(table_style='booktabs')
+    latex_exporter = LaTeXExporter(table_style="booktabs")
 
     latex = latex_exporter.export_validation_tests(
-        validation_data['tests'],
+        validation_data["tests"],
         caption="Panel Data Validation Test Results",
-        label="tab:validation"
+        label="tab:validation",
     )
 
     latex_path = latex_exporter.save(
-        latex,
-        output_dir / 'validation_tests.tex',
-        overwrite=True,
-        add_preamble=False
+        latex, output_dir / "validation_tests.tex", overwrite=True, add_preamble=False
     )
 
     print(f"✓ LaTeX table generated: {latex_path}")
@@ -198,21 +190,13 @@ def main():
 
     # Step 5: Generate Markdown report
     print("Step 5: Generating Markdown report...")
-    md_exporter = MarkdownExporter(
-        include_toc=True,
-        github_flavor=True
-    )
+    md_exporter = MarkdownExporter(include_toc=True, github_flavor=True)
 
     markdown = md_exporter.export_validation_report(
-        validation_data,
-        title="Panel Data Validation Report"
+        validation_data, title="Panel Data Validation Report"
     )
 
-    md_path = md_exporter.save(
-        markdown,
-        output_dir / 'VALIDATION_REPORT.md',
-        overwrite=True
-    )
+    md_path = md_exporter.save(markdown, output_dir / "VALIDATION_REPORT.md", overwrite=True)
 
     print(f"✓ Markdown report generated: {md_path}")
     print()
@@ -248,19 +232,19 @@ def main():
     print("Test Results Summary")
     print("=" * 70)
     print()
-    summary = validation_data['summary']
+    summary = validation_data["summary"]
     print(f"Status: {summary['status_message']}")
     print(f"Pass Rate: {summary['pass_rate_formatted']}")
     print()
     print("Issues by category:")
-    for category, count in summary['failed_by_category'].items():
+    for category, count in summary["failed_by_category"].items():
         if count > 0:
             print(f"  - {category.replace('_', ' ').title()}: {count} test(s) failed")
     print()
 
-    if validation_data['recommendations']:
+    if validation_data["recommendations"]:
         print("Recommendations:")
-        for i, rec in enumerate(validation_data['recommendations'], 1):
+        for i, rec in enumerate(validation_data["recommendations"], 1):
             print(f"  {i}. {rec['category']}: {rec['issue']}")
         print()
 
@@ -268,10 +252,11 @@ def main():
     print()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()

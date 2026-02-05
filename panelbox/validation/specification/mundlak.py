@@ -20,55 +20,56 @@ from panelbox.validation.base import ValidationTest, ValidationTestResult
 class MundlakTest(ValidationTest):
     """
     Mundlak test for Random Effects specification.
-    
+
     Tests whether the random effects assumption that entity effects are
     uncorrelated with the regressors is valid.
-    
+
     H0: Cov(u_i, X_it) = 0 (RE is appropriate)
     H1: Cov(u_i, X_it) ≠ 0 (use FE instead)
-    
+
     The test augments the RE model with the time averages of the
     time-varying regressors and tests if their coefficients are jointly zero.
-    
+
     Notes
     -----
     This is essentially testing the same thing as the Hausman test, but
     implemented differently. If the Mundlak test rejects, it suggests
     that Fixed Effects should be used instead of Random Effects.
-    
+
     The test statistic is an F-test (or Wald chi-squared test) on the
     coefficients of the time-averaged variables.
-    
+
     Examples
     --------
     >>> from panelbox.models.static.random_effects import RandomEffects
     >>> re = RandomEffects("y ~ x1 + x2", data, "entity", "time")
     >>> results = re.fit()
-    >>> 
+    >>>
     >>> from panelbox.validation.specification.mundlak import MundlakTest
     >>> test = MundlakTest(results)
     >>> result = test.run()
     >>> print(result)
     """
-    
-    def __init__(self, results: 'PanelResults'):
+
+    def __init__(self, results: "PanelResults"):
         """
         Initialize Mundlak test.
-        
+
         Parameters
         ----------
         results : PanelResults
             Results from panel model estimation (preferably Random Effects)
         """
         super().__init__(results)
-        
-        if 'Random Effects' not in self.model_type:
+
+        if "Random Effects" not in self.model_type:
             import warnings
+
             warnings.warn(
                 "Mundlak test is designed for Random Effects models. "
                 f"Current model: {self.model_type}"
             )
-    
+
     def run(self, alpha: float = 0.05) -> ValidationTestResult:
         """
         Run Mundlak test for RE specification.
@@ -117,8 +118,8 @@ class MundlakTest(ValidationTest):
         mean_vars = []
         for var in var_names:
             if var in data_aug.columns:
-                mean_col_name = f'{var}_mean'
-                data_aug[mean_col_name] = data_aug.groupby(entity_col)[var].transform('mean')
+                mean_col_name = f"{var}_mean"
+                data_aug[mean_col_name] = data_aug.groupby(entity_col)[var].transform("mean")
                 mean_vars.append(mean_col_name)
 
         if len(mean_vars) == 0:
@@ -129,9 +130,9 @@ class MundlakTest(ValidationTest):
 
         # Build augmented formula: y ~ x1 + x2 + ... + x1_mean + x2_mean + ...
         # Parse original formula to get dependent variable
-        dep_var = formula.split('~')[0].strip()
-        orig_vars = ' + '.join(var_names)
-        mean_formula = ' + '.join(mean_vars)
+        dep_var = formula.split("~")[0].strip()
+        orig_vars = " + ".join(var_names)
+        mean_formula = " + ".join(mean_vars)
         augmented_formula = f"{dep_var} ~ {orig_vars} + {mean_formula}"
 
         # Estimate augmented model with cluster-robust SE
@@ -143,19 +144,12 @@ class MundlakTest(ValidationTest):
         try:
             from panelbox.models.static.pooled_ols import PooledOLS
 
-            model_augmented = PooledOLS(
-                augmented_formula,
-                data_aug,
-                entity_col,
-                time_col
-            )
+            model_augmented = PooledOLS(augmented_formula, data_aug, entity_col, time_col)
             # Use cluster-robust SE (clustered by entity)
-            re_results = model_augmented.fit(cov_type='clustered', cov_kwds={'groups': entity_col})
+            re_results = model_augmented.fit(cov_type="clustered", cov_kwds={"groups": entity_col})
 
         except Exception as e:
-            raise ValueError(
-                f"Failed to estimate augmented model: {e}"
-            )
+            raise ValueError(f"Failed to estimate augmented model: {e}")
 
         # Extract coefficients on group means (delta)
         k_vars = len(mean_vars)
@@ -165,9 +159,7 @@ class MundlakTest(ValidationTest):
         mean_indices = [i for i, name in enumerate(param_names) if name in mean_vars]
 
         if len(mean_indices) != k_vars:
-            raise ValueError(
-                f"Expected {k_vars} mean coefficients, found {len(mean_indices)}"
-            )
+            raise ValueError(f"Expected {k_vars} mean coefficients, found {len(mean_indices)}")
 
         # Extract delta coefficients
         delta = re_results.params.iloc[mean_indices].values
@@ -186,8 +178,7 @@ class MundlakTest(ValidationTest):
         # Compute quadratic form
         wald_stat_array = delta.T @ vcov_delta_inv @ delta
         wald_stat = float(
-            wald_stat_array.item() if hasattr(wald_stat_array, 'item')
-            else wald_stat_array
+            wald_stat_array.item() if hasattr(wald_stat_array, "item") else wald_stat_array
         )
 
         # Degrees of freedom
@@ -198,24 +189,21 @@ class MundlakTest(ValidationTest):
 
         # Metadata
         delta_dict = {
-            mean_vars[i]: float(delta[i].item() if hasattr(delta[i], 'item') else delta[i])
+            mean_vars[i]: float(delta[i].item() if hasattr(delta[i], "item") else delta[i])
             for i in range(len(delta))
         }
 
         # Extract standard errors for reference
         se_delta = np.sqrt(np.diag(vcov_delta))
-        se_dict = {
-            mean_vars[i]: float(se_delta[i])
-            for i in range(len(se_delta))
-        }
+        se_dict = {mean_vars[i]: float(se_delta[i]) for i in range(len(se_delta))}
 
         metadata = {
-            'n_time_varying_vars': k_vars,
-            'delta_coefficients': delta_dict,
-            'standard_errors': se_dict,
-            'F_statistic': wald_stat / df if df > 0 else 0.0,
-            'augmented_formula': augmented_formula,
-            'implementation': 'Pooled OLS with cluster-robust SE (entity-clustered)'
+            "n_time_varying_vars": k_vars,
+            "delta_coefficients": delta_dict,
+            "standard_errors": se_dict,
+            "F_statistic": wald_stat / df if df > 0 else 0.0,
+            "augmented_formula": augmented_formula,
+            "implementation": "Pooled OLS with cluster-robust SE (entity-clustered)",
         }
 
         result = ValidationTestResult(
@@ -226,11 +214,11 @@ class MundlakTest(ValidationTest):
             alternative_hypothesis="RE is inconsistent (use Fixed Effects)",
             alpha=alpha,
             df=df,
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
-    
+
     def _get_data_full(self):
         """
         Get full data including DataFrame, formula, and variable names.
@@ -250,12 +238,12 @@ class MundlakTest(ValidationTest):
         - time_col: Name of time column
         - var_names: List of regressor names (excluding constant)
         """
-        if not hasattr(self.results, '_model'):
+        if not hasattr(self.results, "_model"):
             return None, None, None, None, None
 
         model = self.results._model
 
-        if not (hasattr(model, 'formula_parser') and hasattr(model, 'data')):
+        if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None, None, None
 
         try:
@@ -267,28 +255,26 @@ class MundlakTest(ValidationTest):
             time_col = model.data.time_col
 
             # Get formula
-            if hasattr(model, 'formula'):
+            if hasattr(model, "formula"):
                 formula = model.formula
             else:
                 return None, None, None, None, None
 
             # Extract variable names from formula parser
             # The formula_parser should have information about the terms
-            if hasattr(model.formula_parser, 'rhs_terms'):
+            if hasattr(model.formula_parser, "rhs_terms"):
                 # Get RHS terms (excluding Intercept)
                 var_names = [
-                    term for term in model.formula_parser.rhs_terms
-                    if term.lower() not in ['intercept', '1']
+                    term
+                    for term in model.formula_parser.rhs_terms
+                    if term.lower() not in ["intercept", "1"]
                 ]
             else:
                 # Fallback: parse formula manually
                 # Format: "y ~ x1 + x2 + ..."
-                rhs = formula.split('~')[1].strip()
-                terms = [t.strip() for t in rhs.split('+')]
-                var_names = [
-                    t for t in terms
-                    if t.lower() not in ['1', 'intercept', '']
-                ]
+                rhs = formula.split("~")[1].strip()
+                terms = [t.strip() for t in rhs.split("+")]
+                var_names = [t for t in terms if t.lower() not in ["1", "intercept", ""]]
 
             return data, formula, entity_col, time_col, var_names
 
@@ -309,19 +295,16 @@ class MundlakTest(ValidationTest):
         This is a legacy method kept for compatibility.
         New code should use _get_data_full() instead.
         """
-        if not hasattr(self.results, '_model'):
+        if not hasattr(self.results, "_model"):
             return None, None, None
 
         model = self.results._model
 
-        if not (hasattr(model, 'formula_parser') and hasattr(model, 'data')):
+        if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None
 
         try:
-            y, X = model.formula_parser.build_design_matrices(
-                model.data.data,
-                return_type='array'
-            )
+            y, X = model.formula_parser.build_design_matrices(model.data.data, return_type="array")
 
             entities = model.data.data[model.data.entity_col].values.ravel()
 

@@ -4,6 +4,7 @@ Simple tests for Between and First Difference Estimators (no pytest required).
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 
@@ -22,13 +23,7 @@ def create_test_data():
     x2 = np.random.normal(0, 1, n_entities * n_periods)
     y = 2 + 0.5 * x1 + 1.5 * x2 + entity_effects + np.random.normal(0, 1, n_entities * n_periods)
 
-    data = pd.DataFrame({
-        'entity': entities,
-        'time': times,
-        'y': y,
-        'x1': x1,
-        'x2': x2
-    })
+    data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
 
     return data
 
@@ -43,20 +38,20 @@ def test_between_estimator():
 
     # Test 1: Basic initialization and fitting
     print("\n1. Initialization and basic fit...")
-    be = pb.BetweenEstimator('y ~ x1 + x2', data, 'entity', 'time')
-    results = be.fit(cov_type='nonrobust')
+    be = pb.BetweenEstimator("y ~ x1 + x2", data, "entity", "time")
+    results = be.fit(cov_type="nonrobust")
     assert len(results.params) == 3  # intercept + x1 + x2
-    assert 'Intercept' in results.params.index
-    assert 'x1' in results.params.index
-    assert 'x2' in results.params.index
+    assert "Intercept" in results.params.index
+    assert "x1" in results.params.index
+    assert "x2" in results.params.index
     print("   ✓ PASSED")
 
     # Test 2: Entity means
     print("\n2. Entity means structure...")
     assert be.entity_means is not None
     assert len(be.entity_means) == 10  # 10 entities
-    assert 'entity' in be.entity_means.columns
-    assert 'y' in be.entity_means.columns
+    assert "entity" in be.entity_means.columns
+    assert "y" in be.entity_means.columns
     print("   ✓ PASSED")
 
     # Test 3: Degrees of freedom
@@ -74,7 +69,7 @@ def test_between_estimator():
 
     # Test 5: Different covariance types
     print("\n5. Different covariance types...")
-    for cov_type in ['robust', 'hc1', 'clustered']:
+    for cov_type in ["robust", "hc1", "clustered"]:
         res = be.fit(cov_type=cov_type)
         assert res.cov_type == cov_type
     print("   ✓ PASSED")
@@ -83,14 +78,14 @@ def test_between_estimator():
     print("\n6. Summary output...")
     summary = results.summary()
     assert isinstance(summary, str)
-    assert 'Between Estimator' in summary
+    assert "Between Estimator" in summary
     print("   ✓ PASSED")
 
     # Test 7: With Grunfeld data
     print("\n7. Grunfeld dataset...")
     grunfeld = pb.load_grunfeld()
-    be_grun = pb.BetweenEstimator('invest ~ value + capital', grunfeld, 'firm', 'year')
-    results_grun = be_grun.fit(cov_type='robust')
+    be_grun = pb.BetweenEstimator("invest ~ value + capital", grunfeld, "firm", "year")
+    results_grun = be_grun.fit(cov_type="robust")
     assert results_grun.nobs == 10  # 10 firms
     assert results_grun.rsquared_between > 0.8  # Known property
     print("   ✓ PASSED")
@@ -110,12 +105,12 @@ def test_first_difference_estimator():
 
     # Test 1: Basic initialization and fitting
     print("\n1. Initialization and basic fit...")
-    fd = pb.FirstDifferenceEstimator('y ~ x1 + x2', data, 'entity', 'time')
-    results = fd.fit(cov_type='nonrobust')
+    fd = pb.FirstDifferenceEstimator("y ~ x1 + x2", data, "entity", "time")
+    results = fd.fit(cov_type="nonrobust")
     assert len(results.params) == 2  # x1 + x2 (no intercept)
-    assert 'Intercept' not in results.params.index
-    assert 'x1' in results.params.index
-    assert 'x2' in results.params.index
+    assert "Intercept" not in results.params.index
+    assert "x1" in results.params.index
+    assert "x2" in results.params.index
     print("   ✓ PASSED")
 
     # Test 2: Observations dropped
@@ -141,7 +136,7 @@ def test_first_difference_estimator():
 
     # Test 5: Different covariance types (especially clustered)
     print("\n5. Different covariance types...")
-    for cov_type in ['robust', 'clustered', 'driscoll_kraay']:
+    for cov_type in ["robust", "clustered", "driscoll_kraay"]:
         res = fd.fit(cov_type=cov_type)
         assert res.cov_type == cov_type
     print("   ✓ PASSED")
@@ -150,7 +145,7 @@ def test_first_difference_estimator():
     print("\n6. Summary output...")
     summary = results.summary()
     assert isinstance(summary, str)
-    assert 'First Difference' in summary
+    assert "First Difference" in summary
     print("   ✓ PASSED")
 
     # Test 7: Residuals shape
@@ -163,8 +158,8 @@ def test_first_difference_estimator():
     # Test 8: With Grunfeld data
     print("\n8. Grunfeld dataset...")
     grunfeld = pb.load_grunfeld()
-    fd_grun = pb.FirstDifferenceEstimator('invest ~ value + capital', grunfeld, 'firm', 'year')
-    results_grun = fd_grun.fit(cov_type='clustered')
+    fd_grun = pb.FirstDifferenceEstimator("invest ~ value + capital", grunfeld, "firm", "year")
+    results_grun = fd_grun.fit(cov_type="clustered")
     assert results_grun.nobs == 190  # 10 × 19
     assert (fd_grun.n_obs_original - fd_grun.n_obs_differenced) == 10
     print("   ✓ PASSED")
@@ -183,23 +178,29 @@ def test_comparison():
     grunfeld = pb.load_grunfeld()
 
     # Fixed Effects
-    fe = pb.FixedEffects('invest ~ value + capital', grunfeld, 'firm', 'year')
-    results_fe = fe.fit(cov_type='clustered')
+    fe = pb.FixedEffects("invest ~ value + capital", grunfeld, "firm", "year")
+    results_fe = fe.fit(cov_type="clustered")
 
     # Between
-    be = pb.BetweenEstimator('invest ~ value + capital', grunfeld, 'firm', 'year')
-    results_be = be.fit(cov_type='robust')
+    be = pb.BetweenEstimator("invest ~ value + capital", grunfeld, "firm", "year")
+    results_be = be.fit(cov_type="robust")
 
     # First Difference
-    fd = pb.FirstDifferenceEstimator('invest ~ value + capital', grunfeld, 'firm', 'year')
-    results_fd = fd.fit(cov_type='clustered')
+    fd = pb.FirstDifferenceEstimator("invest ~ value + capital", grunfeld, "firm", "year")
+    results_fd = fd.fit(cov_type="clustered")
 
     print("\nCoefficients:")
     print(f"{'Estimator':<20} {'value':>10} {'capital':>10}")
     print("-" * 42)
-    print(f"{'Fixed Effects':<20} {results_fe.params['value']:>10.4f} {results_fe.params['capital']:>10.4f}")
-    print(f"{'Between':<20} {results_be.params['value']:>10.4f} {results_be.params['capital']:>10.4f}")
-    print(f"{'First Difference':<20} {results_fd.params['value']:>10.4f} {results_fd.params['capital']:>10.4f}")
+    print(
+        f"{'Fixed Effects':<20} {results_fe.params['value']:>10.4f} {results_fe.params['capital']:>10.4f}"
+    )
+    print(
+        f"{'Between':<20} {results_be.params['value']:>10.4f} {results_be.params['capital']:>10.4f}"
+    )
+    print(
+        f"{'First Difference':<20} {results_fd.params['value']:>10.4f} {results_fd.params['capital']:>10.4f}"
+    )
 
     print("\nR-squared:")
     print(f"Fixed Effects (within):  {results_fe.rsquared:.4f}")
@@ -216,7 +217,7 @@ def test_comparison():
     print("=" * 70)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("PANELBOX - NEW ESTIMATORS TEST SUITE")
     print("=" * 70)

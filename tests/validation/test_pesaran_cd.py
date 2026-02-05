@@ -7,6 +7,7 @@ in panel models.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.validation.cross_sectional_dependence.pesaran_cd import PesaranCDTest
@@ -26,8 +27,8 @@ class TestPesaranCD:
         # Should detect cross-sectional dependence
         # (Note: detection depends on strength of common shocks)
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_no_false_positive_clean_data(self, clean_panel_data):
         """Test that Pesaran CD doesn't reject when no cross-sectional dependence exists."""
@@ -51,8 +52,8 @@ class TestPesaranCD:
 
         # Should run without error
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_result_attributes(self, clean_panel_data):
         """Test that result has all required attributes."""
@@ -63,12 +64,12 @@ class TestPesaranCD:
         result = test.run()
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -89,8 +90,9 @@ class TestPesaranCD:
 
         # CD statistic should typically be within reasonable bounds for N(0,1)
         # (allowing for some variation, typically within [-4, 4] with high probability)
-        assert -10 < result.statistic < 10, \
-            f"CD statistic {result.statistic} seems unreasonable for N(0,1)"
+        assert (
+            -10 < result.statistic < 10
+        ), f"CD statistic {result.statistic} seems unreasonable for N(0,1)"
 
     def test_different_alpha_levels(self, clean_panel_data):
         """Test behavior with different significance levels."""
@@ -110,9 +112,7 @@ class TestPesaranCD:
     def test_requires_multiple_entities(self, balanced_panel_data):
         """Test that Pesaran CD requires multiple entities."""
         # Create data with only one entity
-        data_single = balanced_panel_data[
-            balanced_panel_data['entity'] == 1
-        ].copy()
+        data_single = balanced_panel_data[balanced_panel_data["entity"] == 1].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_single, "entity", "time")
         results = fe.fit()
@@ -125,9 +125,7 @@ class TestPesaranCD:
     def test_requires_multiple_periods(self, balanced_panel_data):
         """Test that Pesaran CD requires multiple time periods."""
         # Create data with only one period
-        data_single_period = balanced_panel_data[
-            balanced_panel_data['time'] == 2020
-        ].copy()
+        data_single_period = balanced_panel_data[balanced_panel_data["time"] == 2020].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_single_period, "entity", "time")
         results = fe.fit()
@@ -169,8 +167,8 @@ class TestPesaranCD:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test Pesaran CD with unbalanced panel."""
@@ -182,8 +180,8 @@ class TestPesaranCD:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_details_contain_entity_count(self, clean_panel_data):
         """Test that details contain number of entities."""
@@ -194,4 +192,4 @@ class TestPesaranCD:
         result = test.run()
 
         # Details should contain N (number of entities)
-        assert 'n_entities' in result.details or 'N' in result.details
+        assert "n_entities" in result.details or "N" in result.details

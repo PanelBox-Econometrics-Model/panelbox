@@ -4,7 +4,8 @@ PanelData - Container for panel data with validation and transformations.
 This module provides the core PanelData class for handling panel datasets.
 """
 
-from typing import Optional, Union, List
+from typing import List, Optional, Union
+
 import numpy as np
 import pandas as pd
 
@@ -65,12 +66,7 @@ class PanelData:
     >>> print(panel.summary())
     """
 
-    def __init__(
-        self,
-        data: pd.DataFrame,
-        entity_col: str,
-        time_col: str
-    ):
+    def __init__(self, data: pd.DataFrame, entity_col: str, time_col: str):
         # Validate inputs
         if not isinstance(data, pd.DataFrame):
             raise TypeError("data must be a pandas DataFrame")
@@ -105,9 +101,7 @@ class PanelData:
             self.avg_periods = float(obs_per_entity.mean())
 
     def demeaning(
-        self,
-        variables: Optional[Union[str, List[str]]] = None,
-        method: str = 'entity'
+        self, variables: Optional[Union[str, List[str]]] = None, method: str = "entity"
     ) -> pd.DataFrame:
         """
         Remove means from variables (within transformation).
@@ -137,8 +131,7 @@ class PanelData:
         if variables is None:
             # Demean all numeric columns except identifiers
             numeric_cols = self.data.select_dtypes(include=[np.number]).columns
-            variables = [col for col in numeric_cols
-                        if col not in [self.entity_col, self.time_col]]
+            variables = [col for col in numeric_cols if col not in [self.entity_col, self.time_col]]
         elif isinstance(variables, str):
             variables = [variables]
 
@@ -149,34 +142,31 @@ class PanelData:
 
         result = self.data.copy()
 
-        if method == 'entity':
+        if method == "entity":
             # Remove entity means
-            group_means = result.groupby(self.entity_col)[variables].transform('mean')
+            group_means = result.groupby(self.entity_col)[variables].transform("mean")
             result[variables] = result[variables] - group_means
 
-        elif method == 'time':
+        elif method == "time":
             # Remove time means
-            group_means = result.groupby(self.time_col)[variables].transform('mean')
+            group_means = result.groupby(self.time_col)[variables].transform("mean")
             result[variables] = result[variables] - group_means
 
-        elif method == 'both':
+        elif method == "both":
             # Two-way demeaning (entity and time)
             # First remove entity means
-            entity_means = result.groupby(self.entity_col)[variables].transform('mean')
+            entity_means = result.groupby(self.entity_col)[variables].transform("mean")
             result[variables] = result[variables] - entity_means
 
             # Then remove time means from demeaned data
-            time_means = result.groupby(self.time_col)[variables].transform('mean')
+            time_means = result.groupby(self.time_col)[variables].transform("mean")
             result[variables] = result[variables] - time_means
         else:
             raise ValueError("method must be 'entity', 'time', or 'both'")
 
         return result
 
-    def first_difference(
-        self,
-        variables: Optional[Union[str, List[str]]] = None
-    ) -> pd.DataFrame:
+    def first_difference(self, variables: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
         """
         Compute first differences (Δy_it = y_it - y_i,t-1).
 
@@ -199,8 +189,7 @@ class PanelData:
         """
         if variables is None:
             numeric_cols = self.data.select_dtypes(include=[np.number]).columns
-            variables = [col for col in numeric_cols
-                        if col not in [self.entity_col, self.time_col]]
+            variables = [col for col in numeric_cols if col not in [self.entity_col, self.time_col]]
         elif isinstance(variables, str):
             variables = [variables]
 
@@ -220,11 +209,7 @@ class PanelData:
 
         return result
 
-    def lag(
-        self,
-        variable: str,
-        lags: Union[int, List[int]] = 1
-    ) -> pd.DataFrame:
+    def lag(self, variable: str, lags: Union[int, List[int]] = 1) -> pd.DataFrame:
         """
         Create lagged variables.
 
@@ -261,16 +246,12 @@ class PanelData:
             if lag < 1:
                 raise ValueError("Lag order must be >= 1")
 
-            lag_name = f'L{lag}.{variable}'
+            lag_name = f"L{lag}.{variable}"
             result[lag_name] = result.groupby(self.entity_col)[variable].shift(lag)
 
         return result
 
-    def lead(
-        self,
-        variable: str,
-        leads: Union[int, List[int]] = 1
-    ) -> pd.DataFrame:
+    def lead(self, variable: str, leads: Union[int, List[int]] = 1) -> pd.DataFrame:
         """
         Create lead variables (forward lags).
 
@@ -303,12 +284,12 @@ class PanelData:
             if lead < 1:
                 raise ValueError("Lead order must be >= 1")
 
-            lead_name = f'F{lead}.{variable}'
+            lead_name = f"F{lead}.{variable}"
             result[lead_name] = result.groupby(self.entity_col)[variable].shift(-lead)
 
         return result
 
-    def balance(self) -> 'PanelData':
+    def balance(self) -> "PanelData":
         """
         Balance the panel by keeping only entities with complete time series.
 
@@ -373,7 +354,9 @@ class PanelData:
             lines.append(f"Periods per entity:     {self.n_periods}")
 
         lines.append("-" * 60)
-        lines.append(f"Time period range:      {self.time_periods.min()} to {self.time_periods.max()}")
+        lines.append(
+            f"Time period range:      {self.time_periods.min()} to {self.time_periods.max()}"
+        )
         lines.append("=" * 60)
 
         return "\n".join(lines)
@@ -381,7 +364,9 @@ class PanelData:
     def __repr__(self) -> str:
         """String representation of PanelData."""
         balanced_str = "Balanced" if self.is_balanced else "Unbalanced"
-        return (f"PanelData({balanced_str}, "
-                f"n_entities={self.n_entities}, "
-                f"n_periods={self.n_periods}, "
-                f"n_obs={self.n_obs})")
+        return (
+            f"PanelData({balanced_str}, "
+            f"n_entities={self.n_entities}, "
+            f"n_periods={self.n_periods}, "
+            f"n_obs={self.n_obs})"
+        )

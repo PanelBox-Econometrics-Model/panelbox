@@ -6,6 +6,7 @@ and Random Effects models.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -43,7 +44,7 @@ class HausmanTestResult:
         fe_params: pd.Series,
         re_params: pd.Series,
         diff: pd.Series,
-        alpha: float = 0.05
+        alpha: float = 0.05,
     ):
         self.statistic = statistic
         self.pvalue = pvalue
@@ -56,8 +57,7 @@ class HausmanTestResult:
         # Determine conclusion
         if pvalue < alpha:
             self.conclusion = (
-                f"Reject H0 at {alpha*100:.0f}% level. "
-                "Use Fixed Effects (RE is inconsistent)."
+                f"Reject H0 at {alpha*100:.0f}% level. " "Use Fixed Effects (RE is inconsistent)."
             )
             self.recommendation = "Fixed Effects"
         else:
@@ -106,7 +106,9 @@ class HausmanTestResult:
         lines.append("=" * 70)
         lines.append("COEFFICIENT COMPARISON")
         lines.append("=" * 70)
-        lines.append(f"{'Variable':<15} {'Fixed Effects':<15} {'Random Effects':<15} {'Difference':<15}")
+        lines.append(
+            f"{'Variable':<15} {'Fixed Effects':<15} {'Random Effects':<15} {'Difference':<15}"
+        )
         lines.append("-" * 70)
 
         for var in self.fe_params.index:
@@ -114,9 +116,7 @@ class HausmanTestResult:
             re_coef = self.re_params[var]
             diff_coef = self.diff[var]
 
-            lines.append(
-                f"{var:<15} {fe_coef:>14.4f} {re_coef:>14.4f} {diff_coef:>14.4f}"
-            )
+            lines.append(f"{var:<15} {fe_coef:>14.4f} {re_coef:>14.4f} {diff_coef:>14.4f}")
 
         lines.append("=" * 70)
         lines.append("")
@@ -164,15 +164,15 @@ class HausmanTest:
     ...     final_results = re_results
     """
 
-    def __init__(
-        self,
-        fe_results: PanelResults,
-        re_results: PanelResults
-    ):
-        if fe_results.model_type not in ['Fixed Effects', 'Fixed Effects (Two-Way)', 'Fixed Effects (Time)']:
+    def __init__(self, fe_results: PanelResults, re_results: PanelResults):
+        if fe_results.model_type not in [
+            "Fixed Effects",
+            "Fixed Effects (Two-Way)",
+            "Fixed Effects (Time)",
+        ]:
             raise ValueError("First argument must be Fixed Effects results")
 
-        if re_results.model_type not in ['Random Effects (GLS)', 'Random Effects']:
+        if re_results.model_type not in ["Random Effects (GLS)", "Random Effects"]:
             raise ValueError("Second argument must be Random Effects results")
 
         self.fe_results = fe_results
@@ -181,7 +181,7 @@ class HausmanTest:
         # Find common coefficients (exclude Intercept for FE, keep for RE)
         # FE doesn't have intercept, RE does
         fe_vars = set(fe_results.params.index)
-        re_vars = set(re_results.params.index) - {'Intercept'}  # Exclude intercept from comparison
+        re_vars = set(re_results.params.index) - {"Intercept"}  # Exclude intercept from comparison
 
         self.common_vars = sorted(fe_vars & re_vars)
 
@@ -258,7 +258,7 @@ class HausmanTest:
             fe_params=self.fe_results.params[self.common_vars],
             re_params=self.re_results.params[self.common_vars],
             diff=pd.Series(diff, index=self.common_vars),
-            alpha=alpha
+            alpha=alpha,
         )
 
         return result

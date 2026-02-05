@@ -5,20 +5,20 @@ This module implements White's heteroskedasticity-robust covariance
 estimators and their finite-sample improvements.
 """
 
-from typing import Optional, Literal
-import numpy as np
 from dataclasses import dataclass
+from typing import Literal, Optional
+
+import numpy as np
 
 from .utils import (
-    compute_leverage,
     compute_bread,
+    compute_leverage,
     compute_meat_hc,
+    hc_covariance,
     sandwich_covariance,
-    hc_covariance
 )
 
-
-HC_TYPES = Literal['HC0', 'HC1', 'HC2', 'HC3']
+HC_TYPES = Literal["HC0", "HC1", "HC2", "HC3"]
 
 
 @dataclass
@@ -41,6 +41,7 @@ class RobustCovarianceResult:
     leverage : np.ndarray, optional
         Leverage values (for HC2, HC3)
     """
+
     cov_matrix: np.ndarray
     std_errors: np.ndarray
     method: str
@@ -144,16 +145,16 @@ class RobustStandardErrors:
         downward in finite samples. Consider using HC1, HC2, or HC3
         for better finite-sample properties.
         """
-        meat = compute_meat_hc(self.X, self.resid, method='HC0')
+        meat = compute_meat_hc(self.X, self.resid, method="HC0")
         cov_matrix = sandwich_covariance(self.bread, meat)
         std_errors = np.sqrt(np.diag(cov_matrix))
 
         return RobustCovarianceResult(
             cov_matrix=cov_matrix,
             std_errors=std_errors,
-            method='HC0',
+            method="HC0",
             n_obs=self.n_obs,
-            n_params=self.n_params
+            n_params=self.n_params,
         )
 
     def hc1(self) -> RobustCovarianceResult:
@@ -174,16 +175,16 @@ class RobustStandardErrors:
 
         This is the default in Stata's "robust" option.
         """
-        meat = compute_meat_hc(self.X, self.resid, method='HC1')
+        meat = compute_meat_hc(self.X, self.resid, method="HC1")
         cov_matrix = sandwich_covariance(self.bread, meat)
         std_errors = np.sqrt(np.diag(cov_matrix))
 
         return RobustCovarianceResult(
             cov_matrix=cov_matrix,
             std_errors=std_errors,
-            method='HC1',
+            method="HC1",
             n_obs=self.n_obs,
-            n_params=self.n_params
+            n_params=self.n_params,
         )
 
     def hc2(self) -> RobustCovarianceResult:
@@ -206,17 +207,17 @@ class RobustStandardErrors:
         better than HC0 and HC1 in finite samples.
         """
         leverage = self.leverage
-        meat = compute_meat_hc(self.X, self.resid, method='HC2', leverage=leverage)
+        meat = compute_meat_hc(self.X, self.resid, method="HC2", leverage=leverage)
         cov_matrix = sandwich_covariance(self.bread, meat)
         std_errors = np.sqrt(np.diag(cov_matrix))
 
         return RobustCovarianceResult(
             cov_matrix=cov_matrix,
             std_errors=std_errors,
-            method='HC2',
+            method="HC2",
             n_obs=self.n_obs,
             n_params=self.n_params,
-            leverage=leverage
+            leverage=leverage,
         )
 
     def hc3(self) -> RobustCovarianceResult:
@@ -242,20 +243,20 @@ class RobustStandardErrors:
         in simulation studies.
         """
         leverage = self.leverage
-        meat = compute_meat_hc(self.X, self.resid, method='HC3', leverage=leverage)
+        meat = compute_meat_hc(self.X, self.resid, method="HC3", leverage=leverage)
         cov_matrix = sandwich_covariance(self.bread, meat)
         std_errors = np.sqrt(np.diag(cov_matrix))
 
         return RobustCovarianceResult(
             cov_matrix=cov_matrix,
             std_errors=std_errors,
-            method='HC3',
+            method="HC3",
             n_obs=self.n_obs,
             n_params=self.n_params,
-            leverage=leverage
+            leverage=leverage,
         )
 
-    def compute(self, method: HC_TYPES = 'HC1') -> RobustCovarianceResult:
+    def compute(self, method: HC_TYPES = "HC1") -> RobustCovarianceResult:
         """
         Compute robust covariance with specified method.
 
@@ -277,25 +278,22 @@ class RobustStandardErrors:
         """
         method_upper = method.upper()
 
-        if method_upper == 'HC0':
+        if method_upper == "HC0":
             return self.hc0()
-        elif method_upper == 'HC1':
+        elif method_upper == "HC1":
             return self.hc1()
-        elif method_upper == 'HC2':
+        elif method_upper == "HC2":
             return self.hc2()
-        elif method_upper == 'HC3':
+        elif method_upper == "HC3":
             return self.hc3()
         else:
             raise ValueError(
-                f"Unknown HC method: {method}. "
-                f"Must be one of: 'HC0', 'HC1', 'HC2', 'HC3'"
+                f"Unknown HC method: {method}. " f"Must be one of: 'HC0', 'HC1', 'HC2', 'HC3'"
             )
 
 
 def robust_covariance(
-    X: np.ndarray,
-    resid: np.ndarray,
-    method: HC_TYPES = 'HC1'
+    X: np.ndarray, resid: np.ndarray, method: HC_TYPES = "HC1"
 ) -> RobustCovarianceResult:
     """
     Convenience function for computing robust covariance.

@@ -7,6 +7,7 @@ in Fixed Effects panel models.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.validation.serial_correlation.wooldridge_ar import WooldridgeARTest
 
@@ -60,9 +61,7 @@ class TestWooldridgeAR:
     def test_requires_minimum_periods(self, balanced_panel_data):
         """Test that Wooldridge test requires T >= 3."""
         # Create data with only 2 periods per entity
-        data_short = balanced_panel_data[
-            balanced_panel_data['time'].isin([2020, 2021])
-        ].copy()
+        data_short = balanced_panel_data[balanced_panel_data["time"].isin([2020, 2021])].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_short, "entity", "time")
         results = fe.fit()
@@ -97,12 +96,12 @@ class TestWooldridgeAR:
         result = test.run()
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -139,5 +138,5 @@ class TestWooldridgeAR:
 
         # Basic checks
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")

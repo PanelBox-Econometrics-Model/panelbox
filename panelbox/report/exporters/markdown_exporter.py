@@ -4,9 +4,9 @@ Markdown Exporter for PanelBox Reports.
 Exports validation and regression results to Markdown format.
 """
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
 import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 
 class MarkdownExporter:
@@ -32,19 +32,13 @@ class MarkdownExporter:
     >>> exporter.save(md, 'validation_report.md')
     """
 
-    def __init__(
-        self,
-        include_toc: bool = True,
-        github_flavor: bool = True
-    ):
+    def __init__(self, include_toc: bool = True, github_flavor: bool = True):
         """Initialize Markdown Exporter."""
         self.include_toc = include_toc
         self.github_flavor = github_flavor
 
     def export_validation_report(
-        self,
-        validation_data: Dict[str, Any],
-        title: str = "Validation Report"
+        self, validation_data: Dict[str, Any], title: str = "Validation Report"
     ) -> str:
         """
         Export complete validation report to Markdown.
@@ -75,12 +69,12 @@ class MarkdownExporter:
         lines.append("")
 
         # Metadata
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lines.append(f"**Generated:** {timestamp}")
         lines.append("")
 
         # Summary
-        summary = validation_data.get('summary', {})
+        summary = validation_data.get("summary", {})
         lines.append("## Summary")
         lines.append("")
         lines.append(f"- **Total Tests:** {summary.get('total_tests', 0)}")
@@ -90,7 +84,7 @@ class MarkdownExporter:
         lines.append("")
 
         # Status indicator
-        if summary.get('has_issues', False):
+        if summary.get("has_issues", False):
             lines.append(f"> ⚠️ **{summary.get('status_message', 'Issues detected')}**")
         else:
             lines.append(f"> ✅ **{summary.get('status_message', 'All tests passed')}**")
@@ -102,26 +96,32 @@ class MarkdownExporter:
             lines.append("")
             lines.append("- [Model Information](#model-information)")
             lines.append("- [Test Results](#test-results)")
-            if validation_data.get('recommendations'):
+            if validation_data.get("recommendations"):
                 lines.append("- [Recommendations](#recommendations)")
             lines.append("")
 
         # Model Information
-        model_info = validation_data.get('model_info', {})
+        model_info = validation_data.get("model_info", {})
         lines.append("## Model Information")
         lines.append("")
         lines.append(f"- **Model Type:** {model_info.get('model_type', 'Unknown')}")
-        if 'formula' in model_info:
+        if "formula" in model_info:
             lines.append(f"- **Formula:** `{model_info['formula']}`")
-        lines.append(f"- **Observations:** {model_info.get('nobs_formatted', model_info.get('nobs', 'N/A'))}")
-        if 'n_entities' in model_info:
-            lines.append(f"- **Entities:** {model_info.get('n_entities_formatted', model_info.get('n_entities'))}")
-        if 'n_periods' in model_info:
-            lines.append(f"- **Time Periods:** {model_info.get('n_periods_formatted', model_info.get('n_periods'))}")
+        lines.append(
+            f"- **Observations:** {model_info.get('nobs_formatted', model_info.get('nobs', 'N/A'))}"
+        )
+        if "n_entities" in model_info:
+            lines.append(
+                f"- **Entities:** {model_info.get('n_entities_formatted', model_info.get('n_entities'))}"
+            )
+        if "n_periods" in model_info:
+            lines.append(
+                f"- **Time Periods:** {model_info.get('n_periods_formatted', model_info.get('n_periods'))}"
+            )
         lines.append("")
 
         # Test Results
-        tests = validation_data.get('tests', [])
+        tests = validation_data.get("tests", [])
         if tests:
             lines.append("## Test Results")
             lines.append("")
@@ -129,7 +129,7 @@ class MarkdownExporter:
             # Group by category
             categories = {}
             for test in tests:
-                cat = test['category']
+                cat = test["category"]
                 if cat not in categories:
                     categories[cat] = []
                 categories[cat].append(test)
@@ -145,14 +145,14 @@ class MarkdownExporter:
 
                 # Table rows
                 for test in cat_tests:
-                    name = test['name']
-                    stat = test['statistic_formatted']
-                    pval = test['pvalue_formatted']
-                    sig = test.get('significance', '')
-                    result = test['result']
+                    name = test["name"]
+                    stat = test["statistic_formatted"]
+                    pval = test["pvalue_formatted"]
+                    sig = test.get("significance", "")
+                    result = test["result"]
 
                     # Emoji indicator
-                    if result == 'REJECT':
+                    if result == "REJECT":
                         result_emoji = "❌ REJECT"
                     else:
                         result_emoji = "✅ ACCEPT"
@@ -162,22 +162,22 @@ class MarkdownExporter:
                 lines.append("")
 
         # Recommendations
-        recommendations = validation_data.get('recommendations', [])
+        recommendations = validation_data.get("recommendations", [])
         if recommendations:
             lines.append("## Recommendations")
             lines.append("")
 
             for i, rec in enumerate(recommendations, 1):
-                severity = rec['severity'].upper()
-                category = rec['category']
-                issue = rec['issue']
+                severity = rec["severity"].upper()
+                category = rec["category"]
+                issue = rec["issue"]
 
                 # Severity emoji
-                if severity == 'CRITICAL':
+                if severity == "CRITICAL":
                     emoji = "🔴"
-                elif severity == 'HIGH':
+                elif severity == "HIGH":
                     emoji = "🟠"
-                elif severity == 'MEDIUM':
+                elif severity == "MEDIUM":
                     emoji = "🟡"
                 else:
                     emoji = "🔵"
@@ -188,16 +188,16 @@ class MarkdownExporter:
                 lines.append("")
 
                 # Failed tests
-                if rec.get('tests'):
+                if rec.get("tests"):
                     lines.append("**Failed Tests:**")
-                    for test in rec['tests']:
+                    for test in rec["tests"]:
                         lines.append(f"- {test}")
                     lines.append("")
 
                 # Suggestions
-                if rec.get('suggestions'):
+                if rec.get("suggestions"):
                     lines.append("**Suggested Actions:**")
-                    for suggestion in rec['suggestions']:
+                    for suggestion in rec["suggestions"]:
                         lines.append(f"1. {suggestion}")
                     lines.append("")
 
@@ -209,10 +209,7 @@ class MarkdownExporter:
 
         return "\n".join(lines)
 
-    def export_validation_tests(
-        self,
-        tests: List[Dict[str, Any]]
-    ) -> str:
+    def export_validation_tests(self, tests: List[Dict[str, Any]]) -> str:
         """
         Export validation tests as Markdown table.
 
@@ -239,7 +236,7 @@ class MarkdownExporter:
         # Group by category
         categories = {}
         for test in tests:
-            cat = test['category']
+            cat = test["category"]
             if cat not in categories:
                 categories[cat] = []
             categories[cat].append(test)
@@ -250,15 +247,15 @@ class MarkdownExporter:
                 # Show category only for first test in group
                 cat_display = category if i == 0 else ""
 
-                name = test['name']
-                stat = test['statistic_formatted']
-                pval = test['pvalue_formatted']
-                sig = test.get('significance', '')
-                df = test.get('df', 'N/A')
-                result = test['result']
+                name = test["name"]
+                stat = test["statistic_formatted"]
+                pval = test["pvalue_formatted"]
+                sig = test.get("significance", "")
+                df = test.get("df", "N/A")
+                result = test["result"]
 
                 # Result emoji
-                result_emoji = "❌" if result == 'REJECT' else "✅"
+                result_emoji = "❌" if result == "REJECT" else "✅"
 
                 lines.append(
                     f"| {cat_display} | {name} | {stat} | {pval}{sig} | {df} | {result_emoji} {result} |"
@@ -270,7 +267,7 @@ class MarkdownExporter:
         self,
         coefficients: List[Dict[str, Any]],
         model_info: Dict[str, Any],
-        title: str = "Regression Results"
+        title: str = "Regression Results",
     ) -> str:
         """
         Export regression results as Markdown.
@@ -304,49 +301,47 @@ class MarkdownExporter:
 
         # Coefficient rows
         for coef in coefficients:
-            var = coef['variable']
+            var = coef["variable"]
             beta = f"{coef['coefficient']:.4f}"
             se = f"{coef['std_error']:.4f}"
             tstat = f"{coef['t_statistic']:.3f}"
             pval = f"{coef['pvalue']:.4f}"
 
             # Significance stars
-            if coef['pvalue'] < 0.001:
+            if coef["pvalue"] < 0.001:
                 stars = "***"
-            elif coef['pvalue'] < 0.01:
+            elif coef["pvalue"] < 0.01:
                 stars = "**"
-            elif coef['pvalue'] < 0.05:
+            elif coef["pvalue"] < 0.05:
                 stars = "*"
             else:
                 stars = ""
 
-            lines.append(
-                f"| {var} | {beta}{stars} | ({se}) | {tstat} | {pval} |"
-            )
+            lines.append(f"| {var} | {beta}{stars} | ({se}) | {tstat} | {pval} |")
 
         lines.append("")
 
         # Model statistics
         lines.append("**Model Statistics:**")
         lines.append("")
-        if 'r_squared' in model_info:
+        if "r_squared" in model_info:
             lines.append(f"- R²: {model_info['r_squared']:.4f}")
-        if 'nobs' in model_info:
+        if "nobs" in model_info:
             lines.append(f"- Observations: {model_info['nobs']}")
-        if 'n_entities' in model_info:
+        if "n_entities" in model_info:
             lines.append(f"- Entities: {model_info['n_entities']}")
         lines.append("")
 
         # Note
-        lines.append("*Note:* Standard errors in parentheses. Significance: *** p<0.001, ** p<0.01, * p<0.05")
+        lines.append(
+            "*Note:* Standard errors in parentheses. Significance: *** p<0.001, ** p<0.01, * p<0.05"
+        )
         lines.append("")
 
         return "\n".join(lines)
 
     def export_summary_stats(
-        self,
-        stats: List[Dict[str, Any]],
-        title: str = "Summary Statistics"
+        self, stats: List[Dict[str, Any]], title: str = "Summary Statistics"
     ) -> str:
         """
         Export summary statistics as Markdown.
@@ -378,26 +373,21 @@ class MarkdownExporter:
 
         # Data rows
         for stat in stats:
-            var = stat['variable']
-            n = stat['count']
+            var = stat["variable"]
+            n = stat["count"]
             mean = f"{stat['mean']:.3f}"
             std = f"{stat['std']:.3f}"
             min_val = f"{stat['min']:.3f}"
             max_val = f"{stat['max']:.3f}"
 
-            lines.append(
-                f"| {var} | {n} | {mean} | {std} | {min_val} | {max_val} |"
-            )
+            lines.append(f"| {var} | {n} | {mean} | {std} | {min_val} | {max_val} |")
 
         lines.append("")
 
         return "\n".join(lines)
 
     def save(
-        self,
-        markdown_content: str,
-        output_path: Union[str, Path],
-        overwrite: bool = False
+        self, markdown_content: str, output_path: Union[str, Path], overwrite: bool = False
     ) -> Path:
         """
         Save Markdown content to file.
@@ -425,15 +415,14 @@ class MarkdownExporter:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. "
-                "Use overwrite=True to replace."
+                f"File already exists: {output_path}. " "Use overwrite=True to replace."
             )
 
         # Create parent directories
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write file
-        output_path.write_text(markdown_content, encoding='utf-8')
+        output_path.write_text(markdown_content, encoding="utf-8")
 
         return output_path
 

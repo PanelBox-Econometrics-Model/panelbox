@@ -13,11 +13,12 @@ Shao, J., & Tu, D. (1995). The Jackknife and Bootstrap.
     Springer Science & Business Media.
 """
 
-from typing import Optional, Dict, Any, Tuple
 import warnings
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from panelbox.core.results import PanelResults
 
@@ -44,6 +45,7 @@ class JackknifeResults:
     n_jackknife : int
         Number of jackknife samples (entities)
     """
+
     jackknife_estimates: pd.DataFrame
     original_estimates: pd.Series
     jackknife_mean: pd.Series
@@ -62,8 +64,9 @@ class JackknifeResults:
 
         lines.append("Parameter Estimates and Bias:")
         lines.append("-" * 70)
-        lines.append(f"{'Parameter':<15} {'Original':>12} {'Jackknife':>12} "
-                    f"{'Bias':>12} {'SE (JK)':>12}")
+        lines.append(
+            f"{'Parameter':<15} {'Original':>12} {'Jackknife':>12} " f"{'Bias':>12} {'SE (JK)':>12}"
+        )
         lines.append("-" * 70)
 
         for param in self.original_estimates.index:
@@ -144,11 +147,7 @@ class PanelJackknife:
     - For N entities, requires N model re-estimations
     """
 
-    def __init__(
-        self,
-        results: PanelResults,
-        verbose: bool = True
-    ):
+    def __init__(self, results: PanelResults, verbose: bool = True):
         self.results = results
         self.verbose = verbose
 
@@ -207,32 +206,23 @@ class PanelJackknife:
         # Perform leave-one-out
         for i, entity in enumerate(self.entities, 1):
             if self.verbose:
-                print(f"Jackknife sample {i}/{self.n_entities}: "
-                      f"Excluding entity {entity}")
+                print(f"Jackknife sample {i}/{self.n_entities}: " f"Excluding entity {entity}")
 
             try:
                 # Remove entity i
-                jackknife_data = self.data[
-                    self.data[self.entity_col] != entity
-                ].copy()
+                jackknife_data = self.data[self.data[self.entity_col] != entity].copy()
 
                 # Re-estimate model
                 model_class = type(self.model)
                 jackknife_model = model_class(
-                    self.formula,
-                    jackknife_data,
-                    self.entity_col,
-                    self.time_col
+                    self.formula, jackknife_data, self.entity_col, self.time_col
                 )
-                jackknife_result = jackknife_model.fit(
-                    cov_type=self.results.cov_type
-                )
+                jackknife_result = jackknife_model.fit(cov_type=self.results.cov_type)
 
                 # Store estimates
-                jackknife_estimates.append({
-                    'entity_excluded': entity,
-                    **jackknife_result.params.to_dict()
-                })
+                jackknife_estimates.append(
+                    {"entity_excluded": entity, **jackknife_result.params.to_dict()}
+                )
 
             except Exception as e:
                 warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {str(e)}")
@@ -249,8 +239,8 @@ class PanelJackknife:
 
         # Convert to DataFrame
         jackknife_df = pd.DataFrame(jackknife_estimates)
-        entity_col_jk = jackknife_df['entity_excluded']
-        jackknife_df = jackknife_df.drop('entity_excluded', axis=1)
+        entity_col_jk = jackknife_df["entity_excluded"]
+        jackknife_df = jackknife_df.drop("entity_excluded", axis=1)
 
         # Compute jackknife statistics
         N = len(jackknife_estimates)
@@ -263,14 +253,14 @@ class PanelJackknife:
 
         # Jackknife standard error: sqrt((N-1)/N * sum((theta_i - mean)^2))
         deviations = jackknife_df - jackknife_mean
-        jackknife_variance = ((N - 1) / N) * (deviations ** 2).sum()
+        jackknife_variance = ((N - 1) / N) * (deviations**2).sum()
         jackknife_se = np.sqrt(jackknife_variance)
 
         # Influence: (N-1) * (theta_original - theta_(-i))
         influence_df = pd.DataFrame(
             (N - 1) * (original_estimates.values - jackknife_df.values),
             columns=original_estimates.index,
-            index=entity_col_jk
+            index=entity_col_jk,
         )
 
         # Create results object
@@ -281,7 +271,7 @@ class PanelJackknife:
             jackknife_bias=jackknife_bias,
             jackknife_se=jackknife_se,
             influence=influence_df,
-            n_jackknife=N
+            n_jackknife=N,
         )
 
         if self.verbose:
@@ -317,17 +307,12 @@ class PanelJackknife:
             raise RuntimeError("Must call run() before bias_corrected_estimates()")
 
         bias_corrected = (
-            self.jackknife_results_.original_estimates -
-            self.jackknife_results_.jackknife_bias
+            self.jackknife_results_.original_estimates - self.jackknife_results_.jackknife_bias
         )
 
         return bias_corrected
 
-    def confidence_intervals(
-        self,
-        alpha: float = 0.05,
-        method: str = 'normal'
-    ) -> pd.DataFrame:
+    def confidence_intervals(self, alpha: float = 0.05, method: str = "normal") -> pd.DataFrame:
         """
         Compute confidence intervals using jackknife standard errors.
 
@@ -354,17 +339,22 @@ class PanelJackknife:
         if self.jackknife_results_ is None:
             raise RuntimeError("Must call run() before confidence_intervals()")
 
-        if method == 'normal':
+        if method == "normal":
             # Normal approximation
             from scipy import stats
+
             z = stats.norm.ppf(1 - alpha / 2)
 
-            lower = (self.jackknife_results_.original_estimates -
-                    z * self.jackknife_results_.jackknife_se)
-            upper = (self.jackknife_results_.original_estimates +
-                    z * self.jackknife_results_.jackknife_se)
+            lower = (
+                self.jackknife_results_.original_estimates
+                - z * self.jackknife_results_.jackknife_se
+            )
+            upper = (
+                self.jackknife_results_.original_estimates
+                + z * self.jackknife_results_.jackknife_se
+            )
 
-        elif method == 'percentile':
+        elif method == "percentile":
             # Percentile method
             lower = self.jackknife_results_.jackknife_estimates.quantile(alpha / 2)
             upper = self.jackknife_results_.jackknife_estimates.quantile(1 - alpha / 2)
@@ -372,18 +362,11 @@ class PanelJackknife:
         else:
             raise ValueError(f"Unknown method: {method}. Use 'normal' or 'percentile'")
 
-        ci = pd.DataFrame({
-            'lower': lower,
-            'upper': upper
-        })
+        ci = pd.DataFrame({"lower": lower, "upper": upper})
 
         return ci
 
-    def influential_entities(
-        self,
-        threshold: float = 2.0,
-        metric: str = 'max'
-    ) -> pd.DataFrame:
+    def influential_entities(self, threshold: float = 2.0, metric: str = "max") -> pd.DataFrame:
         """
         Identify influential entities based on jackknife influence.
 
@@ -414,11 +397,11 @@ class PanelJackknife:
         influence = self.jackknife_results_.influence
 
         # Compute aggregate influence
-        if metric == 'max':
+        if metric == "max":
             aggregate_influence = influence.abs().max(axis=1)
-        elif metric == 'mean':
+        elif metric == "mean":
             aggregate_influence = influence.abs().mean(axis=1)
-        elif metric == 'sum':
+        elif metric == "sum":
             aggregate_influence = influence.abs().sum(axis=1)
         else:
             raise ValueError(f"Unknown metric: {metric}. Use 'max', 'mean', or 'sum'")
@@ -429,11 +412,13 @@ class PanelJackknife:
 
         # Filter influential entities
         influential_mask = aggregate_influence > influence_threshold
-        influential = pd.DataFrame({
-            'entity': aggregate_influence[influential_mask].index,
-            'influence': aggregate_influence[influential_mask].values,
-            'threshold': influence_threshold
-        })
+        influential = pd.DataFrame(
+            {
+                "entity": aggregate_influence[influential_mask].index,
+                "influence": aggregate_influence[influential_mask].values,
+                "threshold": influence_threshold,
+            }
+        )
 
         return influential
 

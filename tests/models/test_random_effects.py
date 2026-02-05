@@ -14,14 +14,9 @@ class TestRandomEffectsInitialization:
 
     def test_init_default(self, balanced_panel_data):
         """Test initialization with default parameters."""
-        model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time"
-        )
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
 
-        assert model.variance_estimator == 'swamy-arora'
+        assert model.variance_estimator == "swamy-arora"
         assert model.sigma2_u is None  # Not estimated yet
         assert model.sigma2_e is None
         assert model.theta is None
@@ -29,24 +24,16 @@ class TestRandomEffectsInitialization:
     def test_init_amemiya(self, balanced_panel_data):
         """Test initialization with Amemiya estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            variance_estimator='amemiya'
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="amemiya"
         )
 
-        assert model.variance_estimator == 'amemiya'
+        assert model.variance_estimator == "amemiya"
 
     def test_init_invalid_estimator(self, balanced_panel_data):
         """Test that invalid variance estimator raises ValueError."""
         with pytest.raises(ValueError, match="variance_estimator must be one of"):
             RandomEffects(
-                "y ~ x1 + x2",
-                balanced_panel_data,
-                "entity",
-                "time",
-                variance_estimator='invalid'
+                "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="invalid"
             )
 
 
@@ -89,7 +76,7 @@ class TestRandomEffectsFitting:
         results = model.fit()
 
         # Should have intercept
-        assert 'Intercept' in results.params.index
+        assert "Intercept" in results.params.index
 
 
 class TestRSquaredMeasures:
@@ -120,24 +107,24 @@ class TestCovarianceTypes:
     def test_nonrobust_se(self, balanced_panel_data):
         """Test non-robust standard errors."""
         model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='nonrobust')
+        results = model.fit(cov_type="nonrobust")
 
-        assert results.cov_type == 'nonrobust'
+        assert results.cov_type == "nonrobust"
         assert len(results.std_errors) == 3
 
     def test_robust_se(self, balanced_panel_data):
         """Test robust standard errors."""
         model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='robust')
+        results = model.fit(cov_type="robust")
 
-        assert results.cov_type == 'robust'
+        assert results.cov_type == "robust"
 
     def test_clustered_se(self, balanced_panel_data):
         """Test cluster-robust standard errors."""
         model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='clustered')
+        results = model.fit(cov_type="clustered")
 
-        assert results.cov_type == 'clustered'
+        assert results.cov_type == "clustered"
 
 
 class TestVarianceEstimators:
@@ -146,11 +133,7 @@ class TestVarianceEstimators:
     def test_swamy_arora(self, balanced_panel_data):
         """Test Swamy-Arora estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            variance_estimator='swamy-arora'
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="swamy-arora"
         )
         results = model.fit()
 
@@ -160,11 +143,7 @@ class TestVarianceEstimators:
     def test_walhus(self, balanced_panel_data):
         """Test Wallace-Hussain estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            variance_estimator='walhus'
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="walhus"
         )
         results = model.fit()
 
@@ -173,11 +152,7 @@ class TestVarianceEstimators:
     def test_amemiya(self, balanced_panel_data):
         """Test Amemiya estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            variance_estimator='amemiya'
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="amemiya"
         )
         results = model.fit()
 
@@ -186,11 +161,7 @@ class TestVarianceEstimators:
     def test_nerlove(self, balanced_panel_data):
         """Test Nerlove estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            variance_estimator='nerlove'
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="nerlove"
         )
         results = model.fit()
 
@@ -278,10 +249,10 @@ class TestComparisonWithOtherModels:
         """Test that RE can include time-invariant variables (unlike FE)."""
         # Add a time-invariant variable
         data = balanced_panel_data.copy()
-        data['const_var'] = data['entity'] * 100  # Time-invariant
+        data["const_var"] = data["entity"] * 100  # Time-invariant
 
         model = RandomEffects("y ~ x1 + x2 + const_var", data, "entity", "time")
         results = model.fit()
 
         # Should include the time-invariant variable
-        assert 'const_var' in results.params.index
+        assert "const_var" in results.params.index

@@ -15,12 +15,14 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Union, List, Optional, Dict
+from typing import Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
-from panelbox.gmm.results import GMMResults, TestResult
-from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
+
 from panelbox.gmm.estimator import GMMEstimator
+from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
+from panelbox.gmm.results import GMMResults, TestResult
 from panelbox.gmm.tests import GMMTests
 
 
@@ -158,20 +160,22 @@ class DifferenceGMM:
     Arellano, M., & Bond, S. (1991). Review of Economic Studies, 58(2), 277-297.
     """
 
-    def __init__(self,
-                 data: pd.DataFrame,
-                 dep_var: str,
-                 lags: Union[int, List[int]],
-                 id_var: str = 'id',
-                 time_var: str = 'year',
-                 exog_vars: Optional[List[str]] = None,
-                 endogenous_vars: Optional[List[str]] = None,
-                 predetermined_vars: Optional[List[str]] = None,
-                 time_dummies: bool = True,
-                 collapse: bool = False,
-                 two_step: bool = True,
-                 robust: bool = True,
-                 gmm_type: str = 'two_step'):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        dep_var: str,
+        lags: Union[int, List[int]],
+        id_var: str = "id",
+        time_var: str = "year",
+        exog_vars: Optional[List[str]] = None,
+        endogenous_vars: Optional[List[str]] = None,
+        predetermined_vars: Optional[List[str]] = None,
+        time_dummies: bool = True,
+        collapse: bool = False,
+        two_step: bool = True,
+        robust: bool = True,
+        gmm_type: str = "two_step",
+    ):
         """Initialize Difference GMM model."""
         self.data = data.copy()
         self.dep_var = dep_var
@@ -219,14 +223,14 @@ class DifferenceGMM:
                 raise ValueError(f"Variable '{var}' not found in data")
 
         # Check gmm_type is valid
-        valid_types = ['one_step', 'two_step', 'iterative']
+        valid_types = ["one_step", "two_step", "iterative"]
         if self.gmm_type not in valid_types:
             raise ValueError(f"gmm_type must be one of {valid_types}")
 
         # If gmm_type is specified, override two_step flag
-        if self.gmm_type == 'one_step':
+        if self.gmm_type == "one_step":
             self.two_step = False
-        elif self.gmm_type == 'two_step':
+        elif self.gmm_type == "two_step":
             self.two_step = True
 
         # Check for unbalanced panel + time dummies issue
@@ -246,15 +250,15 @@ class DifferenceGMM:
                         f"  2. Use only subset of key time dummies\n"
                         f"  3. Ensure collapse=True (currently: {self.collapse})\n\n"
                         f"See examples/gmm/unbalanced_panel_guide.py for details.",
-                        UserWarning
+                        UserWarning,
                     )
 
         # Check collapse recommendation
         if not self.collapse:
             warnings.warn(
-                "\n" + "="*70 + "\n"
+                "\n" + "=" * 70 + "\n"
                 "RECOMMENDATION: Set collapse=True\n"
-                "="*70 + "\n"
+                "=" * 70 + "\n"
                 "Non-collapsed GMM instruments (collapse=False) can cause:\n"
                 "  • Instrument proliferation (grows as T²)\n"
                 "  • Numerical instability with sparse instrument matrices\n"
@@ -270,11 +274,11 @@ class DifferenceGMM:
                 "To suppress this warning:\n"
                 "  DifferenceGMM(..., collapse=True)  # Recommended\n"
                 "\n"
-                "Reference: Roodman, D. (2009). \"How to do xtabond2:\n"
-                "An introduction to difference and system GMM in Stata.\"\n"
+                'Reference: Roodman, D. (2009). "How to do xtabond2:\n'
+                'An introduction to difference and system GMM in Stata."\n'
                 "The Stata Journal, 9(1), 86-136.\n"
-                "="*70,
-                UserWarning
+                "=" * 70,
+                UserWarning,
             )
 
     def _check_panel_balance(self):
@@ -343,8 +347,10 @@ class DifferenceGMM:
         # Filter observations by GMM instrument availability
         # For Difference GMM, Stata requires at least 2 valid GMM instruments per observation
         # This ensures sufficient variation and enables overidentification tests
-        instrument_names_filtered = [name for i, name in enumerate(Z.instrument_names) if not_all_nan[i]]
-        gmm_cols = [i for i, name in enumerate(instrument_names_filtered) if name.startswith('n_t')]
+        instrument_names_filtered = [
+            name for i, name in enumerate(Z.instrument_names) if not_all_nan[i]
+        ]
+        gmm_cols = [i for i, name in enumerate(instrument_names_filtered) if name.startswith("n_t")]
 
         if len(gmm_cols) > 0:
             Z_gmm = Z_matrix_filtered[:, gmm_cols]
@@ -374,19 +380,17 @@ class DifferenceGMM:
         Z_matrix = np.nan_to_num(Z_matrix_filtered, nan=0.0)
 
         # Step 3: Estimate GMM
-        if self.gmm_type == 'one_step':
+        if self.gmm_type == "one_step":
             beta, W, residuals = self.estimator.one_step(y_diff, X_diff, Z_matrix)
             vcov = self._compute_one_step_vcov(X_diff, Z_matrix, residuals, W)
             converged = True
-        elif self.gmm_type == 'two_step':
+        elif self.gmm_type == "two_step":
             beta, vcov, W, residuals = self.estimator.two_step(
                 y_diff, X_diff, Z_matrix, robust=self.robust
             )
             converged = True
         else:  # iterative
-            beta, vcov, W, converged = self.estimator.iterative(
-                y_diff, X_diff, Z_matrix
-            )
+            beta, vcov, W, converged = self.estimator.iterative(y_diff, X_diff, Z_matrix)
             residuals = y_diff - X_diff @ beta
 
         # Step 4: Compute standard errors and t-statistics
@@ -394,18 +398,15 @@ class DifferenceGMM:
         std_errors = np.sqrt(np.diag(vcov))
         tvalues = beta / std_errors
         from scipy import stats
+
         pvalues = 2 * (1 - stats.norm.cdf(np.abs(tvalues)))
 
         # Step 5: Get variable names
         var_names = self._get_variable_names()
 
         # Step 6: Compute specification tests
-        hansen = self.tester.hansen_j_test(
-            residuals, Z_matrix, W, len(beta)
-        )
-        sargan = self.tester.sargan_test(
-            residuals, Z_matrix, len(beta)
-        )
+        hansen = self.tester.hansen_j_test(residuals, Z_matrix, W, len(beta))
+        sargan = self.tester.sargan_test(residuals, Z_matrix, len(beta))
 
         # For AR tests, we need clean data without NaN
         residuals_flat = residuals.flatten() if residuals.ndim > 1 else residuals
@@ -436,9 +437,9 @@ class DifferenceGMM:
             converged=converged,
             two_step=self.two_step,
             windmeijer_corrected=self.robust and self.two_step,
-            model_type='difference',
-            transformation='fd',
-            residuals=residuals
+            model_type="difference",
+            transformation="fd",
+            residuals=residuals,
         )
 
         self.params = self.results.params
@@ -447,6 +448,7 @@ class DifferenceGMM:
         retention_rate = self.results.nobs / len(self.data)
         if retention_rate < 0.30:
             import warnings
+
             warnings.warn(
                 f"\nLow observation retention: {self.results.nobs}/{len(self.data)} "
                 f"({retention_rate*100:.1f}%).\n"
@@ -457,7 +459,7 @@ class DifferenceGMM:
                 f"  3. Ensure collapse=True (currently: {self.collapse})\n"
                 f"  4. Check data for excessive missing values\n\n"
                 f"See examples/gmm/unbalanced_panel_guide.py for detailed guidance.",
-                UserWarning
+                UserWarning,
             )
 
         return self.results
@@ -482,7 +484,7 @@ class DifferenceGMM:
 
         # Create lagged dependent variable
         for lag in self.lags:
-            lag_name = f'{self.dep_var}_L{lag}'
+            lag_name = f"{self.dep_var}_L{lag}"
             df[lag_name] = df.groupby(self.id_var)[self.dep_var].shift(lag)
             # Also add to self.data for instrument generation
             self.data[lag_name] = df[lag_name]
@@ -490,27 +492,27 @@ class DifferenceGMM:
         # Build regressor list
         regressors = []
         for lag in self.lags:
-            regressors.append(f'{self.dep_var}_L{lag}')
+            regressors.append(f"{self.dep_var}_L{lag}")
         regressors.extend(self.exog_vars)
         regressors.extend(self.endogenous_vars)
         regressors.extend(self.predetermined_vars)
 
         # Add time dummies if requested
         if self.time_dummies:
-            time_dummies = pd.get_dummies(df[self.time_var], prefix='year', drop_first=True)
+            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", drop_first=True)
             for col in time_dummies.columns:
                 df[col] = time_dummies[col]
                 regressors.append(col)
 
         # First-difference transformation
-        df['y_diff'] = df.groupby(self.id_var)[self.dep_var].diff()
+        df["y_diff"] = df.groupby(self.id_var)[self.dep_var].diff()
 
         X_diff_dict = {}
         for var in regressors:
             X_diff_dict[var] = df.groupby(self.id_var)[var].diff()
 
         # Extract arrays, ensuring float64 dtype
-        y_diff = df['y_diff'].values.reshape(-1, 1).astype(np.float64)
+        y_diff = df["y_diff"].values.reshape(-1, 1).astype(np.float64)
         X_diff = np.column_stack([X_diff_dict[var].values for var in regressors]).astype(np.float64)
         ids = df[self.id_var].values
         times = df[self.time_var].values
@@ -536,8 +538,8 @@ class DifferenceGMM:
                 var=self.dep_var,
                 min_lag=lag + 1,  # For L1.y, use y_{t-2} and earlier
                 max_lag=99,  # All available lags
-                equation='diff',
-                collapse=self.collapse
+                equation="diff",
+                collapse=self.collapse,
             )
             instrument_sets.append(Z_lag)
 
@@ -550,7 +552,7 @@ class DifferenceGMM:
                 var=var,
                 min_lag=0,  # Current and all lags
                 max_lag=6,  # Empirically calibrated to match Stata xtabond2
-                equation='diff'
+                equation="diff",
             )
             instrument_sets.append(Z_exog)
 
@@ -560,8 +562,8 @@ class DifferenceGMM:
                 var=var,
                 min_lag=2,  # t-2 and earlier
                 max_lag=99,
-                equation='diff',
-                collapse=self.collapse
+                equation="diff",
+                collapse=self.collapse,
             )
             instrument_sets.append(Z_pred)
 
@@ -571,8 +573,8 @@ class DifferenceGMM:
                 var=var,
                 min_lag=3,  # t-3 and earlier
                 max_lag=99,
-                equation='diff',
-                collapse=self.collapse
+                equation="diff",
+                collapse=self.collapse,
             )
             instrument_sets.append(Z_endog)
 
@@ -581,11 +583,9 @@ class DifferenceGMM:
 
         return Z_combined
 
-    def _compute_one_step_vcov(self,
-                              X: np.ndarray,
-                              Z: np.ndarray,
-                              residuals: np.ndarray,
-                              W: np.ndarray) -> np.ndarray:
+    def _compute_one_step_vcov(
+        self, X: np.ndarray, Z: np.ndarray, residuals: np.ndarray, W: np.ndarray
+    ) -> np.ndarray:
         """
         Compute variance-covariance matrix for one-step GMM.
 
@@ -652,7 +652,7 @@ class DifferenceGMM:
 
         # Lagged dependent variable
         for lag in self.lags:
-            var_names.append(f'L{lag}.{self.dep_var}')
+            var_names.append(f"L{lag}.{self.dep_var}")
 
         # Other variables
         var_names.extend(self.exog_vars)
@@ -663,7 +663,7 @@ class DifferenceGMM:
         if self.time_dummies:
             time_periods = sorted(self.data[self.time_var].unique())[1:]  # Drop first
             for t in time_periods:
-                var_names.append(f'year_{t}')
+                var_names.append(f"year_{t}")
 
         return var_names
 
@@ -684,10 +684,9 @@ class DifferenceGMM:
         if self.results is None:
             raise ValueError("Model has not been fit yet. Call fit() first.")
 
-        return self.results.summary(title='Difference GMM (Arellano-Bond)')
+        return self.results.summary(title="Difference GMM (Arellano-Bond)")
 
     def __repr__(self) -> str:
         """Representation of the model."""
         status = "fitted" if self.results is not None else "not fitted"
-        return (f"DifferenceGMM(dep_var='{self.dep_var}', lags={self.lags}, "
-                f"status='{status}')")
+        return f"DifferenceGMM(dep_var='{self.dep_var}', lags={self.lags}, " f"status='{status}')"

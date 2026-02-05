@@ -13,6 +13,7 @@ Date: 2026-01-22
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 # Set random seed
@@ -56,13 +57,7 @@ errors = np.random.randn(n_obs)
 
 y = beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
-data = pd.DataFrame({
-    'entity': entities,
-    'time': times,
-    'y': y,
-    'x1': x1,
-    'x2': x2
-})
+data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
 
 print(f"   Panel: {n_entities} entities × {n_periods} periods = {n_obs} observations")
 print(f"   True parameters: β₁={beta_1}, β₂={beta_2}")
@@ -75,7 +70,7 @@ print(f"   Added outlier to entity {outlier_entity}")
 print("\n2. Fitting Fixed Effects model...")
 
 model = pb.FixedEffects("y ~ x1 + x2", data, "entity", "time")
-results = model.fit(cov_type='robust')
+results = model.fit(cov_type="robust")
 
 print("\nOriginal estimates:")
 print(f"   x1: {results.params['x1']:.4f} (SE: {results.std_errors['x1']:.4f})")
@@ -140,13 +135,11 @@ print("\n6. Running Subset Sensitivity analysis...")
 print("   (Random subsamples with 80% of entities)")
 
 subset_results = sensitivity.subset_sensitivity(
-    n_subsamples=30,
-    subsample_size=0.8,
-    random_state=42
+    n_subsamples=30, subsample_size=0.8, random_state=42
 )
 
 print(f"\n   Completed: {len(subset_results.estimates)} subsamples")
-successful = subset_results.subsample_info['converged'].sum()
+successful = subset_results.subsample_info["converged"].sum()
 print(f"   Successful estimations: {successful}/{len(subset_results.estimates)}")
 
 # Summary statistics
@@ -161,29 +154,31 @@ print(summary_subset.to_string(index=False))
 print("\n7. Comparing Sensitivity Across Methods:")
 print("=" * 80)
 
-comparison = pd.DataFrame({
-    'Method': ['LOO Entities', 'LOO Periods', 'Subset (80%)'],
-    'x1_Mean': [
-        loo_entities.estimates['x1'].mean(),
-        loo_periods.estimates['x1'].mean(),
-        subset_results.estimates['x1'].mean()
-    ],
-    'x1_Std': [
-        loo_entities.estimates['x1'].std(),
-        loo_periods.estimates['x1'].std(),
-        subset_results.estimates['x1'].std()
-    ],
-    'x2_Mean': [
-        loo_entities.estimates['x2'].mean(),
-        loo_periods.estimates['x2'].mean(),
-        subset_results.estimates['x2'].mean()
-    ],
-    'x2_Std': [
-        loo_entities.estimates['x2'].std(),
-        loo_periods.estimates['x2'].std(),
-        subset_results.estimates['x2'].std()
-    ]
-})
+comparison = pd.DataFrame(
+    {
+        "Method": ["LOO Entities", "LOO Periods", "Subset (80%)"],
+        "x1_Mean": [
+            loo_entities.estimates["x1"].mean(),
+            loo_periods.estimates["x1"].mean(),
+            subset_results.estimates["x1"].mean(),
+        ],
+        "x1_Std": [
+            loo_entities.estimates["x1"].std(),
+            loo_periods.estimates["x1"].std(),
+            subset_results.estimates["x1"].std(),
+        ],
+        "x2_Mean": [
+            loo_entities.estimates["x2"].mean(),
+            loo_periods.estimates["x2"].mean(),
+            subset_results.estimates["x2"].mean(),
+        ],
+        "x2_Std": [
+            loo_entities.estimates["x2"].std(),
+            loo_periods.estimates["x2"].std(),
+            subset_results.estimates["x2"].std(),
+        ],
+    }
+)
 
 print("\n" + comparison.to_string(index=False))
 
@@ -199,10 +194,7 @@ if loo_entities.influential_units:
     print(f"\n✓ Detected {len(loo_entities.influential_units)} influential entities")
 
     # Extract entity IDs from 'excl_X' format
-    influential_ids = [
-        int(unit.replace('excl_', ''))
-        for unit in loo_entities.influential_units
-    ]
+    influential_ids = [int(unit.replace("excl_", "")) for unit in loo_entities.influential_units]
 
     if outlier_entity in influential_ids:
         print(f"✓ Successfully identified planted outlier (entity {outlier_entity})")
@@ -211,12 +203,12 @@ if loo_entities.influential_units:
 
     print("\nParameter changes when excluding influential entities:")
     for unit in loo_entities.influential_units:
-        entity_id = int(unit.replace('excl_', ''))
-        x1_est = loo_entities.estimates.loc[unit, 'x1']
-        x2_est = loo_entities.estimates.loc[unit, 'x2']
+        entity_id = int(unit.replace("excl_", ""))
+        x1_est = loo_entities.estimates.loc[unit, "x1"]
+        x2_est = loo_entities.estimates.loc[unit, "x2"]
 
-        x1_change = ((x1_est - results.params['x1']) / results.params['x1']) * 100
-        x2_change = ((x2_est - results.params['x2']) / results.params['x2']) * 100
+        x1_change = ((x1_est - results.params["x1"]) / results.params["x1"]) * 100
+        x2_change = ((x2_est - results.params["x2"]) / results.params["x2"]) * 100
 
         print(f"   Entity {entity_id}:")
         print(f"      x1: {x1_est:.4f} ({x1_change:+.2f}% change)")
@@ -232,20 +224,22 @@ print("\n9. Stability Assessment:")
 print("=" * 80)
 
 # Calculate coefficient of variation (CV) for each parameter
-cv_entities_x1 = (loo_entities.estimates['x1'].std() /
-                  abs(loo_entities.estimates['x1'].mean())) * 100
-cv_entities_x2 = (loo_entities.estimates['x2'].std() /
-                  abs(loo_entities.estimates['x2'].mean())) * 100
+cv_entities_x1 = (
+    loo_entities.estimates["x1"].std() / abs(loo_entities.estimates["x1"].mean())
+) * 100
+cv_entities_x2 = (
+    loo_entities.estimates["x2"].std() / abs(loo_entities.estimates["x2"].mean())
+) * 100
 
-cv_periods_x1 = (loo_periods.estimates['x1'].std() /
-                 abs(loo_periods.estimates['x1'].mean())) * 100
-cv_periods_x2 = (loo_periods.estimates['x2'].std() /
-                 abs(loo_periods.estimates['x2'].mean())) * 100
+cv_periods_x1 = (loo_periods.estimates["x1"].std() / abs(loo_periods.estimates["x1"].mean())) * 100
+cv_periods_x2 = (loo_periods.estimates["x2"].std() / abs(loo_periods.estimates["x2"].mean())) * 100
 
-cv_subset_x1 = (subset_results.estimates['x1'].std() /
-                abs(subset_results.estimates['x1'].mean())) * 100
-cv_subset_x2 = (subset_results.estimates['x2'].std() /
-                abs(subset_results.estimates['x2'].mean())) * 100
+cv_subset_x1 = (
+    subset_results.estimates["x1"].std() / abs(subset_results.estimates["x1"].mean())
+) * 100
+cv_subset_x2 = (
+    subset_results.estimates["x2"].std() / abs(subset_results.estimates["x2"].mean())
+) * 100
 
 print("\nCoefficient of Variation (lower is more stable):")
 print(f"   LOO Entities - x1: {cv_entities_x1:.2f}%, x2: {cv_entities_x2:.2f}%")
@@ -274,28 +268,40 @@ print(f"   x1: {results.params['x1']:.4f}")
 print(f"   x2: {results.params['x2']:.4f}")
 
 print("\nLOO Entities ranges:")
-print(f"   x1: [{loo_entities.estimates['x1'].min():.4f}, "
-      f"{loo_entities.estimates['x1'].max():.4f}] "
-      f"(range: {loo_entities.estimates['x1'].max() - loo_entities.estimates['x1'].min():.4f})")
-print(f"   x2: [{loo_entities.estimates['x2'].min():.4f}, "
-      f"{loo_entities.estimates['x2'].max():.4f}] "
-      f"(range: {loo_entities.estimates['x2'].max() - loo_entities.estimates['x2'].min():.4f})")
+print(
+    f"   x1: [{loo_entities.estimates['x1'].min():.4f}, "
+    f"{loo_entities.estimates['x1'].max():.4f}] "
+    f"(range: {loo_entities.estimates['x1'].max() - loo_entities.estimates['x1'].min():.4f})"
+)
+print(
+    f"   x2: [{loo_entities.estimates['x2'].min():.4f}, "
+    f"{loo_entities.estimates['x2'].max():.4f}] "
+    f"(range: {loo_entities.estimates['x2'].max() - loo_entities.estimates['x2'].min():.4f})"
+)
 
 print("\nLOO Periods ranges:")
-print(f"   x1: [{loo_periods.estimates['x1'].min():.4f}, "
-      f"{loo_periods.estimates['x1'].max():.4f}] "
-      f"(range: {loo_periods.estimates['x1'].max() - loo_periods.estimates['x1'].min():.4f})")
-print(f"   x2: [{loo_periods.estimates['x2'].min():.4f}, "
-      f"{loo_periods.estimates['x2'].max():.4f}] "
-      f"(range: {loo_periods.estimates['x2'].max() - loo_periods.estimates['x2'].min():.4f})")
+print(
+    f"   x1: [{loo_periods.estimates['x1'].min():.4f}, "
+    f"{loo_periods.estimates['x1'].max():.4f}] "
+    f"(range: {loo_periods.estimates['x1'].max() - loo_periods.estimates['x1'].min():.4f})"
+)
+print(
+    f"   x2: [{loo_periods.estimates['x2'].min():.4f}, "
+    f"{loo_periods.estimates['x2'].max():.4f}] "
+    f"(range: {loo_periods.estimates['x2'].max() - loo_periods.estimates['x2'].min():.4f})"
+)
 
 print("\nSubset ranges:")
-print(f"   x1: [{subset_results.estimates['x1'].min():.4f}, "
-      f"{subset_results.estimates['x1'].max():.4f}] "
-      f"(range: {subset_results.estimates['x1'].max() - subset_results.estimates['x1'].min():.4f})")
-print(f"   x2: [{subset_results.estimates['x2'].min():.4f}, "
-      f"{subset_results.estimates['x2'].max():.4f}] "
-      f"(range: {subset_results.estimates['x2'].max() - subset_results.estimates['x2'].min():.4f})")
+print(
+    f"   x1: [{subset_results.estimates['x1'].min():.4f}, "
+    f"{subset_results.estimates['x1'].max():.4f}] "
+    f"(range: {subset_results.estimates['x1'].max() - subset_results.estimates['x1'].min():.4f})"
+)
+print(
+    f"   x2: [{subset_results.estimates['x2'].min():.4f}, "
+    f"{subset_results.estimates['x2'].max():.4f}] "
+    f"(range: {subset_results.estimates['x2'].max() - subset_results.estimates['x2'].min():.4f})"
+)
 
 # ============================================================================
 # 11. Recommendations for Practice
@@ -404,29 +410,20 @@ try:
     print("\n   Creating sensitivity plots...")
 
     # Plot LOO entities
-    fig1 = sensitivity.plot_sensitivity(
-        loo_entities,
-        figsize=(14, 5)
-    )
-    plt.savefig('sensitivity_loo_entities.png', dpi=300, bbox_inches='tight')
+    fig1 = sensitivity.plot_sensitivity(loo_entities, figsize=(14, 5))
+    plt.savefig("sensitivity_loo_entities.png", dpi=300, bbox_inches="tight")
     print("   ✓ Saved: sensitivity_loo_entities.png")
     plt.close(fig1)
 
     # Plot LOO periods
-    fig2 = sensitivity.plot_sensitivity(
-        loo_periods,
-        figsize=(14, 5)
-    )
-    plt.savefig('sensitivity_loo_periods.png', dpi=300, bbox_inches='tight')
+    fig2 = sensitivity.plot_sensitivity(loo_periods, figsize=(14, 5))
+    plt.savefig("sensitivity_loo_periods.png", dpi=300, bbox_inches="tight")
     print("   ✓ Saved: sensitivity_loo_periods.png")
     plt.close(fig2)
 
     # Plot subset sensitivity
-    fig3 = sensitivity.plot_sensitivity(
-        subset_results,
-        figsize=(14, 5)
-    )
-    plt.savefig('sensitivity_subset.png', dpi=300, bbox_inches='tight')
+    fig3 = sensitivity.plot_sensitivity(subset_results, figsize=(14, 5))
+    plt.savefig("sensitivity_subset.png", dpi=300, bbox_inches="tight")
     print("   ✓ Saved: sensitivity_subset.png")
     plt.close(fig3)
 
@@ -447,20 +444,32 @@ print("=" * 80)
 print(f"\n✅ Sensitivity analysis completed successfully")
 print(f"\n📊 Results Summary:")
 print(f"   - Original x1 estimate: {results.params['x1']:.4f}")
-print(f"   - LOO entities mean:    {loo_entities.estimates['x1'].mean():.4f} "
-      f"(CV: {cv_entities_x1:.2f}%)")
-print(f"   - LOO periods mean:     {loo_periods.estimates['x1'].mean():.4f} "
-      f"(CV: {cv_periods_x1:.2f}%)")
-print(f"   - Subset mean:          {subset_results.estimates['x1'].mean():.4f} "
-      f"(CV: {cv_subset_x1:.2f}%)")
+print(
+    f"   - LOO entities mean:    {loo_entities.estimates['x1'].mean():.4f} "
+    f"(CV: {cv_entities_x1:.2f}%)"
+)
+print(
+    f"   - LOO periods mean:     {loo_periods.estimates['x1'].mean():.4f} "
+    f"(CV: {cv_periods_x1:.2f}%)"
+)
+print(
+    f"   - Subset mean:          {subset_results.estimates['x1'].mean():.4f} "
+    f"(CV: {cv_subset_x1:.2f}%)"
+)
 
 print(f"\n   - Original x2 estimate: {results.params['x2']:.4f}")
-print(f"   - LOO entities mean:    {loo_entities.estimates['x2'].mean():.4f} "
-      f"(CV: {cv_entities_x2:.2f}%)")
-print(f"   - LOO periods mean:     {loo_periods.estimates['x2'].mean():.4f} "
-      f"(CV: {cv_periods_x2:.2f}%)")
-print(f"   - Subset mean:          {subset_results.estimates['x2'].mean():.4f} "
-      f"(CV: {cv_subset_x2:.2f}%)")
+print(
+    f"   - LOO entities mean:    {loo_entities.estimates['x2'].mean():.4f} "
+    f"(CV: {cv_entities_x2:.2f}%)"
+)
+print(
+    f"   - LOO periods mean:     {loo_periods.estimates['x2'].mean():.4f} "
+    f"(CV: {cv_periods_x2:.2f}%)"
+)
+print(
+    f"   - Subset mean:          {subset_results.estimates['x2'].mean():.4f} "
+    f"(CV: {cv_subset_x2:.2f}%)"
+)
 
 print("\n💡 Key Findings:")
 if loo_entities.influential_units:
@@ -494,13 +503,13 @@ save_results = False  # Set to True to save
 
 if save_results:
     # Save all estimates
-    loo_entities.estimates.to_csv('sensitivity_loo_entities_estimates.csv')
-    loo_periods.estimates.to_csv('sensitivity_loo_periods_estimates.csv')
-    subset_results.estimates.to_csv('sensitivity_subset_estimates.csv')
+    loo_entities.estimates.to_csv("sensitivity_loo_entities_estimates.csv")
+    loo_periods.estimates.to_csv("sensitivity_loo_periods_estimates.csv")
+    subset_results.estimates.to_csv("sensitivity_subset_estimates.csv")
 
     # Save summaries
-    summary_entities.to_csv('sensitivity_loo_entities_summary.csv', index=False)
-    summary_periods.to_csv('sensitivity_loo_periods_summary.csv', index=False)
-    summary_subset.to_csv('sensitivity_subset_summary.csv', index=False)
+    summary_entities.to_csv("sensitivity_loo_entities_summary.csv", index=False)
+    summary_periods.to_csv("sensitivity_loo_periods_summary.csv", index=False)
+    summary_subset.to_csv("sensitivity_subset_summary.csv", index=False)
 
     print("\n💾 Results saved to CSV files")

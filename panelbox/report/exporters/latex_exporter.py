@@ -4,9 +4,9 @@ LaTeX Exporter for PanelBox Reports.
 Exports validation and regression results to LaTeX format for academic papers.
 """
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
 import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 
 class LaTeXExporter:
@@ -36,12 +36,12 @@ class LaTeXExporter:
 
     def __init__(
         self,
-        table_style: str = 'booktabs',
-        float_format: str = '.3f',
-        escape_special_chars: bool = True
+        table_style: str = "booktabs",
+        float_format: str = ".3f",
+        escape_special_chars: bool = True,
     ):
         """Initialize LaTeX Exporter."""
-        if table_style not in ('booktabs', 'standard', 'threeparttable'):
+        if table_style not in ("booktabs", "standard", "threeparttable"):
             raise ValueError(
                 f"Invalid table_style: {table_style}. "
                 "Must be 'booktabs', 'standard', or 'threeparttable'."
@@ -55,7 +55,7 @@ class LaTeXExporter:
         self,
         tests: List[Dict[str, Any]],
         caption: str = "Validation Test Results",
-        label: str = "tab:validation"
+        label: str = "tab:validation",
     ) -> str:
         """
         Export validation tests to LaTeX table.
@@ -90,7 +90,7 @@ class LaTeXExporter:
         lines.append(f"    \\caption{{{caption}}}")
         lines.append(f"    \\label{{{label}}}")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"    \begin{tabular}{lcccc}")
             lines.append(r"        \toprule")
         else:
@@ -100,7 +100,7 @@ class LaTeXExporter:
         # Header
         lines.append(r"        Test & Statistic & P-value & DF & Result \\")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \midrule")
         else:
             lines.append(r"        \hline")
@@ -108,7 +108,7 @@ class LaTeXExporter:
         # Group by category
         categories = {}
         for test in tests:
-            cat = test['category']
+            cat = test["category"]
             if cat not in categories:
                 categories[cat] = []
             categories[cat].append(test)
@@ -116,7 +116,7 @@ class LaTeXExporter:
         # Add rows by category
         for category, cat_tests in categories.items():
             # Category header
-            if self.table_style == 'booktabs':
+            if self.table_style == "booktabs":
                 lines.append(f"        \\multicolumn{{5}}{{l}}{{\\textit{{{category}}}}} \\\\")
             else:
                 lines.append(f"        \\multicolumn{{5}}{{|l|}}{{\\textbf{{{category}}}}} \\\\")
@@ -124,24 +124,22 @@ class LaTeXExporter:
 
             # Test rows
             for test in cat_tests:
-                name = self._escape(test['name'])
-                stat = self._format_float(test['statistic'])
-                pval = self._format_pvalue(test['pvalue'])
-                df = test['df'] if test['df'] else '--'
-                result = test['result']
+                name = self._escape(test["name"])
+                stat = self._format_float(test["statistic"])
+                pval = self._format_pvalue(test["pvalue"])
+                df = test["df"] if test["df"] else "--"
+                result = test["result"]
 
                 # Add significance stars
-                stars = test.get('significance', '')
+                stars = test.get("significance", "")
 
-                lines.append(
-                    f"        {name} & {stat} & {pval}{stars} & {df} & {result} \\\\"
-                )
+                lines.append(f"        {name} & {stat} & {pval}{stars} & {df} & {result} \\\\")
 
-            if self.table_style != 'booktabs':
+            if self.table_style != "booktabs":
                 lines.append(r"        \hline")
 
         # End table
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \bottomrule")
         else:
             lines.append(r"        \hline")
@@ -149,11 +147,13 @@ class LaTeXExporter:
         lines.append(r"    \end{tabular}")
 
         # Add notes
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"    \medskip")
             lines.append(r"    \begin{minipage}{\textwidth}")
             lines.append(r"        \small")
-            lines.append(r"        \textit{Note:} Significance levels: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1.")
+            lines.append(
+                r"        \textit{Note:} Significance levels: *** p<0.001, ** p<0.01, * p<0.05, . p<0.1."
+            )
             lines.append(r"    \end{minipage}")
 
         lines.append(r"\end{table}")
@@ -165,7 +165,7 @@ class LaTeXExporter:
         coefficients: List[Dict[str, Any]],
         model_info: Dict[str, Any],
         caption: str = "Regression Results",
-        label: str = "tab:regression"
+        label: str = "tab:regression",
     ) -> str:
         """
         Export regression results to LaTeX table.
@@ -202,7 +202,7 @@ class LaTeXExporter:
         lines.append(f"    \\caption{{{caption}}}")
         lines.append(f"    \\label{{{label}}}")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"    \begin{tabular}{lcccc}")
             lines.append(r"        \toprule")
         else:
@@ -212,27 +212,25 @@ class LaTeXExporter:
         # Header
         lines.append(r"        Variable & Coefficient & Std. Error & t-statistic & P-value \\")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \midrule")
         else:
             lines.append(r"        \hline")
 
         # Coefficient rows
         for coef in coefficients:
-            var = self._escape(coef['variable'])
-            beta = self._format_float(coef['coefficient'])
-            se = self._format_float(coef['std_error'])
-            tstat = self._format_float(coef['t_statistic'])
-            pval = self._format_pvalue(coef['pvalue'])
+            var = self._escape(coef["variable"])
+            beta = self._format_float(coef["coefficient"])
+            se = self._format_float(coef["std_error"])
+            tstat = self._format_float(coef["t_statistic"])
+            pval = self._format_pvalue(coef["pvalue"])
 
             # Add significance stars
-            stars = self._get_stars(coef['pvalue'])
+            stars = self._get_stars(coef["pvalue"])
 
-            lines.append(
-                f"        {var} & {beta}{stars} & ({se}) & {tstat} & {pval} \\\\"
-            )
+            lines.append(f"        {var} & {beta}{stars} & ({se}) & {tstat} & {pval} \\\\")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \midrule")
         else:
             lines.append(r"        \hline")
@@ -240,20 +238,20 @@ class LaTeXExporter:
         # Model statistics
         lines.append(r"        \multicolumn{5}{l}{\textit{Model Statistics}} \\")
 
-        if 'r_squared' in model_info:
-            r2 = self._format_float(model_info['r_squared'])
+        if "r_squared" in model_info:
+            r2 = self._format_float(model_info["r_squared"])
             lines.append(f"        R² & \\multicolumn{{4}}{{c}}{{{r2}}} \\\\")
 
-        if 'nobs' in model_info:
-            nobs = model_info['nobs']
+        if "nobs" in model_info:
+            nobs = model_info["nobs"]
             lines.append(f"        Observations & \\multicolumn{{4}}{{c}}{{{nobs}}} \\\\")
 
-        if 'n_entities' in model_info:
-            n_ent = model_info['n_entities']
+        if "n_entities" in model_info:
+            n_ent = model_info["n_entities"]
             lines.append(f"        Entities & \\multicolumn{{4}}{{c}}{{{n_ent}}} \\\\")
 
         # End table
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \bottomrule")
         else:
             lines.append(r"        \hline")
@@ -261,7 +259,7 @@ class LaTeXExporter:
         lines.append(r"    \end{tabular}")
 
         # Add notes
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"    \medskip")
             lines.append(r"    \begin{minipage}{\textwidth}")
             lines.append(r"        \small")
@@ -277,7 +275,7 @@ class LaTeXExporter:
         self,
         stats: List[Dict[str, Any]],
         caption: str = "Summary Statistics",
-        label: str = "tab:summary"
+        label: str = "tab:summary",
     ) -> str:
         """
         Export summary statistics to LaTeX table.
@@ -311,7 +309,7 @@ class LaTeXExporter:
         lines.append(f"    \\caption{{{caption}}}")
         lines.append(f"    \\label{{{label}}}")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"    \begin{tabular}{lcccccc}")
             lines.append(r"        \toprule")
         else:
@@ -321,27 +319,27 @@ class LaTeXExporter:
         # Header
         lines.append(r"        Variable & N & Mean & Std. Dev. & Min & Max & Median \\")
 
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \midrule")
         else:
             lines.append(r"        \hline")
 
         # Data rows
         for stat in stats:
-            var = self._escape(stat['variable'])
-            n = stat['count']
-            mean = self._format_float(stat['mean'])
-            std = self._format_float(stat['std'])
-            min_val = self._format_float(stat['min'])
-            max_val = self._format_float(stat['max'])
-            median = self._format_float(stat.get('median', stat.get('50%', 0)))
+            var = self._escape(stat["variable"])
+            n = stat["count"]
+            mean = self._format_float(stat["mean"])
+            std = self._format_float(stat["std"])
+            min_val = self._format_float(stat["min"])
+            max_val = self._format_float(stat["max"])
+            median = self._format_float(stat.get("median", stat.get("50%", 0)))
 
             lines.append(
                 f"        {var} & {n} & {mean} & {std} & {min_val} & {max_val} & {median} \\\\"
             )
 
         # End table
-        if self.table_style == 'booktabs':
+        if self.table_style == "booktabs":
             lines.append(r"        \bottomrule")
         else:
             lines.append(r"        \hline")
@@ -356,7 +354,7 @@ class LaTeXExporter:
         latex_content: str,
         output_path: Union[str, Path],
         overwrite: bool = False,
-        add_preamble: bool = False
+        add_preamble: bool = False,
     ) -> Path:
         """
         Save LaTeX content to file.
@@ -388,8 +386,7 @@ class LaTeXExporter:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. "
-                "Use overwrite=True to replace."
+                f"File already exists: {output_path}. " "Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -400,7 +397,7 @@ class LaTeXExporter:
             latex_content = self._add_preamble(latex_content)
 
         # Write file
-        output_path.write_text(latex_content, encoding='utf-8')
+        output_path.write_text(latex_content, encoding="utf-8")
 
         return output_path
 
@@ -455,16 +452,16 @@ class LaTeXExporter:
 
         # LaTeX special characters
         replacements = {
-            '&': r'\&',
-            '%': r'\%',
-            '$': r'\$',
-            '#': r'\#',
-            '_': r'\_',
-            '{': r'\{',
-            '}': r'\}',
-            '~': r'\textasciitilde{}',
-            '^': r'\textasciicircum{}',
-            '\\': r'\textbackslash{}',
+            "&": r"\&",
+            "%": r"\%",
+            "$": r"\$",
+            "#": r"\#",
+            "_": r"\_",
+            "{": r"\{",
+            "}": r"\}",
+            "~": r"\textasciitilde{}",
+            "^": r"\textasciicircum{}",
+            "\\": r"\textbackslash{}",
         }
 
         for char, replacement in replacements.items():
@@ -492,14 +489,14 @@ class LaTeXExporter:
         """Get significance stars."""
         try:
             if pvalue < 0.001:
-                return r'^{***}'
+                return r"^{***}"
             elif pvalue < 0.01:
-                return r'^{**}'
+                return r"^{**}"
             elif pvalue < 0.05:
-                return r'^{*}'
-            return ''
+                return r"^{*}"
+            return ""
         except (ValueError, TypeError):
-            return ''
+            return ""
 
     def __repr__(self) -> str:
         """String representation."""

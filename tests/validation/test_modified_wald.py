@@ -7,6 +7,7 @@ in Fixed Effects panel models.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.validation.heteroskedasticity.modified_wald import ModifiedWaldTest
 
@@ -60,12 +61,12 @@ class TestModifiedWald:
         result = test.run()
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -113,7 +114,7 @@ class TestModifiedWald:
 
         # Degrees of freedom should equal number of entities
         expected_df = results.n_entities
-        assert result.details['df'] == expected_df
+        assert result.details["df"] == expected_df
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test Modified Wald with unbalanced panel."""
@@ -125,15 +126,13 @@ class TestModifiedWald:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_minimum_observations_per_group(self, balanced_panel_data):
         """Test that test requires minimum observations per group."""
         # Create data with very few observations per entity
-        data_few = balanced_panel_data[
-            balanced_panel_data['time'].isin([2020, 2021])
-        ].copy()
+        data_few = balanced_panel_data[balanced_panel_data["time"].isin([2020, 2021])].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_few, "entity", "time")
         results = fe.fit()

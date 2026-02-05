@@ -5,9 +5,10 @@ Provides tools to test robustness of results across different
 specifications, samples, and estimators.
 """
 
-from typing import List, Optional, Dict, Any
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 
 from panelbox.core.results import PanelResults
 
@@ -43,9 +44,7 @@ class RobustnessChecker:
         self.time_col = self.model.data.time_col
 
     def check_alternative_specs(
-        self,
-        formulas: List[str],
-        model_type: Optional[str] = None
+        self, formulas: List[str], model_type: Optional[str] = None
     ) -> List[PanelResults]:
         """
         Test alternative specifications.
@@ -69,11 +68,8 @@ class RobustnessChecker:
         else:
             # Import appropriate model class
             from panelbox import FixedEffects, PooledOLS, RandomEffects
-            model_map = {
-                'fe': FixedEffects,
-                'pooled': PooledOLS,
-                're': RandomEffects
-            }
+
+            model_map = {"fe": FixedEffects, "pooled": PooledOLS, "re": RandomEffects}
             model_class = model_map.get(model_type, type(self.model))
 
         for formula in formulas:
@@ -92,9 +88,7 @@ class RobustnessChecker:
         return results_list
 
     def generate_robustness_table(
-        self,
-        results_list: List[PanelResults],
-        parameters: Optional[List[str]] = None
+        self, results_list: List[PanelResults], parameters: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Generate robustness table comparing specifications.
@@ -123,20 +117,23 @@ class RobustnessChecker:
 
             for param in parameters:
                 if param in result.params.index:
-                    data.append({
-                        'Specification': f'({i})',
-                        'Parameter': param,
-                        'Coefficient': result.params[param],
-                        'SE': result.std_errors[param],
-                        'p-value': result.pvalues[param]
-                    })
+                    data.append(
+                        {
+                            "Specification": f"({i})",
+                            "Parameter": param,
+                            "Coefficient": result.params[param],
+                            "SE": result.std_errors[param],
+                            "p-value": result.pvalues[param],
+                        }
+                    )
 
         df = pd.DataFrame(data)
 
         # Pivot to wide format
         if len(df) > 0:
-            table = df.pivot(index='Parameter', columns='Specification',
-                           values=['Coefficient', 'SE', 'p-value'])
+            table = df.pivot(
+                index="Parameter", columns="Specification", values=["Coefficient", "SE", "p-value"]
+            )
         else:
             table = pd.DataFrame()
 

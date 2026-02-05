@@ -11,29 +11,21 @@ Author: PanelBox Team
 Date: January 2026
 """
 
-import pandas as pd
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 # PanelBox imports
 from panelbox.data import PanelData
 from panelbox.models import FixedEffects
-from panelbox.validation import (
-    HausmanTest,
-    MundlakTest,
-    WooldridgeTest,
-    PesaranCDTest
-)
-from panelbox.validation.validation_report import ValidationReport
 
 # Report imports
 from panelbox.report import ReportManager
+from panelbox.report.exporters import HTMLExporter, LaTeXExporter, MarkdownExporter
 from panelbox.report.validation_transformer import ValidationTransformer
-from panelbox.report.exporters import (
-    HTMLExporter,
-    LaTeXExporter,
-    MarkdownExporter
-)
+from panelbox.validation import HausmanTest, MundlakTest, PesaranCDTest, WooldridgeTest
+from panelbox.validation.validation_report import ValidationReport
 
 
 def create_sample_panel_data(n_entities=100, n_periods=10, seed=42):
@@ -62,10 +54,7 @@ def create_sample_panel_data(n_entities=100, n_periods=10, seed=42):
 
     # Generate data
     # Entity fixed effects
-    entity_effects = np.repeat(
-        np.random.normal(0, 1, n_entities),
-        n_periods
-    )
+    entity_effects = np.repeat(np.random.normal(0, 1, n_entities), n_periods)
 
     # Explanatory variables
     x1 = np.random.normal(0, 1, n_entities * n_periods)
@@ -74,30 +63,21 @@ def create_sample_panel_data(n_entities=100, n_periods=10, seed=42):
 
     # Outcome variable (with entity fixed effects)
     y = (
-        3.0 +                      # Intercept
-        1.5 * x1 +                 # Effect of x1
-        -0.8 * x2 +                # Effect of x2
-        0.5 * x3 +                 # Effect of x3
-        entity_effects +           # Entity fixed effects
-        np.random.normal(0, 0.5, n_entities * n_periods)  # Random error
+        3.0  # Intercept
+        + 1.5 * x1  # Effect of x1
+        + -0.8 * x2  # Effect of x2
+        + 0.5 * x3  # Effect of x3
+        + entity_effects  # Entity fixed effects
+        + np.random.normal(0, 0.5, n_entities * n_periods)  # Random error
     )
 
     # Create DataFrame
-    df = pd.DataFrame({
-        'entity_id': entities,
-        'time_id': time,
-        'y': y,
-        'x1': x1,
-        'x2': x2,
-        'x3': x3
-    })
+    df = pd.DataFrame(
+        {"entity_id": entities, "time_id": time, "y": y, "x1": x1, "x2": x2, "x3": x3}
+    )
 
     # Create PanelData
-    panel = PanelData(
-        df,
-        entity_col='entity_id',
-        time_col='time_id'
-    )
+    panel = PanelData(df, entity_col="entity_id", time_col="time_id")
 
     return panel
 
@@ -123,44 +103,37 @@ def run_validation_tests(panel, model):
     # Specification tests
     print("  - Hausman Test")
     hausman = HausmanTest()
-    hausman_result = hausman.test(panel, 'y ~ x1 + x2 + x3')
+    hausman_result = hausman.test(panel, "y ~ x1 + x2 + x3")
 
     print("  - Mundlak Test")
     mundlak = MundlakTest()
-    mundlak_result = mundlak.test(panel, 'y ~ x1 + x2 + x3')
+    mundlak_result = mundlak.test(panel, "y ~ x1 + x2 + x3")
 
     # Serial correlation tests
     print("  - Wooldridge Test")
     wooldridge = WooldridgeTest()
-    wooldridge_result = wooldridge.test(panel, 'y ~ x1 + x2 + x3')
+    wooldridge_result = wooldridge.test(panel, "y ~ x1 + x2 + x3")
 
     # Cross-sectional dependence tests
     print("  - Pesaran CD Test")
     pesaran = PesaranCDTest()
-    pesaran_result = pesaran.test(panel, 'y ~ x1 + x2 + x3')
+    pesaran_result = pesaran.test(panel, "y ~ x1 + x2 + x3")
 
     # Create validation report
     model_info = {
-        'model_type': 'Fixed Effects',
-        'formula': 'y ~ x1 + x2 + x3',
-        'nobs': len(panel.data),
-        'n_entities': panel.n_entities,
-        'n_periods': panel.n_periods,
-        'balanced': panel.is_balanced
+        "model_type": "Fixed Effects",
+        "formula": "y ~ x1 + x2 + x3",
+        "nobs": len(panel.data),
+        "n_entities": panel.n_entities,
+        "n_periods": panel.n_periods,
+        "balanced": panel.is_balanced,
     }
 
     report = ValidationReport(
         model_info=model_info,
-        specification_tests={
-            'Hausman Test': hausman_result,
-            'Mundlak Test': mundlak_result
-        },
-        serial_tests={
-            'Wooldridge Test': wooldridge_result
-        },
-        cd_tests={
-            'Pesaran CD Test': pesaran_result
-        }
+        specification_tests={"Hausman Test": hausman_result, "Mundlak Test": mundlak_result},
+        serial_tests={"Wooldridge Test": wooldridge_result},
+        cd_tests={"Pesaran CD Test": pesaran_result},
     )
 
     print("✓ Validation tests completed")
@@ -198,17 +171,13 @@ def generate_html_report(validation_report, output_dir):
     html = report_mgr.generate_validation_report(
         validation_data=validation_data,
         interactive=True,
-        title='Panel Data Validation Report',
-        subtitle='Comprehensive validation of Fixed Effects model'
+        title="Panel Data Validation Report",
+        subtitle="Comprehensive validation of Fixed Effects model",
     )
 
     # Export HTML
     exporter = HTMLExporter()
-    html_path = exporter.export(
-        html,
-        output_dir / 'validation_report.html',
-        overwrite=True
-    )
+    html_path = exporter.export(html, output_dir / "validation_report.html", overwrite=True)
 
     print(f"✓ HTML report saved to: {html_path}")
     print()
@@ -234,21 +203,16 @@ def generate_latex_tables(validation_data, output_dir):
     """
     print("Generating LaTeX tables...")
 
-    exporter = LaTeXExporter(table_style='booktabs')
+    exporter = LaTeXExporter(table_style="booktabs")
 
     # Validation tests table
-    tests = validation_data['tests']
+    tests = validation_data["tests"]
     latex = exporter.export_validation_tests(
-        tests,
-        caption="Panel Data Validation Test Results",
-        label="tab:validation"
+        tests, caption="Panel Data Validation Test Results", label="tab:validation"
     )
 
     latex_path = exporter.save(
-        latex,
-        output_dir / 'validation_tests.tex',
-        overwrite=True,
-        add_preamble=False
+        latex, output_dir / "validation_tests.tex", overwrite=True, add_preamble=False
     )
 
     print(f"✓ LaTeX table saved to: {latex_path}")
@@ -275,23 +239,15 @@ def generate_markdown_report(validation_data, output_dir):
     """
     print("Generating Markdown report...")
 
-    exporter = MarkdownExporter(
-        include_toc=True,
-        github_flavor=True
-    )
+    exporter = MarkdownExporter(include_toc=True, github_flavor=True)
 
     # Generate Markdown
     markdown = exporter.export_validation_report(
-        validation_data,
-        title="Panel Data Validation Report"
+        validation_data, title="Panel Data Validation Report"
     )
 
     # Save
-    md_path = exporter.save(
-        markdown,
-        output_dir / 'VALIDATION_REPORT.md',
-        overwrite=True
-    )
+    md_path = exporter.save(markdown, output_dir / "VALIDATION_REPORT.md", overwrite=True)
 
     print(f"✓ Markdown report saved to: {md_path}")
     print()
@@ -307,7 +263,7 @@ def main():
     print()
 
     # Create output directory
-    output_dir = Path('output/reports')
+    output_dir = Path("output/reports")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 1: Create sample panel data
@@ -318,7 +274,7 @@ def main():
 
     # Step 2: Estimate Fixed Effects model
     print("Step 2: Estimating Fixed Effects model...")
-    model = FixedEffects('y ~ x1 + x2 + x3', panel)
+    model = FixedEffects("y ~ x1 + x2 + x3", panel)
     results = model.fit()
     print("✓ Model estimated")
     print()
@@ -373,5 +329,5 @@ def main():
     print()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

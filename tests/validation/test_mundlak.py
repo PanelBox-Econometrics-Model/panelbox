@@ -7,8 +7,9 @@ by checking if regressors are correlated with entity effects.
 
 import numpy as np
 import pytest
-from panelbox.models.static.random_effects import RandomEffects
+
 from panelbox.models.static.fixed_effects import FixedEffects
+from panelbox.models.static.random_effects import RandomEffects
 from panelbox.validation.specification.mundlak import MundlakTest
 
 
@@ -26,8 +27,8 @@ class TestMundlak:
         # Should reject RE specification (regressors are correlated with entity effects)
         # Note: May not always reject due to sample variation
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_no_false_positive_clean_data(self, clean_panel_data):
         """Test that Mundlak doesn't reject when RE assumption holds."""
@@ -60,12 +61,12 @@ class TestMundlak:
         result = test.run()
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -111,10 +112,10 @@ class TestMundlak:
         result = test.run()
 
         # DF should be number of time-varying regressors
-        assert 'df' in result.details
+        assert "df" in result.details
         expected_df = len(results.params) - 1  # Exclude intercept
         # Note: Actual df might differ based on which means are included
-        assert result.details['df'] > 0
+        assert result.details["df"] > 0
 
     def test_pvalue_bounds(self, clean_panel_data):
         """Test that p-value is between 0 and 1."""
@@ -132,7 +133,7 @@ class TestMundlak:
         results = re.fit()
 
         # Should have model reference
-        assert hasattr(results, '_model')
+        assert hasattr(results, "_model")
         assert results._model is not None
 
         test = MundlakTest(results)
@@ -150,8 +151,8 @@ class TestMundlak:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_with_multiple_regressors(self, clean_panel_data):
         """Test Mundlak with multiple regressors."""
@@ -162,8 +163,8 @@ class TestMundlak:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_entity_means_computation(self, clean_panel_data):
         """Test that entity means are computed correctly."""
@@ -184,8 +185,8 @@ class TestMundlak:
         # Add a time-invariant regressor
         data_with_invariant = clean_panel_data.copy()
         # Entity-specific constant
-        entity_constant = data_with_invariant.groupby('entity')['x1'].transform('mean')
-        data_with_invariant['x_const'] = entity_constant
+        entity_constant = data_with_invariant.groupby("entity")["x1"].transform("mean")
+        data_with_invariant["x_const"] = entity_constant
 
         re = RandomEffects("y ~ x1 + x_const", data_with_invariant, "entity", "time")
         results = re.fit()
@@ -206,8 +207,8 @@ class TestMundlak:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_conclusion_interpretation(self, clean_panel_data):
         """Test that conclusion provides correct interpretation."""

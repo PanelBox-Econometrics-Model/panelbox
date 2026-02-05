@@ -21,20 +21,21 @@ Author: PanelBox Development Team
 Date: January 2026
 """
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 
 # Add panelbox to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from panelbox.gmm import DifferenceGMM, SystemGMM
 from sklearn.linear_model import LinearRegression
 
+from panelbox.gmm import DifferenceGMM, SystemGMM
 
-def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
-                             rho=0.85, seed=42):
+
+def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65, rho=0.85, seed=42):
     """
     Generate synthetic production function data with simultaneity bias.
 
@@ -76,9 +77,9 @@ def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
     """
     np.random.seed(seed)
 
-    print("="*70)
+    print("=" * 70)
     print("GENERATING PRODUCTION FUNCTION DATA")
-    print("="*70)
+    print("=" * 70)
     print()
     print("Model:")
     print("  y_it = α k_it + β l_it + ω_it + ε_it")
@@ -104,7 +105,7 @@ def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
         # Generate productivity path (AR(1))
         for t in range(1, n_years):
             xi_it = np.random.normal(0, 0.2)
-            omega[t] = rho * omega[t-1] + xi_it
+            omega[t] = rho * omega[t - 1] + xi_it
 
         # Generate inputs and output
         for t in range(n_years):
@@ -117,7 +118,7 @@ def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
             if t == 0:
                 k_base = 3.0 + np.random.normal(0, 0.3)
             else:
-                k_base = 0.7 * data[-1]['capital'] + 0.3 * 3.0 + np.random.normal(0, 0.2)
+                k_base = 0.7 * data[-1]["capital"] + 0.3 * 3.0 + np.random.normal(0, 0.2)
 
             capital_it = k_base + theta_k * omega[t]
 
@@ -131,14 +132,16 @@ def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
             output_it = alpha * capital_it + beta * labor_it + omega[t] + epsilon_it
 
             # Store observation
-            data.append({
-                'firm_id': i,
-                'year': 2000 + t,
-                'output': output_it,
-                'capital': capital_it,
-                'labor': labor_it,
-                'productivity': omega[t],  # Unobserved (for validation only)
-            })
+            data.append(
+                {
+                    "firm_id": i,
+                    "year": 2000 + t,
+                    "output": output_it,
+                    "capital": capital_it,
+                    "labor": labor_it,
+                    "productivity": omega[t],  # Unobserved (for validation only)
+                }
+            )
 
     df = pd.DataFrame(data)
 
@@ -148,12 +151,12 @@ def generate_production_data(n_firms=250, n_years=12, alpha=0.35, beta=0.65,
     print(f"  Total observations: {len(df)}")
     print()
     print("Descriptive statistics:")
-    print(df[['output', 'capital', 'labor']].describe())
+    print(df[["output", "capital", "labor"]].describe())
     print()
 
     # Check correlation between inputs and productivity (unobserved)
-    corr_k_omega = df['capital'].corr(df['productivity'])
-    corr_l_omega = df['labor'].corr(df['productivity'])
+    corr_k_omega = df["capital"].corr(df["productivity"])
+    corr_l_omega = df["labor"].corr(df["productivity"])
     print("Simultaneity check (correlation with unobserved productivity):")
     print(f"  Corr(capital, ω):  {corr_k_omega:.3f} ✓ Positive (simultaneity bias)")
     print(f"  Corr(labor, ω):    {corr_l_omega:.3f} ✓ Positive (simultaneity bias)")
@@ -166,13 +169,13 @@ def estimate_ols(df):
     """
     OLS estimation (BIASED due to simultaneity).
     """
-    print("="*70)
+    print("=" * 70)
     print("Method 1: OLS (Biased)")
-    print("="*70)
+    print("=" * 70)
     print()
 
-    X = df[['capital', 'labor']].values
-    y = df['output'].values
+    X = df[["capital", "labor"]].values
+    y = df["output"].values
 
     ols = LinearRegression().fit(X, y)
     alpha_ols = ols.coef_[0]
@@ -209,18 +212,18 @@ def estimate_fixed_effects(df):
     """
     Fixed Effects estimation (BIASED due to Nickell + dynamic model).
     """
-    print("="*70)
+    print("=" * 70)
     print("Method 2: Fixed Effects (Biased)")
-    print("="*70)
+    print("=" * 70)
     print()
 
     # Within transformation
     df_fe = df.copy()
-    for var in ['output', 'capital', 'labor']:
-        df_fe[f'{var}_dm'] = df_fe[var] - df_fe.groupby('firm_id')[var].transform('mean')
+    for var in ["output", "capital", "labor"]:
+        df_fe[f"{var}_dm"] = df_fe[var] - df_fe.groupby("firm_id")[var].transform("mean")
 
-    X_dm = df_fe[['capital_dm', 'labor_dm']].values
-    y_dm = df_fe['output_dm'].values
+    X_dm = df_fe[["capital_dm", "labor_dm"]].values
+    y_dm = df_fe["output_dm"].values
 
     fe = LinearRegression(fit_intercept=False).fit(X_dm, y_dm)
     alpha_fe = fe.coef_[0]
@@ -258,26 +261,26 @@ def estimate_difference_gmm(df):
     Difference GMM (Arellano-Bond).
     May have weak instruments if productivity is highly persistent.
     """
-    print("="*70)
+    print("=" * 70)
     print("Method 3: Difference GMM (Arellano-Bond 1991)")
-    print("="*70)
+    print("=" * 70)
     print()
 
     # Create lagged output as regressor
-    df_sorted = df.sort_values(['firm_id', 'year']).copy()
-    df_sorted['output_lag'] = df_sorted.groupby('firm_id')['output'].shift(1)
+    df_sorted = df.sort_values(["firm_id", "year"]).copy()
+    df_sorted["output_lag"] = df_sorted.groupby("firm_id")["output"].shift(1)
 
     gmm_diff = DifferenceGMM(
         data=df_sorted,
-        dep_var='output',
+        dep_var="output",
         lags=1,  # Include output_{t-1}
-        id_var='firm_id',
-        time_var='year',
-        exog_vars=['capital', 'labor'],
+        id_var="firm_id",
+        time_var="year",
+        exog_vars=["capital", "labor"],
         time_dummies=False,
         collapse=True,
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     results_diff = gmm_diff.fit()
@@ -285,13 +288,13 @@ def estimate_difference_gmm(df):
     print()
 
     # Extract coefficients
-    rho_diff = results_diff.params['L1.output']
-    alpha_diff = results_diff.params['capital']
-    beta_diff = results_diff.params['labor']
+    rho_diff = results_diff.params["L1.output"]
+    alpha_diff = results_diff.params["capital"]
+    beta_diff = results_diff.params["labor"]
 
-    se_rho = results_diff.std_errors['L1.output']
-    se_alpha = results_diff.std_errors['capital']
-    se_beta = results_diff.std_errors['labor']
+    se_rho = results_diff.std_errors["L1.output"]
+    se_alpha = results_diff.std_errors["capital"]
+    se_beta = results_diff.std_errors["labor"]
 
     print("Note: With highly persistent productivity (ρ ≈ 0.85):")
     print("  - Lagged levels are weak instruments for differences")
@@ -310,28 +313,28 @@ def estimate_system_gmm(df):
     Note: System GMM may fail with synthetic data due to collinearity
     in level instruments. This is a known limitation.
     """
-    print("="*70)
+    print("=" * 70)
     print("Method 4: System GMM (Blundell-Bond 1998) - PREFERRED")
-    print("="*70)
+    print("=" * 70)
     print()
 
     try:
         # Create lagged output
-        df_sorted = df.sort_values(['firm_id', 'year']).copy()
-        df_sorted['output_lag'] = df_sorted.groupby('firm_id')['output'].shift(1)
+        df_sorted = df.sort_values(["firm_id", "year"]).copy()
+        df_sorted["output_lag"] = df_sorted.groupby("firm_id")["output"].shift(1)
 
         gmm_sys = SystemGMM(
             data=df_sorted,
-            dep_var='output',
+            dep_var="output",
             lags=1,
-            id_var='firm_id',
-            time_var='year',
-            exog_vars=['capital', 'labor'],
+            id_var="firm_id",
+            time_var="year",
+            exog_vars=["capital", "labor"],
             time_dummies=False,
             collapse=True,
             two_step=True,
             robust=True,
-            level_instruments={'max_lags': 1}
+            level_instruments={"max_lags": 1},
         )
 
         results_sys = gmm_sys.fit()
@@ -339,13 +342,13 @@ def estimate_system_gmm(df):
         print()
 
         # Extract coefficients
-        rho_sys = results_sys.params['L1.output']
-        alpha_sys = results_sys.params['capital']
-        beta_sys = results_sys.params['labor']
+        rho_sys = results_sys.params["L1.output"]
+        alpha_sys = results_sys.params["capital"]
+        beta_sys = results_sys.params["labor"]
 
-        se_rho = results_sys.std_errors['L1.output']
-        se_alpha = results_sys.std_errors['capital']
-        se_beta = results_sys.std_errors['labor']
+        se_rho = results_sys.std_errors["L1.output"]
+        se_alpha = results_sys.std_errors["capital"]
+        se_beta = results_sys.std_errors["labor"]
 
         print("System GMM advantages:")
         print("  ✓ Additional moment conditions (level equation)")
@@ -372,34 +375,47 @@ def estimate_system_gmm(df):
         return None, None, None, None
 
 
-def compare_results(alpha_true, beta_true, rho_true,
-                   alpha_ols, beta_ols,
-                   alpha_fe, beta_fe,
-                   rho_diff, alpha_diff, beta_diff, results_diff,
-                   rho_sys, alpha_sys, beta_sys, results_sys):
+def compare_results(
+    alpha_true,
+    beta_true,
+    rho_true,
+    alpha_ols,
+    beta_ols,
+    alpha_fe,
+    beta_fe,
+    rho_diff,
+    alpha_diff,
+    beta_diff,
+    results_diff,
+    rho_sys,
+    alpha_sys,
+    beta_sys,
+    results_sys,
+):
     """
     Compare all methods and provide economic interpretation.
     """
-    print("="*70)
+    print("=" * 70)
     print("COMPARISON OF METHODS")
-    print("="*70)
+    print("=" * 70)
     print()
 
     sys_available = results_sys is not None
 
     # Comparison table
     comp_data = {
-        'True': [alpha_true, beta_true, alpha_true + beta_true, rho_true],
-        'OLS': [alpha_ols, beta_ols, alpha_ols + beta_ols, np.nan],
-        'FE': [alpha_fe, beta_fe, alpha_fe + beta_fe, np.nan],
-        'Diff GMM': [alpha_diff, beta_diff, alpha_diff + beta_diff, rho_diff]
+        "True": [alpha_true, beta_true, alpha_true + beta_true, rho_true],
+        "OLS": [alpha_ols, beta_ols, alpha_ols + beta_ols, np.nan],
+        "FE": [alpha_fe, beta_fe, alpha_fe + beta_fe, np.nan],
+        "Diff GMM": [alpha_diff, beta_diff, alpha_diff + beta_diff, rho_diff],
     }
 
     if sys_available:
-        comp_data['Sys GMM'] = [alpha_sys, beta_sys, alpha_sys + beta_sys, rho_sys]
+        comp_data["Sys GMM"] = [alpha_sys, beta_sys, alpha_sys + beta_sys, rho_sys]
 
-    comparison = pd.DataFrame(comp_data,
-                             index=['α (capital)', 'β (labor)', 'α+β (RTS)', 'ρ (persistence)'])
+    comparison = pd.DataFrame(
+        comp_data, index=["α (capital)", "β (labor)", "α+β (RTS)", "ρ (persistence)"]
+    )
 
     print("Coefficient Estimates:")
     print(comparison.to_string())
@@ -412,13 +428,19 @@ def compare_results(alpha_true, beta_true, rho_true,
 
     print("Bias Analysis (α - capital elasticity):")
     print(f"  True α:       {alpha_true:.4f}")
-    print(f"  OLS:          {alpha_ols:.4f}  (bias: {bias_ols:+.4f}, {100*bias_ols/alpha_true:+.1f}%)")
+    print(
+        f"  OLS:          {alpha_ols:.4f}  (bias: {bias_ols:+.4f}, {100*bias_ols/alpha_true:+.1f}%)"
+    )
     print(f"  FE:           {alpha_fe:.4f}  (bias: {bias_fe:+.4f}, {100*bias_fe/alpha_true:+.1f}%)")
-    print(f"  Diff GMM:     {alpha_diff:.4f}  (bias: {bias_diff:+.4f}, {100*bias_diff/alpha_true:+.1f}%)")
+    print(
+        f"  Diff GMM:     {alpha_diff:.4f}  (bias: {bias_diff:+.4f}, {100*bias_diff/alpha_true:+.1f}%)"
+    )
 
     if sys_available:
         bias_sys = alpha_sys - alpha_true
-        print(f"  System GMM:   {alpha_sys:.4f}  (bias: {bias_sys:+.4f}, {100*bias_sys/alpha_true:+.1f}%)")
+        print(
+            f"  System GMM:   {alpha_sys:.4f}  (bias: {bias_sys:+.4f}, {100*bias_sys/alpha_true:+.1f}%)"
+        )
     print()
 
     # Returns to scale analysis
@@ -444,8 +466,8 @@ def compare_results(alpha_true, beta_true, rho_true,
 
     # Efficiency comparison (only if System GMM available)
     if sys_available:
-        se_diff_alpha = results_diff.std_errors['capital']
-        se_sys_alpha = results_sys.std_errors['capital']
+        se_diff_alpha = results_diff.std_errors["capital"]
+        se_sys_alpha = results_sys.std_errors["capital"]
         efficiency_gain = (se_diff_alpha - se_sys_alpha) / se_diff_alpha * 100
 
         print("Efficiency Comparison (capital elasticity):")
@@ -463,9 +485,9 @@ def diagnostic_summary(results_diff, results_sys):
     """
     Diagnostic tests for both GMM estimators.
     """
-    print("="*70)
+    print("=" * 70)
     print("DIAGNOSTIC TESTS")
-    print("="*70)
+    print("=" * 70)
     print()
 
     sys_available = results_sys is not None
@@ -525,9 +547,9 @@ def diagnostic_summary(results_diff, results_sys):
         print()
 
     # Model selection
-    print("="*70)
+    print("=" * 70)
     print("MODEL SELECTION")
-    print("="*70)
+    print("=" * 70)
     print()
 
     diff_valid = ar2_diff > 0.10 and 0.10 < hansen_diff < 0.50
@@ -547,8 +569,8 @@ def diagnostic_summary(results_diff, results_sys):
             print("    - Consider using real data for better instrument relevance")
     else:
         sys_valid = ar2_sys > 0.10 and 0.10 < hansen_sys < 0.50
-        se_diff = results_diff.std_errors['capital']
-        se_sys = results_sys.std_errors['capital']
+        se_diff = results_diff.std_errors["capital"]
+        se_sys = results_sys.std_errors["capital"]
 
         if diff_valid and sys_valid:
             if se_sys < se_diff * 0.9:
@@ -578,9 +600,9 @@ def main():
     Run complete production function estimation example.
     """
     print()
-    print("="*70)
+    print("=" * 70)
     print("PRODUCTION FUNCTION ESTIMATION WITH GMM")
-    print("="*70)
+    print("=" * 70)
     print()
     print("This example estimates a Cobb-Douglas production function:")
     print("  y_it = α k_it + β l_it + ω_it + ε_it")
@@ -593,11 +615,7 @@ def main():
 
     # Generate data
     df, alpha_true, beta_true, rho_true = generate_production_data(
-        n_firms=250,
-        n_years=12,
-        alpha=0.35,
-        beta=0.65,
-        rho=0.85
+        n_firms=250, n_years=12, alpha=0.35, beta=0.65, rho=0.85
     )
 
     # Estimate with all methods
@@ -608,19 +626,29 @@ def main():
 
     # Compare and interpret
     compare_results(
-        alpha_true, beta_true, rho_true,
-        alpha_ols, beta_ols,
-        alpha_fe, beta_fe,
-        rho_diff, alpha_diff, beta_diff, results_diff,
-        rho_sys, alpha_sys, beta_sys, results_sys
+        alpha_true,
+        beta_true,
+        rho_true,
+        alpha_ols,
+        beta_ols,
+        alpha_fe,
+        beta_fe,
+        rho_diff,
+        alpha_diff,
+        beta_diff,
+        results_diff,
+        rho_sys,
+        alpha_sys,
+        beta_sys,
+        results_sys,
     )
 
     # Diagnostics
     diagnostic_summary(results_diff, results_sys)
 
-    print("="*70)
+    print("=" * 70)
     print("KEY TAKEAWAYS")
-    print("="*70)
+    print("=" * 70)
     print()
     print("1. Simultaneity causes UPWARD bias in OLS")
     print("   → Firms with high productivity use more inputs")
@@ -646,10 +674,10 @@ def main():
     print("   → ρ ≈ 0.85: Highly persistent productivity")
     print("   → Elasticities reasonable (α ≈ 0.35, β ≈ 0.65)")
     print()
-    print("="*70)
+    print("=" * 70)
     print("✓ Example completed successfully!")
-    print("="*70)
+    print("=" * 70)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

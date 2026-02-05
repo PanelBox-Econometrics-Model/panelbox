@@ -4,9 +4,9 @@ CSS Manager for PanelBox Reports.
 Manages compilation and layering of CSS styles with 3-layer architecture.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set
-from dataclasses import dataclass
 
 from .asset_manager import AssetManager
 
@@ -25,6 +25,7 @@ class CSSLayer:
     priority : int
         Layer priority (lower = earlier in output)
     """
+
     name: str
     files: List[str]
     priority: int = 0
@@ -65,28 +66,12 @@ class CSSManager:
 
     # Default layer configuration
     DEFAULT_LAYERS = {
-        'base': CSSLayer(
-            name='base',
-            files=['base_styles.css'],
-            priority=0
-        ),
-        'components': CSSLayer(
-            name='components',
-            files=['report_components.css'],
-            priority=10
-        ),
-        'custom': CSSLayer(
-            name='custom',
-            files=[],
-            priority=20
-        )
+        "base": CSSLayer(name="base", files=["base_styles.css"], priority=0),
+        "components": CSSLayer(name="components", files=["report_components.css"], priority=10),
+        "custom": CSSLayer(name="custom", files=[], priority=20),
     }
 
-    def __init__(
-        self,
-        asset_manager: Optional[AssetManager] = None,
-        minify: bool = False
-    ):
+    def __init__(self, asset_manager: Optional[AssetManager] = None, minify: bool = False):
         """Initialize CSS Manager."""
         if asset_manager is None:
             asset_manager = AssetManager(minify=minify)
@@ -98,9 +83,7 @@ class CSSManager:
         self.layers: Dict[str, CSSLayer] = {}
         for name, layer in self.DEFAULT_LAYERS.items():
             self.layers[name] = CSSLayer(
-                name=layer.name,
-                files=layer.files.copy(),
-                priority=layer.priority
+                name=layer.name, files=layer.files.copy(), priority=layer.priority
             )
 
         # Track custom CSS snippets
@@ -110,12 +93,7 @@ class CSSManager:
         self._compiled_css: Optional[str] = None
         self._cache_valid = False
 
-    def add_layer(
-        self,
-        name: str,
-        files: List[str],
-        priority: int
-    ) -> None:
+    def add_layer(self, name: str, files: List[str], priority: int) -> None:
         """
         Add a new CSS layer.
 
@@ -132,11 +110,7 @@ class CSSManager:
         --------
         >>> css_mgr.add_layer('theme', ['dark-theme.css'], priority=5)
         """
-        self.layers[name] = CSSLayer(
-            name=name,
-            files=files,
-            priority=priority
-        )
+        self.layers[name] = CSSLayer(name=name, files=files, priority=priority)
         self._invalidate_cache()
 
     def add_css_to_layer(self, layer_name: str, css_file: str) -> None:
@@ -198,7 +172,7 @@ class CSSManager:
         --------
         >>> css_mgr.add_custom_css('validation-custom.css')
         """
-        self.add_css_to_layer('custom', css_file)
+        self.add_css_to_layer("custom", css_file)
 
     def add_inline_css(self, css_content: str) -> None:
         """
@@ -243,10 +217,7 @@ class CSSManager:
         css_parts = []
 
         # Sort layers by priority
-        sorted_layers = sorted(
-            self.layers.values(),
-            key=lambda layer: layer.priority
-        )
+        sorted_layers = sorted(self.layers.values(), key=lambda layer: layer.priority)
 
         # Compile each layer
         for layer in sorted_layers:
@@ -309,7 +280,7 @@ class CSSManager:
         report_css_file = f"{report_type}_report.css"
 
         # Temporarily add to custom layer
-        original_custom_files = self.layers['custom'].files.copy()
+        original_custom_files = self.layers["custom"].files.copy()
 
         try:
             # Add report-type CSS if it exists
@@ -322,7 +293,7 @@ class CSSManager:
         css = self.compile(force=True)
 
         # Restore original custom files
-        self.layers['custom'].files = original_custom_files
+        self.layers["custom"].files = original_custom_files
         self._invalidate_cache()
 
         return css
@@ -344,9 +315,9 @@ class CSSManager:
         """
         return {
             name: {
-                'priority': layer.priority,
-                'files': layer.files.copy(),
-                'file_count': len(layer.files)
+                "priority": layer.priority,
+                "files": layer.files.copy(),
+                "file_count": len(layer.files),
             }
             for name, layer in self.layers.items()
         }
@@ -364,9 +335,7 @@ class CSSManager:
         self.layers.clear()
         for name, layer in self.DEFAULT_LAYERS.items():
             self.layers[name] = CSSLayer(
-                name=layer.name,
-                files=layer.files.copy(),
-                priority=layer.priority
+                name=layer.name, files=layer.files.copy(), priority=layer.priority
             )
 
         self.custom_css.clear()
@@ -387,7 +356,7 @@ class CSSManager:
         >>> print(files['css'])
         ['base_styles.css', 'report_components.css', ...]
         """
-        return self.asset_manager.list_assets(asset_type='css')
+        return self.asset_manager.list_assets(asset_type="css")
 
     def get_size_estimate(self) -> Dict[str, int]:
         """
@@ -405,10 +374,7 @@ class CSSManager:
         """
         css = self.compile()
 
-        sizes = {
-            'total': len(css.encode('utf-8')),
-            'total_kb': len(css.encode('utf-8')) / 1024
-        }
+        sizes = {"total": len(css.encode("utf-8")), "total_kb": len(css.encode("utf-8")) / 1024}
 
         # Estimate per layer
         for name, layer in self.layers.items():
@@ -416,7 +382,7 @@ class CSSManager:
                 continue
 
             layer_css = self.asset_manager.collect_css(layer.files)
-            sizes[f'{name}_layer'] = len(layer_css.encode('utf-8'))
+            sizes[f"{name}_layer"] = len(layer_css.encode("utf-8"))
 
         return sizes
 

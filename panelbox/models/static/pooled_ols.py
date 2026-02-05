@@ -6,24 +6,21 @@ and estimates a standard OLS regression.
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
-from panelbox.utils.matrix_ops import (
-    compute_ols,
-    compute_vcov_nonrobust,
-    compute_rsquared
-)
 from panelbox.standard_errors import (
-    robust_covariance,
     cluster_by_entity,
-    twoway_cluster,
     driscoll_kraay,
     newey_west,
-    pcse
+    pcse,
+    robust_covariance,
+    twoway_cluster,
 )
+from panelbox.utils.matrix_ops import compute_ols, compute_rsquared, compute_vcov_nonrobust
 
 
 class PooledOLS(PanelModel):
@@ -75,15 +72,11 @@ class PooledOLS(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None
+        weights: Optional[np.ndarray] = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
-    def fit(
-        self,
-        cov_type: str = 'nonrobust',
-        **cov_kwds
-    ) -> PanelResults:
+    def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
         Fit the Pooled OLS model.
 
@@ -130,10 +123,7 @@ class PooledOLS(PanelModel):
         >>> results = model.fit(cov_type='pcse')
         """
         # Build design matrices
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
 
         # Get variable names
         var_names = self.formula_parser.get_variable_names(self.data.data)
@@ -154,40 +144,40 @@ class PooledOLS(PanelModel):
         # Compute covariance matrix based on type
         cov_type_lower = cov_type.lower()
 
-        if cov_type_lower == 'nonrobust':
+        if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X, resid, df_resid)
 
-        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
             # HC robust standard errors
-            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             result = robust_covariance(X, resid, method=method)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'clustered':
+        elif cov_type_lower == "clustered":
             # Cluster-robust by entity
             result = cluster_by_entity(X, resid, entities, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'twoway':
+        elif cov_type_lower == "twoway":
             # Two-way clustering (entity and time)
             result = twoway_cluster(X, resid, entities, times, df_correction=True)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'driscoll_kraay':
+        elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(X, resid, times, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'newey_west':
+        elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get('max_lags', None)
-            kernel = cov_kwds.get('kernel', 'bartlett')
+            max_lags = cov_kwds.get("max_lags", None)
+            kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X, resid, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
-        elif cov_type_lower == 'pcse':
+        elif cov_type_lower == "pcse":
             # Panel-corrected standard errors
             result = pcse(X, resid, entities, times)
             vcov = result.cov_matrix
@@ -204,8 +194,7 @@ class PooledOLS(PanelModel):
 
         # Compute R-squared
         rsquared = compute_rsquared(
-            y, fitted, resid,
-            has_intercept=self.formula_parser.has_intercept
+            y, fitted, resid, has_intercept=self.formula_parser.has_intercept
         )
 
         # Adjusted R-squared
@@ -218,30 +207,30 @@ class PooledOLS(PanelModel):
 
         # Model information
         model_info = {
-            'model_type': 'Pooled OLS',
-            'formula': self.formula,
-            'cov_type': cov_type,
-            'cov_kwds': cov_kwds
+            "model_type": "Pooled OLS",
+            "formula": self.formula,
+            "cov_type": cov_type,
+            "cov_kwds": cov_kwds,
         }
 
         # Data information
         data_info = {
-            'nobs': n,
-            'n_entities': self.data.n_entities,
-            'n_periods': self.data.n_periods,
-            'df_model': df_model,
-            'df_resid': df_resid,
-            'entity_index': self.data.data[self.data.entity_col].values.ravel(),
-            'time_index': self.data.data[self.data.time_col].values.ravel()
+            "nobs": n,
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "entity_index": self.data.data[self.data.entity_col].values.ravel(),
+            "time_index": self.data.data[self.data.time_col].values.ravel(),
         }
 
         # R-squared dictionary
         rsquared_dict = {
-            'rsquared': rsquared,
-            'rsquared_adj': rsquared_adj,
-            'rsquared_within': np.nan,
-            'rsquared_between': np.nan,
-            'rsquared_overall': rsquared
+            "rsquared": rsquared,
+            "rsquared_adj": rsquared_adj,
+            "rsquared_within": np.nan,
+            "rsquared_between": np.nan,
+            "rsquared_overall": rsquared,
         }
 
         # Create results object
@@ -254,7 +243,7 @@ class PooledOLS(PanelModel):
             model_info=model_info,
             data_info=data_info,
             rsquared_dict=rsquared_dict,
-            model=self
+            model=self,
         )
 
         # Store results and update state
@@ -272,18 +261,11 @@ class PooledOLS(PanelModel):
         np.ndarray
             Estimated coefficients
         """
-        y, X = self.formula_parser.build_design_matrices(
-            self.data.data,
-            return_type='array'
-        )
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
         beta, _, _ = compute_ols(y, X, self.weights)
         return beta
 
-    def _compute_vcov_robust(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray
-    ) -> np.ndarray:
+    def _compute_vcov_robust(self, X: np.ndarray, resid: np.ndarray) -> np.ndarray:
         """
         Compute heteroskedasticity-robust covariance matrix (HC1).
 
@@ -309,18 +291,14 @@ class PooledOLS(PanelModel):
         XtX_inv = np.linalg.inv(X.T @ X)
 
         # Meat: X' diag(resid^2) X
-        meat = X.T @ (resid[:, np.newaxis]**2 * X)
+        meat = X.T @ (resid[:, np.newaxis] ** 2 * X)
 
         # Sandwich: (X'X)^{-1} * X'ΩX * (X'X)^{-1}
         vcov = adjustment * (XtX_inv @ meat @ XtX_inv)
 
         return vcov
 
-    def _compute_vcov_clustered(
-        self,
-        X: np.ndarray,
-        resid: np.ndarray
-    ) -> np.ndarray:
+    def _compute_vcov_clustered(self, X: np.ndarray, resid: np.ndarray) -> np.ndarray:
         """
         Compute cluster-robust covariance matrix.
 

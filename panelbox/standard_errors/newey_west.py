@@ -5,14 +5,14 @@ Newey-West (1987) standard errors are robust to both heteroskedasticity and
 autocorrelation. Useful for time-series and panel data with serial correlation.
 """
 
-from typing import Optional, Literal
-import numpy as np
 from dataclasses import dataclass
+from typing import Literal, Optional
+
+import numpy as np
 
 from .utils import compute_bread, sandwich_covariance
 
-
-KernelType = Literal['bartlett', 'parzen', 'quadratic_spectral']
+KernelType = Literal["bartlett", "parzen", "quadratic_spectral"]
 
 
 @dataclass
@@ -37,6 +37,7 @@ class NeweyWestResult:
     prewhitening : bool
         Whether prewhitening was applied
     """
+
     cov_matrix: np.ndarray
     std_errors: np.ndarray
     max_lags: int
@@ -103,8 +104,8 @@ class NeweyWestStandardErrors:
         X: np.ndarray,
         resid: np.ndarray,
         max_lags: Optional[int] = None,
-        kernel: KernelType = 'bartlett',
-        prewhitening: bool = False
+        kernel: KernelType = "bartlett",
+        prewhitening: bool = False,
     ):
         self.X = X
         self.resid = resid
@@ -116,7 +117,7 @@ class NeweyWestStandardErrors:
         # Set max_lags
         if max_lags is None:
             # Newey-West rule: floor(4(T/100)^(2/9))
-            self.max_lags = int(np.floor(4 * (self.n_obs / 100) ** (2/9)))
+            self.max_lags = int(np.floor(4 * (self.n_obs / 100) ** (2 / 9)))
         else:
             self.max_lags = max_lags
 
@@ -151,20 +152,20 @@ class NeweyWestStandardErrors:
         if lag > self.max_lags:
             return 0.0
 
-        if self.kernel == 'bartlett':
+        if self.kernel == "bartlett":
             # Bartlett (triangular) kernel
             # w(l) = 1 - l/(max_lags + 1)
             return 1.0 - lag / (self.max_lags + 1)
 
-        elif self.kernel == 'parzen':
+        elif self.kernel == "parzen":
             # Parzen kernel
             z = lag / (self.max_lags + 1)
             if z <= 0.5:
                 return 1 - 6 * z**2 + 6 * z**3
             else:
-                return 2 * (1 - z)**3
+                return 2 * (1 - z) ** 3
 
-        elif self.kernel == 'quadratic_spectral':
+        elif self.kernel == "quadratic_spectral":
             # Quadratic Spectral kernel
             if lag == 0:
                 return 1.0
@@ -253,7 +254,7 @@ class NeweyWestStandardErrors:
             kernel=self.kernel,
             n_obs=self.n_obs,
             n_params=self.n_params,
-            prewhitening=self.prewhitening
+            prewhitening=self.prewhitening,
         )
 
     def diagnostic_summary(self) -> str:
@@ -290,8 +291,8 @@ def newey_west(
     X: np.ndarray,
     resid: np.ndarray,
     max_lags: Optional[int] = None,
-    kernel: KernelType = 'bartlett',
-    prewhitening: bool = False
+    kernel: KernelType = "bartlett",
+    prewhitening: bool = False,
 ) -> NeweyWestResult:
     """
     Convenience function for Newey-West HAC standard errors.

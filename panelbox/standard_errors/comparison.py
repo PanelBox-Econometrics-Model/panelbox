@@ -35,10 +35,11 @@ References
   both firm and time. Journal of Financial Economics, 99(1), 1-10.
 """
 
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Union, Any
-from dataclasses import dataclass
 
 
 @dataclass
@@ -65,6 +66,7 @@ class ComparisonResult:
     summary_stats : pd.DataFrame
         Summary statistics across SE types
     """
+
     se_comparison: pd.DataFrame
     se_ratios: pd.DataFrame
     t_stats: pd.DataFrame
@@ -155,7 +157,7 @@ class StandardErrorComparison:
         """Extract model information for computing different SEs."""
         # Store original model object if available
         # Check multiple possible attribute names
-        self.model = getattr(self.model_results, 'model', None)
+        self.model = getattr(self.model_results, "model", None)
 
         # If model not available, store what we need from results
         if self.model is None:
@@ -169,11 +171,7 @@ class StandardErrorComparison:
         else:
             self._has_model = True
 
-    def compare_all(
-        self,
-        se_types: Optional[List[str]] = None,
-        **kwargs
-    ) -> ComparisonResult:
+    def compare_all(self, se_types: Optional[List[str]] = None, **kwargs) -> ComparisonResult:
         """
         Compare all specified standard error types.
 
@@ -209,11 +207,11 @@ class StandardErrorComparison:
         """
         if se_types is None:
             # Default list of SE types to compare
-            se_types = ['nonrobust', 'robust', 'hc3', 'clustered']
+            se_types = ["nonrobust", "robust", "hc3", "clustered"]
 
             # Add advanced types if T is large enough
-            if hasattr(self.model_results, 'nobs') and self.model_results.nobs > 100:
-                se_types.extend(['driscoll_kraay', 'newey_west'])
+            if hasattr(self.model_results, "nobs") and self.model_results.nobs > 100:
+                se_types.extend(["driscoll_kraay", "newey_west"])
 
         # Store standard errors for each type
         se_dict = {}
@@ -241,8 +239,8 @@ class StandardErrorComparison:
         se_comparison = pd.DataFrame(se_dict, index=self.coef_names)
 
         # Compute ratios relative to nonrobust (if available)
-        if 'nonrobust' in se_dict:
-            se_ratios = se_comparison.div(se_comparison['nonrobust'], axis=0)
+        if "nonrobust" in se_dict:
+            se_ratios = se_comparison.div(se_comparison["nonrobust"], axis=0)
         else:
             # Use first SE type as baseline
             baseline = list(se_dict.keys())[0]
@@ -250,30 +248,30 @@ class StandardErrorComparison:
 
         # Compute t-statistics
         t_stats = pd.DataFrame(
-            {se_type: self.coefficients / se_dict[se_type]
-             for se_type in se_dict.keys()},
-            index=self.coef_names
+            {se_type: self.coefficients / se_dict[se_type] for se_type in se_dict.keys()},
+            index=self.coef_names,
         )
 
         # Compute p-values (two-tailed)
         from scipy import stats
+
         p_values = pd.DataFrame(
-            {se_type: 2 * (1 - stats.t.cdf(np.abs(t_stats[se_type]), self.df_resid))
-             for se_type in se_dict.keys()},
-            index=self.coef_names
+            {
+                se_type: 2 * (1 - stats.t.cdf(np.abs(t_stats[se_type]), self.df_resid))
+                for se_type in se_dict.keys()
+            },
+            index=self.coef_names,
         )
 
         # Compute 95% confidence intervals
         t_crit = stats.t.ppf(0.975, self.df_resid)
         ci_lower = pd.DataFrame(
-            {se_type: self.coefficients - t_crit * se_dict[se_type]
-             for se_type in se_dict.keys()},
-            index=self.coef_names
+            {se_type: self.coefficients - t_crit * se_dict[se_type] for se_type in se_dict.keys()},
+            index=self.coef_names,
         )
         ci_upper = pd.DataFrame(
-            {se_type: self.coefficients + t_crit * se_dict[se_type]
-             for se_type in se_dict.keys()},
-            index=self.coef_names
+            {se_type: self.coefficients + t_crit * se_dict[se_type] for se_type in se_dict.keys()},
+            index=self.coef_names,
         )
 
         # Significance indicators
@@ -281,14 +279,17 @@ class StandardErrorComparison:
         significance = significance.applymap(self._significance_stars)
 
         # Summary statistics
-        summary_stats = pd.DataFrame({
-            'mean_se': se_comparison.mean(axis=1),
-            'std_se': se_comparison.std(axis=1),
-            'min_se': se_comparison.min(axis=1),
-            'max_se': se_comparison.max(axis=1),
-            'range_se': se_comparison.max(axis=1) - se_comparison.min(axis=1),
-            'cv_se': se_comparison.std(axis=1) / se_comparison.mean(axis=1)  # Coefficient of variation
-        })
+        summary_stats = pd.DataFrame(
+            {
+                "mean_se": se_comparison.mean(axis=1),
+                "std_se": se_comparison.std(axis=1),
+                "min_se": se_comparison.min(axis=1),
+                "max_se": se_comparison.max(axis=1),
+                "range_se": se_comparison.max(axis=1) - se_comparison.min(axis=1),
+                "cv_se": se_comparison.std(axis=1)
+                / se_comparison.mean(axis=1),  # Coefficient of variation
+            }
+        )
 
         return ComparisonResult(
             se_comparison=se_comparison,
@@ -298,15 +299,10 @@ class StandardErrorComparison:
             ci_lower=ci_lower,
             ci_upper=ci_upper,
             significance=significance,
-            summary_stats=summary_stats
+            summary_stats=summary_stats,
         )
 
-    def compare_pair(
-        self,
-        se_type1: str,
-        se_type2: str,
-        **kwargs
-    ) -> ComparisonResult:
+    def compare_pair(self, se_type1: str, se_type2: str, **kwargs) -> ComparisonResult:
         """
         Compare two specific standard error types.
 
@@ -335,7 +331,7 @@ class StandardErrorComparison:
         self,
         result: Optional[ComparisonResult] = None,
         alpha: float = 0.05,
-        figsize: tuple = (12, 8)
+        figsize: tuple = (12, 8),
     ):
         """
         Plot comparison of standard errors and confidence intervals.
@@ -369,8 +365,7 @@ class StandardErrorComparison:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "Matplotlib is required for plotting. "
-                "Install it with: pip install matplotlib"
+                "Matplotlib is required for plotting. " "Install it with: pip install matplotlib"
             )
 
         if result is None:
@@ -384,12 +379,12 @@ class StandardErrorComparison:
 
         # Plot 1: Standard Errors Comparison
         ax1 = axes[0]
-        result.se_comparison.plot(kind='bar', ax=ax1)
-        ax1.set_title('Standard Errors Comparison', fontsize=14, fontweight='bold')
-        ax1.set_xlabel('Coefficient', fontsize=12)
-        ax1.set_ylabel('Standard Error', fontsize=12)
-        ax1.legend(title='SE Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-        ax1.grid(axis='y', alpha=0.3)
+        result.se_comparison.plot(kind="bar", ax=ax1)
+        ax1.set_title("Standard Errors Comparison", fontsize=14, fontweight="bold")
+        ax1.set_xlabel("Coefficient", fontsize=12)
+        ax1.set_ylabel("Standard Error", fontsize=12)
+        ax1.legend(title="SE Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax1.grid(axis="y", alpha=0.3)
 
         # Plot 2: Coefficient Estimates with Confidence Intervals
         ax2 = axes[1]
@@ -397,29 +392,30 @@ class StandardErrorComparison:
         width = 0.8 / n_se_types
 
         for i, se_type in enumerate(result.se_comparison.columns):
-            offset = (i - n_se_types/2 + 0.5) * width
+            offset = (i - n_se_types / 2 + 0.5) * width
             ax2.errorbar(
                 x + offset,
                 self.coefficients,
                 yerr=[
                     self.coefficients - result.ci_lower[se_type].values,
-                    result.ci_upper[se_type].values - self.coefficients
+                    result.ci_upper[se_type].values - self.coefficients,
                 ],
-                fmt='o',
+                fmt="o",
                 label=se_type,
                 capsize=5,
-                capthick=2
+                capthick=2,
             )
 
-        ax2.axhline(y=0, color='black', linestyle='--', alpha=0.3)
-        ax2.set_title('Coefficient Estimates with 95% Confidence Intervals',
-                     fontsize=14, fontweight='bold')
-        ax2.set_xlabel('Coefficient', fontsize=12)
-        ax2.set_ylabel('Estimate', fontsize=12)
+        ax2.axhline(y=0, color="black", linestyle="--", alpha=0.3)
+        ax2.set_title(
+            "Coefficient Estimates with 95% Confidence Intervals", fontsize=14, fontweight="bold"
+        )
+        ax2.set_xlabel("Coefficient", fontsize=12)
+        ax2.set_ylabel("Estimate", fontsize=12)
         ax2.set_xticks(x)
-        ax2.set_xticklabels(self.coef_names, rotation=45, ha='right')
-        ax2.legend(title='SE Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-        ax2.grid(axis='y', alpha=0.3)
+        ax2.set_xticklabels(self.coef_names, rotation=45, ha="right")
+        ax2.legend(title="SE Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax2.grid(axis="y", alpha=0.3)
 
         plt.tight_layout()
         return fig
@@ -459,12 +455,14 @@ class StandardErrorComparison:
         print("-" * 80)
 
         # Combine coefficients with significance
-        sig_table = pd.DataFrame({
-            'Coefficient': self.coefficients
-        })
+        sig_table = pd.DataFrame({"Coefficient": self.coefficients})
         for col in result.significance.columns:
             sig_table[col] = result.significance[col]
-        print(sig_table.to_string(float_format=lambda x: f"{x:.4f}" if isinstance(x, float) else str(x)))
+        print(
+            sig_table.to_string(
+                float_format=lambda x: f"{x:.4f}" if isinstance(x, float) else str(x)
+            )
+        )
         print()
 
         print("Summary Statistics Across SE Types:")
@@ -486,7 +484,9 @@ class StandardErrorComparison:
         # Identify coefficients with inconsistent inference
         sig_matrix = result.p_values < 0.05
         inconsistent = sig_matrix.sum(axis=1)
-        inconsistent = inconsistent[(inconsistent > 0) & (inconsistent < len(result.p_values.columns))]
+        inconsistent = inconsistent[
+            (inconsistent > 0) & (inconsistent < len(result.p_values.columns))
+        ]
 
         if len(inconsistent) > 0:
             print("⚠️  Coefficients with inconsistent inference across SE types:")
@@ -507,11 +507,11 @@ class StandardErrorComparison:
         """Get SE-specific keyword arguments."""
         se_kwargs = {}
 
-        if se_type in ['driscoll_kraay', 'newey_west']:
-            if 'max_lags' in kwargs:
-                se_kwargs['max_lags'] = kwargs['max_lags']
-            if 'kernel' in kwargs:
-                se_kwargs['kernel'] = kwargs['kernel']
+        if se_type in ["driscoll_kraay", "newey_west"]:
+            if "max_lags" in kwargs:
+                se_kwargs["max_lags"] = kwargs["max_lags"]
+            if "kernel" in kwargs:
+                se_kwargs["kernel"] = kwargs["kernel"]
 
         return se_kwargs
 
@@ -519,10 +519,10 @@ class StandardErrorComparison:
     def _significance_stars(p_value: float) -> str:
         """Convert p-value to significance stars."""
         if p_value < 0.01:
-            return '***'
+            return "***"
         elif p_value < 0.05:
-            return '**'
+            return "**"
         elif p_value < 0.10:
-            return '*'
+            return "*"
         else:
-            return ''
+            return ""

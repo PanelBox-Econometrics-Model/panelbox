@@ -51,15 +51,15 @@ References
        126(1), 25-51.
 """
 
-from panelbox.gmm.results import GMMResults, TestResult
 from panelbox.gmm.difference_gmm import DifferenceGMM
+from panelbox.gmm.results import GMMResults, TestResult
 from panelbox.gmm.system_gmm import SystemGMM
 
 __all__ = [
-    'DifferenceGMM',
-    'SystemGMM',
-    'GMMResults',
-    'TestResult',
+    "DifferenceGMM",
+    "SystemGMM",
+    "GMMResults",
+    "TestResult",
 ]
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"

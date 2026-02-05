@@ -13,8 +13,9 @@ Cameron, A. C., & Trivedi, P. K. (2005). Microeconometrics: Methods and Applicat
 Efron, B., & Tibshirani, R. J. (1994). An Introduction to the Bootstrap.
 """
 
-from typing import Optional, Union, Literal, Tuple
 import warnings
+from typing import Literal, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -149,30 +150,26 @@ class PanelBootstrap:
         self,
         results: PanelResults,
         n_bootstrap: int = 1000,
-        method: Literal['pairs', 'wild', 'block', 'residual'] = 'pairs',
+        method: Literal["pairs", "wild", "block", "residual"] = "pairs",
         block_size: Optional[int] = None,
         random_state: Optional[int] = None,
         show_progress: bool = True,
-        parallel: bool = False
+        parallel: bool = False,
     ):
         # Validation
         if not isinstance(results, PanelResults):
-            raise TypeError(
-                f"results must be PanelResults, got {type(results)}"
-            )
+            raise TypeError(f"results must be PanelResults, got {type(results)}")
 
         if n_bootstrap < 100:
             warnings.warn(
                 f"n_bootstrap={n_bootstrap} is quite small. "
                 "Recommend at least 500 for standard errors, 1000 for confidence intervals.",
-                UserWarning
+                UserWarning,
             )
 
-        valid_methods = ['pairs', 'wild', 'block', 'residual']
+        valid_methods = ["pairs", "wild", "block", "residual"]
         if method not in valid_methods:
-            raise ValueError(
-                f"method must be one of {valid_methods}, got '{method}'"
-            )
+            raise ValueError(f"method must be one of {valid_methods}, got '{method}'")
 
         # Store inputs
         self.results = results
@@ -198,8 +195,7 @@ class PanelBootstrap:
         # Check for parallel (not yet implemented)
         if parallel:
             warnings.warn(
-                "Parallel processing not yet implemented. Running sequentially.",
-                UserWarning
+                "Parallel processing not yet implemented. Running sequentially.", UserWarning
             )
 
         # Results storage
@@ -209,7 +205,7 @@ class PanelBootstrap:
         self.n_failed_: int = 0
         self._fitted = False
 
-    def run(self) -> 'PanelBootstrap':
+    def run(self) -> "PanelBootstrap":
         """
         Run bootstrap procedure.
 
@@ -229,13 +225,13 @@ class PanelBootstrap:
             If too many bootstrap replications fail
         """
         # Dispatch to appropriate method
-        if self.method == 'pairs':
+        if self.method == "pairs":
             estimates = self._bootstrap_pairs()
-        elif self.method == 'wild':
+        elif self.method == "wild":
             estimates = self._bootstrap_wild()
-        elif self.method == 'block':
+        elif self.method == "block":
             estimates = self._bootstrap_block()
-        elif self.method == 'residual':
+        elif self.method == "residual":
             estimates = self._bootstrap_residual()
         else:
             raise ValueError(f"Unknown bootstrap method: {self.method}")
@@ -260,7 +256,7 @@ class PanelBootstrap:
                 f"({self.n_failed_/self.n_bootstrap*100:.1f}%). "
                 "Results may be unreliable. Consider using a different method or "
                 "checking your model specification.",
-                UserWarning
+                UserWarning,
             )
 
         return self
@@ -477,7 +473,7 @@ class PanelBootstrap:
         # Determine block size
         if self.block_size is None:
             # Rule of thumb: T^(1/3)
-            block_size = max(1, int(np.ceil(n_periods ** (1/3))))
+            block_size = max(1, int(np.ceil(n_periods ** (1 / 3))))
             if self.show_progress:
                 print(f"\nUsing automatic block size: {block_size} (T^(1/3) where T={n_periods})")
         else:
@@ -487,7 +483,7 @@ class PanelBootstrap:
             warnings.warn(
                 f"block_size={block_size} is larger than n_periods={n_periods}. "
                 f"Setting block_size={n_periods}",
-                UserWarning
+                UserWarning,
             )
             block_size = n_periods
 
@@ -511,7 +507,7 @@ class PanelBootstrap:
                     start_idx = self.rng.randint(0, n_periods - block_size + 1)
 
                     # Extract block of time periods
-                    block = time_periods[start_idx:start_idx + block_size]
+                    block = time_periods[start_idx : start_idx + block_size]
                     boot_time_periods.extend(block)
 
                 # Trim to original length
@@ -674,19 +670,19 @@ class PanelBootstrap:
 
         # Common parameters for all models
         init_kwargs = {
-            'formula': self.model.formula,
-            'data': boot_data,
-            'entity_col': self.model.data.entity_col,
-            'time_col': self.model.data.time_col,
+            "formula": self.model.formula,
+            "data": boot_data,
+            "entity_col": self.model.data.entity_col,
+            "time_col": self.model.data.time_col,
         }
 
         # Add model-specific parameters
-        if hasattr(self.model, 'entity_effects'):
-            init_kwargs['entity_effects'] = self.model.entity_effects
-        if hasattr(self.model, 'time_effects'):
-            init_kwargs['time_effects'] = self.model.time_effects
-        if hasattr(self.model, 'weights'):
-            init_kwargs['weights'] = self.model.weights
+        if hasattr(self.model, "entity_effects"):
+            init_kwargs["entity_effects"] = self.model.entity_effects
+        if hasattr(self.model, "time_effects"):
+            init_kwargs["time_effects"] = self.model.time_effects
+        if hasattr(self.model, "weights"):
+            init_kwargs["weights"] = self.model.weights
 
         # Create model instance
         boot_model = model_class(**init_kwargs)
@@ -696,7 +692,7 @@ class PanelBootstrap:
     def conf_int(
         self,
         alpha: float = 0.05,
-        method: Literal['percentile', 'basic', 'bca', 'studentized'] = 'percentile'
+        method: Literal["percentile", "basic", "bca", "studentized"] = "percentile",
     ) -> pd.DataFrame:
         """
         Compute bootstrap confidence intervals.
@@ -730,18 +726,17 @@ class PanelBootstrap:
         if not self._fitted:
             raise RuntimeError("Must call run() before conf_int()")
 
-        if method == 'percentile':
+        if method == "percentile":
             ci = self._conf_int_percentile(alpha)
-        elif method == 'basic':
+        elif method == "basic":
             ci = self._conf_int_basic(alpha)
-        elif method == 'bca':
+        elif method == "bca":
             ci = self._conf_int_bca(alpha)
-        elif method == 'studentized':
+        elif method == "studentized":
             ci = self._conf_int_studentized(alpha)
         else:
             raise ValueError(
-                f"method must be 'percentile', 'basic', 'bca', or 'studentized', "
-                f"got '{method}'"
+                f"method must be 'percentile', 'basic', 'bca', or 'studentized', " f"got '{method}'"
             )
 
         return ci
@@ -758,10 +753,7 @@ class PanelBootstrap:
         lower = np.percentile(self.bootstrap_estimates_, lower_pct, axis=0)
         upper = np.percentile(self.bootstrap_estimates_, upper_pct, axis=0)
 
-        ci = pd.DataFrame({
-            'lower': lower,
-            'upper': upper
-        }, index=self.results.params.index)
+        ci = pd.DataFrame({"lower": lower, "upper": upper}, index=self.results.params.index)
 
         return ci
 
@@ -780,10 +772,7 @@ class PanelBootstrap:
         lower = 2 * theta_hat - np.percentile(self.bootstrap_estimates_, upper_pct, axis=0)
         upper = 2 * theta_hat - np.percentile(self.bootstrap_estimates_, lower_pct, axis=0)
 
-        ci = pd.DataFrame({
-            'lower': lower,
-            'upper': upper
-        }, index=self.results.params.index)
+        ci = pd.DataFrame({"lower": lower, "upper": upper}, index=self.results.params.index)
 
         return ci
 
@@ -796,7 +785,7 @@ class PanelBootstrap:
         warnings.warn(
             "BCa confidence intervals not yet fully implemented. "
             "Falling back to percentile method.",
-            UserWarning
+            UserWarning,
         )
         return self._conf_int_percentile(alpha)
 
@@ -810,7 +799,7 @@ class PanelBootstrap:
         warnings.warn(
             "Studentized confidence intervals not yet fully implemented. "
             "Falling back to percentile method.",
-            UserWarning
+            UserWarning,
         )
         return self._conf_int_percentile(alpha)
 
@@ -831,14 +820,18 @@ class PanelBootstrap:
         if not self._fitted:
             raise RuntimeError("Must call run() before summary()")
 
-        summary = pd.DataFrame({
-            'Original': self.results.params,
-            'Bootstrap Mean': self.bootstrap_estimates_.mean(axis=0),
-            'Bootstrap Bias': self.bootstrap_estimates_.mean(axis=0) - self.results.params.values,
-            'Original SE': self.results.std_errors,
-            'Bootstrap SE': self.bootstrap_se_,
-            'SE Ratio': self.bootstrap_se_ / self.results.std_errors.values
-        }, index=self.results.params.index)
+        summary = pd.DataFrame(
+            {
+                "Original": self.results.params,
+                "Bootstrap Mean": self.bootstrap_estimates_.mean(axis=0),
+                "Bootstrap Bias": self.bootstrap_estimates_.mean(axis=0)
+                - self.results.params.values,
+                "Original SE": self.results.std_errors,
+                "Bootstrap SE": self.bootstrap_se_,
+                "SE Ratio": self.bootstrap_se_ / self.results.std_errors.values,
+            },
+            index=self.results.params.index,
+        )
 
         return summary
 
@@ -860,8 +853,7 @@ class PanelBootstrap:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "matplotlib is required for plotting. "
-                "Install with: pip install matplotlib"
+                "matplotlib is required for plotting. " "Install with: pip install matplotlib"
             )
 
         if not self._fitted:
@@ -877,12 +869,17 @@ class PanelBootstrap:
             original_value = self.results.params.iloc[param_idx]
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            ax.hist(boot_values, bins=50, alpha=0.7, edgecolor='black')
-            ax.axvline(original_value, color='red', linestyle='--', linewidth=2,
-                      label=f'Original: {original_value:.4f}')
-            ax.set_xlabel('Coefficient Value')
-            ax.set_ylabel('Frequency')
-            ax.set_title(f'Bootstrap Distribution: {param}')
+            ax.hist(boot_values, bins=50, alpha=0.7, edgecolor="black")
+            ax.axvline(
+                original_value,
+                color="red",
+                linestyle="--",
+                linewidth=2,
+                label=f"Original: {original_value:.4f}",
+            )
+            ax.set_xlabel("Coefficient Value")
+            ax.set_ylabel("Frequency")
+            ax.set_title(f"Bootstrap Distribution: {param}")
             ax.legend()
             plt.tight_layout()
             plt.show()
@@ -892,7 +889,7 @@ class PanelBootstrap:
             n_cols = min(3, n_params)
             n_rows = (n_params + n_cols - 1) // n_cols
 
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
             if n_params == 1:
                 axes = np.array([axes])
             axes = axes.flatten()
@@ -901,11 +898,16 @@ class PanelBootstrap:
                 boot_values = self.bootstrap_estimates_[:, i]
                 original_value = self.results.params.iloc[i]
 
-                axes[i].hist(boot_values, bins=30, alpha=0.7, edgecolor='black')
-                axes[i].axvline(original_value, color='red', linestyle='--',
-                               linewidth=2, label=f'Original: {original_value:.4f}')
-                axes[i].set_xlabel('Value')
-                axes[i].set_ylabel('Frequency')
+                axes[i].hist(boot_values, bins=30, alpha=0.7, edgecolor="black")
+                axes[i].axvline(
+                    original_value,
+                    color="red",
+                    linestyle="--",
+                    linewidth=2,
+                    label=f"Original: {original_value:.4f}",
+                )
+                axes[i].set_xlabel("Value")
+                axes[i].set_ylabel("Frequency")
                 axes[i].set_title(param_name)
                 axes[i].legend(fontsize=8)
 
@@ -913,8 +915,11 @@ class PanelBootstrap:
             for i in range(n_params, len(axes)):
                 axes[i].set_visible(False)
 
-            plt.suptitle(f'Bootstrap Distributions ({self.method} method, n={self.n_bootstrap})',
-                        fontsize=14, y=1.00)
+            plt.suptitle(
+                f"Bootstrap Distributions ({self.method} method, n={self.n_bootstrap})",
+                fontsize=14,
+                y=1.00,
+            )
             plt.tight_layout()
             plt.show()
 

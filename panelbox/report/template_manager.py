@@ -4,12 +4,12 @@ Template Manager for PanelBox Reports.
 Manages loading, caching, and rendering of Jinja2 templates.
 """
 
+import datetime
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
-import datetime
+from typing import Any, Dict, Optional
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape, Template
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 
 class TemplateManager:
@@ -39,17 +39,13 @@ class TemplateManager:
     >>> html = template.render(context)
     """
 
-    def __init__(
-        self,
-        template_dir: Optional[Path] = None,
-        enable_cache: bool = True
-    ):
+    def __init__(self, template_dir: Optional[Path] = None, enable_cache: bool = True):
         """Initialize Template Manager."""
         # Determine template directory
         if template_dir is None:
             # Use package templates
             package_dir = Path(__file__).parent.parent
-            template_dir = package_dir / 'templates'
+            template_dir = package_dir / "templates"
         else:
             template_dir = Path(template_dir)
 
@@ -63,10 +59,10 @@ class TemplateManager:
         # Create Jinja2 environment
         self.env = Environment(
             loader=FileSystemLoader(str(template_dir)),
-            autoescape=select_autoescape(['html', 'xml']),
+            autoescape=select_autoescape(["html", "xml"]),
             trim_blocks=True,
             lstrip_blocks=True,
-            enable_async=False
+            enable_async=False,
         )
 
         # Register custom filters
@@ -77,19 +73,19 @@ class TemplateManager:
 
     def _register_filters(self) -> None:
         """Register custom Jinja2 filters."""
-        self.env.filters['number_format'] = self._filter_number_format
-        self.env.filters['pvalue_format'] = self._filter_pvalue_format
-        self.env.filters['percentage'] = self._filter_percentage
-        self.env.filters['significance_stars'] = self._filter_significance_stars
-        self.env.filters['round'] = self._filter_round
+        self.env.filters["number_format"] = self._filter_number_format
+        self.env.filters["pvalue_format"] = self._filter_pvalue_format
+        self.env.filters["percentage"] = self._filter_percentage
+        self.env.filters["significance_stars"] = self._filter_significance_stars
+        self.env.filters["round"] = self._filter_round
 
     def _register_globals(self) -> None:
         """Register custom Jinja2 global functions."""
-        self.env.globals['now'] = datetime.datetime.now
-        self.env.globals['range'] = range
-        self.env.globals['len'] = len
-        self.env.globals['enumerate'] = enumerate
-        self.env.globals['zip'] = zip
+        self.env.globals["now"] = datetime.datetime.now
+        self.env.globals["range"] = range
+        self.env.globals["len"] = len
+        self.env.globals["enumerate"] = enumerate
+        self.env.globals["zip"] = zip
 
     def get_template(self, template_path: str) -> Template:
         """
@@ -124,11 +120,7 @@ class TemplateManager:
 
         return template
 
-    def render_template(
-        self,
-        template_path: str,
-        context: Dict[str, Any]
-    ) -> str:
+    def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """
         Load and render a template with context.
 
@@ -256,16 +248,16 @@ class TemplateManager:
         try:
             pvalue = float(pvalue)
             if pvalue < 0.001:
-                return '***'
+                return "***"
             elif pvalue < 0.01:
-                return '**'
+                return "**"
             elif pvalue < 0.05:
-                return '*'
+                return "*"
             elif pvalue < 0.1:
-                return '.'
-            return ''
+                return "."
+            return ""
         except (ValueError, TypeError):
-            return ''
+            return ""
 
     @staticmethod
     def _filter_round(value, decimals: int = 0) -> float:

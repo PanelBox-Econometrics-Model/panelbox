@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.core.panel_data import PanelData
+from panelbox.models.static.fixed_effects import FixedEffects
 
 
 class TestFixedEffectsInitialization:
@@ -16,11 +16,7 @@ class TestFixedEffectsInitialization:
     def test_init_entity_effects(self, balanced_panel_data):
         """Test initialization with entity effects."""
         model = FixedEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time",
-            entity_effects=True
+            "y ~ x1 + x2", balanced_panel_data, "entity", "time", entity_effects=True
         )
 
         assert model.entity_effects is True
@@ -35,7 +31,7 @@ class TestFixedEffectsInitialization:
             "entity",
             "time",
             entity_effects=False,
-            time_effects=True
+            time_effects=True,
         )
 
         assert model.entity_effects is False
@@ -49,7 +45,7 @@ class TestFixedEffectsInitialization:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
 
         assert model.entity_effects is True
@@ -64,7 +60,7 @@ class TestFixedEffectsInitialization:
                 "entity",
                 "time",
                 entity_effects=False,
-                time_effects=False
+                time_effects=False,
             )
 
 
@@ -73,12 +69,7 @@ class TestFixedEffectsFitting:
 
     def test_fit_entity_effects(self, balanced_panel_data):
         """Test fitting with entity fixed effects."""
-        model = FixedEffects(
-            "y ~ x1 + x2",
-            balanced_panel_data,
-            "entity",
-            "time"
-        )
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit()
 
         # Check that model was fitted
@@ -87,9 +78,9 @@ class TestFixedEffectsFitting:
 
         # Check coefficient structure
         assert len(results.params) == 2  # x1 and x2 (no intercept in FE)
-        assert 'x1' in results.params.index
-        assert 'x2' in results.params.index
-        assert 'Intercept' not in results.params.index  # Absorbed by FE
+        assert "x1" in results.params.index
+        assert "x2" in results.params.index
+        assert "Intercept" not in results.params.index  # Absorbed by FE
 
         # Check that fixed effects were computed
         assert model.entity_fe is not None
@@ -103,7 +94,7 @@ class TestFixedEffectsFitting:
             "entity",
             "time",
             entity_effects=False,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
@@ -119,7 +110,7 @@ class TestFixedEffectsFitting:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
@@ -135,8 +126,8 @@ class TestFixedEffectsFitting:
 
         # Add entity-specific constants
         entity_effects_true = {i: i * 10 for i in range(1, 11)}
-        data['entity_effect'] = data['entity'].map(entity_effects_true)
-        data['y'] = data['y'] + data['entity_effect']
+        data["entity_effect"] = data["entity"].map(entity_effects_true)
+        data["y"] = data["y"] + data["entity_effect"]
 
         model = FixedEffects("y ~ x1 + x2", data, "entity", "time")
         results = model.fit()
@@ -185,39 +176,38 @@ class TestCovarianceTypes:
     def test_nonrobust_se(self, balanced_panel_data):
         """Test non-robust standard errors."""
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='nonrobust')
+        results = model.fit(cov_type="nonrobust")
 
-        assert results.cov_type == 'nonrobust'
+        assert results.cov_type == "nonrobust"
         assert len(results.std_errors) == 2
 
     def test_robust_se(self, balanced_panel_data):
         """Test robust standard errors."""
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='robust')
+        results = model.fit(cov_type="robust")
 
-        assert results.cov_type == 'robust'
+        assert results.cov_type == "robust"
 
     def test_clustered_se(self, balanced_panel_data):
         """Test cluster-robust standard errors."""
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results = model.fit(cov_type='clustered')
+        results = model.fit(cov_type="clustered")
 
-        assert results.cov_type == 'clustered'
+        assert results.cov_type == "clustered"
 
     def test_robust_vs_nonrobust(self, balanced_panel_data):
         """Test that robust SEs differ from non-robust."""
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
 
-        results_nonrobust = model.fit(cov_type='nonrobust')
+        results_nonrobust = model.fit(cov_type="nonrobust")
 
         # Refit with robust
         model2 = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
-        results_robust = model2.fit(cov_type='robust')
+        results_robust = model2.fit(cov_type="robust")
 
         # Coefficients should be the same
         np.testing.assert_array_almost_equal(
-            results_nonrobust.params.values,
-            results_robust.params.values
+            results_nonrobust.params.values, results_robust.params.values
         )
 
         # Standard errors typically different (may be same by chance with random data)
@@ -238,7 +228,7 @@ class TestFixedEffectsExtraction:
         assert model.entity_fe is not None
         assert isinstance(model.entity_fe, pd.Series)
         assert len(model.entity_fe) == 10
-        assert model.entity_fe.name == 'entity_fe'
+        assert model.entity_fe.name == "entity_fe"
 
     def test_time_fe_extraction(self, balanced_panel_data):
         """Test extraction of time fixed effects."""
@@ -248,14 +238,14 @@ class TestFixedEffectsExtraction:
             "entity",
             "time",
             entity_effects=False,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
         assert model.time_fe is not None
         assert isinstance(model.time_fe, pd.Series)
         assert len(model.time_fe) == 5
-        assert model.time_fe.name == 'time_fe'
+        assert model.time_fe.name == "time_fe"
 
     def test_twoway_fe_extraction(self, balanced_panel_data):
         """Test extraction of both entity and time fixed effects."""
@@ -265,7 +255,7 @@ class TestFixedEffectsExtraction:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
@@ -307,7 +297,7 @@ class TestResultsSummary:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
@@ -324,7 +314,7 @@ class TestDegreesOfFreedom:
         results = model.fit()
 
         n = 50  # 10 entities * 5 periods
-        k = 2   # x1, x2
+        k = 2  # x1, x2
         n_fe = 10  # entity fixed effects
 
         expected_df_resid = n - k - n_fe
@@ -338,7 +328,7 @@ class TestDegreesOfFreedom:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
         results = model.fit()
 
@@ -360,7 +350,7 @@ class TestEdgeCases:
         results = model.fit()
 
         assert len(results.params) == 1
-        assert 'x1' in results.params.index
+        assert "x1" in results.params.index
 
     def test_no_intercept_formula(self, balanced_panel_data):
         """Test that -1 in formula doesn't cause issues (FE absorbs intercept anyway)."""
@@ -391,7 +381,7 @@ class TestModelComparison:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=False
+            time_effects=False,
         )
         results_entity = model_entity.fit()
 
@@ -401,7 +391,7 @@ class TestModelComparison:
             "entity",
             "time",
             entity_effects=False,
-            time_effects=True
+            time_effects=True,
         )
         results_time = model_time.fit()
 
@@ -417,7 +407,7 @@ class TestModelComparison:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=False
+            time_effects=False,
         )
         results_oneway = model_oneway.fit()
 
@@ -427,7 +417,7 @@ class TestModelComparison:
             "entity",
             "time",
             entity_effects=True,
-            time_effects=True
+            time_effects=True,
         )
         results_twoway = model_twoway.fit()
 

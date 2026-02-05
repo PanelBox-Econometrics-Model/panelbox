@@ -22,98 +22,73 @@ Examples
 >>> print(result.std_errors)
 """
 
-# Robust (HC) standard errors
-from .robust import (
-    RobustStandardErrors,
-    RobustCovarianceResult,
-    robust_covariance
-)
-
 # Clustered standard errors
 from .clustered import (
-    ClusteredStandardErrors,
     ClusteredCovarianceResult,
+    ClusteredStandardErrors,
     cluster_by_entity,
     cluster_by_time,
-    twoway_cluster
-)
-
-# Driscoll-Kraay standard errors
-from .driscoll_kraay import (
-    DriscollKraayStandardErrors,
-    DriscollKraayResult,
-    driscoll_kraay
-)
-
-# Newey-West HAC standard errors
-from .newey_west import (
-    NeweyWestStandardErrors,
-    NeweyWestResult,
-    newey_west
-)
-
-# Panel-Corrected Standard Errors (PCSE)
-from .pcse import (
-    PanelCorrectedStandardErrors,
-    PCSEResult,
-    pcse
+    twoway_cluster,
 )
 
 # Standard Error Comparison
-from .comparison import (
-    StandardErrorComparison,
-    ComparisonResult
-)
+from .comparison import ComparisonResult, StandardErrorComparison
+
+# Driscoll-Kraay standard errors
+from .driscoll_kraay import DriscollKraayResult, DriscollKraayStandardErrors, driscoll_kraay
+
+# Newey-West HAC standard errors
+from .newey_west import NeweyWestResult, NeweyWestStandardErrors, newey_west
+
+# Panel-Corrected Standard Errors (PCSE)
+from .pcse import PanelCorrectedStandardErrors, PCSEResult, pcse
+
+# Robust (HC) standard errors
+from .robust import RobustCovarianceResult, RobustStandardErrors, robust_covariance
 
 # Utilities
 from .utils import (
-    compute_leverage,
-    compute_bread,
-    compute_meat_hc,
-    sandwich_covariance,
-    hc_covariance,
     clustered_covariance,
-    twoway_clustered_covariance
+    compute_bread,
+    compute_leverage,
+    compute_meat_hc,
+    hc_covariance,
+    sandwich_covariance,
+    twoway_clustered_covariance,
 )
 
 __all__ = [
     # Robust (HC) SE
-    'RobustStandardErrors',
-    'RobustCovarianceResult',
-    'robust_covariance',
-
+    "RobustStandardErrors",
+    "RobustCovarianceResult",
+    "robust_covariance",
     # Clustered SE
-    'ClusteredStandardErrors',
-    'ClusteredCovarianceResult',
-    'cluster_by_entity',
-    'cluster_by_time',
-    'twoway_cluster',
-
+    "ClusteredStandardErrors",
+    "ClusteredCovarianceResult",
+    "cluster_by_entity",
+    "cluster_by_time",
+    "twoway_cluster",
     # Driscoll-Kraay SE
-    'DriscollKraayStandardErrors',
-    'DriscollKraayResult',
-    'driscoll_kraay',
-
+    "DriscollKraayStandardErrors",
+    "DriscollKraayResult",
+    "driscoll_kraay",
     # Newey-West HAC SE
-    'NeweyWestStandardErrors',
-    'NeweyWestResult',
-    'newey_west',
-
+    "NeweyWestStandardErrors",
+    "NeweyWestResult",
+    "newey_west",
     # Panel-Corrected SE (PCSE)
-    'PanelCorrectedStandardErrors',
-    'PCSEResult',
-    'pcse',
-
+    "PanelCorrectedStandardErrors",
+    "PCSEResult",
+    "pcse",
     # Comparison
-    'StandardErrorComparison',
-    'ComparisonResult',
-
+    "StandardErrorComparison",
+    "ComparisonResult",
     # Utilities
-    'compute_leverage',
-    'compute_bread',
-    'compute_meat_hc',
-    'sandwich_covariance',
-    'hc_covariance',
-    'clustered_covariance',
-    'twoway_clustered_covariance',
+    "compute_leverage",
+    "compute_bread",
+    "compute_meat_hc",
+    "sandwich_covariance",
+    "hc_covariance",
+    "clustered_covariance",
+    "twoway_clustered_covariance",
 ]

@@ -28,17 +28,19 @@ Author: PanelBox Development Team
 Date: January 2026
 """
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 
 # Add panelbox to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+from scipy import stats
+from sklearn.linear_model import LinearRegression
 
 from panelbox.gmm import DifferenceGMM
-from sklearn.linear_model import LinearRegression
-from scipy import stats
 
 
 def generate_dynamic_panel(n_groups=200, n_periods=10, gamma=0.5, beta=0.3, seed=42):
@@ -81,16 +83,11 @@ def generate_dynamic_panel(n_groups=200, n_periods=10, gamma=0.5, beta=0.3, seed
         # Generate y recursively
         for t in range(1, n_periods):
             epsilon_it = np.random.normal(0, 0.5)
-            y_it[t] = gamma * y_it[t-1] + beta * x_it[t] + eta_i + epsilon_it
+            y_it[t] = gamma * y_it[t - 1] + beta * x_it[t] + eta_i + epsilon_it
 
         # Store data
         for t in range(n_periods):
-            data.append({
-                'id': i,
-                'year': t + 1,
-                'y': y_it[t],
-                'x': x_it[t]
-            })
+            data.append({"id": i, "year": t + 1, "y": y_it[t], "x": x_it[t]})
 
     df = pd.DataFrame(data)
 
@@ -116,15 +113,15 @@ def estimate_ols(df):
     print()
 
     # Create lagged y
-    df_sorted = df.sort_values(['id', 'year']).copy()
-    df_sorted['y_lag'] = df_sorted.groupby('id')['y'].shift(1)
+    df_sorted = df.sort_values(["id", "year"]).copy()
+    df_sorted["y_lag"] = df_sorted.groupby("id")["y"].shift(1)
 
     # Drop missing (first observation per individual)
     df_ols = df_sorted.dropna()
 
     # OLS regression: y = γ y_{t-1} + β x + ε
-    X = df_ols[['y_lag', 'x']].values
-    y = df_ols['y'].values
+    X = df_ols[["y_lag", "x"]].values
+    y = df_ols["y"].values
 
     model = LinearRegression()
     model.fit(X, y)
@@ -171,18 +168,18 @@ def estimate_fixed_effects(df):
     print()
 
     # Create lagged y
-    df_sorted = df.sort_values(['id', 'year']).copy()
-    df_sorted['y_lag'] = df_sorted.groupby('id')['y'].shift(1)
+    df_sorted = df.sort_values(["id", "year"]).copy()
+    df_sorted["y_lag"] = df_sorted.groupby("id")["y"].shift(1)
     df_fe = df_sorted.dropna()
 
     # Within transformation (demean by individual)
-    for var in ['y', 'y_lag', 'x']:
-        group_means = df_fe.groupby('id')[var].transform('mean')
-        df_fe[f'{var}_dm'] = df_fe[var] - group_means
+    for var in ["y", "y_lag", "x"]:
+        group_means = df_fe.groupby("id")[var].transform("mean")
+        df_fe[f"{var}_dm"] = df_fe[var] - group_means
 
     # FE regression on demeaned data
-    X_dm = df_fe[['y_lag_dm', 'x_dm']].values
-    y_dm = df_fe['y_dm'].values
+    X_dm = df_fe[["y_lag_dm", "x_dm"]].values
+    y_dm = df_fe["y_dm"].values
 
     model = LinearRegression(fit_intercept=False)  # Already demeaned
     model.fit(X_dm, y_dm)
@@ -229,23 +226,23 @@ def estimate_gmm(df):
 
     gmm = DifferenceGMM(
         data=df,
-        dep_var='y',
+        dep_var="y",
         lags=1,
-        id_var='id',
-        time_var='year',
-        exog_vars=['x'],
+        id_var="id",
+        time_var="year",
+        exog_vars=["x"],
         time_dummies=False,  # Not needed for synthetic data
         collapse=True,
         two_step=True,
-        robust=True
+        robust=True,
     )
 
     results = gmm.fit()
 
-    gamma_gmm = results.params['L1.y']
-    beta_gmm = results.params['x']
-    se_gamma = results.std_errors['L1.y']
-    se_beta = results.std_errors['x']
+    gamma_gmm = results.params["L1.y"]
+    beta_gmm = results.params["x"]
+    se_gamma = results.std_errors["L1.y"]
+    se_beta = results.std_errors["x"]
 
     print(results.summary())
     print()
@@ -253,11 +250,23 @@ def estimate_gmm(df):
     return gamma_gmm, beta_gmm, se_gamma, se_beta, results
 
 
-def compare_results(gamma_true, beta_true,
-                   gamma_ols, beta_ols, se_ols_g, se_ols_b,
-                   gamma_fe, beta_fe, se_fe_g, se_fe_b,
-                   gamma_gmm, beta_gmm, se_gmm_g, se_gmm_b,
-                   gmm_results):
+def compare_results(
+    gamma_true,
+    beta_true,
+    gamma_ols,
+    beta_ols,
+    se_ols_g,
+    se_ols_b,
+    gamma_fe,
+    beta_fe,
+    se_fe_g,
+    se_fe_b,
+    gamma_gmm,
+    beta_gmm,
+    se_gmm_g,
+    se_gmm_b,
+    gmm_results,
+):
     """
     Create comparison table and visualizations.
     """
@@ -267,18 +276,21 @@ def compare_results(gamma_true, beta_true,
     print()
 
     # Create comparison table
-    comparison = pd.DataFrame({
-        'True Value': [gamma_true, beta_true],
-        'OLS': [gamma_ols, beta_ols],
-        'FE': [gamma_fe, beta_fe],
-        'GMM': [gamma_gmm, beta_gmm],
-        'OLS SE': [se_ols_g, se_ols_b],
-        'FE SE': [se_fe_g, se_fe_b],
-        'GMM SE': [se_gmm_g, se_gmm_b]
-    }, index=['γ (y_lag)', 'β (x)'])
+    comparison = pd.DataFrame(
+        {
+            "True Value": [gamma_true, beta_true],
+            "OLS": [gamma_ols, beta_ols],
+            "FE": [gamma_fe, beta_fe],
+            "GMM": [gamma_gmm, beta_gmm],
+            "OLS SE": [se_ols_g, se_ols_b],
+            "FE SE": [se_fe_g, se_fe_b],
+            "GMM SE": [se_gmm_g, se_gmm_b],
+        },
+        index=["γ (y_lag)", "β (x)"],
+    )
 
     print("Coefficient Estimates:")
-    print(comparison[['True Value', 'OLS', 'FE', 'GMM']].to_string())
+    print(comparison[["True Value", "OLS", "FE", "GMM"]].to_string())
     print()
 
     # Compute biases
@@ -300,7 +312,9 @@ def compare_results(gamma_true, beta_true,
 
     # Verify expected pattern
     print("Expected Pattern: OLS > True > GMM > FE")
-    print(f"Actual:           {gamma_ols:.3f} > {gamma_true:.3f} {'>'if gamma_gmm < gamma_true else '<?'} {gamma_gmm:.3f} {'>' if gamma_gmm > gamma_fe else '<?'} {gamma_fe:.3f}")
+    print(
+        f"Actual:           {gamma_ols:.3f} > {gamma_true:.3f} {'>'if gamma_gmm < gamma_true else '<?'} {gamma_gmm:.3f} {'>' if gamma_gmm > gamma_fe else '<?'} {gamma_fe:.3f}"
+    )
     print()
 
     if gamma_ols > gamma_true > gamma_gmm > gamma_fe:
@@ -311,9 +325,15 @@ def compare_results(gamma_true, beta_true,
 
     # Statistical significance
     print("Is bias statistically significant? (2 SE rule)")
-    print(f"  OLS:  {abs(bias_ols_g) > 2*se_ols_g} (|bias|={abs(bias_ols_g):.4f}, 2*SE={2*se_ols_g:.4f})")
-    print(f"  FE:   {abs(bias_fe_g) > 2*se_fe_g} (|bias|={abs(bias_fe_g):.4f}, 2*SE={2*se_fe_g:.4f})")
-    print(f"  GMM:  {abs(bias_gmm_g) > 2*se_gmm_g} (|bias|={abs(bias_gmm_g):.4f}, 2*SE={2*se_gmm_g:.4f})")
+    print(
+        f"  OLS:  {abs(bias_ols_g) > 2*se_ols_g} (|bias|={abs(bias_ols_g):.4f}, 2*SE={2*se_ols_g:.4f})"
+    )
+    print(
+        f"  FE:   {abs(bias_fe_g) > 2*se_fe_g} (|bias|={abs(bias_fe_g):.4f}, 2*SE={2*se_fe_g:.4f})"
+    )
+    print(
+        f"  GMM:  {abs(bias_gmm_g) > 2*se_gmm_g} (|bias|={abs(bias_gmm_g):.4f}, 2*SE={2*se_gmm_g:.4f})"
+    )
     print()
 
     # GMM diagnostics
@@ -331,7 +351,9 @@ def compare_results(gamma_true, beta_true,
         print("  ⚠ Possible weak instruments")
     print()
 
-    print(f"AR(2) test: p-value = {gmm_results.ar2_test.pvalue if not pd.isna(gmm_results.ar2_test.pvalue) else 'N/A'}")
+    print(
+        f"AR(2) test: p-value = {gmm_results.ar2_test.pvalue if not pd.isna(gmm_results.ar2_test.pvalue) else 'N/A'}"
+    )
     if not pd.isna(gmm_results.ar2_test.pvalue):
         if gmm_results.ar2_test.pvalue > 0.10:
             print("  ✓ Moment conditions valid")
@@ -363,10 +385,7 @@ def main():
 
     # Generate data
     df, gamma_true, beta_true = generate_dynamic_panel(
-        n_groups=200,
-        n_periods=10,
-        gamma=0.5,
-        beta=0.3
+        n_groups=200, n_periods=10, gamma=0.5, beta=0.3
     )
 
     # Estimate with different methods
@@ -376,11 +395,21 @@ def main():
 
     # Compare results
     compare_results(
-        gamma_true, beta_true,
-        gamma_ols, beta_ols, se_ols_g, se_ols_b,
-        gamma_fe, beta_fe, se_fe_g, se_fe_b,
-        gamma_gmm, beta_gmm, se_gmm_g, se_gmm_b,
-        gmm_results
+        gamma_true,
+        beta_true,
+        gamma_ols,
+        beta_ols,
+        se_ols_g,
+        se_ols_b,
+        gamma_fe,
+        beta_fe,
+        se_fe_g,
+        se_fe_b,
+        gamma_gmm,
+        beta_gmm,
+        se_gmm_g,
+        se_gmm_b,
+        gmm_results,
     )
 
     print("=" * 70)
@@ -405,5 +434,5 @@ def main():
     print("=" * 70)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

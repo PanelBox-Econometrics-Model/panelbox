@@ -5,14 +5,15 @@ Unit tests for GMM Estimator
 Tests for the GMMEstimator class implementing low-level GMM algorithms.
 """
 
-import pytest
 import numpy as np
-from panelbox.gmm.estimator import GMMEstimator
+import pytest
 
+from panelbox.gmm.estimator import GMMEstimator
 
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def simple_gmm_data():
@@ -99,6 +100,7 @@ def data_with_missing():
 # Test Initialization
 # ============================================================================
 
+
 class TestGMMEstimatorInitialization:
     """Test GMMEstimator initialization."""
 
@@ -120,6 +122,7 @@ class TestGMMEstimatorInitialization:
 # ============================================================================
 # Test One-Step GMM
 # ============================================================================
+
 
 class TestOneStepGMM:
     """Test one-step GMM estimation."""
@@ -175,10 +178,7 @@ class TestOneStepGMM:
         valid_mask = ~np.isnan(residuals.flatten())
         expected_residuals = y[valid_mask] - X[valid_mask] @ beta
 
-        np.testing.assert_array_almost_equal(
-            residuals[valid_mask],
-            expected_residuals
-        )
+        np.testing.assert_array_almost_equal(residuals[valid_mask], expected_residuals)
 
     def test_one_step_overidentified(self, overidentified_data):
         """Test one-step GMM with overidentified model."""
@@ -225,6 +225,7 @@ class TestOneStepGMM:
 # ============================================================================
 # Test Two-Step GMM
 # ============================================================================
+
 
 class TestTwoStepGMM:
     """Test two-step GMM estimation."""
@@ -304,9 +305,7 @@ class TestTwoStepGMM:
         y, X, Z = overidentified_data
         estimator = GMMEstimator()
 
-        beta_robust, vcov_robust, W, residuals = estimator.two_step(
-            y, X, Z, robust=True
-        )
+        beta_robust, vcov_robust, W, residuals = estimator.two_step(y, X, Z, robust=True)
 
         # Should complete without exception
         assert vcov_robust is not None
@@ -316,9 +315,7 @@ class TestTwoStepGMM:
         y, X, Z = overidentified_data
         estimator = GMMEstimator()
 
-        beta_no_robust, vcov_no_robust, W, residuals = estimator.two_step(
-            y, X, Z, robust=False
-        )
+        beta_no_robust, vcov_no_robust, W, residuals = estimator.two_step(y, X, Z, robust=False)
 
         # Should complete without exception
         assert vcov_no_robust is not None
@@ -327,6 +324,7 @@ class TestTwoStepGMM:
 # ============================================================================
 # Test Iterative GMM
 # ============================================================================
+
 
 class TestIterativeGMM:
     """Test iterative GMM estimation."""
@@ -385,6 +383,7 @@ class TestIterativeGMM:
 # ============================================================================
 # Test Valid Mask
 # ============================================================================
+
 
 class TestValidMask:
     """Test _get_valid_mask method."""
@@ -463,6 +462,7 @@ class TestValidMask:
 # ============================================================================
 # Test Edge Cases
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and numerical stability."""

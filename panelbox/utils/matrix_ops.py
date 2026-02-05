@@ -5,9 +5,10 @@ This module provides optimized matrix operations commonly used in
 panel data estimation.
 """
 
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Tuple
 
 
 def add_intercept(X: np.ndarray) -> np.ndarray:
@@ -28,10 +29,7 @@ def add_intercept(X: np.ndarray) -> np.ndarray:
     return np.column_stack([np.ones(n), X])
 
 
-def demean_matrix(
-    X: np.ndarray,
-    groups: np.ndarray
-) -> np.ndarray:
+def demean_matrix(X: np.ndarray, groups: np.ndarray) -> np.ndarray:
     """
     Demean matrix by groups (within transformation).
 
@@ -59,9 +57,7 @@ def demean_matrix(
 
 
 def compute_ols(
-    y: np.ndarray,
-    X: np.ndarray,
-    weights: np.ndarray = None
+    y: np.ndarray, X: np.ndarray, weights: np.ndarray = None
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute OLS estimates.
@@ -105,11 +101,7 @@ def compute_ols(
     return beta, resid.ravel(), fitted.ravel()
 
 
-def compute_vcov_nonrobust(
-    X: np.ndarray,
-    resid: np.ndarray,
-    df_resid: int
-) -> np.ndarray:
+def compute_vcov_nonrobust(X: np.ndarray, resid: np.ndarray, df_resid: int) -> np.ndarray:
     """
     Compute non-robust covariance matrix.
 
@@ -128,7 +120,7 @@ def compute_vcov_nonrobust(
         Covariance matrix (k x k)
     """
     # Estimate of error variance
-    s2 = np.sum(resid ** 2) / df_resid
+    s2 = np.sum(resid**2) / df_resid
 
     # Covariance matrix: s^2 (X'X)^{-1}
     XtX_inv = np.linalg.inv(X.T @ X)
@@ -138,10 +130,7 @@ def compute_vcov_nonrobust(
 
 
 def compute_rsquared(
-    y: np.ndarray,
-    fitted: np.ndarray,
-    resid: np.ndarray,
-    has_intercept: bool = True
+    y: np.ndarray, fitted: np.ndarray, resid: np.ndarray, has_intercept: bool = True
 ) -> Tuple[float, float]:
     """
     Compute R-squared and adjusted R-squared.
@@ -168,10 +157,10 @@ def compute_rsquared(
     if has_intercept:
         tss = np.sum((y - y.mean()) ** 2)
     else:
-        tss = np.sum(y ** 2)
+        tss = np.sum(y**2)
 
     # Residual sum of squares
-    rss = np.sum(resid ** 2)
+    rss = np.sum(resid**2)
 
     # R-squared
     rsquared = 1 - (rss / tss) if tss > 0 else 0.0
@@ -180,10 +169,7 @@ def compute_rsquared(
 
 
 def compute_panel_rsquared(
-    y: np.ndarray,
-    fitted: np.ndarray,
-    resid: np.ndarray,
-    groups: np.ndarray
+    y: np.ndarray, fitted: np.ndarray, resid: np.ndarray, groups: np.ndarray
 ) -> Tuple[float, float, float]:
     """
     Compute panel-specific R-squared measures.
@@ -211,14 +197,14 @@ def compute_panel_rsquared(
     # Overall R-squared
     y_mean = y.mean()
     tss_overall = np.sum((y - y_mean) ** 2)
-    rss = np.sum(resid ** 2)
+    rss = np.sum(resid**2)
     rsquared_overall = 1 - (rss / tss_overall) if tss_overall > 0 else 0.0
 
     # Within R-squared (variation within groups)
     y_demeaned = demean_matrix(y.reshape(-1, 1), groups).ravel()
     fitted_demeaned = demean_matrix(fitted.reshape(-1, 1), groups).ravel()
-    tss_within = np.sum(y_demeaned ** 2)
-    ess_within = np.sum(fitted_demeaned ** 2)
+    tss_within = np.sum(y_demeaned**2)
+    ess_within = np.sum(fitted_demeaned**2)
     rsquared_within = ess_within / tss_within if tss_within > 0 else 0.0
 
     # Between R-squared (variation between group means)

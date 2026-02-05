@@ -13,11 +13,12 @@ Tashman, L. J. (2000). Out-of-sample tests of forecasting accuracy: an
     analysis and review. International Journal of Forecasting, 16(4), 437-450.
 """
 
-from typing import Optional, Union, Literal, Dict, Any, Tuple, List
 import warnings
+from dataclasses import dataclass
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from panelbox.core.results import PanelResults
 
@@ -42,6 +43,7 @@ class CVResults:
     window_size : Optional[int]
         Window size for rolling CV
     """
+
     predictions: pd.DataFrame
     metrics: Dict[str, float]
     fold_metrics: pd.DataFrame
@@ -144,10 +146,10 @@ class TimeSeriesCV:
     def __init__(
         self,
         results: PanelResults,
-        method: Literal['expanding', 'rolling'] = 'expanding',
+        method: Literal["expanding", "rolling"] = "expanding",
         window_size: Optional[int] = None,
         min_train_periods: int = 3,
-        verbose: bool = True
+        verbose: bool = True,
     ):
         self.results = results
         self.method = method
@@ -178,10 +180,10 @@ class TimeSeriesCV:
 
     def _validate_inputs(self):
         """Validate input parameters."""
-        if self.method not in ['expanding', 'rolling']:
+        if self.method not in ["expanding", "rolling"]:
             raise ValueError(f"method must be 'expanding' or 'rolling', got '{self.method}'")
 
-        if self.method == 'rolling' and self.window_size is None:
+        if self.method == "rolling" and self.window_size is None:
             raise ValueError("window_size must be specified for rolling window CV")
 
         if self.min_train_periods < 2:
@@ -216,7 +218,7 @@ class TimeSeriesCV:
             print(f"Starting {self.method} window cross-validation...")
             print(f"Total periods: {self.n_periods}")
             print(f"Min train periods: {self.min_train_periods}")
-            if self.method == 'rolling':
+            if self.method == "rolling":
                 print(f"Window size: {self.window_size}")
 
         # Storage for predictions and metrics
@@ -234,8 +236,10 @@ class TimeSeriesCV:
         # Perform CV
         for fold_idx, (train_periods, test_period) in enumerate(folds, 1):
             if self.verbose:
-                print(f"Fold {fold_idx}/{n_folds}: Training on {len(train_periods)} periods, "
-                      f"testing on period {test_period}")
+                print(
+                    f"Fold {fold_idx}/{n_folds}: Training on {len(train_periods)} periods, "
+                    f"testing on period {test_period}"
+                )
 
             # Split data
             train_data = self.data[self.data[self.time_col].isin(train_periods)]
@@ -244,34 +248,30 @@ class TimeSeriesCV:
             # Fit model on training data
             try:
                 model_class = type(self.model)
-                train_model = model_class(
-                    self.formula,
-                    train_data,
-                    self.entity_col,
-                    self.time_col
-                )
+                train_model = model_class(self.formula, train_data, self.entity_col, self.time_col)
                 train_results = train_model.fit(cov_type=self.results.cov_type)
 
                 # Predict on test data
                 predictions = self._predict_fold(train_results, test_data)
 
                 # Store predictions
-                predictions['fold'] = fold_idx
-                predictions['test_period'] = test_period
+                predictions["fold"] = fold_idx
+                predictions["test_period"] = test_period
                 all_predictions.append(predictions)
 
                 # Compute fold metrics
                 fold_metrics = self._compute_metrics(
-                    predictions['actual'].values,
-                    predictions['predicted'].values
+                    predictions["actual"].values, predictions["predicted"].values
                 )
-                fold_metrics['fold'] = fold_idx
-                fold_metrics['test_period'] = test_period
+                fold_metrics["fold"] = fold_idx
+                fold_metrics["test_period"] = test_period
                 fold_metrics_list.append(fold_metrics)
 
                 if self.verbose:
-                    print(f"  Fold {fold_idx} R²: {fold_metrics['r2_oos']:.4f}, "
-                          f"RMSE: {fold_metrics['rmse']:.4f}")
+                    print(
+                        f"  Fold {fold_idx} R²: {fold_metrics['r2_oos']:.4f}, "
+                        f"RMSE: {fold_metrics['rmse']:.4f}"
+                    )
 
             except Exception as e:
                 warnings.warn(f"Fold {fold_idx} failed: {str(e)}")
@@ -286,8 +286,7 @@ class TimeSeriesCV:
 
         # Compute overall metrics
         overall_metrics = self._compute_metrics(
-            predictions_df['actual'].values,
-            predictions_df['predicted'].values
+            predictions_df["actual"].values, predictions_df["predicted"].values
         )
 
         # Create results object
@@ -297,7 +296,7 @@ class TimeSeriesCV:
             fold_metrics=fold_metrics_df,
             method=self.method,
             n_folds=n_folds,
-            window_size=self.window_size
+            window_size=self.window_size,
         )
 
         self.predictions_ = predictions_df
@@ -321,14 +320,14 @@ class TimeSeriesCV:
         """
         folds = []
 
-        if self.method == 'expanding':
+        if self.method == "expanding":
             # Expanding window: train on [1, t], test on t+1
             for t in range(self.min_train_periods, self.n_periods):
                 train_periods = self.time_periods[:t]
                 test_period = self.time_periods[t]
                 folds.append((train_periods, test_period))
 
-        elif self.method == 'rolling':
+        elif self.method == "rolling":
             # Rolling window: train on [t-w, t], test on t+1
             for t in range(self.min_train_periods, self.n_periods):
                 # Determine window start
@@ -359,14 +358,15 @@ class TimeSeriesCV:
             DataFrame with columns ['actual', 'predicted', 'entity', 'time']
         """
         # Extract dependent variable name from formula
-        dependent_var = train_results.formula.split('~')[0].strip()
+        dependent_var = train_results.formula.split("~")[0].strip()
 
         # Get X matrix for test data using patsy
         from patsy import dmatrix
-        formula_rhs = train_results.formula.split('~')[1].strip()
+
+        formula_rhs = train_results.formula.split("~")[1].strip()
 
         # Build design matrix
-        X_test = dmatrix(formula_rhs, test_data, return_type='dataframe')
+        X_test = dmatrix(formula_rhs, test_data, return_type="dataframe")
 
         # Get parameter estimates
         params = train_results.params
@@ -376,18 +376,22 @@ class TimeSeriesCV:
         param_names = params.index.tolist()
 
         # Ensure X_test has same columns as training parameters
-        X_test_aligned = X_test[param_names] if all(col in X_test.columns for col in param_names) else X_test
+        X_test_aligned = (
+            X_test[param_names] if all(col in X_test.columns for col in param_names) else X_test
+        )
 
         # Make predictions
         predictions_raw = X_test_aligned.values @ params.values
 
         # Create results dataframe
-        predictions_df = pd.DataFrame({
-            'actual': test_data[dependent_var].values,
-            'predicted': predictions_raw,
-            'entity': test_data[self.entity_col].values,
-            'time': test_data[self.time_col].values
-        })
+        predictions_df = pd.DataFrame(
+            {
+                "actual": test_data[dependent_var].values,
+                "predicted": predictions_raw,
+                "entity": test_data[self.entity_col].values,
+                "time": test_data[self.time_col].values,
+            }
+        )
 
         return predictions_df
 
@@ -411,28 +415,21 @@ class TimeSeriesCV:
         residuals = y_true - y_pred
 
         # MSE and RMSE
-        mse = np.mean(residuals ** 2)
+        mse = np.mean(residuals**2)
         rmse = np.sqrt(mse)
 
         # MAE
         mae = np.mean(np.abs(residuals))
 
         # R² (out-of-sample)
-        ss_res = np.sum(residuals ** 2)
+        ss_res = np.sum(residuals**2)
         ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
         r2_oos = 1 - (ss_res / ss_tot)
 
-        return {
-            'mse': mse,
-            'rmse': rmse,
-            'mae': mae,
-            'r2_oos': r2_oos
-        }
+        return {"mse": mse, "rmse": rmse, "mae": mae, "r2_oos": r2_oos}
 
     def plot_predictions(
-        self,
-        entity: Optional[Union[int, str]] = None,
-        save_path: Optional[str] = None
+        self, entity: Optional[Union[int, str]] = None, save_path: Optional[str] = None
     ):
         """
         Plot actual vs predicted values.
@@ -457,14 +454,15 @@ class TimeSeriesCV:
         try:
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError("matplotlib is required for plotting. "
-                            "Install with: pip install matplotlib")
+            raise ImportError(
+                "matplotlib is required for plotting. " "Install with: pip install matplotlib"
+            )
 
         predictions = self.cv_results_.predictions
 
         # Filter by entity if specified
         if entity is not None:
-            predictions = predictions[predictions['entity'] == entity]
+            predictions = predictions[predictions["entity"] == entity]
             if len(predictions) == 0:
                 raise ValueError(f"No predictions found for entity {entity}")
 
@@ -473,19 +471,19 @@ class TimeSeriesCV:
 
         # Plot 1: Actual vs Predicted
         ax1 = axes[0]
-        ax1.scatter(predictions['actual'], predictions['predicted'],
-                   alpha=0.5, s=30)
+        ax1.scatter(predictions["actual"], predictions["predicted"], alpha=0.5, s=30)
 
         # Add diagonal line
-        min_val = min(predictions['actual'].min(), predictions['predicted'].min())
-        max_val = max(predictions['actual'].max(), predictions['predicted'].max())
-        ax1.plot([min_val, max_val], [min_val, max_val],
-                'r--', lw=2, label='Perfect prediction')
+        min_val = min(predictions["actual"].min(), predictions["predicted"].min())
+        max_val = max(predictions["actual"].max(), predictions["predicted"].max())
+        ax1.plot([min_val, max_val], [min_val, max_val], "r--", lw=2, label="Perfect prediction")
 
-        ax1.set_xlabel('Actual Values')
-        ax1.set_ylabel('Predicted Values')
-        ax1.set_title(f'Out-of-Sample Predictions: Actual vs Predicted\n'
-                     f'R² = {self.cv_results_.metrics["r2_oos"]:.4f}')
+        ax1.set_xlabel("Actual Values")
+        ax1.set_ylabel("Predicted Values")
+        ax1.set_title(
+            f"Out-of-Sample Predictions: Actual vs Predicted\n"
+            f'R² = {self.cv_results_.metrics["r2_oos"]:.4f}'
+        )
         ax1.legend()
         ax1.grid(True, alpha=0.3)
 
@@ -493,26 +491,37 @@ class TimeSeriesCV:
         ax2 = axes[1]
 
         # Group by time period and compute means
-        time_means = predictions.groupby('time').agg({
-            'actual': 'mean',
-            'predicted': 'mean'
-        }).reset_index()
+        time_means = (
+            predictions.groupby("time").agg({"actual": "mean", "predicted": "mean"}).reset_index()
+        )
 
-        ax2.plot(time_means['time'], time_means['actual'],
-                'o-', label='Actual', linewidth=2, markersize=6)
-        ax2.plot(time_means['time'], time_means['predicted'],
-                's--', label='Predicted', linewidth=2, markersize=6)
+        ax2.plot(
+            time_means["time"],
+            time_means["actual"],
+            "o-",
+            label="Actual",
+            linewidth=2,
+            markersize=6,
+        )
+        ax2.plot(
+            time_means["time"],
+            time_means["predicted"],
+            "s--",
+            label="Predicted",
+            linewidth=2,
+            markersize=6,
+        )
 
-        ax2.set_xlabel('Time Period')
-        ax2.set_ylabel('Mean Value')
-        ax2.set_title(f'{self.method.capitalize()} Window CV: Mean Predictions Over Time')
+        ax2.set_xlabel("Time Period")
+        ax2.set_ylabel("Mean Value")
+        ax2.set_title(f"{self.method.capitalize()} Window CV: Mean Predictions Over Time")
         ax2.legend()
         ax2.grid(True, alpha=0.3)
 
         plt.tight_layout()
 
         if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
             if self.verbose:
                 print(f"Plot saved to {save_path}")
         else:

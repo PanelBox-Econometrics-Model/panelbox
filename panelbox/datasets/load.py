@@ -11,14 +11,15 @@ Each dataset includes:
 - Citation information
 """
 
-import pandas as pd
 import os
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
+
+import pandas as pd
 
 
 def _get_data_path() -> str:
     """Get the path to the data directory."""
-    return os.path.join(os.path.dirname(__file__), 'data')
+    return os.path.join(os.path.dirname(__file__), "data")
 
 
 def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame:
@@ -91,12 +92,13 @@ def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame:
     >>> results = fe.fit()
     >>> print(results.summary())
     """
-    data_path = os.path.join(_get_data_path(), 'grunfeld.csv')
+    data_path = os.path.join(_get_data_path(), "grunfeld.csv")
     df = pd.read_csv(data_path)
 
     if return_panel_data:
         from panelbox.core.data import PanelData
-        return PanelData(df, entity_col='firm', time_col='year')
+
+        return PanelData(df, entity_col="firm", time_col="year")
 
     return df
 
@@ -169,7 +171,7 @@ def load_abdata(return_panel_data: bool = False) -> Optional[pd.DataFrame]:
     ...     )
     ...     results = gmm.fit()
     """
-    data_path = os.path.join(_get_data_path(), 'abdata.csv')
+    data_path = os.path.join(_get_data_path(), "abdata.csv")
 
     if not os.path.exists(data_path):
         return None
@@ -178,9 +180,10 @@ def load_abdata(return_panel_data: bool = False) -> Optional[pd.DataFrame]:
 
     if return_panel_data:
         from panelbox.core.data import PanelData
+
         # Try to infer entity and time columns
-        entity_col = 'id' if 'id' in df.columns else df.columns[0]
-        time_col = 'year' if 'year' in df.columns else df.columns[1]
+        entity_col = "id" if "id" in df.columns else df.columns[0]
+        time_col = "year" if "year" in df.columns else df.columns[1]
         return PanelData(df, entity_col=entity_col, time_col=time_col)
 
     return df
@@ -208,7 +211,7 @@ def list_datasets() -> List[str]:
 
     if os.path.exists(data_path):
         for filename in os.listdir(data_path):
-            if filename.endswith('.csv'):
+            if filename.endswith(".csv"):
                 dataset_name = filename[:-4]  # Remove .csv extension
                 datasets.append(dataset_name)
 
@@ -246,58 +249,61 @@ def get_dataset_info(dataset_name: str) -> Dict[str, any]:
     >>> print(f"Variables: {', '.join(info['variables'])}")
     """
     dataset_info = {
-        'grunfeld': {
-            'name': 'Grunfeld Investment Data',
-            'description': 'Investment data for 10 US manufacturing firms (1935-1954)',
-            'source': 'Grunfeld (1958)',
-            'citation': 'Grunfeld, Y. (1958). The determinants of corporate investment.',
-            'entity_col': 'firm',
-            'time_col': 'year',
+        "grunfeld": {
+            "name": "Grunfeld Investment Data",
+            "description": "Investment data for 10 US manufacturing firms (1935-1954)",
+            "source": "Grunfeld (1958)",
+            "citation": "Grunfeld, Y. (1958). The determinants of corporate investment.",
+            "entity_col": "firm",
+            "time_col": "year",
         },
-        'abdata': {
-            'name': 'Arellano-Bond Employment Data',
-            'description': 'UK company employment data (1976-1984)',
-            'source': 'Arellano & Bond (1991)',
-            'citation': 'Arellano, M., & Bond, S. (1991). Review of Economic Studies, 58(2), 277-297.',
-            'entity_col': 'id',
-            'time_col': 'year',
-        }
+        "abdata": {
+            "name": "Arellano-Bond Employment Data",
+            "description": "UK company employment data (1976-1984)",
+            "source": "Arellano & Bond (1991)",
+            "citation": "Arellano, M., & Bond, S. (1991). Review of Economic Studies, 58(2), 277-297.",
+            "entity_col": "id",
+            "time_col": "year",
+        },
     }
 
-    base_info = dataset_info.get(dataset_name, {
-        'name': dataset_name,
-        'description': 'Unknown dataset',
-        'source': 'Unknown',
-    })
+    base_info = dataset_info.get(
+        dataset_name,
+        {
+            "name": dataset_name,
+            "description": "Unknown dataset",
+            "source": "Unknown",
+        },
+    )
 
     # Try to load dataset and add statistics
     try:
-        if dataset_name == 'grunfeld':
+        if dataset_name == "grunfeld":
             df = load_grunfeld()
-        elif dataset_name == 'abdata':
+        elif dataset_name == "abdata":
             df = load_abdata()
         else:
-            data_path = os.path.join(_get_data_path(), f'{dataset_name}.csv')
+            data_path = os.path.join(_get_data_path(), f"{dataset_name}.csv")
             if os.path.exists(data_path):
                 df = pd.read_csv(data_path)
             else:
                 return base_info
 
         if df is not None:
-            entity_col = base_info.get('entity_col', df.columns[0])
-            time_col = base_info.get('time_col', df.columns[1])
+            entity_col = base_info.get("entity_col", df.columns[0])
+            time_col = base_info.get("time_col", df.columns[1])
 
-            base_info['n_entities'] = df[entity_col].nunique()
-            base_info['n_periods'] = df[time_col].nunique()
-            base_info['n_obs'] = len(df)
-            base_info['variables'] = list(df.columns)
+            base_info["n_entities"] = df[entity_col].nunique()
+            base_info["n_periods"] = df[time_col].nunique()
+            base_info["n_obs"] = len(df)
+            base_info["variables"] = list(df.columns)
 
             # Check if balanced
             obs_per_entity = df.groupby(entity_col).size()
-            base_info['balanced'] = (obs_per_entity == obs_per_entity.iloc[0]).all()
+            base_info["balanced"] = (obs_per_entity == obs_per_entity.iloc[0]).all()
 
     except Exception as e:
-        base_info['error'] = str(e)
+        base_info["error"] = str(e)
 
     return base_info
 
@@ -319,13 +325,13 @@ def load_dataset(name: str, **kwargs) -> Optional[pd.DataFrame]:
     pd.DataFrame or None
         The requested dataset, or None if not found
     """
-    if name == 'grunfeld':
+    if name == "grunfeld":
         return load_grunfeld(**kwargs)
-    elif name == 'abdata':
+    elif name == "abdata":
         return load_abdata(**kwargs)
     else:
         # Try to load from file
-        data_path = os.path.join(_get_data_path(), f'{name}.csv')
+        data_path = os.path.join(_get_data_path(), f"{name}.csv")
         if os.path.exists(data_path):
             return pd.read_csv(data_path)
         else:

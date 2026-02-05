@@ -11,11 +11,12 @@ good estimates for small to medium samples.
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
-print("="*80)
+print("=" * 80)
 print("Jackknife Inference Example")
-print("="*80)
+print("=" * 80)
 print()
 
 # Generate sample panel data
@@ -35,13 +36,7 @@ for entity in range(n_entities):
         # DGP: y = 2.0 + 1.5*x1 - 1.0*x2 + alpha_i + error
         y = 2.0 + 1.5 * x1 - 1.0 * x2 + alpha_i + np.random.normal(0, 0.5)
 
-        data.append({
-            'entity': entity,
-            'time': time,
-            'y': y,
-            'x1': x1,
-            'x2': x2
-        })
+        data.append({"entity": entity, "time": time, "y": y, "x1": x1, "x2": x2})
 
 df = pd.DataFrame(data)
 
@@ -79,9 +74,11 @@ bias_corrected = jackknife.bias_corrected_estimates()
 print(f"{'Parameter':<15} {'Original':>12} {'Bias':>12} {'Corrected':>12}")
 print("-" * 80)
 for param in results.params.index:
-    print(f"{param:<15} {results.params[param]:>12.6f} "
-          f"{jk_results.jackknife_bias[param]:>12.6f} "
-          f"{bias_corrected[param]:>12.6f}")
+    print(
+        f"{param:<15} {results.params[param]:>12.6f} "
+        f"{jk_results.jackknife_bias[param]:>12.6f} "
+        f"{bias_corrected[param]:>12.6f}"
+    )
 print()
 
 # Comparison of standard errors
@@ -91,9 +88,11 @@ print(f"{'Parameter':<15} {'Asymptotic':>12} {'Jackknife':>12} {'Ratio (JK/AS)':
 print("-" * 80)
 for param in results.params.index:
     ratio = jk_results.jackknife_se[param] / results.std_errors[param]
-    print(f"{param:<15} {results.std_errors[param]:>12.6f} "
-          f"{jk_results.jackknife_se[param]:>12.6f} "
-          f"{ratio:>15.3f}")
+    print(
+        f"{param:<15} {results.std_errors[param]:>12.6f} "
+        f"{jk_results.jackknife_se[param]:>12.6f} "
+        f"{ratio:>15.3f}"
+    )
 print()
 
 # Interpretation
@@ -118,30 +117,34 @@ print("=" * 80)
 ci_asymptotic = results.conf_int(alpha=0.05)
 
 # Jackknife CI (normal approximation)
-ci_jackknife = jackknife.confidence_intervals(alpha=0.05, method='normal')
+ci_jackknife = jackknife.confidence_intervals(alpha=0.05, method="normal")
 
 print(f"{'Parameter':<15} {'Method':<15} {'Lower':>12} {'Upper':>12} {'Width':>12}")
 print("-" * 80)
 for param in results.params.index:
     # Asymptotic
-    width_asym = ci_asymptotic.loc[param, 'upper'] - ci_asymptotic.loc[param, 'lower']
-    print(f"{param:<15} {'Asymptotic':<15} "
-          f"{ci_asymptotic.loc[param, 'lower']:>12.6f} "
-          f"{ci_asymptotic.loc[param, 'upper']:>12.6f} "
-          f"{width_asym:>12.6f}")
+    width_asym = ci_asymptotic.loc[param, "upper"] - ci_asymptotic.loc[param, "lower"]
+    print(
+        f"{param:<15} {'Asymptotic':<15} "
+        f"{ci_asymptotic.loc[param, 'lower']:>12.6f} "
+        f"{ci_asymptotic.loc[param, 'upper']:>12.6f} "
+        f"{width_asym:>12.6f}"
+    )
 
     # Jackknife
-    width_jk = ci_jackknife.loc[param, 'upper'] - ci_jackknife.loc[param, 'lower']
-    print(f"{'':<15} {'Jackknife':<15} "
-          f"{ci_jackknife.loc[param, 'lower']:>12.6f} "
-          f"{ci_jackknife.loc[param, 'upper']:>12.6f} "
-          f"{width_jk:>12.6f}")
+    width_jk = ci_jackknife.loc[param, "upper"] - ci_jackknife.loc[param, "lower"]
+    print(
+        f"{'':<15} {'Jackknife':<15} "
+        f"{ci_jackknife.loc[param, 'lower']:>12.6f} "
+        f"{ci_jackknife.loc[param, 'upper']:>12.6f} "
+        f"{width_jk:>12.6f}"
+    )
     print()
 
 # Influential entities
 print("\n7. Influential Entities Analysis:")
 print("=" * 80)
-influential = jackknife.influential_entities(threshold=2.0, metric='max')
+influential = jackknife.influential_entities(threshold=2.0, metric="max")
 
 if len(influential) > 0:
     print(f"Found {len(influential)} influential entities (threshold = 2.0 × mean influence)")
@@ -186,9 +189,9 @@ else:
     print("   → Consider robustness checks")
 print()
 
-print("="*80)
+print("=" * 80)
 print("Jackknife Analysis Complete!")
-print("="*80)
+print("=" * 80)
 print()
 print("Key Takeaways:")
 print("- Jackknife provides alternative bias and variance estimates")

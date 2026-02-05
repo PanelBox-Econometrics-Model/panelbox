@@ -7,6 +7,7 @@ using squared terms and cross-products.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.validation.heteroskedasticity.white import WhiteTest
@@ -25,8 +26,8 @@ class TestWhite:
 
         # Check that test runs
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_no_false_positive_clean_data(self, clean_panel_data):
         """Test that White doesn't reject with homoskedastic data."""
@@ -49,14 +50,14 @@ class TestWhite:
 
         # Should run successfully
         assert result_no_cross is not None
-        assert hasattr(result_no_cross, 'statistic')
-        assert hasattr(result_no_cross, 'pvalue')
+        assert hasattr(result_no_cross, "statistic")
+        assert hasattr(result_no_cross, "pvalue")
 
         # Test with cross terms
         result_with_cross = test.run(cross_terms=True)
 
         # With cross terms should have different (typically higher) DF
-        assert result_with_cross.details['df'] >= result_no_cross.details['df']
+        assert result_with_cross.details["df"] >= result_no_cross.details["df"]
 
     def test_works_with_pooled_ols(self, clean_panel_data):
         """Test that White test works with Pooled OLS."""
@@ -68,8 +69,8 @@ class TestWhite:
 
         # Should run without error
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_result_attributes(self, clean_panel_data):
         """Test that result has all required attributes."""
@@ -80,12 +81,12 @@ class TestWhite:
         result = test.run(cross_terms=False)
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -133,11 +134,12 @@ class TestWhite:
         result_with_cross = test.run(cross_terms=True)
 
         # DF with cross terms should be larger
-        df_no_cross = result_no_cross.details['df']
-        df_with_cross = result_with_cross.details['df']
+        df_no_cross = result_no_cross.details["df"]
+        df_with_cross = result_with_cross.details["df"]
 
-        assert df_with_cross > df_no_cross, \
-            f"DF with cross terms ({df_with_cross}) should be > DF without ({df_no_cross})"
+        assert (
+            df_with_cross > df_no_cross
+        ), f"DF with cross terms ({df_with_cross}) should be > DF without ({df_no_cross})"
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test White test with unbalanced panel."""
@@ -148,8 +150,8 @@ class TestWhite:
         result = test.run(cross_terms=False)
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_requires_model_reference(self, clean_panel_data):
         """Test that White test can access design matrix through model reference."""
@@ -157,7 +159,7 @@ class TestWhite:
         results = fe.fit()
 
         # Should have model reference
-        assert hasattr(results, '_model')
+        assert hasattr(results, "_model")
         assert results._model is not None
 
         test = WhiteTest(results)
@@ -175,8 +177,8 @@ class TestWhite:
         result = test.run(cross_terms=False)
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_pvalue_bounds(self, clean_panel_data):
         """Test that p-value is between 0 and 1."""

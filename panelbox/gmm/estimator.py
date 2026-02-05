@@ -23,10 +23,11 @@ References
        Economic Statistics, 14(3), 262-280.
 """
 
-from typing import Tuple, Optional
+import warnings
+from typing import Optional, Tuple
+
 import numpy as np
 from scipy import linalg
-import warnings
 
 
 class GMMEstimator:
@@ -51,11 +52,9 @@ class GMMEstimator:
         self.tol = tol
         self.max_iter = max_iter
 
-    def one_step(self,
-                 y: np.ndarray,
-                 X: np.ndarray,
-                 Z: np.ndarray,
-                 skip_instrument_cleaning: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def one_step(
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, skip_instrument_cleaning: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         One-step GMM estimation.
 
@@ -131,11 +130,9 @@ class GMMEstimator:
 
         return beta, W, residuals
 
-    def two_step(self,
-                 y: np.ndarray,
-                 X: np.ndarray,
-                 Z: np.ndarray,
-                 robust: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def two_step(
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, robust: bool = True
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Two-step GMM estimation with Windmeijer correction.
 
@@ -225,10 +222,9 @@ class GMMEstimator:
 
         return beta, vcov, W_optimal, residuals
 
-    def _compute_optimal_weight(self,
-                               Z: np.ndarray,
-                               residuals: np.ndarray,
-                               robust: bool = True) -> np.ndarray:
+    def _compute_optimal_weight(
+        self, Z: np.ndarray, residuals: np.ndarray, robust: bool = True
+    ) -> np.ndarray:
         """
         Compute optimal GMM weight matrix.
 
@@ -260,7 +256,7 @@ class GMMEstimator:
             ZtOmegaZ = Z.T @ Omega @ Z
         else:
             # Homoskedastic weight matrix
-            sigma2 = np.mean(residuals ** 2)
+            sigma2 = np.mean(residuals**2)
             ZtOmegaZ = sigma2 * (Z.T @ Z)
 
         try:
@@ -271,12 +267,9 @@ class GMMEstimator:
 
         return W
 
-    def windmeijer_correction(self,
-                             X: np.ndarray,
-                             Z: np.ndarray,
-                             residuals: np.ndarray,
-                             W: np.ndarray,
-                             A_inv: np.ndarray) -> np.ndarray:
+    def windmeijer_correction(
+        self, X: np.ndarray, Z: np.ndarray, residuals: np.ndarray, W: np.ndarray, A_inv: np.ndarray
+    ) -> np.ndarray:
         """
         Windmeijer (2005) finite-sample correction for two-step GMM.
 
@@ -326,9 +319,7 @@ class GMMEstimator:
 
         # Windmeijer correction term
         # Accounts for estimation of W in first step
-        correction = self._compute_windmeijer_correction_term(
-            X, Z, residuals, W, D, Sigma
-        )
+        correction = self._compute_windmeijer_correction_term(X, Z, residuals, W, D, Sigma)
 
         # Corrected variance
         # V_corrected = A_inv + A_inv * correction * A_inv
@@ -339,13 +330,15 @@ class GMMEstimator:
 
         return vcov_corrected
 
-    def _compute_windmeijer_correction_term(self,
-                                           X: np.ndarray,
-                                           Z: np.ndarray,
-                                           residuals: np.ndarray,
-                                           W: np.ndarray,
-                                           D: np.ndarray,
-                                           Sigma: np.ndarray) -> np.ndarray:
+    def _compute_windmeijer_correction_term(
+        self,
+        X: np.ndarray,
+        Z: np.ndarray,
+        residuals: np.ndarray,
+        W: np.ndarray,
+        D: np.ndarray,
+        Sigma: np.ndarray,
+    ) -> np.ndarray:
         """
         Compute the correction term for Windmeijer's variance.
 
@@ -380,10 +373,10 @@ class GMMEstimator:
 
         for i in range(n):
             # g_i = Z_i * ε_i
-            g_i = g[i:i+1, :].T  # n_instruments x 1
+            g_i = g[i : i + 1, :].T  # n_instruments x 1
 
             # X_i weighted by instruments
-            ZiXi = Z[i:i+1, :].T @ X[i:i+1, :]  # n_instruments x k
+            ZiXi = Z[i : i + 1, :].T @ X[i : i + 1, :]  # n_instruments x k
 
             # Contribution to correction
             # This is a simplified version that captures the main effect
@@ -396,10 +389,9 @@ class GMMEstimator:
 
         return correction
 
-    def iterative(self,
-                 y: np.ndarray,
-                 X: np.ndarray,
-                 Z: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
+    def iterative(
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
         """
         Iterated GMM (CUE - Continuously Updated Estimator).
 
@@ -481,15 +473,11 @@ class GMMEstimator:
         residuals[valid_mask] = y_clean - X_clean @ beta_new
 
         # Variance matrix (with Windmeijer-style correction)
-        vcov = self.windmeijer_correction(
-            X_clean, Z_clean, residuals[valid_mask], W, A_inv
-        )
+        vcov = self.windmeijer_correction(X_clean, Z_clean, residuals[valid_mask], W, A_inv)
 
         return beta_new, vcov, W, converged
 
-    def _check_convergence(self,
-                          beta_old: np.ndarray,
-                          beta_new: np.ndarray) -> bool:
+    def _check_convergence(self, beta_old: np.ndarray, beta_new: np.ndarray) -> bool:
         """
         Check convergence of iterative methods.
 
@@ -554,11 +542,9 @@ class GMMEstimator:
 
         return AtB
 
-    def _get_valid_mask(self,
-                       y: np.ndarray,
-                       X: np.ndarray,
-                       Z: np.ndarray,
-                       min_instruments: Optional[int] = None) -> np.ndarray:
+    def _get_valid_mask(
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: Optional[int] = None
+    ) -> np.ndarray:
         """
         Get mask of observations with sufficient valid data.
 

@@ -7,6 +7,7 @@ using the Lagrange Multiplier approach.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.validation.heteroskedasticity.breusch_pagan import BreuschPaganTest
@@ -25,8 +26,8 @@ class TestBreuschPagan:
 
         # Check that test runs
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
         # Note: BP may not always detect groupwise het as strongly as Modified Wald
 
     def test_no_false_positive_clean_data(self, clean_panel_data):
@@ -50,8 +51,8 @@ class TestBreuschPagan:
 
         # Should run without error
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_result_attributes(self, clean_panel_data):
         """Test that result has all required attributes."""
@@ -62,12 +63,12 @@ class TestBreuschPagan:
         result = test.run()
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check types
         assert isinstance(result.test_name, str)
@@ -114,8 +115,8 @@ class TestBreuschPagan:
         result = test.run()
 
         # DF should be number of regressors in auxiliary regression
-        assert 'df' in result.details
-        assert result.details['df'] > 0
+        assert "df" in result.details
+        assert result.details["df"] > 0
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test BP test with unbalanced panel."""
@@ -126,8 +127,8 @@ class TestBreuschPagan:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_requires_model_reference(self, clean_panel_data):
         """Test that BP test can access design matrix through model reference."""
@@ -135,7 +136,7 @@ class TestBreuschPagan:
         results = fe.fit()
 
         # Should have model reference
-        assert hasattr(results, '_model')
+        assert hasattr(results, "_model")
         assert results._model is not None
 
         test = BreuschPaganTest(results)
@@ -153,8 +154,8 @@ class TestBreuschPagan:
         result = test.run()
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_pvalue_bounds(self, clean_panel_data):
         """Test that p-value is between 0 and 1."""

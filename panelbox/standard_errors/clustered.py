@@ -5,18 +5,19 @@ This module implements one-way and two-way cluster-robust covariance
 estimators commonly used in panel data applications.
 """
 
-from typing import Union, List, Optional
+from dataclasses import dataclass
+from typing import List, Optional, Union
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 from .utils import (
+    clustered_covariance,
     compute_bread,
     compute_clustered_meat,
     compute_twoway_clustered_meat,
     sandwich_covariance,
-    clustered_covariance,
-    twoway_clustered_covariance
+    twoway_clustered_covariance,
 )
 
 
@@ -42,6 +43,7 @@ class ClusteredCovarianceResult:
     df_correction : bool
         Whether finite-sample correction was applied
     """
+
     cov_matrix: np.ndarray
     std_errors: np.ndarray
     n_clusters: Union[int, tuple]
@@ -109,7 +111,7 @@ class ClusteredStandardErrors:
         X: np.ndarray,
         resid: np.ndarray,
         clusters: Union[np.ndarray, tuple],
-        df_correction: bool = True
+        df_correction: bool = True,
     ):
         self.X = X
         self.resid = resid
@@ -182,29 +184,17 @@ class ClusteredStandardErrors:
         """
         if self.cluster_dims == 1:
             # One-way clustering
-            meat = compute_clustered_meat(
-                self.X,
-                self.resid,
-                self.clusters,
-                self.df_correction
-            )
+            meat = compute_clustered_meat(self.X, self.resid, self.clusters, self.df_correction)
             cov_matrix = sandwich_covariance(self.bread, meat)
             n_clust = len(np.unique(self.clusters))
 
         else:
             # Two-way clustering
             meat = compute_twoway_clustered_meat(
-                self.X,
-                self.resid,
-                self.clusters1,
-                self.clusters2,
-                self.df_correction
+                self.X, self.resid, self.clusters1, self.clusters2, self.df_correction
             )
             cov_matrix = sandwich_covariance(self.bread, meat)
-            n_clust = (
-                len(np.unique(self.clusters1)),
-                len(np.unique(self.clusters2))
-            )
+            n_clust = (len(np.unique(self.clusters1)), len(np.unique(self.clusters2)))
 
         std_errors = np.sqrt(np.diag(cov_matrix))
 
@@ -215,7 +205,7 @@ class ClusteredStandardErrors:
             n_obs=self.n_obs,
             n_params=self.n_params,
             cluster_dims=self.cluster_dims,
-            df_correction=self.df_correction
+            df_correction=self.df_correction,
         )
 
     def diagnostic_summary(self) -> str:
@@ -283,10 +273,7 @@ class ClusteredStandardErrors:
 
 
 def cluster_by_entity(
-    X: np.ndarray,
-    resid: np.ndarray,
-    entity_ids: np.ndarray,
-    df_correction: bool = True
+    X: np.ndarray, resid: np.ndarray, entity_ids: np.ndarray, df_correction: bool = True
 ) -> ClusteredCovarianceResult:
     """
     Convenience function for clustering by entity.
@@ -318,10 +305,7 @@ def cluster_by_entity(
 
 
 def cluster_by_time(
-    X: np.ndarray,
-    resid: np.ndarray,
-    time_ids: np.ndarray,
-    df_correction: bool = True
+    X: np.ndarray, resid: np.ndarray, time_ids: np.ndarray, df_correction: bool = True
 ) -> ClusteredCovarianceResult:
     """
     Convenience function for clustering by time.
@@ -351,7 +335,7 @@ def twoway_cluster(
     resid: np.ndarray,
     cluster1: np.ndarray,
     cluster2: np.ndarray,
-    df_correction: bool = True
+    df_correction: bool = True,
 ) -> ClusteredCovarianceResult:
     """
     Convenience function for two-way clustering.
@@ -380,7 +364,5 @@ def twoway_cluster(
     >>> result = twoway_cluster(X, resid, entity_ids, time_ids)
     >>> print(result.std_errors)
     """
-    clustered = ClusteredStandardErrors(
-        X, resid, (cluster1, cluster2), df_correction
-    )
+    clustered = ClusteredStandardErrors(X, resid, (cluster1, cluster2), df_correction)
     return clustered.compute()

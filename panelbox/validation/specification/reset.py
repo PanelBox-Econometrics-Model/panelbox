@@ -59,7 +59,7 @@ class RESETTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: 'PanelResults'):
+    def __init__(self, results: "PanelResults"):
         """
         Initialize RESET test.
 
@@ -124,30 +124,22 @@ class RESETTest(ValidationTest):
         power_vars = []
 
         for power in powers:
-            var_name = f'fitted_pow{power}'
-            data_aug[var_name] = fitted ** power
+            var_name = f"fitted_pow{power}"
+            data_aug[var_name] = fitted**power
             power_vars.append(var_name)
 
         # Build augmented formula
-        dep_var = formula.split('~')[0].strip()
-        orig_vars = ' + '.join(var_names)
-        power_formula = ' + '.join(power_vars)
+        dep_var = formula.split("~")[0].strip()
+        orig_vars = " + ".join(var_names)
+        power_formula = " + ".join(power_vars)
         augmented_formula = f"{dep_var} ~ {orig_vars} + {power_formula}"
 
         # Estimate augmented model with cluster-robust SE
         try:
             from panelbox.models.static.pooled_ols import PooledOLS
 
-            model_aug = PooledOLS(
-                augmented_formula,
-                data_aug,
-                entity_col,
-                time_col
-            )
-            results_aug = model_aug.fit(
-                cov_type='clustered',
-                cov_kwds={'groups': entity_col}
-            )
+            model_aug = PooledOLS(augmented_formula, data_aug, entity_col, time_col)
+            results_aug = model_aug.fit(cov_type="clustered", cov_kwds={"groups": entity_col})
 
         except Exception as e:
             raise ValueError(f"Failed to estimate augmented model: {e}")
@@ -167,8 +159,7 @@ class RESETTest(ValidationTest):
 
         wald_stat_array = gamma.T @ vcov_inv @ gamma
         wald_stat = float(
-            wald_stat_array.item() if hasattr(wald_stat_array, 'item')
-            else wald_stat_array
+            wald_stat_array.item() if hasattr(wald_stat_array, "item") else wald_stat_array
         )
 
         # Degrees of freedom
@@ -185,27 +176,21 @@ class RESETTest(ValidationTest):
         pvalue_chi2 = 1 - stats.chi2.cdf(wald_stat, df_num)
 
         # Metadata
-        gamma_dict = {
-            power_vars[i]: float(gamma[i])
-            for i in range(len(gamma))
-        }
+        gamma_dict = {power_vars[i]: float(gamma[i]) for i in range(len(gamma))}
 
         se_gamma = np.sqrt(np.diag(vcov_gamma))
-        se_dict = {
-            power_vars[i]: float(se_gamma[i])
-            for i in range(len(se_gamma))
-        }
+        se_dict = {power_vars[i]: float(se_gamma[i]) for i in range(len(se_gamma))}
 
         metadata = {
-            'powers': powers,
-            'gamma_coefficients': gamma_dict,
-            'standard_errors': se_dict,
-            'wald_statistic': wald_stat,
-            'F_statistic': f_stat,
-            'df_numerator': df_num,
-            'df_denominator': df_denom,
-            'pvalue_chi2': pvalue_chi2,
-            'augmented_formula': augmented_formula
+            "powers": powers,
+            "gamma_coefficients": gamma_dict,
+            "standard_errors": se_dict,
+            "wald_statistic": wald_stat,
+            "F_statistic": f_stat,
+            "df_numerator": df_num,
+            "df_denominator": df_denom,
+            "pvalue_chi2": pvalue_chi2,
+            "augmented_formula": augmented_formula,
         }
 
         result = ValidationTestResult(
@@ -216,7 +201,7 @@ class RESETTest(ValidationTest):
             alternative_hypothesis="Nonlinear terms needed (specification error)",
             alpha=alpha,
             df=(df_num, df_denom),
-            metadata=metadata
+            metadata=metadata,
         )
 
         return result
@@ -231,12 +216,12 @@ class RESETTest(ValidationTest):
             (data, formula, entity_col, time_col, var_names) or
             (None, None, None, None, None) if not available
         """
-        if not hasattr(self.results, '_model'):
+        if not hasattr(self.results, "_model"):
             return None, None, None, None, None
 
         model = self.results._model
 
-        if not (hasattr(model, 'formula_parser') and hasattr(model, 'data')):
+        if not (hasattr(model, "formula_parser") and hasattr(model, "data")):
             return None, None, None, None, None
 
         try:
@@ -248,24 +233,22 @@ class RESETTest(ValidationTest):
             time_col = model.data.time_col
 
             # Get formula
-            if hasattr(model, 'formula'):
+            if hasattr(model, "formula"):
                 formula = model.formula
             else:
                 return None, None, None, None, None
 
             # Extract variable names from formula
-            if hasattr(model.formula_parser, 'rhs_terms'):
+            if hasattr(model.formula_parser, "rhs_terms"):
                 var_names = [
-                    term for term in model.formula_parser.rhs_terms
-                    if term.lower() not in ['intercept', '1']
+                    term
+                    for term in model.formula_parser.rhs_terms
+                    if term.lower() not in ["intercept", "1"]
                 ]
             else:
-                rhs = formula.split('~')[1].strip()
-                terms = [t.strip() for t in rhs.split('+')]
-                var_names = [
-                    t for t in terms
-                    if t.lower() not in ['1', 'intercept', '']
-                ]
+                rhs = formula.split("~")[1].strip()
+                terms = [t.strip() for t in rhs.split("+")]
+                var_names = [t for t in terms if t.lower() not in ["1", "intercept", ""]]
 
             return data, formula, entity_col, time_col, var_names
 

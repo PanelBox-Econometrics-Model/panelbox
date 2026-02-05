@@ -5,12 +5,13 @@ This module provides the abstract base class that all panel models inherit from.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Any
-import pandas as pd
-import numpy as np
+from typing import Any, Optional
 
-from panelbox.core.panel_data import PanelData
+import numpy as np
+import pandas as pd
+
 from panelbox.core.formula_parser import FormulaParser
+from panelbox.core.panel_data import PanelData
 
 
 class PanelModel(ABC):
@@ -60,7 +61,7 @@ class PanelModel(ABC):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None
+        weights: Optional[np.ndarray] = None,
     ):
         # Store formula
         self.formula = formula
@@ -75,9 +76,7 @@ class PanelModel(ABC):
         self.weights = weights
         if weights is not None:
             if len(weights) != self.data.n_obs:
-                raise ValueError(
-                    f"weights must have length {self.data.n_obs}, got {len(weights)}"
-                )
+                raise ValueError(f"weights must have length {self.data.n_obs}, got {len(weights)}")
 
         # Parse formula
         self.formula_parser = FormulaParser(formula).parse()
@@ -87,7 +86,7 @@ class PanelModel(ABC):
         self._results: Optional[Any] = None
 
     @abstractmethod
-    def fit(self, **kwargs) -> 'PanelResults':
+    def fit(self, **kwargs) -> "PanelResults":
         """
         Fit the model.
 
@@ -120,11 +119,7 @@ class PanelModel(ABC):
         """
         pass
 
-    def validate(
-        self,
-        tests: Optional[list] = None,
-        verbose: bool = True
-    ) -> 'ValidationReport':
+    def validate(self, tests: Optional[list] = None, verbose: bool = True) -> "ValidationReport":
         """
         Run validation suite on fitted model.
 
@@ -157,8 +152,10 @@ class PanelModel(ABC):
     def __repr__(self) -> str:
         """String representation."""
         status = "fitted" if self._fitted else "not fitted"
-        return (f"{self.__class__.__name__}("
-                f"formula='{self.formula}', "
-                f"n_entities={self.data.n_entities}, "
-                f"n_obs={self.data.n_obs}, "
-                f"status={status})")
+        return (
+            f"{self.__class__.__name__}("
+            f"formula='{self.formula}', "
+            f"n_entities={self.data.n_entities}, "
+            f"n_obs={self.data.n_obs}, "
+            f"status={status})"
+        )

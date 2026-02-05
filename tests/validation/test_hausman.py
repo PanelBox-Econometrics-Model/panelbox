@@ -51,9 +51,9 @@ class TestHausmanTestInitialization:
         hausman = HausmanTest(fe_results, re_results)
 
         # Common vars should be x1 and x2 (not Intercept, as FE doesn't have it)
-        assert 'x1' in hausman.common_vars
-        assert 'x2' in hausman.common_vars
-        assert 'Intercept' not in hausman.common_vars
+        assert "x1" in hausman.common_vars
+        assert "x2" in hausman.common_vars
+        assert "Intercept" not in hausman.common_vars
 
 
 class TestHausmanTestExecution:
@@ -132,14 +132,14 @@ class TestHausmanTestResult:
         hausman = HausmanTest(fe_results, re_results)
         result = hausman.run()
 
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'df')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'recommendation')
-        assert hasattr(result, 'fe_params')
-        assert hasattr(result, 're_params')
-        assert hasattr(result, 'diff')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "df")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "recommendation")
+        assert hasattr(result, "fe_params")
+        assert hasattr(result, "re_params")
+        assert hasattr(result, "diff")
 
     def test_recommendation(self, balanced_panel_data):
         """Test that recommendation is either FE or RE."""
@@ -226,14 +226,8 @@ class TestCoefficientDifferences:
 
         # Check FE params
         for var in hausman.common_vars:
-            np.testing.assert_almost_equal(
-                result.fe_params[var],
-                fe_results.params[var]
-            )
-            np.testing.assert_almost_equal(
-                result.re_params[var],
-                re_results.params[var]
-            )
+            np.testing.assert_almost_equal(result.fe_params[var], fe_results.params[var])
+            np.testing.assert_almost_equal(result.re_params[var], re_results.params[var])
 
 
 class TestEdgeCases:

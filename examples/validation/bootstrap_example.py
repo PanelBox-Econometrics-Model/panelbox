@@ -10,6 +10,7 @@ Date: 2026-01-22
 
 import numpy as np
 import pandas as pd
+
 import panelbox as pb
 
 # Set random seed for reproducibility
@@ -31,7 +32,7 @@ n_obs = n_entities * n_periods
 
 # True parameters
 beta_0 = 10.0  # Intercept
-beta_1 = 2.5   # Effect of x1
+beta_1 = 2.5  # Effect of x1
 beta_2 = -1.8  # Effect of x2
 
 # Generate data
@@ -52,13 +53,7 @@ errors = np.random.randn(n_obs) * (1 + 0.5 * np.abs(x1))
 y = beta_0 + beta_1 * x1 + beta_2 * x2 + entity_effects + errors
 
 # Create DataFrame
-data = pd.DataFrame({
-    'entity': entities,
-    'time': times,
-    'y': y,
-    'x1': x1,
-    'x2': x2
-})
+data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
 
 print(f"   Generated panel: {n_entities} entities, {n_periods} periods")
 print(f"   Total observations: {n_obs}")
@@ -76,10 +71,10 @@ model = pb.FixedEffects(
     entity_col="entity",
     time_col="time",
     entity_effects=True,
-    time_effects=False
+    time_effects=False,
 )
 
-results = model.fit(cov_type='robust')
+results = model.fit(cov_type="robust")
 
 print("\nModel Results:")
 print(results.summary())
@@ -96,9 +91,9 @@ print("   (This may take 30-60 seconds...)")
 bootstrap = pb.PanelBootstrap(
     results=results,
     n_bootstrap=1000,
-    method='pairs',
+    method="pairs",
     random_state=42,
-    show_progress=True  # Show progress bar
+    show_progress=True,  # Show progress bar
 )
 
 # Run bootstrap
@@ -132,23 +127,20 @@ print("=" * 70)
 
 # Asymptotic CI
 ci_asymp = results.conf_int(alpha=0.05)
-ci_asymp.columns = ['Asymptotic Lower', 'Asymptotic Upper']
+ci_asymp.columns = ["Asymptotic Lower", "Asymptotic Upper"]
 
 # Bootstrap percentile CI
-ci_boot_perc = bootstrap.conf_int(alpha=0.05, method='percentile')
-ci_boot_perc.columns = ['Bootstrap Lower', 'Bootstrap Upper']
+ci_boot_perc = bootstrap.conf_int(alpha=0.05, method="percentile")
+ci_boot_perc.columns = ["Bootstrap Lower", "Bootstrap Upper"]
 
 # Bootstrap basic CI
-ci_boot_basic = bootstrap.conf_int(alpha=0.05, method='basic')
-ci_boot_basic.columns = ['Basic Lower', 'Basic Upper']
+ci_boot_basic = bootstrap.conf_int(alpha=0.05, method="basic")
+ci_boot_basic.columns = ["Basic Lower", "Basic Upper"]
 
 # Combine
-ci_comparison = pd.concat([
-    results.params.rename('Estimate'),
-    ci_asymp,
-    ci_boot_perc,
-    ci_boot_basic
-], axis=1)
+ci_comparison = pd.concat(
+    [results.params.rename("Estimate"), ci_asymp, ci_boot_perc, ci_boot_basic], axis=1
+)
 
 print(ci_comparison.to_string())
 
@@ -165,14 +157,16 @@ print("  - Differences indicate departure from asymptotic normality")
 print("\n6. Confidence Interval Widths:")
 print("=" * 70)
 
-widths = pd.DataFrame({
-    'Asymptotic Width': ci_asymp['Asymptotic Upper'] - ci_asymp['Asymptotic Lower'],
-    'Bootstrap Width': ci_boot_perc['Bootstrap Upper'] - ci_boot_perc['Bootstrap Lower'],
-    'Ratio (Boot/Asymp)': (
-        (ci_boot_perc['Bootstrap Upper'] - ci_boot_perc['Bootstrap Lower']) /
-        (ci_asymp['Asymptotic Upper'] - ci_asymp['Asymptotic Lower'])
-    )
-})
+widths = pd.DataFrame(
+    {
+        "Asymptotic Width": ci_asymp["Asymptotic Upper"] - ci_asymp["Asymptotic Lower"],
+        "Bootstrap Width": ci_boot_perc["Bootstrap Upper"] - ci_boot_perc["Bootstrap Lower"],
+        "Ratio (Boot/Asymp)": (
+            (ci_boot_perc["Bootstrap Upper"] - ci_boot_perc["Bootstrap Lower"])
+            / (ci_asymp["Asymptotic Upper"] - ci_asymp["Asymptotic Lower"])
+        ),
+    }
+)
 
 print(widths.to_string())
 
@@ -191,20 +185,21 @@ print("=" * 70)
 # Test H0: β₁ = 2.5 (true value)
 # Calculate bootstrap p-value
 
-param_idx = results.params.index.get_loc('x1')
+param_idx = results.params.index.get_loc("x1")
 true_beta1 = 2.5
-estimated_beta1 = results.params['x1']
+estimated_beta1 = results.params["x1"]
 
 # Bootstrap distribution
 boot_beta1 = bootstrap.bootstrap_estimates_[:, param_idx]
 
 # Two-sided p-value: proportion of bootstrap estimates farther from H0 than observed
 boot_t = np.abs((boot_beta1 - true_beta1) / bootstrap.bootstrap_se_[param_idx])
-obs_t = np.abs((estimated_beta1 - true_beta1) / results.std_errors['x1'])
+obs_t = np.abs((estimated_beta1 - true_beta1) / results.std_errors["x1"])
 p_value_boot = np.mean(boot_t >= obs_t)
 
 # Asymptotic p-value
 from scipy import stats
+
 p_value_asymp = 2 * (1 - stats.t.cdf(np.abs(obs_t), results.df_resid))
 
 print(f"Testing H₀: β₁ = {true_beta1} (true value)")
@@ -250,10 +245,10 @@ print("  ✓ Heteroskedasticity or serial correlation concerns")
 print("  ✓ Non-standard estimators or test statistics")
 
 print("\nBootstrap vs Asymptotic:")
-if np.max(widths['Ratio (Boot/Asymp)']) > 1.2:
+if np.max(widths["Ratio (Boot/Asymp)"]) > 1.2:
     print("  ⚠  Bootstrap CIs notably wider → More conservative")
     print("     Consider using bootstrap for inference")
-elif np.min(widths['Ratio (Boot/Asymp)']) < 0.8:
+elif np.min(widths["Ratio (Boot/Asymp)"]) < 0.8:
     print("  ⚠  Bootstrap CIs notably narrower → Less conservative")
     print("     Investigate potential issues")
 else:
@@ -272,10 +267,10 @@ save_results = False  # Set to True to save
 
 if save_results:
     # Save summary
-    summary.to_csv('bootstrap_summary.csv')
+    summary.to_csv("bootstrap_summary.csv")
 
     # Save CI comparison
-    ci_comparison.to_csv('bootstrap_ci_comparison.csv')
+    ci_comparison.to_csv("bootstrap_ci_comparison.csv")
 
     print("\nResults saved to:")
     print("  - bootstrap_summary.csv")

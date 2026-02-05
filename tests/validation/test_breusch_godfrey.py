@@ -7,6 +7,7 @@ in panel models using the Lagrange Multiplier approach.
 
 import numpy as np
 import pytest
+
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.validation.serial_correlation.breusch_godfrey import BreuschGodfreyTest
@@ -51,8 +52,8 @@ class TestBreuschGodfrey:
 
         # Should run without error
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
 
     def test_higher_order_lags(self, panel_with_ar1):
         """Test BG with higher order lags."""
@@ -64,18 +65,18 @@ class TestBreuschGodfrey:
         # Test with lags=2
         result_lag2 = test.run(lags=2, alpha=0.05)
         assert result_lag2 is not None
-        assert result_lag2.details['lags'] == 2
+        assert result_lag2.details["lags"] == 2
 
         # Test with lags=3
         result_lag3 = test.run(lags=3, alpha=0.05)
         assert result_lag3 is not None
-        assert result_lag3.details['lags'] == 3
+        assert result_lag3.details["lags"] == 3
 
     def test_requires_minimum_periods_for_lags(self, balanced_panel_data):
         """Test that BG requires sufficient periods for lag order."""
         # Create data with only 3 periods
         data_short = balanced_panel_data[
-            balanced_panel_data['time'].isin([2020, 2021, 2022])
+            balanced_panel_data["time"].isin([2020, 2021, 2022])
         ].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_short, "entity", "time")
@@ -100,16 +101,16 @@ class TestBreuschGodfrey:
         result = test.run(lags=1)
 
         # Check all attributes exist
-        assert hasattr(result, 'test_name')
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
-        assert hasattr(result, 'reject_null')
-        assert hasattr(result, 'conclusion')
-        assert hasattr(result, 'details')
+        assert hasattr(result, "test_name")
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")
+        assert hasattr(result, "reject_null")
+        assert hasattr(result, "conclusion")
+        assert hasattr(result, "details")
 
         # Check details contains lag info
-        assert 'lags' in result.details
-        assert result.details['lags'] == 1
+        assert "lags" in result.details
+        assert result.details["lags"] == 1
 
         # Check test name
         assert "Breusch-Godfrey" in result.test_name
@@ -163,5 +164,5 @@ class TestBreuschGodfrey:
         result = test.run(lags=1)
 
         assert result is not None
-        assert hasattr(result, 'statistic')
-        assert hasattr(result, 'pvalue')
+        assert hasattr(result, "statistic")
+        assert hasattr(result, "pvalue")

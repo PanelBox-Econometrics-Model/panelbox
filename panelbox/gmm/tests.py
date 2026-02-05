@@ -22,9 +22,11 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 import numpy as np
 from scipy import stats
+
 from panelbox.gmm.results import TestResult
 
 
@@ -45,11 +47,9 @@ class GMMTests:
     >>> ar2 = tester.arellano_bond_ar_test(residuals_diff, order=2)
     """
 
-    def hansen_j_test(self,
-                     residuals: np.ndarray,
-                     Z: np.ndarray,
-                     W: np.ndarray,
-                     n_params: int) -> TestResult:
+    def hansen_j_test(
+        self, residuals: np.ndarray, Z: np.ndarray, W: np.ndarray, n_params: int
+    ) -> TestResult:
         """
         Hansen (1982) J-test of overidentifying restrictions.
 
@@ -108,37 +108,34 @@ class GMMTests:
         if df <= 0:
             # Exactly identified or under-identified
             return TestResult(
-                name='Hansen J-test',
+                name="Hansen J-test",
                 statistic=np.nan,
                 pvalue=np.nan,
                 df=df,
-                distribution='chi2',
-                null_hypothesis='All instruments are valid',
-                conclusion='N/A (exactly/under-identified)',
-                details={'message': 'Test not applicable: model is exactly or under-identified'}
+                distribution="chi2",
+                null_hypothesis="All instruments are valid",
+                conclusion="N/A (exactly/under-identified)",
+                details={"message": "Test not applicable: model is exactly or under-identified"},
             )
 
         # P-value from chi-square distribution
         pvalue = 1 - stats.chi2.cdf(J_stat, df)
 
         return TestResult(
-            name='Hansen J-test',
+            name="Hansen J-test",
             statistic=J_stat,
             pvalue=pvalue,
             df=df,
-            distribution='chi2',
-            null_hypothesis='All instruments are valid (overid restrictions hold)',
+            distribution="chi2",
+            null_hypothesis="All instruments are valid (overid restrictions hold)",
             details={
-                'n_instruments': n_instruments,
-                'n_params': n_params,
-                'overid_restrictions': df
-            }
+                "n_instruments": n_instruments,
+                "n_params": n_params,
+                "overid_restrictions": df,
+            },
         )
 
-    def sargan_test(self,
-                   residuals: np.ndarray,
-                   Z: np.ndarray,
-                   n_params: int) -> TestResult:
+    def sargan_test(self, residuals: np.ndarray, Z: np.ndarray, n_params: int) -> TestResult:
         """
         Sargan (1958) test of overidentifying restrictions.
 
@@ -185,14 +182,14 @@ class GMMTests:
 
         if df <= 0:
             return TestResult(
-                name='Sargan test',
+                name="Sargan test",
                 statistic=np.nan,
                 pvalue=np.nan,
                 df=df,
-                distribution='chi2',
-                null_hypothesis='All instruments are valid (homoskedasticity)',
-                conclusion='N/A (exactly/under-identified)',
-                details={'message': 'Test not applicable: model is exactly or under-identified'}
+                distribution="chi2",
+                null_hypothesis="All instruments are valid (homoskedasticity)",
+                conclusion="N/A (exactly/under-identified)",
+                details={"message": "Test not applicable: model is exactly or under-identified"},
             )
 
         # Compute Sargan statistic
@@ -211,23 +208,22 @@ class GMMTests:
         pvalue = 1 - stats.chi2.cdf(S_stat, df)
 
         return TestResult(
-            name='Sargan test',
+            name="Sargan test",
             statistic=S_stat,
             pvalue=pvalue,
             df=df,
-            distribution='chi2',
-            null_hypothesis='All instruments valid (assumes homoskedasticity)',
+            distribution="chi2",
+            null_hypothesis="All instruments valid (assumes homoskedasticity)",
             details={
-                'n_instruments': n_instruments,
-                'n_params': n_params,
-                'note': 'Not robust to heteroskedasticity. Use Hansen J-test for robustness.'
-            }
+                "n_instruments": n_instruments,
+                "n_params": n_params,
+                "note": "Not robust to heteroskedasticity. Use Hansen J-test for robustness.",
+            },
         )
 
-    def arellano_bond_ar_test(self,
-                              residuals_diff: np.ndarray,
-                              ids: np.ndarray,
-                              order: int = 1) -> TestResult:
+    def arellano_bond_ar_test(
+        self, residuals_diff: np.ndarray, ids: np.ndarray, order: int = 1
+    ) -> TestResult:
         """
         Arellano-Bond (1991) test for autocorrelation in residuals.
 
@@ -291,14 +287,14 @@ class GMMTests:
 
         if len(products) == 0:
             return TestResult(
-                name=f'AR({order}) test',
+                name=f"AR({order}) test",
                 statistic=np.nan,
                 pvalue=np.nan,
                 df=None,
-                distribution='normal',
-                null_hypothesis=f'No AR({order}) in differenced residuals',
-                conclusion='N/A (insufficient data)',
-                details={'message': 'Insufficient observations for AR test'}
+                distribution="normal",
+                null_hypothesis=f"No AR({order}) in differenced residuals",
+                conclusion="N/A (insufficient data)",
+                details={"message": "Insufficient observations for AR test"},
             )
 
         products = np.array(products)
@@ -310,14 +306,14 @@ class GMMTests:
 
         if var_product == 0:
             return TestResult(
-                name=f'AR({order}) test',
+                name=f"AR({order}) test",
                 statistic=np.nan,
                 pvalue=np.nan,
                 df=None,
-                distribution='normal',
-                null_hypothesis=f'No AR({order}) in differenced residuals',
-                conclusion='N/A (zero variance)',
-                details={'message': 'Zero variance in products'}
+                distribution="normal",
+                null_hypothesis=f"No AR({order}) in differenced residuals",
+                conclusion="N/A (zero variance)",
+                details={"message": "Zero variance in products"},
             )
 
         # Normalize by standard error
@@ -329,36 +325,38 @@ class GMMTests:
 
         # Determine null hypothesis and expected result
         if order == 1:
-            null_hyp = 'No AR(1) in differenced residuals'
+            null_hyp = "No AR(1) in differenced residuals"
             details = {
-                'note': 'AR(1) rejection is EXPECTED due to MA(1) induced by differencing',
-                'n_products': len(products)
+                "note": "AR(1) rejection is EXPECTED due to MA(1) induced by differencing",
+                "n_products": len(products),
             }
         else:
-            null_hyp = f'No AR({order}) in differenced residuals'
+            null_hyp = f"No AR({order}) in differenced residuals"
             details = {
-                'note': f'AR({order}) rejection indicates INVALID moment conditions',
-                'n_products': len(products)
+                "note": f"AR({order}) rejection indicates INVALID moment conditions",
+                "n_products": len(products),
             }
 
         return TestResult(
-            name=f'AR({order}) test',
+            name=f"AR({order}) test",
             statistic=z_stat,
             pvalue=pvalue,
             df=None,
-            distribution='normal',
+            distribution="normal",
             null_hypothesis=null_hyp,
-            details=details
+            details=details,
         )
 
-    def difference_in_hansen(self,
-                            residuals: np.ndarray,
-                            Z_full: np.ndarray,
-                            Z_subset: np.ndarray,
-                            W_full: np.ndarray,
-                            W_subset: np.ndarray,
-                            n_params: int,
-                            subset_name: str = 'subset') -> TestResult:
+    def difference_in_hansen(
+        self,
+        residuals: np.ndarray,
+        Z_full: np.ndarray,
+        Z_subset: np.ndarray,
+        W_full: np.ndarray,
+        W_subset: np.ndarray,
+        n_params: int,
+        subset_name: str = "subset",
+    ) -> TestResult:
         """
         Difference-in-Hansen test for instrument subsets.
 
@@ -431,36 +429,30 @@ class GMMTests:
 
         if df_diff <= 0:
             return TestResult(
-                name=f'Diff-in-Hansen ({subset_name})',
+                name=f"Diff-in-Hansen ({subset_name})",
                 statistic=np.nan,
                 pvalue=np.nan,
                 df=df_diff,
-                distribution='chi2',
-                null_hypothesis=f'{subset_name} instruments are valid',
-                conclusion='N/A (invalid df)',
-                details={'message': 'Invalid degrees of freedom for difference test'}
+                distribution="chi2",
+                null_hypothesis=f"{subset_name} instruments are valid",
+                conclusion="N/A (invalid df)",
+                details={"message": "Invalid degrees of freedom for difference test"},
             )
 
         # P-value from chi-square distribution
         pvalue = 1 - stats.chi2.cdf(D_stat, df_diff)
 
         return TestResult(
-            name=f'Diff-in-Hansen ({subset_name})',
+            name=f"Diff-in-Hansen ({subset_name})",
             statistic=D_stat,
             pvalue=pvalue,
             df=df_diff,
-            distribution='chi2',
-            null_hypothesis=f'{subset_name} instruments are valid',
-            details={
-                'J_full': J_full,
-                'J_subset': J_subset,
-                'n_instruments_tested': df_diff
-            }
+            distribution="chi2",
+            null_hypothesis=f"{subset_name} instruments are valid",
+            details={"J_full": J_full, "J_subset": J_subset, "n_instruments_tested": df_diff},
         )
 
-    def weak_instruments_test(self,
-                             X: np.ndarray,
-                             Z: np.ndarray) -> Tuple[float, bool]:
+    def weak_instruments_test(self, X: np.ndarray, Z: np.ndarray) -> Tuple[float, bool]:
         """
         Simple weak instruments diagnostic.
 
@@ -519,7 +511,7 @@ class GMMTests:
             # Compute F-statistic
             # F = (R² / k) / ((1 - R²) / (n - k - 1))
             ss_total = np.sum((x_j - np.mean(x_j)) ** 2)
-            ss_resid = np.sum(resid ** 2)
+            ss_resid = np.sum(resid**2)
             r_squared = 1 - (ss_resid / ss_total)
 
             if r_squared >= 1.0:
