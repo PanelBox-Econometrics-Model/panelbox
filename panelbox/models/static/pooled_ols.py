@@ -16,6 +16,14 @@ from panelbox.utils.matrix_ops import (
     compute_vcov_nonrobust,
     compute_rsquared
 )
+from panelbox.standard_errors import (
+    robust_covariance,
+    cluster_by_entity,
+    twoway_cluster,
+    driscoll_kraay,
+    newey_west,
+    pcse
+)
 
 
 class PooledOLS(PanelModel):
@@ -84,10 +92,17 @@ class PooledOLS(PanelModel):
         cov_type : str, default='nonrobust'
             Type of covariance estimator:
             - 'nonrobust': Classical OLS standard errors
-            - 'robust': Heteroskedasticity-robust (HC1)
+            - 'robust' or 'hc1': Heteroskedasticity-robust (HC1)
+            - 'hc0', 'hc2', 'hc3': Other HC variants
             - 'clustered': Cluster-robust (clustered by entity by default)
+            - 'twoway': Two-way clustering (entity and time)
+            - 'driscoll_kraay': Driscoll-Kraay for spatial/temporal dependence
+            - 'newey_west': Newey-West HAC
+            - 'pcse': Panel-corrected standard errors
         **cov_kwds
-            Additional arguments for covariance estimation
+            Additional arguments for covariance estimation:
+            - max_lags : int, for driscoll_kraay and newey_west
+            - kernel : str, for driscoll_kraay and newey_west
 
         Returns
         -------
@@ -96,8 +111,23 @@ class PooledOLS(PanelModel):
 
         Examples
         --------
+        >>> # Classical standard errors
+        >>> results = model.fit(cov_type='nonrobust')
+        >>>
+        >>> # Heteroskedasticity-robust
         >>> results = model.fit(cov_type='robust')
-        >>> results_cluster = model.fit(cov_type='clustered')
+        >>> results = model.fit(cov_type='hc3')
+        >>>
+        >>> # Cluster-robust
+        >>> results = model.fit(cov_type='clustered')
+        >>> results = model.fit(cov_type='twoway')
+        >>>
+        >>> # HAC
+        >>> results = model.fit(cov_type='driscoll_kraay', max_lags=3)
+        >>> results = model.fit(cov_type='newey_west', max_lags=4, kernel='bartlett')
+        >>>
+        >>> # PCSE
+        >>> results = model.fit(cov_type='pcse')
         """
         # Build design matrices
         y, X = self.formula_parser.build_design_matrices(
@@ -117,17 +147,56 @@ class PooledOLS(PanelModel):
         df_model = k - (1 if self.formula_parser.has_intercept else 0)
         df_resid = n - k
 
-        # Compute covariance matrix
-        if cov_type == 'nonrobust':
+        # Get entity and time indices
+        entities = self.data.data[self.data.entity_col].values
+        times = self.data.data[self.data.time_col].values
+
+        # Compute covariance matrix based on type
+        cov_type_lower = cov_type.lower()
+
+        if cov_type_lower == 'nonrobust':
             vcov = compute_vcov_nonrobust(X, resid, df_resid)
-        elif cov_type == 'robust':
-            vcov = self._compute_vcov_robust(X, resid)
-        elif cov_type == 'clustered':
-            vcov = self._compute_vcov_clustered(X, resid)
+
+        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+            # HC robust standard errors
+            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            result = robust_covariance(X, resid, method=method)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'clustered':
+            # Cluster-robust by entity
+            result = cluster_by_entity(X, resid, entities, df_correction=True)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'twoway':
+            # Two-way clustering (entity and time)
+            result = twoway_cluster(X, resid, entities, times, df_correction=True)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'driscoll_kraay':
+            # Driscoll-Kraay for spatial/temporal dependence
+            max_lags = cov_kwds.get('max_lags', None)
+            kernel = cov_kwds.get('kernel', 'bartlett')
+            result = driscoll_kraay(X, resid, times, max_lags=max_lags, kernel=kernel)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'newey_west':
+            # Newey-West HAC
+            max_lags = cov_kwds.get('max_lags', None)
+            kernel = cov_kwds.get('kernel', 'bartlett')
+            result = newey_west(X, resid, max_lags=max_lags, kernel=kernel)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'pcse':
+            # Panel-corrected standard errors
+            result = pcse(X, resid, entities, times)
+            vcov = result.cov_matrix
+
         else:
             raise ValueError(
-                f"cov_type must be 'nonrobust', 'robust', or 'clustered', "
-                f"got '{cov_type}'"
+                f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', "
+                f"'hc2', 'hc3', 'clustered', 'twoway', 'driscoll_kraay', "
+                f"'newey_west', 'pcse'. Got '{cov_type}'"
             )
 
         # Standard errors

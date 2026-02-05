@@ -15,6 +15,13 @@ from panelbox.utils.matrix_ops import (
     compute_ols,
     compute_panel_rsquared
 )
+from panelbox.standard_errors import (
+    robust_covariance,
+    cluster_by_entity,
+    twoway_cluster,
+    driscoll_kraay,
+    newey_west
+)
 
 
 class RandomEffects(PanelModel):
@@ -121,10 +128,16 @@ class RandomEffects(PanelModel):
         cov_type : str, default='nonrobust'
             Type of covariance estimator:
             - 'nonrobust': Classical GLS standard errors
-            - 'robust': Heteroskedasticity-robust
-            - 'clustered': Cluster-robust (clustered by entity)
+            - 'robust' or 'hc1': Heteroskedasticity-robust (HC1)
+            - 'hc0', 'hc2', 'hc3': Other HC variants
+            - 'clustered': Cluster-robust (by entity by default)
+            - 'twoway': Two-way clustered (entity and time)
+            - 'driscoll_kraay': Driscoll-Kraay (spatial/temporal dependence)
+            - 'newey_west': Newey-West HAC
         **cov_kwds
-            Additional arguments for covariance estimation
+            Additional arguments for covariance estimation:
+            - max_lags: For Driscoll-Kraay and Newey-West
+            - kernel: For HAC estimators
 
         Returns
         -------
@@ -169,16 +182,45 @@ class RandomEffects(PanelModel):
         df_resid = n - k
 
         # Compute covariance matrix
-        if cov_type == 'nonrobust':
+        cov_type_lower = cov_type.lower()
+
+        if cov_type_lower == 'nonrobust':
             vcov = self._compute_vcov_gls(X, resid_gls, entities, df_resid)
-        elif cov_type == 'robust':
-            vcov = self._compute_vcov_robust(X_gls, resid_gls, df_resid)
-        elif cov_type == 'clustered':
-            vcov = self._compute_vcov_clustered(X_gls, resid_gls, entities, df_resid)
+
+        elif cov_type_lower in ['robust', 'hc0', 'hc1', 'hc2', 'hc3']:
+            # Map 'robust' to 'hc1' (default robust method)
+            method = 'HC1' if cov_type_lower == 'robust' else cov_type_lower.upper()
+            result = robust_covariance(X_gls, resid_gls, method=method)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'clustered':
+            # Default: cluster by entity
+            result = cluster_by_entity(X_gls, resid_gls, entities, df_correction=True)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'twoway':
+            # Two-way clustering: entity and time
+            result = twoway_cluster(X_gls, resid_gls, entities, times, df_correction=True)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'driscoll_kraay':
+            # Driscoll-Kraay for spatial/temporal dependence
+            max_lags = cov_kwds.get('max_lags', None)
+            kernel = cov_kwds.get('kernel', 'bartlett')
+            result = driscoll_kraay(X_gls, resid_gls, times, max_lags=max_lags, kernel=kernel)
+            vcov = result.cov_matrix
+
+        elif cov_type_lower == 'newey_west':
+            # Newey-West HAC
+            max_lags = cov_kwds.get('max_lags', None)
+            kernel = cov_kwds.get('kernel', 'bartlett')
+            result = newey_west(X_gls, resid_gls, max_lags=max_lags, kernel=kernel)
+            vcov = result.cov_matrix
+
         else:
             raise ValueError(
-                f"cov_type must be 'nonrobust', 'robust', or 'clustered', "
-                f"got '{cov_type}'"
+                f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', 'hc2', 'hc3', "
+                f"'clustered', 'twoway', 'driscoll_kraay', 'newey_west', got '{cov_type}'"
             )
 
         # Standard errors

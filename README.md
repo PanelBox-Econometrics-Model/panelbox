@@ -5,6 +5,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Development Status](https://img.shields.io/badge/status-beta-green.svg)]()
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 PanelBox provides comprehensive tools for panel data econometrics, bringing Stata's `xtabond2` and R's `plm` capabilities to Python with modern, user-friendly APIs.
 

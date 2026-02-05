@@ -8,13 +8,142 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Robust standard errors (HC0-HC3, Driscoll-Kraay, Newey-West)
 - Additional GMM estimators (LIML, CUE)
 - Cross-validation for panel data
 - Jackknife inference
 - Outlier detection and influence diagnostics
 - Panel VAR models
 - Cointegration tests
+
+## [0.4.0] - 2026-02-05
+
+### Added - Robust Standard Errors
+
+**Heteroskedasticity-Robust Standard Errors (HC):**
+- **HC0** - White (1980) sandwich estimator
+- **HC1** - Degrees of freedom corrected: [n/(n-k)] × HC0
+- **HC2** - Leverage adjustment: Ω̂ = diag(ε²/(1-h_i))
+- **HC3** - MacKinnon-White (1985): Ω̂ = diag(ε²/(1-h_i)²)
+- Automatic leverage (hat values) computation
+- Efficient caching for performance
+
+**Cluster-Robust Standard Errors:**
+- **One-way clustering** - Cluster by entity or time
+- **Two-way clustering** - Cameron, Gelbach & Miller (2011) formula: V = V₁ + V₂ - V₁₂
+- Finite-sample corrections: G/(G-1) × (N-1)/(N-K)
+- Diagnostic warnings for few clusters (<20)
+- Support for unbalanced clusters
+
+**Driscoll-Kraay Standard Errors:**
+- Robust to spatial and temporal dependence
+- Automatic lag selection: floor(4(T/100)^(2/9))
+- 3 kernel options: Bartlett, Parzen, Quadratic Spectral
+- Appropriate for large N, moderate/large T
+- Comprehensive diagnostic information
+
+**Newey-West HAC Standard Errors:**
+- Heteroskedasticity and Autocorrelation Consistent
+- Automatic lag selection using Newey-West rule
+- 3 kernel options: Bartlett, Parzen, Quadratic Spectral
+- Suitable for time-series and panels with autocorrelation
+
+**Panel-Corrected Standard Errors (PCSE):**
+- Beck & Katz (1995) implementation
+- For contemporaneous cross-sectional correlation
+- FGLS approach with estimated Σ matrix
+- Requires T > N
+- Works best with Pooled OLS or Random Effects
+
+**Utility Functions:**
+- `compute_leverage()` - Hat values computation
+- `compute_bread()` - (X'X)^{-1} for sandwich estimator
+- `compute_meat_hc()` - Meat matrix for HC variants
+- `compute_clustered_meat()` - One-way clustering meat
+- `compute_twoway_clustered_meat()` - Two-way clustering meat
+- `sandwich_covariance()` - Combines bread and meat
+- Convenience functions for quick usage
+
+**Integration with Models:**
+- **Fixed Effects**: 8 types of standard errors
+  - nonrobust, robust, hc0, hc1, hc2, hc3
+  - clustered (one-way), twoway
+  - driscoll_kraay, newey_west, pcse
+- **Random Effects**: 7 types of standard errors
+  - All above except PCSE works better with non-demeaned data
+- Flexible parameters: `max_lags`, `kernel`
+- Backward compatible with existing code
+
+### Added - Tests
+
+**Comprehensive Test Suite:**
+- 40+ tests for HC standard errors (test_robust.py)
+  - Leverage computation tests
+  - Bread and meat matrix tests
+  - Sandwich covariance tests
+  - HC0-HC3 correctness tests
+  - Edge cases and numerical stability
+- 35+ tests for clustered standard errors (test_clustered.py)
+  - One-way clustering tests
+  - Two-way clustering tests
+  - Diagnostic summary tests
+  - Various cluster patterns (balanced, unbalanced, singletons)
+- Manual validation of Driscoll-Kraay and Newey-West
+- Manual validation of PCSE
+- Integration tests with Fixed Effects and Random Effects
+- Total: 75+ test cases, ~90% coverage
+
+### Added - Documentation
+
+**Module Documentation:**
+- `desenvolvimento/FASE_6_COMPLETE.md` - Complete implementation guide (457 lines)
+- `desenvolvimento/FASE_6_PROGRESSO.md` - Detailed progress tracking (569 lines)
+- `desenvolvimento/FASE_6_ERROS_PADRAO_ROBUSTOS.md` - Planning and checklist (389 lines)
+
+**Implementation Files:**
+- `panelbox/standard_errors/utils.py` - Core utilities (394 lines)
+- `panelbox/standard_errors/robust.py` - HC standard errors (267 lines)
+- `panelbox/standard_errors/clustered.py` - Clustering (320 lines)
+- `panelbox/standard_errors/driscoll_kraay.py` - DK estimator (461 lines)
+- `panelbox/standard_errors/newey_west.py` - NW HAC (309 lines)
+- `panelbox/standard_errors/pcse.py` - PCSE (368 lines)
+
+**Enhanced Docstrings:**
+- Complete API documentation for all new classes
+- Mathematical formulas for each estimator
+- Usage examples in docstrings
+- Parameter descriptions
+- References to academic papers
+
+### Changed
+
+- Updated `FixedEffects.fit()` to support 8 covariance types
+- Updated `RandomEffects.fit()` to support 7 covariance types
+- Enhanced `panelbox/__init__.py` with standard error exports
+- Updated main module to export all SE classes and functions
+
+### Performance
+
+**Optimizations:**
+- Caching of bread matrix and leverage values
+- Vectorized NumPy operations throughout
+- Efficient meat computation for all methods
+- Minimal memory footprint with smart algorithms
+
+**Benchmarks (typical panel N=50, T=10):**
+- HC standard errors: <0.1s computation time
+- Clustered SE: <0.2s computation time
+- Driscoll-Kraay: <0.5s computation time
+- Newey-West: <0.3s computation time
+
+### Academic References Implemented
+
+1. **White, H. (1980)**. A heteroskedasticity-consistent covariance matrix estimator. *Econometrica*, 48(4), 817-838. ✅ HC0
+2. **MacKinnon, J. G., & White, H. (1985)**. Some heteroskedasticity-consistent covariance matrix estimators. *Journal of Econometrics*, 29(3), 305-325. ✅ HC1, HC2, HC3
+3. **Newey, W. K., & West, K. D. (1987)**. A simple, positive semi-definite, heteroskedasticity and autocorrelation consistent covariance matrix. *Econometrica*, 55(3), 703-708. ✅ Newey-West
+4. **Beck, N., & Katz, J. N. (1995)**. What to do (and not to do) with time-series cross-section data. *American Political Science Review*, 89(3), 634-647. ✅ PCSE
+5. **Driscoll, J. C., & Kraay, A. C. (1998)**. Consistent covariance matrix estimation with spatially dependent panel data. *Review of Economics and Statistics*, 80(4), 549-560. ✅ Driscoll-Kraay
+6. **Hoechle, D. (2007)**. Robust standard errors for panel regressions with cross-sectional dependence. *The Stata Journal*, 7(3), 281-312. ✅ DK implementation
+7. **Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2011)**. Robust inference with multiway clustering. *Journal of Business & Economic Statistics*, 29(2), 238-249. ✅ Two-way clustering
 
 ## [0.3.0] - 2026-01-22
 

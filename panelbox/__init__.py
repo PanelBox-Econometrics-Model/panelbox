@@ -29,6 +29,8 @@ from panelbox.core.results import PanelResults
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.random_effects import RandomEffects
+from panelbox.models.static.between import BetweenEstimator
+from panelbox.models.static.first_difference import FirstDifferenceEstimator
 
 # Dynamic panel GMM models
 from panelbox.gmm.difference_gmm import DifferenceGMM
@@ -41,6 +43,19 @@ from panelbox.validation.specification.hausman import HausmanTest, HausmanTestRe
 # Robustness analysis
 from panelbox.validation.robustness.bootstrap import PanelBootstrap
 from panelbox.validation.robustness.sensitivity import SensitivityAnalysis, SensitivityResults
+from panelbox.validation.robustness.cross_validation import TimeSeriesCV, CVResults
+from panelbox.validation.robustness.jackknife import PanelJackknife, JackknifeResults
+from panelbox.validation.robustness.outliers import OutlierDetector, OutlierResults
+from panelbox.validation.robustness.influence import InfluenceDiagnostics, InfluenceResults
+from panelbox.validation.robustness.checks import RobustnessChecker
+
+# Datasets
+from panelbox.datasets import (
+    load_grunfeld,
+    load_abdata,
+    list_datasets,
+    get_dataset_info
+)
 
 __all__ = [
     # Version
@@ -59,6 +74,8 @@ __all__ = [
     'PooledOLS',
     'FixedEffects',
     'RandomEffects',
+    'BetweenEstimator',
+    'FirstDifferenceEstimator',
 
     # GMM Models
     'DifferenceGMM',
@@ -73,4 +90,19 @@ __all__ = [
     'PanelBootstrap',
     'SensitivityAnalysis',
     'SensitivityResults',
+    'TimeSeriesCV',
+    'CVResults',
+    'PanelJackknife',
+    'JackknifeResults',
+    'OutlierDetector',
+    'OutlierResults',
+    'InfluenceDiagnostics',
+    'InfluenceResults',
+    'RobustnessChecker',
+
+    # Datasets
+    'load_grunfeld',
+    'load_abdata',
+    'list_datasets',
+    'get_dataset_info',
 ]
