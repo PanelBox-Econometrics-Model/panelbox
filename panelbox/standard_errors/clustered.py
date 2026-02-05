@@ -179,6 +179,8 @@ class ClusteredStandardErrors:
         where V_1 and V_2 are one-way clustered, and V_12 is clustered
         by the intersection.
         """
+        n_clust: Union[int, tuple[int, int]]
+
         if self.cluster_dims == 1:
             # One-way clustering
             meat = compute_clustered_meat(self.X, self.resid, self.clusters, self.df_correction)

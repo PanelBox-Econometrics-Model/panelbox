@@ -198,7 +198,7 @@ class DifferenceGMM:
 
         # Results (populated after fit)
         self.results: Optional[GMMResults] = None
-        self.params: Optional[np.ndarray] = None
+        self.params: Optional[Union[np.ndarray, pd.Series]] = None
 
         # Validate inputs
         self._validate_inputs()

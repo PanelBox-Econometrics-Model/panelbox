@@ -472,6 +472,7 @@ class IPSTest:
 
         # Determine lags for output
         lags_list = [lags_dict[entity] for entity in self.entities if entity in t_stats_dict]
+        lags_output: Union[int, list[int]]
         if len(set(lags_list)) == 1:
             lags_output = lags_list[0]
         else:
