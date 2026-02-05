@@ -69,20 +69,20 @@ class ChowTest(ValidationTest):
         """
         super().__init__(results)
 
-    def run(self, break_point=None, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
+    def run(self, alpha: float = 0.05, break_point=None, **kwargs) -> ValidationTestResult:
         """
         Run Chow test for structural break.
 
         Parameters
         ----------
+        alpha : float, default=0.05
+            Significance level
         break_point : int or float, optional
             Time period at which to test for structural break.
             If None, uses the median time period.
             Can be specified as:
             - Integer: exact time period
             - Float between 0 and 1: fraction of sample (e.g., 0.5 for midpoint)
-        alpha : float, default=0.05
-            Significance level
 
         Returns
         -------
