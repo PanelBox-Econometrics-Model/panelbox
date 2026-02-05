@@ -267,16 +267,19 @@ def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
         },
     }
 
-    base_info = dataset_info.get(
-        dataset_name,
-        {
-            "name": dataset_name,
-            "description": "Unknown dataset",
-            "source": "Unknown",
-        },
+    base_info: Dict[str, Any] = dict(
+        dataset_info.get(
+            dataset_name,
+            {
+                "name": dataset_name,
+                "description": "Unknown dataset",
+                "source": "Unknown",
+            },
+        )
     )
 
     # Try to load dataset and add statistics
+    df: Optional[pd.DataFrame] = None
     try:
         if dataset_name == "grunfeld":
             df = load_grunfeld()
