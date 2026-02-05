@@ -5,7 +5,7 @@ Manages compilation and layering of CSS styles with 3-layer architecture.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from .asset_manager import AssetManager
 
