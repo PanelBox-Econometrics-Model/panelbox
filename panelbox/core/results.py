@@ -204,21 +204,102 @@ class PanelResults:
 
     def summary(self, title: Optional[str] = None) -> str:
         """
-        Generate formatted summary of results.
+        Generate formatted summary table of estimation results.
+
+        Produces a comprehensive summary table including model information,
+        sample statistics, goodness-of-fit measures, coefficient estimates,
+        standard errors, test statistics, and diagnostic tests.
 
         Parameters
         ----------
         title : str, optional
-            Custom title for summary table
+            Custom title for the summary table. If None, defaults to
+            "{model_type} Estimation Results".
 
         Returns
         -------
         str
-            Formatted summary table
+            Formatted summary table as a multi-line string, suitable for
+            printing to console or including in reports.
+
+        Notes
+        -----
+        **Summary Structure:**
+
+        The summary table includes the following sections:
+
+        1. **Header**: Model type and title
+        2. **Model Information**: Formula, estimation method
+        3. **Sample Statistics**: Number of observations, entities, time periods
+        4. **Goodness-of-Fit**: R-squared (within/between/overall), F-statistic
+        5. **Coefficients Table**: Estimates, standard errors, t/z-statistics, p-values
+        6. **Confidence Intervals**: 95% confidence intervals (default)
+        7. **Diagnostic Tests** (if applicable): Hansen J, AR tests, Hausman test
+
+        **For GMM Models:**
+
+        Additional diagnostics included:
+        - Hansen J test statistic and p-value
+        - Sargan test statistic and p-value
+        - AR(1) and AR(2) test statistics and p-values
+        - Number of instruments and instrument ratio
+
+        **Output Format:**
+
+        The output is formatted for 78-character width terminals and includes:
+        - Aligned columns for easy reading
+        - Separators between sections
+        - Significance stars (*, **, ***) for p-values < 0.10, 0.05, 0.01
 
         Examples
         --------
+        >>> import panelbox as pb
+        >>> data = pb.load_grunfeld()
+        >>>
+        >>> # Fixed Effects example
+        >>> fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
+        >>> results = fe.fit()
         >>> print(results.summary())
+        ================================================================================
+                              Fixed Effects Estimation Results
+        ================================================================================
+        Formula: invest ~ value + capital
+        Model:   Fixed Effects
+        ...
+
+        >>> # Custom title
+        >>> print(results.summary(title="Investment Regression Results"))
+        ================================================================================
+                            Investment Regression Results
+        ================================================================================
+        ...
+
+        >>> # GMM example with diagnostics
+        >>> gmm = pb.SystemGMM(data, 'invest', lags=1, exog_vars=['value', 'capital'],
+        ...                    id_var='firm', time_var='year', collapse=True)
+        >>> gmm_results = gmm.fit()
+        >>> print(gmm_results.summary())
+        ================================================================================
+                               System GMM Estimation Results
+        ================================================================================
+        ...
+        Hansen J statistic:        12.45
+        Hansen J p-value:          0.189
+        AR(2) p-value:             0.356
+        ...
+
+        See Also
+        --------
+        to_latex : Export results to LaTeX format
+        params : Coefficient estimates
+        std_errors : Standard errors
+        pvalues : P-values for coefficients
+        conf_int : Confidence intervals
+
+        References
+        ----------
+        .. [1] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
+               and Panel Data (2nd ed.). MIT Press.
         """
         lines = []
 

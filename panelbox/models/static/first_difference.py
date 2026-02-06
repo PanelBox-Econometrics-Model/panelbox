@@ -115,18 +115,66 @@ class FirstDifferenceEstimator(PanelModel):
     - Driscoll-Kraay useful for serial correlation and heteroskedasticity
 
     **Comparison with Fixed Effects:**
-    - FE uses within transformation (demeaning): y_it - ȳ_i
-    - FD uses first difference: y_it - y_{i,t-1}
-    - Under random walk: y_it = y_{i,t-1} + ε_it → FD removes unit root
-    - Under classical RE/FE assumptions: FE is more efficient
+
+    | Aspect | First Difference | Fixed Effects |
+    |--------|------------------|---------------|
+    | Transformation | y_it - y_{i,t-1} | y_it - ȳ_i |
+    | Observations lost | First period (N) | None |
+    | Serial correlation | More robust | Problematic if MA(1) in Δε |
+    | Efficiency | Less efficient | More efficient |
+    | Unit roots | Handles well | May be inconsistent |
+
+    **When FD is Preferred:**
+
+    - **Serial correlation**: When errors follow AR(1) or random walk
+    - **Small T**: FE requires larger T for asymptotic properties
+    - **Unit roots**: When y_it has a unit root (non-stationary)
+    - **Measurement error**: When measurement error is not i.i.d.
+
+    **When FE is Preferred:**
+
+    - **Homoskedastic errors**: FE is BLUE under classical assumptions
+    - **Large T**: Efficiency gains matter more
+    - **No serial correlation**: Classical assumptions hold
+    - **Sample preservation**: Don't want to lose observations
+
+    **Mathematical Equivalence:**
+
+    Under certain conditions, FD and FE are numerically equivalent:
+
+    - Balanced panel with T = 2: FD ≡ FE
+    - No serial correlation in levels: Both consistent
+    - Different weights on time periods otherwise
+
+    **Standard Error Considerations:**
+
+    First-differencing induces MA(1) structure in errors even if original
+    errors are i.i.d.:
+
+        Δε_it = ε_it - ε_{i,t-1}
+
+    Therefore:
+    - Cov(Δε_it, Δε_{i,t-1}) = -σ²_ε (negative correlation)
+    - Cluster-robust or Driscoll-Kraay SEs recommended
+    - Newey-West with lag=1 minimum
+
+    See Also
+    --------
+    FixedEffects : Within estimator (demeaning transformation)
+    BetweenEstimator : Between estimator (entity means)
+    DifferenceGMM : GMM with first-differencing (for dynamics)
 
     References
     ----------
     .. [1] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
-       and Panel Data. MIT Press. Section 10.5.
-    .. [2] Baltagi, B. H. (2013). Econometric Analysis of Panel Data.
-       Wiley. Chapter 3.
-    .. [3] Hsiao, C. (2014). Analysis of Panel Data. Cambridge University Press.
+           and Panel Data (2nd ed.). MIT Press. Section 10.5.
+    .. [2] Baltagi, B. H. (2021). Econometric Analysis of Panel Data
+           (6th ed.). Springer. Chapter 3.
+    .. [3] Hsiao, C. (2014). Analysis of Panel Data (3rd ed.). Cambridge
+           University Press. Chapter 4.
+    .. [4] Anderson, T. W., & Hsiao, C. (1981). "Estimation of Dynamic Models
+           with Error Components." Journal of the American Statistical Association,
+           76(375), 598-606.
     """
 
     def __init__(
