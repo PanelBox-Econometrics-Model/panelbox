@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/images/logo.svg" alt="PanelBox Logo" width="400">
+  <img src="https://raw.githubusercontent.com/PanelBox-Econometrics-Model/panelbox/main/docs/assets/images/logo.svg" alt="PanelBox Logo" width="400">
 
   <h1>PanelBox</h1>
 
