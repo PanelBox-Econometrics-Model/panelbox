@@ -206,3 +206,6 @@ publish.sh
 # QUICKSTART.md - KEEP (if it's user-facing)
 # MANIFEST.in - KEEP
 # COPYRIGHT_HEADER.txt - KEEP (optional)
+
+# Academic papers working directory
+papers/
