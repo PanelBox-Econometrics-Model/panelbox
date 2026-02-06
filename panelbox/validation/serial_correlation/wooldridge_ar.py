@@ -34,23 +34,151 @@ class WooldridgeARTest(ValidationTest):
     own lag and testing if the coefficient equals -0.5 (which is the value
     under H0 of no serial correlation).
 
+    Parameters
+    ----------
+    results : PanelResults
+        Results from panel model estimation (preferably Fixed Effects)
+
     Notes
     -----
-    The test statistic is approximately distributed as F(1, N-1) under the null
-    of no first-order serial correlation.
+    **Test Procedure:**
 
-    This test requires at least T >= 3 time periods.
+    The Wooldridge test implements the following steps:
+
+    1. **Compute first differences of residuals:**
+
+        Δe_it = e_it - e_{i,t-1}
+
+    2. **Regress Δe_it on Δe_{i,t-1}:**
+
+        Δe_it = β · Δe_{i,t-1} + ν_it
+
+    3. **Test H0: β = -0.5**
+
+    Under the null hypothesis of no serial correlation:
+
+        Cov(Δe_it, Δe_{i,t-1}) = E[(e_it - e_{i,t-1})(e_{i,t-1} - e_{i,t-2})]
+                                = -σ²_e
+
+    And since Var(Δe_it) ≈ 2σ²_e, we expect β ≈ -0.5.
+
+    **Test Statistic:**
+
+    The F-statistic is computed as:
+
+        F = [(β̂ + 0.5) / SE(β̂)]²  ~  F(1, N-1)
+
+    where N is the number of entities.
+
+    **When to Use:**
+
+    This test is particularly useful for:
+
+    - **Fixed Effects models**: Designed specifically for FE estimation
+    - **GMM model validation**: Testing AR(1) assumption before GMM
+    - **Dynamic panels**: Checking for residual autocorrelation after
+      including lagged dependent variable
+    - **Pre-testing**: Before using cluster-robust standard errors
+
+    **Advantages:**
+
+    - Simple to implement and interpret
+    - Does not require strong distributional assumptions
+    - Robust to heteroskedasticity
+    - Works with unbalanced panels (requires T ≥ 3 for each entity)
+
+    **Limitations:**
+
+    1. **Only tests AR(1)**: Does not detect higher-order autocorrelation
+    2. **Minimum T requirement**: Needs T ≥ 3 per entity
+    3. **FE-specific**: Less powerful for other estimators
+    4. **Small N issues**: F-distribution approximation may be poor with few entities
+
+    **Interpretation:**
+
+    | P-value | Decision | Interpretation |
+    |---------|----------|----------------|
+    | < 0.01  | Strong rejection | Strong AR(1) autocorrelation |
+    | 0.01-0.05 | Rejection | Moderate autocorrelation |
+    | 0.05-0.10 | Borderline | Consider robust SEs |
+    | > 0.10  | Fail to reject | No evidence of AR(1) |
+
+    **If Autocorrelation is Detected:**
+
+    - Use **cluster-robust standard errors** (cluster by entity)
+    - Use **Driscoll-Kraay standard errors** (robust to both serial
+      correlation and cross-sectional dependence)
+    - Consider **AR(1) error structure** in GLS estimation
+    - For dynamic models, use **GMM estimators** (System GMM)
+
+    **Comparison with Stata:**
+
+    This test is equivalent to Stata's `xtserial` command:
+
+    ```stata
+    xtreg y x1 x2, fe
+    xtserial y x1 x2
+    ```
+
+    References
+    ----------
+    .. [1] Wooldridge, J. M. (2002). "Econometric Analysis of Cross Section
+           and Panel Data." MIT Press, Section 10.4.1.
+
+    .. [2] Drukker, D. M. (2003). "Testing for serial correlation in linear
+           panel-data models." *Stata Journal*, 3(2), 168-177.
+
+    .. [3] Wooldridge, J. M. (2010). "Econometric Analysis of Cross Section
+           and Panel Data" (2nd ed.). MIT Press, Chapter 10.
+
+    See Also
+    --------
+    BaltagiWuTest : Alternative test for serial correlation in panel data
+    BreuschGodfreyTest : Lagrange Multiplier test for serial correlation
 
     Examples
     --------
-    >>> from panelbox.models.static.fixed_effects import FixedEffects
-    >>> fe = FixedEffects("y ~ x1 + x2", data, "entity", "time")
+    **Basic usage with Fixed Effects:**
+
+    >>> import panelbox as pb
+    >>>
+    >>> # Estimate Fixed Effects model
+    >>> fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> results = fe.fit()
     >>>
-    >>> from panelbox.validation.serial_correlation.wooldridge_ar import WooldridgeARTest
+    >>> # Test for autocorrelation
+    >>> from panelbox.validation.serial_correlation import WooldridgeARTest
     >>> test = WooldridgeARTest(results)
     >>> result = test.run()
     >>> print(result)
+
+    **Interpreting results:**
+
+    >>> print(f"F-statistic: {result.statistic:.3f}")
+    >>> print(f"P-value: {result.pvalue:.4f}")
+    >>>
+    >>> if result.pvalue < 0.05:
+    ...     print("Evidence of AR(1) autocorrelation")
+    ...     print("Consider using cluster-robust standard errors")
+    >>> else:
+    ...     print("No evidence of autocorrelation")
+
+    **Accessing additional information:**
+
+    >>> # Estimated coefficient and its standard error
+    >>> print(f"β̂ = {result.metadata['coefficient']:.4f}")
+    >>> print(f"SE(β̂) = {result.metadata['std_error']:.4f}")
+    >>> print(f"Expected under H0: β = -0.5")
+    >>>
+    >>> # Sample information
+    >>> print(f"Number of entities: {result.metadata['n_entities']}")
+    >>> print(f"Observations used: {result.metadata['n_obs_used']}")
+
+    **Different significance level:**
+
+    >>> # Test at 1% level
+    >>> result_strict = test.run(alpha=0.01)
+    >>> print(result_strict.conclusion)
     """
 
     def __init__(self, results: "PanelResults"):

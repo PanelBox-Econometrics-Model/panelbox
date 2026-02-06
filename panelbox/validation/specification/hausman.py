@@ -5,7 +5,6 @@ This module provides the Hausman test for choosing between Fixed Effects
 and Random Effects models.
 """
 
-
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -140,15 +139,101 @@ class HausmanTest:
     re_results : PanelResults
         Results from Random Effects estimation
 
+    Notes
+    -----
+    **Theoretical Foundation:**
+
+    The Hausman test is based on the principle that under the null hypothesis
+    (no correlation between regressors and individual effects), both FE and RE
+    are consistent, but RE is more efficient. Under the alternative (correlation
+    exists), FE remains consistent while RE becomes inconsistent.
+
+    **Test Statistic:**
+
+    The Hausman statistic is computed as:
+
+        H = (β̂_FE - β̂_RE)' [Var(β̂_FE) - Var(β̂_RE)]^{-1} (β̂_FE - β̂_RE)
+
+    Under H0, this follows χ²(k) where k is the number of coefficients tested.
+
+    **Hypotheses:**
+
+    - H0: Cov(X_it, α_i) = 0 → Random Effects is consistent and efficient
+    - H1: Cov(X_it, α_i) ≠ 0 → Random Effects is inconsistent, use Fixed Effects
+
+    **Decision Rule:**
+
+    - **Reject H0** (p-value < α): Use Fixed Effects
+      - Evidence of correlation between X and α_i
+      - RE estimates are biased and inconsistent
+      - FE estimates are consistent (albeit less efficient)
+
+    - **Fail to reject H0** (p-value ≥ α): Use Random Effects
+      - No evidence of correlation between X and α_i
+      - RE estimates are consistent and efficient
+      - Gain efficiency over FE, especially with time-invariant regressors
+
+    **Interpretation Guidelines:**
+
+    | P-value | Decision | Interpretation |
+    |---------|----------|----------------|
+    | < 0.01  | Strong rejection | Strong evidence for FE |
+    | 0.01-0.05 | Rejection | Moderate evidence for FE |
+    | 0.05-0.10 | Borderline | Consider robustness checks |
+    | > 0.10  | Fail to reject | Use RE for efficiency |
+
+    **Common Issues:**
+
+    1. **Negative test statistic**: Can occur due to:
+       - Small sample sizes
+       - Weak instruments in RE estimation
+       - Solution: Use generalized inverse (automatically handled)
+
+    2. **Large differences in coefficients**: Suggests:
+       - Strong correlation between X and α_i
+       - FE and RE model different relationships
+       - Decision clear: use FE
+
+    3. **Small differences but significant test**: Can indicate:
+       - Large sample size detecting small deviations
+       - Consider economic significance, not just statistical
+
+    **Practical Considerations:**
+
+    - Always estimate both FE and RE before testing
+    - Examine coefficient differences, not just test statistic
+    - Consider theory: does correlation make sense?
+    - RE allows time-invariant regressors; FE does not
+    - For GMM models, use Hansen/Sargan tests instead
+
+    References
+    ----------
+    .. [1] Hausman, J. A. (1978). "Specification tests in econometrics."
+           *Econometrica*, 46(6), 1251-1271.
+
+    .. [2] Wooldridge, J. M. (2010). "Econometric Analysis of Cross Section
+           and Panel Data" (2nd ed.). MIT Press. Chapter 10.
+
+    .. [3] Baltagi, B. H. (2021). "Econometric Analysis of Panel Data"
+           (6th ed.). Springer. Chapter 4.
+
+    See Also
+    --------
+    FixedEffects : Fixed Effects estimator (within transformation)
+    RandomEffects : Random Effects estimator (GLS)
+    MundlakTest : Alternative specification test including time-averages
+
     Examples
     --------
+    **Basic usage:**
+
     >>> import panelbox as pb
     >>>
     >>> # Estimate both models
-    >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "firm", "year")
+    >>> fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> fe_results = fe.fit()
     >>>
-    >>> re = pb.RandomEffects("y ~ x1 + x2", data, "firm", "year")
+    >>> re = pb.RandomEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> re_results = re.fit()
     >>>
     >>> # Run Hausman test
@@ -156,11 +241,34 @@ class HausmanTest:
     >>> result = hausman.run()
     >>> print(result)
     >>>
-    >>> # Use result
+    >>> # Use recommendation
     >>> if result.recommendation == "Fixed Effects":
     ...     final_results = fe_results
     >>> else:
     ...     final_results = re_results
+
+    **Interpreting results:**
+
+    >>> # Examine test statistic and p-value
+    >>> print(f"Chi2 statistic: {result.statistic:.3f}")
+    >>> print(f"P-value: {result.pvalue:.4f}")
+    >>> print(f"Degrees of freedom: {result.df}")
+    >>>
+    >>> # Check coefficient differences
+    >>> print("\nCoefficient Comparison:")
+    >>> for var in result.fe_params.index:
+    ...     diff_pct = 100 * result.diff[var] / result.fe_params[var]
+    ...     print(f"{var}: {diff_pct:.1f}% difference")
+
+    **Different significance levels:**
+
+    >>> # Test at 1% level for more stringent requirement
+    >>> result_strict = hausman.run(alpha=0.01)
+    >>> print(result_strict.conclusion)
+    >>>
+    >>> # Test at 10% level for more lenient requirement
+    >>> result_lenient = hausman.run(alpha=0.10)
+    >>> print(result_lenient.conclusion)
     """
 
     def __init__(self, fe_results: PanelResults, re_results: PanelResults):
