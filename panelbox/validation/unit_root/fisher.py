@@ -88,12 +88,6 @@ class FisherTest:
     where p_i is the p-value from the unit root test for entity i.
     Under H0, P ~ χ²(2N), where N is the number of entities.
 
-    Advantages:
-    - Allows for heterogeneity across entities
-    - Handles unbalanced panels
-    - Does not require T > N
-    - Simple to implement and interpret
-
     Parameters
     ----------
     data : pd.DataFrame
@@ -114,20 +108,193 @@ class FisherTest:
         - 'c': constant only
         - 'ct': constant and trend
 
+    Notes
+    -----
+    **Test Procedure:**
+
+    The Fisher test implements the following steps:
+
+    1. **Run individual unit root tests** (ADF or PP) for each entity i:
+       - For ADF: Tests H0: y_it has a unit root
+       - For PP: Phillips-Perron variant with nonparametric corrections
+
+    2. **Collect p-values**: Let p_i be the p-value for entity i
+
+    3. **Combine using inverse chi-square transformation**:
+
+        P = -2 Σᵢ₌₁ᴺ ln(p_i)
+
+    4. **Test statistic distribution**:
+
+        P ~ χ²(2N)  under H0
+
+    **Hypotheses:**
+
+    - H0: All N series contain a unit root (non-stationary)
+    - H1: At least one series is stationary
+
+    **When to Use:**
+
+    This test is particularly useful for:
+
+    - **Heterogeneous panels**: Different entities may have different dynamics
+    - **Unbalanced panels**: Entities with different time periods
+    - **Small T, large N**: Works even when T < N (unlike LLC test)
+    - **Pre-testing**: Before estimating dynamic panel models or GMM
+
+    **Advantages:**
+
+    - **Flexibility**: Allows for heterogeneity across entities
+    - **Simplicity**: Easy to implement and interpret
+    - **Robustness**: Handles unbalanced panels naturally
+    - **No T > N requirement**: Unlike some other panel unit root tests
+    - **Distribution-free**: Does not impose common dynamics
+
+    **Limitations:**
+
+    1. **Low power**: May fail to reject when only few series are stationary
+    2. **Asymmetry**: Treats unit root as null (Type I vs Type II error tradeoff)
+    3. **Cross-sectional independence**: Assumes errors are independent across entities
+    4. **Small N**: Chi-square approximation may be poor with few entities
+
+    **Interpretation:**
+
+    | P-value | Decision | Interpretation |
+    |---------|----------|----------------|
+    | < 0.01  | Strong rejection | Strong evidence against unit roots |
+    | 0.01-0.05 | Rejection | Moderate evidence of stationarity |
+    | 0.05-0.10 | Borderline | Weak evidence |
+    | > 0.10  | Fail to reject | Consistent with unit roots |
+
+    **Individual P-values Analysis:**
+
+    After running the test, examine `result.individual_pvalues` to see which
+    specific entities drive the rejection:
+
+    - If most p_i < 0.05: Strong panel-wide stationarity
+    - If few p_i < 0.05: Only some entities are stationary
+    - If all p_i > 0.10: Strong evidence for panel unit root
+
+    **If Unit Root is Detected:**
+
+    1. **First-difference the data**:
+       ```python
+       data['Δy'] = data.groupby('entity')['y'].diff()
+       ```
+
+    2. **Use GMM estimators** designed for non-stationary data:
+       ```python
+       gmm = pb.DifferenceGMM(data, 'Δy', ['x1', 'x2'], ...)
+       ```
+
+    3. **Test for cointegration** if variables share common trends:
+       ```python
+       from panelbox.validation.cointegration import PedroniTest
+       ```
+
+    4. **Include time effects** to control for common trends:
+       ```python
+       fe = pb.FixedEffects(..., time_effects=True)
+       ```
+
+    **Trend Specification Guidelines:**
+
+    | Specification | When to Use |
+    |---------------|-------------|
+    | trend='n' | No intercept or trend (e.g., returns) |
+    | trend='c' | Constant only (default, most common) |
+    | trend='ct' | Linear trend present (e.g., GDP) |
+
+    **Comparison with Other Tests:**
+
+    | Test | Assumption | T Requirement | Heterogeneity |
+    |------|-----------|---------------|---------------|
+    | **Fisher** | Independence | Any T | ✅ Allowed |
+    | LLC | Homogeneity | T > 5 | ❌ Restricted |
+    | IPS | Independence | T ≥ 5 | ✅ Allowed |
+    | CIPS | Dependence | T large | ✅ Allowed |
+
+    **Comparison with Stata:**
+
+    This test can be compared with Stata's `xtunitroot fisher` command:
+
+    ```stata
+    xtunitroot fisher invest, dfuller lags(1) demean
+    ```
+
+    References
+    ----------
+    .. [1] Maddala, G. S., & Wu, S. (1999). "A comparative study of unit root
+           tests with panel data and a new simple test." *Oxford Bulletin of
+           Economics and Statistics*, 61(S1), 631-652.
+
+    .. [2] Choi, I. (2001). "Unit root tests for panel data." *Journal of
+           International Money and Finance*, 20(2), 249-272.
+
+    .. [3] Baltagi, B. H. (2021). "Econometric Analysis of Panel Data"
+           (6th ed.). Springer. Chapter 12.
+
+    See Also
+    --------
+    LLCTest : Levin-Lin-Chu test (assumes homogeneity)
+    IPSTest : Im-Pesaran-Shin test (allows heterogeneity, cross-sectional mean)
+    PedroniTest : Cointegration test for non-stationary panels
+
     Examples
     --------
+    **Basic usage with ADF:**
+
     >>> import panelbox as pb
     >>> data = pb.load_grunfeld()
     >>>
-    >>> # Fisher-ADF test
-    >>> fisher = pb.FisherTest(data, 'invest', 'firm', 'year', test_type='adf')
+    >>> # Fisher-ADF test with constant
+    >>> fisher = pb.FisherTest(data, 'invest', 'firm', 'year',
+    ...                        test_type='adf', trend='c')
     >>> result = fisher.run()
     >>> print(result)
+
+    **Interpreting results:**
+
+    >>> print(f"Fisher statistic: {result.statistic:.3f}")
+    >>> print(f"P-value: {result.pvalue:.4f}")
     >>>
-    >>> # Fisher-PP test
-    >>> fisher_pp = pb.FisherTest(data, 'invest', 'firm', 'year', test_type='pp')
+    >>> if result.pvalue < 0.05:
+    ...     print("Evidence of stationarity (reject unit root)")
+    >>> else:
+    ...     print("Evidence of unit root (non-stationary)")
+
+    **Examining individual p-values:**
+
+    >>> # Check which entities drive the result
+    >>> for entity, pval in result.individual_pvalues.items():
+    ...     status = "stationary" if pval < 0.05 else "unit root"
+    ...     print(f"{entity}: p={pval:.4f} ({status})")
+
+    **Different trend specifications:**
+
+    >>> # No trend (for returns, growth rates)
+    >>> fisher_n = pb.FisherTest(data, 'returns', 'firm', 'year', trend='n')
+    >>> result_n = fisher_n.run()
+    >>>
+    >>> # With linear trend (for levels with trend)
+    >>> fisher_ct = pb.FisherTest(data, 'gdp', 'country', 'year', trend='ct')
+    >>> result_ct = fisher_ct.run()
+
+    **Phillips-Perron test:**
+
+    >>> # Use PP test instead of ADF
+    >>> fisher_pp = pb.FisherTest(data, 'invest', 'firm', 'year',
+    ...                           test_type='pp', trend='c')
     >>> result_pp = fisher_pp.run()
-    >>> print(result_pp)
+    >>> print(f"PP-based Fisher: {result_pp.statistic:.3f}")
+
+    **Testing first differences:**
+
+    >>> # Test whether first differences are stationary
+    >>> data['Δinvest'] = data.groupby('firm')['invest'].diff()
+    >>> fisher_diff = pb.FisherTest(data, 'Δinvest', 'firm', 'year')
+    >>> result_diff = fisher_diff.run()
+    >>> print("First differences stationary:", result_diff.pvalue < 0.05)
     """
 
     def __init__(

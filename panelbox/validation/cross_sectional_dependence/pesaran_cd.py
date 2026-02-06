@@ -39,24 +39,173 @@ class PesaranCDTest(ValidationTest):
     H0: No cross-sectional dependence (residuals are independent across entities)
     H1: Cross-sectional dependence present
 
+    Parameters
+    ----------
+    results : PanelResults
+        Results from panel model estimation
+
     Notes
     -----
-    The test statistic is asymptotically distributed as N(0,1) under the null
-    hypothesis. The test works well for both N large, T small and N large, T large
-    panels.
+    **Test Statistic:**
 
-    The test requires T > 3 and works best when N is reasonably large.
+    The Pesaran CD statistic is computed as:
+
+        CD = √(2T / (N(N-1))) × Σᵢ<ⱼ ρ̂ᵢⱼ
+
+    where:
+    - N = number of entities
+    - T = number of time periods
+    - ρ̂ᵢⱼ = sample correlation of residuals between entities i and j
+
+    Under H0, CD ~ N(0,1) asymptotically as N → ∞.
+
+    **When to Use:**
+
+    This test is particularly useful for:
+
+    - **Checking model validity**: Detecting omitted spatial effects or
+      common shocks not captured by time effects
+    - **Panel VAR models**: Testing for cross-sectional independence
+    - **Large N panels**: Works well even when T is small
+    - **Pre-testing**: Before applying Driscoll-Kraay or panel-corrected
+      standard errors
+
+    **Advantages:**
+
+    - Simple and computationally efficient (O(N²) complexity)
+    - Valid for both balanced and unbalanced panels
+    - Works well for small T, large N panels
+    - Does not require normality assumptions
+    - Robust to heteroskedasticity
+
+    **Limitations:**
+
+    1. **Requires T ≥ 3**: Need minimum time periods to compute correlations
+    2. **Large N required**: Asymptotic distribution requires N → ∞
+    3. **Not powerful for weak dependence**: May miss weak spatial patterns
+    4. **Assumes no structural breaks**: Common shocks should be stable
+
+    **Interpretation:**
+
+    | CD Statistic | P-value | Interpretation |
+    |--------------|---------|----------------|
+    | \|CD\| < 1.645 | > 0.10 | No evidence of dependence |
+    | 1.645 < \|CD\| < 1.96 | 0.05-0.10 | Weak evidence |
+    | 1.96 < \|CD\| < 2.576 | 0.01-0.05 | Moderate dependence |
+    | \|CD\| > 2.576 | < 0.01 | Strong dependence |
+
+    **Average Correlation Guidelines:**
+
+    - \|ρ̄\| < 0.1: Weak dependence (likely negligible)
+    - 0.1 ≤ \|ρ̄\| < 0.3: Moderate dependence (consider robust SEs)
+    - 0.3 ≤ \|ρ̄\| < 0.5: Strong dependence (require spatial models)
+    - \|ρ̄\| ≥ 0.5: Very strong dependence (serious misspecification)
+
+    **If Cross-Sectional Dependence is Detected:**
+
+    1. **Include time fixed effects** to control for common shocks:
+       ```python
+       fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year",
+                           time_effects=True)
+       ```
+
+    2. **Use Driscoll-Kraay standard errors** (robust to cross-sectional
+       and serial correlation):
+       ```python
+       result = fe.fit(cov_type="driscoll-kraay")
+       ```
+
+    3. **Use panel-corrected standard errors (PCSE)**:
+       ```python
+       result = fe.fit(cov_type="pcse")
+       ```
+
+    4. **Consider spatial panel models** if geographic structure is known
+
+    5. **Add common correlated effects** (Pesaran CCE estimator)
+
+    **Comparison with Stata:**
+
+    This test is equivalent to Stata's `xtcd` command:
+
+    ```stata
+    xtreg y x1 x2, fe
+    xtcd, pesaran
+    ```
+
+    References
+    ----------
+    .. [1] Pesaran, M. H. (2004). "General diagnostic tests for cross section
+           dependence in panels." *University of Cambridge Working Paper*,
+           No. 0435.
+
+    .. [2] Pesaran, M. H. (2015). "Testing weak cross-sectional dependence in
+           large panels." *Econometric Reviews*, 34(6-10), 1089-1117.
+
+    .. [3] De Hoyos, R. E., & Sarafidis, V. (2006). "Testing for cross-sectional
+           dependence in panel-data models." *Stata Journal*, 6(4), 482-496.
+
+    See Also
+    --------
+    BreuschPaganLMTest : Lagrange Multiplier test for cross-sectional dependence
+    FreesTest : Distribution-free test for cross-sectional dependence
 
     Examples
     --------
-    >>> from panelbox.models.static.fixed_effects import FixedEffects
-    >>> fe = FixedEffects("y ~ x1 + x2", data, "entity", "time")
+    **Basic usage:**
+
+    >>> import panelbox as pb
+    >>>
+    >>> # Estimate model
+    >>> fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> results = fe.fit()
     >>>
-    >>> from panelbox.validation.cross_sectional.pesaran_cd import PesaranCDTest
+    >>> # Test for cross-sectional dependence
+    >>> from panelbox.validation.cross_sectional_dependence import PesaranCDTest
     >>> test = PesaranCDTest(results)
     >>> result = test.run()
     >>> print(result)
+
+    **Interpreting results:**
+
+    >>> print(f"CD statistic: {result.statistic:.3f}")
+    >>> print(f"P-value: {result.pvalue:.4f}")
+    >>>
+    >>> # Check average correlation
+    >>> avg_corr = result.metadata['avg_abs_correlation']
+    >>> print(f"Average absolute correlation: {avg_corr:.3f}")
+    >>>
+    >>> if result.pvalue < 0.05:
+    ...     print("Evidence of cross-sectional dependence")
+    ...     if avg_corr < 0.3:
+    ...         print("Use Driscoll-Kraay standard errors")
+    ...     else:
+    ...         print("Consider spatial panel model")
+    >>> else:
+    ...     print("No evidence of cross-sectional dependence")
+
+    **Examining correlation patterns:**
+
+    >>> # Access detailed correlation statistics
+    >>> print(f"Number of entity pairs: {result.metadata['n_pairs']}")
+    >>> print(f"Average correlation: {result.metadata['avg_correlation']:.3f}")
+    >>> print(f"Max absolute correlation: {result.metadata['max_abs_correlation']:.3f}")
+    >>> print(f"Range: [{result.metadata['min_correlation']:.3f}, "
+    ...       f"{result.metadata['max_correlation']:.3f}]")
+
+    **Testing with time effects:**
+
+    >>> # Include time effects to control for common shocks
+    >>> fe_te = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year",
+    ...                         time_effects=True)
+    >>> results_te = fe_te.fit()
+    >>>
+    >>> # Re-test
+    >>> test_te = PesaranCDTest(results_te)
+    >>> result_te = test_te.run()
+    >>> print(f"CD with time effects: {result_te.statistic:.3f}")
+    >>> print(f"Reduction in dependence: "
+    ...       f"{(1 - result_te.statistic/result.statistic)*100:.1f}%")
     """
 
     def __init__(self, results: "PanelResults"):
