@@ -209,3 +209,19 @@ publish.sh
 
 # Academic papers working directory
 papers/
+
+# =============================================================================
+# PanelBox Output and Script Directories
+# =============================================================================
+
+# Output directory (test reports, generated files)
+output/
+
+# Scripts directory (internal build/release scripts)
+scripts/
+
+# Validation directory (internal validation scripts)
+validation/
+
+# Claude AI working directory
+.claude/
