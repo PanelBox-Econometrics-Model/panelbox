@@ -95,27 +95,85 @@ class BetweenEstimator(PanelModel):
 
     Notes
     -----
-    The Between estimator:
-    1. Computes entity-level means for all variables
-    2. Runs OLS on the N entity means (not NT observations)
-    3. Reports R² as the between R² (variation explained across entities)
+    **Mathematical Formulation:**
 
-    Degrees of freedom:
+    The Between estimator computes entity-level averages:
+
+        ȳ_i = (1/T_i) Σ_t y_it
+        x̄_i = (1/T_i) Σ_t x_it
+
+    Then runs OLS on the cross-section of N entities:
+
+        ȳ_i = β₀ + β₁ x̄_i + ū_i
+
+    where ū_i is the average of residuals u_it for entity i.
+
+    **When to Use:**
+
+    The Between estimator is appropriate when:
+
+    - **Focus on cross-sectional variation**: Interest is in differences across
+      entities, not changes within entities over time
+    - **Small T, large N**: Many entities but few time periods per entity
+    - **Time-invariant regressors**: Variables that don't vary over time can be
+      included (unlike Fixed Effects)
+    - **Exploratory analysis**: Understanding which entities differ and why
+
+    **Comparison with Other Estimators:**
+
+    | Estimator | Variation Used | Sample Size | Time-Invariant X |
+    |-----------|---------------|-------------|------------------|
+    | **Between** | Across entities | N | ✅ Allowed |
+    | **Fixed Effects** | Within entities | NT | ❌ Dropped |
+    | **Random Effects** | Both (weighted) | NT | ✅ Allowed |
+    | **Pooled OLS** | Both (unweighted) | NT | ✅ Allowed |
+
+    **Properties:**
+
+    - **Efficiency**: Less efficient than FE or RE when T is large (uses less data)
+    - **Consistency**: Consistent if E[ū_i | x̄_i] = 0 (between-entity exogeneity)
+    - **R-squared**: Measures between-entity variation only
+    - **Degrees of Freedom**: Based on N (not NT), so standard errors larger
+
+    **Interpretation:**
+
+    Between estimates answer: "Do firms with higher average investment also have
+    higher average capital?" (cross-sectional question)
+
+    Fixed Effects estimates answer: "When a firm increases investment, does it
+    also increase capital?" (within-firm question)
+
+    **Estimation Steps:**
+
+    1. Compute entity-level means for all variables
+    2. Run OLS on the N entity means (not NT observations)
+    3. Report R² as the between R² (variation explained across entities)
+
+    **Degrees of Freedom:**
+
     - N observations (one per entity)
     - k parameters (slopes + intercept)
     - df_resid = N - k
 
-    Standard errors:
-    - All SE types are supported (robust, clustered, etc.)
-    - Applied to the N entity-level observations
-    - Clustering by time is possible if needed
+    **Standard Errors:**
+
+    All SE types are supported (robust, clustered, etc.) and are applied to
+    the N entity-level observations. Clustering by time is possible if needed.
+
+    See Also
+    --------
+    FixedEffects : Within estimator (uses within-entity variation)
+    RandomEffects : GLS estimator (uses both within and between variation)
+    PooledOLS : Ignores panel structure entirely
 
     References
     ----------
     .. [1] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
-       and Panel Data. MIT Press. Section 10.2.2.
-    .. [2] Baltagi, B. H. (2013). Econometric Analysis of Panel Data.
-       Wiley. Chapter 2.
+           and Panel Data (2nd ed.). MIT Press. Section 10.2.2.
+    .. [2] Baltagi, B. H. (2021). Econometric Analysis of Panel Data
+           (6th ed.). Springer. Chapter 2.
+    .. [3] Hsiao, C. (2014). Analysis of Panel Data (3rd ed.). Cambridge
+           University Press. Chapter 3.
     """
 
     def __init__(
