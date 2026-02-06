@@ -1,12 +1,17 @@
-# PanelBox
+<div align="center">
+  <img src="assets/images/logo.svg" alt="PanelBox Logo" width="400">
 
-**Python library for panel data econometrics**
+  <h1>PanelBox</h1>
+
+  <p><strong>Python library for panel data econometrics</strong></p>
 
 [![PyPI version](https://img.shields.io/pypi/v/panelbox.svg)](https://pypi.org/project/panelbox/)
 [![Python versions](https://img.shields.io/pypi/pyversions/panelbox.svg)](https://pypi.org/project/panelbox/)
 [![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+</div>
 
 ---
 

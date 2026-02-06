@@ -49,6 +49,8 @@ theme:
     repo: fontawesome/brands/github
     edit: material/pencil
     view: material/eye
+  logo: assets/images/logo.svg
+  favicon: assets/images/logo.svg
 
 plugins:
   - search:
