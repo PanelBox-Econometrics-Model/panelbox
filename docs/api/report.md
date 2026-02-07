@@ -93,4 +93,3 @@ for name, res in models.items():
 with open("comparison.tex", "w") as f:
     f.write(comparison.to_latex(float_format="%.3f"))
 ```
-

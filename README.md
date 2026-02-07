@@ -7,6 +7,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation Status](https://readthedocs.org/projects/panelbox/badge/?version=latest)](https://panelbox.readthedocs.io/)
 [![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pepy.tech/projects/panelbox)

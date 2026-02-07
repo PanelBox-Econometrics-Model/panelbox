@@ -10,7 +10,6 @@ operations, primarily targeting:
 Using Numba can provide 10-100x speedups for these operations.
 """
 
-
 import numpy as np
 
 try:
