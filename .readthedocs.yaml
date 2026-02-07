@@ -1,5 +1,6 @@
 # Read the Docs configuration file for PanelBox
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# Updated: 2026-02-07 - Using pip for dependency management
 
 # Required
 version: 2
