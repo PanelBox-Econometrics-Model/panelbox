@@ -34,9 +34,9 @@ API documentation for static panel estimators (no lagged dependent variable).
 
 ---
 
-## Between
+## BetweenEstimator
 
-::: panelbox.models.static.between.Between
+::: panelbox.models.static.between.BetweenEstimator
     options:
       show_root_heading: true
       show_source: false
@@ -44,9 +44,9 @@ API documentation for static panel estimators (no lagged dependent variable).
 
 ---
 
-## FirstDifferences
+## FirstDifferenceEstimator
 
-::: panelbox.models.static.first_differences.FirstDifferences
+::: panelbox.models.static.first_difference.FirstDifferenceEstimator
     options:
       show_root_heading: true
       show_source: false
