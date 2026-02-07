@@ -26,6 +26,10 @@ recursive-include examples *.csv
 recursive-include validation/data *.csv
 recursive-include validation/data *.dta
 
+# Include dataset files
+recursive-include panelbox/datasets/data *.csv
+recursive-include panelbox/datasets/data *.dta
+
 # Include templates for reporting
 recursive-include panelbox/templates *.html
 recursive-include panelbox/templates *.css
