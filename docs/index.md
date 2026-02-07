@@ -1,16 +1,18 @@
+<div align="center" style="background: white; padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
+  <img src="assets/images/logo.svg" alt="PanelBox Logo" width="600" style="max-width: 100%; height: auto;">
+</div>
+
 <div align="center">
-  <img src="assets/images/logo.svg" alt="PanelBox Logo" width="400">
-
   <h1>PanelBox</h1>
+  <p style="font-size: 1.2em;"><strong>Python library for panel data econometrics</strong></p>
 
-  <p><strong>Python library for panel data econometrics</strong></p>
-
-[![PyPI version](https://img.shields.io/pypi/v/panelbox.svg)](https://pypi.org/project/panelbox/)
-[![Python versions](https://img.shields.io/pypi/pyversions/panelbox.svg)](https://pypi.org/project/panelbox/)
-[![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
+  <p>
+    <a href="https://pypi.org/project/panelbox/"><img src="https://img.shields.io/pypi/v/panelbox.svg" alt="PyPI version"></a>
+    <a href="https://pypi.org/project/panelbox/"><img src="https://img.shields.io/pypi/pyversions/panelbox.svg" alt="Python versions"></a>
+    <img src="https://img.shields.io/badge/status-stable-brightgreen.svg" alt="Development Status">
+    <a href="https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
+  </p>
 </div>
 
 ---
