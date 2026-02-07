@@ -116,3 +116,6 @@ disallow_untyped_defs = true
 where = ["."]
 include = ["panelbox*"]
 exclude = ["desenvolvimento*", "tests*", "examples*"]
+
+[tool.setuptools.package-data]
+panelbox = ["datasets/data/*.csv", "datasets/data/*.dta"]
