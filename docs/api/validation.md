@@ -14,21 +14,13 @@ API documentation for diagnostic and specification tests.
       show_source: false
       heading_level: 4
 
-### BreuschPaganLM
-
-::: panelbox.validation.specification.breusch_pagan_lm.BreuschPaganLM
-    options:
-      show_root_heading: true
-      show_source: false
-      heading_level: 4
-
 ---
 
 ## Serial Correlation Tests
 
-### WooldridgeTest
+### WooldridgeARTest
 
-::: panelbox.validation.serial_correlation.wooldridge.WooldridgeTest
+::: panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest
     options:
       show_root_heading: true
       show_source: false
@@ -41,6 +33,26 @@ API documentation for diagnostic and specification tests.
 ### BreuschPaganTest
 
 ::: panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest
+    options:
+      show_root_heading: true
+      show_source: false
+      heading_level: 4
+
+---
+
+## Cross-Sectional Dependence Tests
+
+### BreuschPaganLMTest
+
+::: panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest
+    options:
+      show_root_heading: true
+      show_source: false
+      heading_level: 4
+
+### PesaranCDTest
+
+::: panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest
     options:
       show_root_heading: true
       show_source: false
