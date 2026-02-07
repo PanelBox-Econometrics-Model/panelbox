@@ -364,7 +364,7 @@ If you use PanelBox in academic research, please cite:
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
 
 **Ways to contribute:**
 - 🐛 Report bugs via [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
