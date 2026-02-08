@@ -1,0 +1,38 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...100"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+        only_pulls: false
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+
+ignore:
+  - "tests/**/*"
+  - "**/__pycache__"
+  - "**/test_*.py"
+  - "setup.py"
+  - "docs/**/*"
+  - "examples/**/*"
+  - "scripts/**/*"
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
