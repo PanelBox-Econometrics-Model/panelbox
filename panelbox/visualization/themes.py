@@ -14,7 +14,7 @@ Available Themes
 
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 @dataclass

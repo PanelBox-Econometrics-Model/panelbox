@@ -26,7 +26,7 @@ Examples
 >>> chart.show()
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 import numpy as np
 import plotly.graph_objects as go
@@ -779,7 +779,6 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
         pvalue = data.get("pvalue", None)
         avg_corr = data.get("avg_correlation", None)
         entity_corrs = data.get("entity_correlations", None)
-        corr_matrix = data.get("correlation_matrix", None)
 
         if cd_stat is None:
             raise ValueError("CD statistic is required")

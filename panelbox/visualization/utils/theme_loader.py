@@ -27,7 +27,7 @@ Examples:
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 import yaml
 
@@ -410,8 +410,8 @@ def create_theme_template(output_path: Union[str, Path], format: str = "yaml") -
                 raise ValueError(f"Unsupported format: {format}")
 
         print(f"✅ Theme template created at: {output_path}")
-        print(f"\n💡 Edit the file and load it with:")
-        print(f"   from panelbox.visualization.utils import load_theme")
+        print("\n💡 Edit the file and load it with:")
+        print("   from panelbox.visualization.utils import load_theme")
         print(f"   theme = load_theme('{output_path}')")
 
     except Exception as e:

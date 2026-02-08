@@ -12,7 +12,7 @@ in the Social Sciences. Cambridge University Press.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults

@@ -6,15 +6,13 @@ including entity effects, time effects, between-within variance decomposition,
 and panel structure analysis.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 from ..base import PlotlyChartBase
-from ..config.chart_config import ChartConfig
 from ..registry import register_chart
 
 
@@ -597,9 +595,6 @@ class PanelStructurePlot(PlotlyChartBase):
 
         # Get config
         show_statistics = kwargs.get("show_statistics", self.config.get("show_statistics", True))
-        highlight_complete = kwargs.get(
-            "highlight_complete", self.config.get("highlight_complete", True)
-        )
 
         # Calculate statistics
         n_entities = len(entities)

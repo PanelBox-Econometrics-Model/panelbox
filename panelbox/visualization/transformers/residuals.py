@@ -4,10 +4,9 @@ Data transformer for residual diagnostics.
 Converts model results into the data format expected by residual diagnostic charts.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
-from scipy import stats
 
 
 class ResidualDataTransformer:
@@ -180,7 +179,7 @@ class ResidualDataTransformer:
                 influence = results.get_influence()
                 if hasattr(influence, "hat_matrix_diag"):
                     return np.asarray(influence.hat_matrix_diag)
-            except:
+            except Exception:
                 pass
 
         # Try to compute from model matrix
@@ -192,7 +191,7 @@ class ResidualDataTransformer:
                 XtX_inv = np.linalg.inv(X.T @ X)
                 leverage = np.sum((X @ XtX_inv) * X, axis=1)
                 return leverage
-            except:
+            except Exception:
                 pass
 
         return None
@@ -227,7 +226,7 @@ class ResidualDataTransformer:
                 if hasattr(influence, "cooks_distance"):
                     cooks_d, _ = influence.cooks_distance
                     return np.asarray(cooks_d)
-            except:
+            except Exception:
                 pass
 
         # Compute manually
@@ -262,7 +261,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(1).values
-                    except:
+                    except Exception:
                         pass
 
         # Try from original data
@@ -293,7 +292,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(0).values
-                    except:
+                    except Exception:
                         pass
 
         # Try from original data
