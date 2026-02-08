@@ -134,7 +134,7 @@ class ComparisonDataTransformer:
                         value = np.nan
                 else:
                     value = np.nan
-                coefficients[var].append(float(value))
+                coefficients[var].append(self._safe_float(value))
 
         return coefficients
 
@@ -187,7 +187,7 @@ class ComparisonDataTransformer:
                         value = np.nan
                 else:
                     value = np.nan
-                std_errors[var].append(float(value))
+                std_errors[var].append(self._safe_float(value))
 
         return std_errors
 
@@ -234,9 +234,28 @@ class ComparisonDataTransformer:
                         value = np.nan
                 else:
                     value = np.nan
-                pvalues[var].append(float(value))
+                pvalues[var].append(self._safe_float(value))
 
         return pvalues
+
+    def _safe_float(self, value: Any) -> float:
+        """
+        Safely convert value to float, returning NaN if conversion fails.
+
+        Parameters
+        ----------
+        value : Any
+            Value to convert
+
+        Returns
+        -------
+        float
+            Converted value or NaN
+        """
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return np.nan
 
     def _extract_fit_metrics(self, results_list: List[Any]) -> Dict[str, List[float]]:
         """
@@ -257,29 +276,29 @@ class ComparisonDataTransformer:
         for results in results_list:
             # R-squared
             if hasattr(results, "rsquared"):
-                metrics["R²"].append(float(results.rsquared))
+                metrics["R²"].append(self._safe_float(results.rsquared))
             else:
                 metrics["R²"].append(np.nan)
 
             # Adjusted R-squared
             if hasattr(results, "rsquared_adj"):
-                metrics["Adj. R²"].append(float(results.rsquared_adj))
+                metrics["Adj. R²"].append(self._safe_float(results.rsquared_adj))
             else:
                 metrics["Adj. R²"].append(np.nan)
 
             # F-statistic
             if hasattr(results, "fvalue"):
-                metrics["F-statistic"].append(float(results.fvalue))
+                metrics["F-statistic"].append(self._safe_float(results.fvalue))
             elif hasattr(results, "f_statistic"):
-                metrics["F-statistic"].append(float(results.f_statistic))
+                metrics["F-statistic"].append(self._safe_float(results.f_statistic))
             else:
                 metrics["F-statistic"].append(np.nan)
 
             # Log-likelihood
             if hasattr(results, "loglik"):
-                metrics["Log-Likelihood"].append(float(results.loglik))
+                metrics["Log-Likelihood"].append(self._safe_float(results.loglik))
             elif hasattr(results, "llf"):
-                metrics["Log-Likelihood"].append(float(results.llf))
+                metrics["Log-Likelihood"].append(self._safe_float(results.llf))
             else:
                 metrics["Log-Likelihood"].append(np.nan)
 
@@ -307,19 +326,19 @@ class ComparisonDataTransformer:
         for results in results_list:
             # AIC
             if hasattr(results, "aic"):
-                ic_dict["aic"].append(float(results.aic))
+                ic_dict["aic"].append(self._safe_float(results.aic))
             else:
                 ic_dict["aic"].append(np.nan)
 
             # BIC
             if hasattr(results, "bic"):
-                ic_dict["bic"].append(float(results.bic))
+                ic_dict["bic"].append(self._safe_float(results.bic))
             else:
                 ic_dict["bic"].append(np.nan)
 
             # HQIC
             if hasattr(results, "hqic"):
-                ic_dict["hqic"].append(float(results.hqic))
+                ic_dict["hqic"].append(self._safe_float(results.hqic))
             else:
                 ic_dict["hqic"].append(np.nan)
 
