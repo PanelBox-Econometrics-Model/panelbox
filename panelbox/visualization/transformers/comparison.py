@@ -321,26 +321,26 @@ class ComparisonDataTransformer:
         dict
             Dictionary with IC values
         """
-        ic_dict = {"aic": [], "bic": [], "hqic": []}
+        ic_dict = {"AIC": [], "BIC": [], "HQIC": []}
 
         for results in results_list:
             # AIC
             if hasattr(results, "aic"):
-                ic_dict["aic"].append(self._safe_float(results.aic))
+                ic_dict["AIC"].append(self._safe_float(results.aic))
             else:
-                ic_dict["aic"].append(np.nan)
+                ic_dict["AIC"].append(np.nan)
 
             # BIC
             if hasattr(results, "bic"):
-                ic_dict["bic"].append(self._safe_float(results.bic))
+                ic_dict["BIC"].append(self._safe_float(results.bic))
             else:
-                ic_dict["bic"].append(np.nan)
+                ic_dict["BIC"].append(np.nan)
 
             # HQIC
             if hasattr(results, "hqic"):
-                ic_dict["hqic"].append(self._safe_float(results.hqic))
+                ic_dict["HQIC"].append(self._safe_float(results.hqic))
             else:
-                ic_dict["hqic"].append(np.nan)
+                ic_dict["HQIC"].append(np.nan)
 
         # Remove IC that are all NaN
         ic_dict = {k: v for k, v in ic_dict.items() if not all(np.isnan(v))}
@@ -386,7 +386,7 @@ class ComparisonDataTransformer:
         }
 
     def prepare_forest_plot(
-        self, results: Any, variables: Optional[List[str]] = None
+        self, results: Any, variables: Optional[List[str]] = None, confidence_level: float = 0.95
     ) -> Dict[str, Any]:
         """
         Prepare data for forest plot (single model).
@@ -397,6 +397,8 @@ class ComparisonDataTransformer:
             Model results
         variables : list of str, optional
             Variables to include
+        confidence_level : float, default=0.95
+            Confidence level for intervals (0.90, 0.95, or 0.99)
 
         Returns
         -------
@@ -417,13 +419,15 @@ class ComparisonDataTransformer:
         std_errors = [se_dict[v][0] for v in variables]
         pvalues = [pval_dict[v][0] for v in variables]
 
-        # Calculate 95% CI
-        ci_lower = [e - 1.96 * se for e, se in zip(estimates, std_errors)]
-        ci_upper = [e + 1.96 * se for e, se in zip(estimates, std_errors)]
+        # Calculate confidence intervals based on level
+        z_score = {0.90: 1.645, 0.95: 1.96, 0.99: 2.576}.get(confidence_level, 1.96)
+        ci_lower = [e - z_score * se for e, se in zip(estimates, std_errors)]
+        ci_upper = [e + z_score * se for e, se in zip(estimates, std_errors)]
 
         return {
             "variables": variables,
             "estimates": estimates,
+            "coefficients": estimates,  # Alias for backward compatibility
             "ci_lower": ci_lower,
             "ci_upper": ci_upper,
             "pvalues": pvalues,
@@ -475,8 +479,8 @@ class ComparisonDataTransformer:
 
         return {
             "models": data["models"],
-            "aic": ic.get("aic"),
-            "bic": ic.get("bic"),
-            "hqic": ic.get("hqic"),
+            "aic": ic.get("AIC"),
+            "bic": ic.get("BIC"),
+            "hqic": ic.get("HQIC"),
             "show_delta": True,
         }
