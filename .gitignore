@@ -216,6 +216,7 @@ papers/
 
 # Output directory (test reports, generated files)
 output/
+reports/
 
 # Scripts directory (internal build/release scripts)
 scripts/
