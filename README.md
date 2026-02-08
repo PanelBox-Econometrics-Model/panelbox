@@ -10,8 +10,8 @@
 [![Documentation Status](https://readthedocs.org/projects/panelbox/badge/?version=latest)](https://panelbox.readthedocs.io/)
 [![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Tests](https://img.shields.io/badge/tests-1257%20passed-success.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-30%25-yellow.svg)]()
+[![Tests](https://github.com/PanelBox-Econometrics-Model/panelbox/workflows/Tests/badge.svg)](https://github.com/PanelBox-Econometrics-Model/panelbox/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/PanelBox-Econometrics-Model/panelbox/branch/main/graph/badge.svg)](https://codecov.io/gh/PanelBox-Econometrics-Model/panelbox)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 </div>
