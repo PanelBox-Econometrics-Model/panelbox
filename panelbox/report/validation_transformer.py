@@ -6,6 +6,12 @@ Transforms ValidationReport objects into template-friendly data structures.
 
 from typing import Any, Dict, List
 
+# Import at module level for patching in tests
+try:
+    from panelbox.visualization import create_validation_charts
+except ImportError:
+    create_validation_charts = None
+
 
 class ValidationTransformer:
     """
@@ -345,9 +351,7 @@ class ValidationTransformer:
             return self._prepare_chart_data_legacy()
 
         # NEW: Use visualization system
-        try:
-            from panelbox.visualization import create_validation_charts
-        except ImportError:
+        if create_validation_charts is None:
             # Fallback if visualization module not available
             import warnings
 
@@ -383,6 +387,16 @@ class ValidationTransformer:
 
             return charts_html
 
+        except ImportError:
+            # Fallback if import fails during execution
+            import warnings
+
+            warnings.warn(
+                "New visualization system not available. Falling back to legacy mode. "
+                "Install panelbox.visualization or set use_new_visualization=False.",
+                UserWarning,
+            )
+            return self._prepare_chart_data_legacy()
         except Exception as e:
             # Fallback to legacy mode if chart generation fails
             import warnings

@@ -151,7 +151,16 @@ class TestReportManager:
         validation_data = {
             "model_info": {"model_type": "FE"},
             "tests": [],
-            "summary": {"total_tests": 0, "has_issues": False},
+            "summary": {
+                "total_tests": 0,
+                "total_passed": 0,
+                "total_failed": 0,
+                "pass_rate": 100.0,
+                "pass_rate_formatted": "100.0%",
+                "has_issues": False,
+                "overall_status": "excellent",
+                "status_message": "All tests passed",
+            },
             "recommendations": [],
         }
 
