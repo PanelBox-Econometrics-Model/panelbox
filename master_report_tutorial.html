@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PanelBox v0.8.0 - Complete Analysis Tutorial</title>
+
+    <!-- Favicon -->
+
+    <!-- Embedded CSS -->
+    <style>
+        /* CSS will be embedded here by CSSManager */
+
+    </style>
+
+<style>
+/* Master Report Styles */
+
+/* Master Section */
+.master-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.master-section:last-child {
+    border-bottom: none;
+}
+
+/* Experiment Info Grid */
+.experiment-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.info-card:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+}
+
+.info-label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.info-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+    font-family: &#39;Monaco&#39;, &#39;Courier New&#39;, monospace;
+}
+
+/* Models Grid */
+.models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.model-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+}
+
+.model-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.model-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.model-details {
+    font-size: 0.9rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .label {
+    color: var(--gray-600);
+}
+
+.detail-row .value {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* Reports List */
+.reports-list {
+    margin-top: 1.5rem;
+}
+
+.report-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s;
+}
+
+.report-item:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.report-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+}
+
+.report-info {
+    flex-grow: 1;
+}
+
+.report-info h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    color: var(--text-color);
+}
+
+.report-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.report-actions {
+    flex-shrink: 0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--secondary-color);
+    transform: translateX(5px);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: var(--gray-50);
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+
+.empty-state p {
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state .hint {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.empty-state code {
+    background: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: &#39;Monaco&#39;, &#39;Courier New&#39;, monospace;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+}
+
+/* Guide Content */
+.guide-content {
+    background: var(--gray-50);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.guide-content h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+}
+
+.guide-content pre {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+}
+
+.guide-content pre:last-child {
+    margin-bottom: 0;
+}
+
+.guide-content code {
+    font-family: &#39;Monaco&#39;, &#39;Courier New&#39;, monospace;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .experiment-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .models-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .report-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .report-actions {
+        width: 100%;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+
+</style>
+</head>
+<body>
+    <!-- Header -->
+<div class="report-header">
+    <h1 class="report-title">PanelBox v0.8.0 - Complete Analysis Tutorial</h1>
+
+    <div class="report-meta">
+
+
+
+
+
+        <div class="report-meta-item">
+            <span class="report-meta-label">Generated:</span>
+            <span>2026-02-08 18:34:47</span>
+        </div>
+    </div>
+</div>
+    <!-- Main Content -->
+    <main class="report-content">
+        <div class="container">
+
+<!-- Experiment Overview -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>📊 Experiment Overview</h2>
+        <p class="section-description">Summary of panel data experiment</p>
+    </div>
+
+    <div class="experiment-info-grid">
+        <div class="info-card">
+            <div class="info-label">Formula</div>
+            <div class="info-value">invest ~ value + capital</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Observations</div>
+            <div class="info-value">200</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Entities</div>
+            <div class="info-value">10</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Time Periods</div>
+            <div class="info-value">20</div>
+        </div>
+    </div>
+</section>
+
+<!-- Models Summary -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>🔬 Models Fitted</h2>
+        <p class="section-description">Overview of all fitted models</p>
+    </div>
+
+    <div class="models-grid">
+        <div class="model-card">
+            <h3>ols</h3>
+            <div class="model-details">
+                <div class="detail-row">
+                    <span class="label">Type:</span>
+                    <span class="value">pooled_ols</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">R²:</span>
+                    <span class="value">0.8090</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">AIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">BIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+            </div>
+        </div>
+        <div class="model-card">
+            <h3>fe</h3>
+            <div class="model-details">
+                <div class="detail-row">
+                    <span class="label">Type:</span>
+                    <span class="value">fixed_effects</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">R²:</span>
+                    <span class="value">0.7899</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">AIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">BIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+            </div>
+        </div>
+        <div class="model-card">
+            <h3>re</h3>
+            <div class="model-details">
+                <div class="detail-row">
+                    <span class="label">Type:</span>
+                    <span class="value">random_effects</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">R²:</span>
+                    <span class="value">0.8003</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">AIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">BIC:</span>
+                    <span class="value">0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Reports Index -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>📄 Generated Reports</h2>
+        <p class="section-description">Navigate to individual reports</p>
+    </div>
+
+    <div class="reports-list">
+        <div class="report-item">
+            <div class="report-icon">
+📋
+            </div>
+            <div class="report-info">
+                <h4>Fixed Effects Validation</h4>
+                <p>Specification tests for FE model</p>
+            </div>
+            <div class="report-actions">
+                <a href="validation_report_tutorial.html" class="btn btn-primary" target="_blank">
+                    Open Report →
+                </a>
+            </div>
+        </div>
+        <div class="report-item">
+            <div class="report-icon">
+📊
+            </div>
+            <div class="report-info">
+                <h4>Model Comparison</h4>
+                <p>Compare Pooled OLS, FE, and RE models</p>
+            </div>
+            <div class="report-actions">
+                <a href="comparison_report_tutorial.html" class="btn btn-primary" target="_blank">
+                    Open Report →
+                </a>
+            </div>
+        </div>
+        <div class="report-item">
+            <div class="report-icon">
+🔬
+            </div>
+            <div class="report-info">
+                <h4>Residual Diagnostics</h4>
+                <p>Diagnostic tests for FE model residuals</p>
+            </div>
+            <div class="report-actions">
+                <a href="residuals_report_tutorial.html" class="btn btn-primary" target="_blank">
+                    Open Report →
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start Guide -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>🚀 Quick Start</h2>
+        <p class="section-description">How to generate reports</p>
+    </div>
+
+    <div class="guide-content">
+        <h4>Generate Validation Report:</h4>
+        <pre><code>validation_result = experiment.validate_model('model_name')
+validation_result.save_html('validation.html', test_type='validation')</code></pre>
+
+        <h4>Generate Comparison Report:</h4>
+        <pre><code>comparison_result = experiment.compare_models(['model1', 'model2'])
+comparison_result.save_html('comparison.html', test_type='comparison')</code></pre>
+
+        <h4>Generate Residual Diagnostics Report:</h4>
+        <pre><code>residual_result = experiment.analyze_residuals('model_name')
+residual_result.save_html('residuals.html', test_type='residuals')</code></pre>
+
+        <h4>Update Master Report:</h4>
+        <pre><code>experiment.save_master_report('master.html')</code></pre>
+    </div>
+</section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+<div class="report-footer">
+    <div class="report-footer-actions no-print">
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+            Print Report
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="PanelBoxUtils.exportTableToCSV('summary-table', 'panelbox_results.csv')">
+            Export to CSV
+        </button>
+    </div>
+
+    <div class="report-footer-text">
+        <p>
+            Generated with <strong>PanelBox 0.8.0</strong> |
+            <a href="https://github.com/panelbox/panelbox" target="_blank">Documentation</a>
+        </p>
+        <p class="text-xs text-gray-500">
+            Report Type: master |
+            Generated: 2026-02-08 18:34:47 |
+            Python 3.12.10
+        </p>
+    </div>
+</div>
+    <!-- Embedded JavaScript -->
+
+    <!-- Plotly (from CDN or embedded) -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+</body>
+</html>

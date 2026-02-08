@@ -71,62 +71,51 @@ Create custom chart:
 >>> html = chart.to_html()
 """
 
-from .base import BaseChart, PlotlyChartBase, MatplotlibChartBase
+from .base import BaseChart, MatplotlibChartBase, PlotlyChartBase
 from .factory import ChartFactory
 from .registry import ChartRegistry, register_chart
 from .themes import ACADEMIC_THEME, PRESENTATION_THEME, PROFESSIONAL_THEME, Theme
 
-# Import chart implementations to trigger registration (optional)
+# Import chart implementations to trigger registration
+# These imports MUST succeed for chart registration to work
 try:
     from .plotly.basic import BarChart, LineChart
+    from .plotly.comparison import (
+        CoefficientComparisonChart,
+        ForestPlotChart,
+        InformationCriteriaChart,
+        ModelFitComparisonChart,
+    )
+    from .plotly.correlation import CorrelationHeatmapChart, PairwiseCorrelationChart
+    from .plotly.distribution import BoxPlotChart, HistogramChart, KDEChart, ViolinPlotChart
+    from .plotly.econometric_tests import (
+        ACFPACFPlot,
+        CointegrationHeatmap,
+        CrossSectionalDependencePlot,
+        UnitRootTestPlot,
+    )
+    from .plotly.panel import (
+        BetweenWithinPlot,
+        EntityEffectsPlot,
+        PanelStructurePlot,
+        TimeEffectsPlot,
+    )
+    from .plotly.residuals import (
+        PartialRegressionPlot,
+        QQPlot,
+        ResidualDistributionPlot,
+        ResidualTimeSeriesPlot,
+        ResidualVsFittedPlot,
+        ResidualVsLeveragePlot,
+        ScaleLocationPlot,
+    )
+    from .plotly.timeseries import FacetedTimeSeriesChart, PanelTimeSeriesChart, TrendLineChart
     from .plotly.validation import (
         PValueDistributionChart,
         TestComparisonHeatmap,
         TestOverviewChart,
         TestStatisticsChart,
         ValidationDashboard,
-    )
-    from .plotly.residuals import (
-        QQPlot,
-        ResidualVsFittedPlot,
-        ScaleLocationPlot,
-        ResidualVsLeveragePlot,
-        ResidualTimeSeriesPlot,
-        ResidualDistributionPlot,
-        PartialRegressionPlot,
-    )
-    from .plotly.comparison import (
-        CoefficientComparisonChart,
-        ForestPlotChart,
-        ModelFitComparisonChart,
-        InformationCriteriaChart,
-    )
-    from .plotly.distribution import (
-        HistogramChart,
-        KDEChart,
-        ViolinPlotChart,
-        BoxPlotChart,
-    )
-    from .plotly.correlation import (
-        CorrelationHeatmapChart,
-        PairwiseCorrelationChart,
-    )
-    from .plotly.timeseries import (
-        PanelTimeSeriesChart,
-        TrendLineChart,
-        FacetedTimeSeriesChart,
-    )
-    from .plotly.panel import (
-        EntityEffectsPlot,
-        TimeEffectsPlot,
-        BetweenWithinPlot,
-        PanelStructurePlot,
-    )
-    from .plotly.econometric_tests import (
-        ACFPACFPlot,
-        UnitRootTestPlot,
-        CointegrationHeatmap,
-        CrossSectionalDependencePlot,
     )
 
     _has_plotly_charts = True
@@ -171,21 +160,21 @@ except ImportError:
 # High-level convenience APIs (Phase 2)
 try:
     from .api import (
+        create_acf_pacf_plot,
+        create_between_within_plot,
+        create_cointegration_heatmap,
         create_comparison_charts,
+        create_cross_sectional_dependence_plot,
+        create_entity_effects_plot,
+        create_panel_charts,
+        create_panel_structure_plot,
         create_residual_diagnostics,
+        create_time_effects_plot,
+        create_unit_root_test_plot,
         create_validation_charts,
         export_chart,
         export_charts,
         export_charts_multiple_formats,
-        create_panel_charts,
-        create_entity_effects_plot,
-        create_time_effects_plot,
-        create_between_within_plot,
-        create_panel_structure_plot,
-        create_acf_pacf_plot,
-        create_unit_root_test_plot,
-        create_cointegration_heatmap,
-        create_cross_sectional_dependence_plot,
     )
 
     _has_api = True
@@ -285,4 +274,45 @@ __all__ = [
     "export_charts_multiple_formats",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
+
+
+def _initialize_chart_registry():
+    """
+    Initialize the chart registry by importing all chart modules.
+
+    This function ensures that all chart decorators (@register_chart)
+    are executed at module import time, populating the ChartRegistry.
+    """
+    # Charts are already imported above if plotly is available
+    # This function serves as documentation and can be called explicitly if needed
+    if _has_plotly_charts:
+        # Verify registration happened
+        registered = ChartRegistry.list_charts()
+        if not registered:
+            # Force re-import if registry is empty
+            import importlib
+
+            from . import plotly
+
+            # Reload all plotly submodules to trigger registration
+            for module_name in [
+                "basic",
+                "validation",
+                "residuals",
+                "comparison",
+                "distribution",
+                "correlation",
+                "timeseries",
+            ]:
+                try:
+                    module = importlib.import_module(
+                        f".plotly.{module_name}", package="panelbox.visualization"
+                    )
+                    importlib.reload(module)
+                except ImportError:
+                    pass
+
+
+# Initialize registry at import time
+_initialize_chart_registry()

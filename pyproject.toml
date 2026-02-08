@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panelbox"
-version = "0.5.0"
-description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Bootstrap, Sensitivity Analysis, Interactive Visualizations (28+ Charts)"
+version = "0.8.0"
+description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Experiment Pattern with Result Containers (Validation, Comparison, Residual), Test Runners & Master Reports, Interactive Visualizations (35 Charts), Professional HTML Reports, Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Comprehensive Diagnostics"
 authors = [
     {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},
     {name = "Paulo Dourado", email = "paulodourado.unb@gmail.com"}
@@ -62,6 +62,7 @@ dependencies = [
     "patsy>=0.5.3",
     "tqdm>=4.65.0",
     "jinja2>=3.1.0",
+    "plotly>=5.14.0",
 ]
 
 [project.optional-dependencies]
@@ -123,4 +124,14 @@ include = ["panelbox*"]
 exclude = ["desenvolvimento*", "tests*", "examples*"]
 
 [tool.setuptools.package-data]
-panelbox = ["datasets/data/*.csv", "datasets/data/*.dta"]
+panelbox = [
+    "datasets/data/*.csv",
+    "datasets/data/*.dta",
+    "templates/**/*.html",
+    "templates/**/*.css",
+    "templates/**/*.js",
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.3.0,<9.0"
+pytest-cov = "^7.0.0"

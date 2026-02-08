@@ -14,6 +14,246 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional cointegration tests
 - Matplotlib backend for static visualizations
 
+## [0.8.0] - 2026-02-08
+
+### Summary
+
+**🎯 Test Runners & Master Report (Sprint 8)**
+
+PanelBox v0.8.0 completes the report generation system with test runners and master reports. This release provides configurable test runners for validation and comparison, a comprehensive master report that integrates all sub-reports, and full end-to-end workflow integration.
+
+**Key Metrics:**
+- 2 test runners (ValidationTest, ComparisonTest)
+- Master report system with experiment overview
+- 23 new tests (19 unit + 4 integration), all passing
+- Full workflow: validation → comparison → residuals → master
+- Professional responsive HTML templates
+
+### Added
+
+- **ValidationTest Runner** - Configurable test runner for model validation
+  - Three preset configurations: `quick`, `basic`, `full`
+  - Clean API: `ValidationTest().run(results, config='full')`
+  - Integrates with existing model `validate()` methods
+  - Supports custom test selection
+  - Comprehensive error handling with helpful messages
+
+- **ComparisonTest Runner** - Multi-model comparison test runner
+  - Automatic metrics extraction (R², AIC, BIC, etc.)
+  - Automatic coefficients extraction for forest plots
+  - Validation for minimum 2 models
+  - Returns ComparisonResult container
+  - Support for optional statistics and coefficients
+
+- **Master Report System** - Comprehensive HTML report with navigation
+  - Experiment overview (formula, observations, entities, time periods)
+  - Models summary grid with key metrics (type, R², AIC, BIC)
+  - Reports index with navigation links to sub-reports
+  - Quick start guide with embedded code examples
+  - Responsive design for all screen sizes
+  - Professional styling matching validation/comparison/residuals reports
+
+- **PanelExperiment Enhancement**
+  - `save_master_report()` method for generating master HTML reports
+  - Validates at least one model is fitted
+  - Customizable title and theme support
+  - Optional reports list for linking sub-reports
+
+- **Test Suite**
+  - 9 unit tests for ValidationTest (all passing)
+  - 10 unit tests for ComparisonTest (all passing)
+  - 4 integration tests for full workflow (all passing)
+  - Complete end-to-end workflow validation
+  - JSON export tests for all result types
+
+- **Templates**
+  - `panelbox/templates/master/index.html` - Master report template (145 lines)
+  - `panelbox/templates/master/master.css` - Professional styling (231 lines)
+  - Responsive grid layouts for experiment info and models
+  - Empty state handling with helpful instructions
+
+### Changed
+
+- **Package Metadata**
+  - Updated version to 0.8.0 in `__version__.py` and `pyproject.toml`
+  - Enhanced package description to include test runners and master reports
+  - Updated version history with Sprint 8 features
+
+- **PanelExperiment API**
+  - Enhanced model metadata handling (safe access with `.get()`)
+  - Better timestamp handling (optional in metadata)
+  - Improved error messages for missing models
+
+### Fixed
+
+- **Metadata Handling**
+  - Fixed KeyError when accessing 'timestamp' in model metadata
+  - Now uses `.get('timestamp')` with safe fallback
+  - Model type defaults to 'Unknown' if not found
+
+## [0.7.0] - 2026-02-08
+
+### Summary
+
+**🎯 Advanced Features & Production Polish (Sprint 5)**
+
+PanelBox v0.7.0 completes the result container trilogy with ResidualResult and fixes critical chart registration issues. This release delivers a production-ready package with zero console warnings, embedded interactive charts in HTML reports, and comprehensive residual diagnostics.
+
+**Key Metrics:**
+- ResidualResult container with 4 diagnostic tests
+- 16 comprehensive tests with 85% coverage
+- All 35 charts now correctly registered
+- Zero warnings in console output
+- HTML reports now include embedded interactive charts (102.9 KB vs 77.5 KB)
+
+### Added
+
+- **ResidualResult** - Complete container for residual diagnostics analysis
+  - Four diagnostic tests: Shapiro-Wilk, Jarque-Bera, Durbin-Watson, Ljung-Box
+  - Summary statistics: mean, std, skewness, kurtosis, min, max
+  - Standardized residuals computation for outlier detection
+  - Professional `summary()` output with interpretation guidelines
+  - Inherits from BaseResult for consistent API
+
+- **PanelExperiment Integration**
+  - `analyze_residuals(name)` method for one-liner residual analysis
+  - Follows same pattern as `validate_model()` and `compare_models()`
+  - Automatic metadata propagation
+
+- **ResidualResult Methods**
+  - `from_model_results()` - Factory method for creating from fitted models
+  - `to_dict()` - Export to visualization-ready dictionary
+  - `summary()` - Generate formatted text summary with interpretation
+  - `save_html()` - Generate interactive HTML report with residual charts
+  - `save_json()` - Export diagnostics to JSON format
+
+- **Test Suite**
+  - 16 comprehensive tests for ResidualResult (85% coverage)
+  - Creation & initialization tests (3)
+  - Diagnostic test validation (4)
+  - Summary statistics tests (1)
+  - Export & serialization tests (4)
+  - Integration tests with PanelExperiment (4)
+
+### Fixed
+
+- **Chart Registration System** - Critical bug fix
+  - Root cause: Plotly dependency was declared but not installed
+  - Solution: Ran `poetry lock && poetry install` to install plotly 6.5.2
+  - Added `_initialize_chart_registry()` function as fallback mechanism
+  - All 35 charts now registered correctly
+  - Zero warnings in console output
+
+- **Plotly Dependencies**
+  - Plotly 6.5.2 now properly installed via poetry
+  - Narwhals 2.16.0 added as plotly dependency
+  - pytest and pytest-cov added to dev dependencies
+
+- **HTML Reports**
+  - Charts now render correctly in validation reports
+  - Charts now render correctly in comparison reports
+  - Interactive Plotly visualizations properly embedded
+  - Report size increased from 77.5 KB to 102.9 KB (charts included)
+
+- **API Issues**
+  - Fixed `jarque_bera()` return value unpacking (was expecting 4 values, got 2)
+  - Fixed `ljung_box()` DataFrame indexing (statsmodels changed return type)
+
+### Changed
+
+- **Package Metadata**
+  - Updated version to 0.7.0 in `__version__.py` and `pyproject.toml`
+  - Enhanced package description to mention all 3 result containers
+  - Added ResidualResult to public API exports
+
+- **Visualization System**
+  - Chart imports are now mandatory (not "optional")
+  - Registry initialization happens at module import time
+  - Better error messages when charts fail to register
+
+- **Documentation**
+  - Added comprehensive version history in `__version__.py`
+  - Updated docstrings for all ResidualResult methods
+  - Added usage examples in class docstrings
+
+### Code Statistics
+
+**Sprint 5 Additions:**
+- ResidualResult class: ~500 LOC
+- Test suite: ~250 LOC
+- Integration: ~70 LOC
+- Documentation: ~200 LOC
+- **Total**: ~1,020 new lines
+
+**Test Results:**
+- 16/16 tests passing (100%)
+- 85% coverage for ResidualResult class
+- All integration tests passing
+
+### Upgrade Notes
+
+**From v0.6.0 to v0.7.0:**
+
+No breaking changes - fully backward compatible.
+
+**New Usage Pattern:**
+```python
+import panelbox as pb
+
+# Create experiment
+experiment = pb.PanelExperiment(data, 'y ~ x1 + x2', 'firm', 'year')
+
+# Fit model
+experiment.fit_model('fe', name='fe')
+
+# Analyze residuals (NEW!)
+residual_result = experiment.analyze_residuals('fe')
+
+# Print diagnostics
+print(residual_result.summary())
+
+# Check specific tests
+stat, pvalue = residual_result.shapiro_test
+print(f"Normality: p={pvalue:.4f}")
+
+dw = residual_result.durbin_watson
+print(f"Autocorrelation: DW={dw:.4f}")
+
+# Save reports
+residual_result.save_html('residuals.html', test_type='residuals')
+residual_result.save_json('residuals.json')
+```
+
+### Complete Result Container Trilogy
+
+PanelBox now offers three complementary result containers:
+
+1. **ValidationResult** - Model specification tests
+   - Created via `experiment.validate_model(name)`
+   - Tests: Hausman, heteroskedasticity, autocorrelation, etc.
+
+2. **ComparisonResult** - Model comparison and selection
+   - Created via `experiment.compare_models(names)`
+   - Automatic best model identification
+
+3. **ResidualResult** - Residual diagnostics (NEW!)
+   - Created via `experiment.analyze_residuals(name)`
+   - Tests: Shapiro-Wilk, Jarque-Bera, Durbin-Watson, Ljung-Box
+
+All three follow the same pattern:
+- Inherit from BaseResult
+- Implement `to_dict()` and `summary()`
+- Support HTML/JSON export
+- Professional formatted output
+
+## [0.6.0] - 2026-02-08
+
+### Summary
+
+**🔬 Experiment Pattern & Result Containers**
+
+(Previous v0.6.0 content remains unchanged)
+
 ## [0.5.0] - 2026-02-08
 
 ### Summary

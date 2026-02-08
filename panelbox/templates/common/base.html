@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_title | default('PanelBox Report') }}</title>
+
+    <!-- Favicon -->
+    {% if favicon_base64 %}
+    <link rel="icon" type="image/png" href="data:image/png;base64,{{ favicon_base64 }}">
+    {% endif %}
+
+    <!-- Embedded CSS -->
+    <style>
+        /* CSS will be embedded here by CSSManager */
+        {{ css_content }}
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    {% include 'common/header.html' %}
+
+    <!-- Main Content -->
+    <main class="report-content">
+        <div class="container">
+            {% block content %}
+            <!-- Report content goes here -->
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    {% include 'common/footer.html' %}
+
+    <!-- Embedded JavaScript -->
+    {% if js_content %}
+    <script>
+        {{ js_content }}
+    </script>
+    {% endif %}
+
+    <!-- Plotly (from CDN or embedded) -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

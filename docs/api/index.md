@@ -53,9 +53,16 @@ Example datasets for learning and testing:
 
 Reporting and export utilities:
 
+- **PanelExperiment**: High-level API for panel data analysis (NEW in v0.8.0)
+- **ValidationResult**: Container for validation test results with HTML export (NEW in v0.8.0)
+- **ComparisonResult**: Container for model comparison with HTML export (NEW in v0.8.0)
+- **ResidualResult**: Container for residual diagnostics with HTML export (NEW in v0.7.0)
+- **ValidationTest**: Test runner with configurable presets (NEW in v0.8.0)
+- **ComparisonTest**: Multi-model comparison runner (NEW in v0.8.0)
 - **to_latex()**: Export to LaTeX tables
 - **summary()**: Formatted summary tables
-- **compare_models()**: Side-by-side comparison
+- **save_html()**: Generate interactive HTML reports (NEW in v0.8.0)
+- **save_master_report()**: Generate master report with navigation (NEW in v0.8.0)
 
 ## Quick Links
 
@@ -69,6 +76,11 @@ Reporting and export utilities:
 | Check Hansen J Test | [Results](results.md#hansen-j-test) |
 | Load Example Data | [load_grunfeld](datasets.md#load_grunfeld) |
 | Export to LaTeX | [to_latex](report.md#to_latex) |
+| Create Experiment | [PanelExperiment](report.md#panelexperiment) |
+| Validate Model | [ValidationTest](report.md#validationtest) |
+| Compare Models | [ComparisonTest](report.md#comparisontest) |
+| Generate HTML Report | [save_html](report.md#save_html) |
+| Master Report | [save_master_report](report.md#save_master_report) |
 
 ## Usage Patterns
 
@@ -126,6 +138,52 @@ print(f"AR(2): {results.ar2_test.pvalue:.3f}")
 # 5. If tests pass, view results
 if results.hansen_j.pvalue > 0.10 and results.ar2_test.pvalue > 0.10:
     print(results.summary())
+```
+
+### Complete Workflow with Reports (NEW in v0.8.0)
+
+```python
+import panelbox as pb
+
+# 1. Load data
+data = pb.load_grunfeld()
+
+# 2. Create experiment
+experiment = pb.PanelExperiment(
+    data=data,
+    formula="invest ~ value + capital",
+    entity_col="firm",
+    time_col="year"
+)
+
+# 3. Fit multiple models
+experiment.fit_model('pooled_ols', name='ols')
+experiment.fit_model('fixed_effects', name='fe')
+experiment.fit_model('random_effects', name='re')
+
+# 4. Generate validation report
+validation = experiment.validate_model('fe', config='full')
+validation.save_html('validation.html', test_type='validation', theme='professional')
+
+# 5. Generate comparison report
+comparison = experiment.compare_models(['ols', 'fe', 're'])
+comparison.save_html('comparison.html', test_type='comparison', theme='professional')
+
+# 6. Generate residual diagnostics
+residuals = experiment.analyze_residuals('fe')
+residuals.save_html('residuals.html', test_type='residuals', theme='professional')
+
+# 7. Generate master report
+experiment.save_master_report('master.html', theme='professional', reports=[
+    {'type': 'validation', 'title': 'Model Validation',
+     'description': 'Specification tests', 'file_path': 'validation.html'},
+    {'type': 'comparison', 'title': 'Model Comparison',
+     'description': 'Compare OLS, FE, RE', 'file_path': 'comparison.html'},
+    {'type': 'residuals', 'title': 'Residual Diagnostics',
+     'description': 'Diagnostic plots', 'file_path': 'residuals.html'}
+])
+
+# Open master.html in your browser!
 ```
 
 ## Module Organization

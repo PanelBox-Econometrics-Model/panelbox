@@ -7,15 +7,24 @@ inspired by Stata (xtabond2), R (plm), and statsmodels.
 Features:
 - Static panel models: Pooled OLS, Fixed Effects, Random Effects
 - Dynamic panel GMM: Arellano-Bond (1991), Blundell-Bond (1998)
+- Experiment Pattern: Factory-based model management with result containers
+- Interactive HTML reports with Plotly visualizations
 - Robust to unbalanced panels
 - Comprehensive specification tests
 - Publication-ready reporting
 
-Quick Start:
-    >>> from panelbox import DifferenceGMM
-    >>> gmm = DifferenceGMM(data=df, dep_var='y', lags=1, id_var='id', time_var='year')
-    >>> results = gmm.fit()
+Quick Start (Traditional):
+    >>> from panelbox import FixedEffects
+    >>> fe = FixedEffects("y ~ x1 + x2", data, "firm", "year")
+    >>> results = fe.fit()
     >>> print(results.summary())
+
+Quick Start (Experiment Pattern):
+    >>> from panelbox import PanelExperiment
+    >>> experiment = PanelExperiment(data, "y ~ x1 + x2", "firm", "year")
+    >>> experiment.fit_all_models(names=['pooled', 'fe', 're'])
+    >>> val_result = experiment.validate_model('fe')
+    >>> val_result.save_html('validation.html', test_type='validation')
 """
 
 from panelbox.__version__ import __author__, __email__, __license__, __version__
@@ -27,6 +36,15 @@ from panelbox.core.results import PanelResults
 
 # Datasets
 from panelbox.datasets import get_dataset_info, list_datasets, load_abdata, load_grunfeld
+
+# Experiment Pattern (Sprints 3-5)
+from panelbox.experiment import PanelExperiment
+from panelbox.experiment.results import (
+    BaseResult,
+    ComparisonResult,
+    ResidualResult,
+    ValidationResult,
+)
 
 # Dynamic panel GMM models
 from panelbox.gmm.difference_gmm import DifferenceGMM
@@ -153,4 +171,10 @@ __all__ = [
     "load_abdata",
     "list_datasets",
     "get_dataset_info",
+    # Experiment Pattern
+    "PanelExperiment",
+    "BaseResult",
+    "ValidationResult",
+    "ComparisonResult",
+    "ResidualResult",
 ]

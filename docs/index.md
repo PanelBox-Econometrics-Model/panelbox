@@ -23,6 +23,9 @@ PanelBox is a comprehensive Python library for **panel data econometrics**, prov
 
 - **Static panel models**: Pooled OLS, Fixed Effects, Random Effects, Between, First Differences
 - **Dynamic panel GMM**: Difference GMM (Arellano-Bond 1991), System GMM (Blundell-Bond 1998)
+- **HTML Report System** (NEW in v0.8.0): Interactive validation, comparison, and residual diagnostic reports
+- **Test Runners** (NEW in v0.8.0): ValidationTest and ComparisonTest with configurable presets
+- **Master Reports** (NEW in v0.8.0): Comprehensive overview with navigation to all sub-reports
 - **Robust inference**: 8+ types of standard errors (clustered, HAC, heteroskedasticity-robust)
 - **Diagnostic tests**: Hansen J, Sargan, AR tests, Hausman, Wooldridge, Breusch-Pagan
 - **Validation**: Cross-validated against Stata's `xtabond2` and R's `plm`
@@ -44,43 +47,41 @@ import panelbox as pb
 # Load example data
 data = pb.load_grunfeld()
 
-# Estimate System GMM
-gmm = pb.SystemGMM(
+# Create experiment and fit multiple models (NEW in v0.8.0!)
+experiment = pb.PanelExperiment(
     data=data,
-    dep_var='invest',
-    lags=1,
-    exog_vars=['value', 'capital'],
-    id_var='firm',
-    time_var='year',
-    collapse=True,
-    robust=True
+    formula="invest ~ value + capital",
+    entity_col="firm",
+    time_col="year"
 )
 
-results = gmm.fit()
-print(results.summary())
+# Fit models
+experiment.fit_model('pooled_ols', name='ols')
+experiment.fit_model('fixed_effects', name='fe')
+experiment.fit_model('random_effects', name='re')
 
-# Check diagnostics
-print(f"Hansen J p-value: {results.hansen_j.pvalue:.3f}")  # 0.185
-print(f"AR(2) p-value: {results.ar2_test.pvalue:.3f}")      # 0.412
+# Generate reports with one line each (NEW in v0.8.0!)
+validation = experiment.validate_model('fe')
+validation.save_html('validation.html', test_type='validation')
+
+comparison = experiment.compare_models(['ols', 'fe', 're'])
+comparison.save_html('comparison.html', test_type='comparison')
+
+# Generate master report (NEW in v0.8.0!)
+experiment.save_master_report('master.html', reports=[
+    {'type': 'validation', 'title': 'Model Validation', 'file_path': 'validation.html'},
+    {'type': 'comparison', 'title': 'Model Comparison', 'file_path': 'comparison.html'}
+])
 ```
 
 **Output:**
-```
-================================================================================
-                       System GMM Estimation Results
-================================================================================
-Dependent Variable:              invest        Hansen J p-value:           0.185
-Model:                       System GMM        AR(2) p-value:              0.412
-No. Observations:                   180        Instrument ratio:             2.5
-No. Entities:                        10
-================================================================================
-                    coef    std err          z      P>|z|      [0.025      0.975]
---------------------------------------------------------------------------------
-invest_L1         0.512      0.098      5.224      0.000       0.320       0.704
-value             0.088      0.029      3.034      0.002       0.031       0.145
-capital           0.185      0.067      2.761      0.006       0.054       0.316
-================================================================================
-```
+
+Three interactive HTML reports are generated:
+- `validation.html`: Comprehensive diagnostic tests with pass/fail indicators
+- `comparison.html`: Side-by-side model comparison with coefficients and metrics
+- `master.html`: Overview dashboard with navigation to all reports
+
+Open `master.html` in your browser for an interactive analysis experience!
 
 ---
 
@@ -157,6 +158,34 @@ See [Installation Guide](how-to/install.md) for detailed instructions.
 - AR(1) and AR(2) tests (serial correlation)
 - Difference-in-Hansen test (System GMM levels)
 
+### HTML Report System (NEW in v0.8.0)
+
+**Report Types:**
+- **Validation Reports**: Comprehensive diagnostic tests with interactive visualizations
+- **Comparison Reports**: Side-by-side model comparison with coefficients and fit metrics
+- **Residual Reports**: Diagnostic plots (QQ plots, residuals vs fitted, ACF/PACF)
+- **Master Reports**: Overview dashboard with navigation to all sub-reports
+
+**Features:**
+- **Three Professional Themes**: Professional (blue), Academic (gray), Presentation (purple)
+- **Test Runners**: ValidationTest and ComparisonTest with configurable presets (quick, basic, full)
+- **Self-Contained**: HTML files work offline, no external dependencies
+- **Interactive**: Plotly charts, sortable tables, responsive design
+- **Export Options**: JSON export for programmatic analysis
+
+**Quick Start:**
+```python
+# Create experiment
+experiment = pb.PanelExperiment(data, formula, entity_col, time_col)
+
+# Fit models
+experiment.fit_model('fixed_effects', name='fe')
+
+# Generate reports
+validation = experiment.validate_model('fe')
+validation.save_html('report.html', test_type='validation', theme='professional')
+```
+
 ### Data and Reporting
 
 **Datasets:**
@@ -164,10 +193,11 @@ See [Installation Guide](how-to/install.md) for detailed instructions.
 - Arellano-Bond employment data (optional)
 
 **Output Formats:**
+- Interactive HTML reports (NEW in v0.8.0)
 - Console-friendly summary tables
 - LaTeX export for publications
 - Pandas DataFrames for further analysis
-- Diagnostic test reports
+- JSON export for programmatic analysis (NEW in v0.8.0)
 
 ---
 
@@ -184,6 +214,7 @@ See [Installation Guide](how-to/install.md) for detailed instructions.
 1. **[Getting Started](tutorials/01_getting_started.md)**: Load data, estimate Pooled OLS, interpret results
 2. **[Static Panel Models](tutorials/02_static_models.md)**: Fixed Effects, Random Effects, Hausman test
 3. **[GMM Introduction](tutorials/03_gmm_intro.md)**: Difference GMM, System GMM, diagnostics
+4. **[HTML Report System](tutorials/04_html_reports.md)**: Generate professional reports (NEW in v0.8.0)
 
 ### 🛠️ How-To Guides (Task-Oriented)
 

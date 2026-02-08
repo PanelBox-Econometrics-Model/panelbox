@@ -1,0 +1,143 @@
+{% extends "common/base.html" %}
+
+{% block title %}{{ title | default('PanelBox Master Report') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+{{ master_css }}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Experiment Overview -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>📊 Experiment Overview</h2>
+        <p class="section-description">Summary of panel data experiment</p>
+    </div>
+
+    <div class="experiment-info-grid">
+        <div class="info-card">
+            <div class="info-label">Formula</div>
+            <div class="info-value">{{ experiment_info.formula }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Observations</div>
+            <div class="info-value">{{ experiment_info.n_obs }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Entities</div>
+            <div class="info-value">{{ experiment_info.n_entities }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Time Periods</div>
+            <div class="info-value">{{ experiment_info.n_time }}</div>
+        </div>
+    </div>
+</section>
+
+<!-- Models Summary -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>🔬 Models Fitted</h2>
+        <p class="section-description">Overview of all fitted models</p>
+    </div>
+
+    {% if models|length > 0 %}
+    <div class="models-grid">
+        {% for model in models %}
+        <div class="model-card">
+            <h3>{{ model.name }}</h3>
+            <div class="model-details">
+                <div class="detail-row">
+                    <span class="label">Type:</span>
+                    <span class="value">{{ model.type }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">R²:</span>
+                    <span class="value">{{ "%.4f"|format(model.rsquared) }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">AIC:</span>
+                    <span class="value">{{ "%.2f"|format(model.aic) }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">BIC:</span>
+                    <span class="value">{{ "%.2f"|format(model.bic) }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No models have been fitted yet.</p>
+        <p class="hint">Use <code>experiment.fit_model()</code> to fit panel models.</p>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Reports Index -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>📄 Generated Reports</h2>
+        <p class="section-description">Navigate to individual reports</p>
+    </div>
+
+    {% if reports|length > 0 %}
+    <div class="reports-list">
+        {% for report in reports %}
+        <div class="report-item">
+            <div class="report-icon">
+                {% if report.type == 'validation' %}📋
+                {% elif report.type == 'comparison' %}📊
+                {% elif report.type == 'residuals' %}🔬
+                {% endif %}
+            </div>
+            <div class="report-info">
+                <h4>{{ report.title }}</h4>
+                <p>{{ report.description }}</p>
+            </div>
+            <div class="report-actions">
+                <a href="{{ report.file_path }}" class="btn btn-primary" target="_blank">
+                    Open Report →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No reports have been generated yet.</p>
+        <p class="hint">Use <code>.save_html()</code> on ValidationResult, ComparisonResult, or ResidualResult to generate reports.</p>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Quick Start Guide -->
+<section class="master-section">
+    <div class="section-header">
+        <h2>🚀 Quick Start</h2>
+        <p class="section-description">How to generate reports</p>
+    </div>
+
+    <div class="guide-content">
+        <h4>Generate Validation Report:</h4>
+        <pre><code>validation_result = experiment.validate_model('model_name')
+validation_result.save_html('validation.html', test_type='validation')</code></pre>
+
+        <h4>Generate Comparison Report:</h4>
+        <pre><code>comparison_result = experiment.compare_models(['model1', 'model2'])
+comparison_result.save_html('comparison.html', test_type='comparison')</code></pre>
+
+        <h4>Generate Residual Diagnostics Report:</h4>
+        <pre><code>residual_result = experiment.analyze_residuals('model_name')
+residual_result.save_html('residuals.html', test_type='residuals')</code></pre>
+
+        <h4>Update Master Report:</h4>
+        <pre><code>experiment.save_master_report('master.html')</code></pre>
+    </div>
+</section>
+
+{% endblock %}
