@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include 'common/meta.html' %}
+
+    <!-- Embedded CSS -->
+    <style>
+        {{ css_inline|safe }}
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        {% include 'common/header.html' %}
+
+        <!-- Residual Diagnostics Summary -->
+        <section class="report-section">
+            <h2 class="section-title">Residual Diagnostics Summary</h2>
+
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Model Type</div>
+                    <div class="metric-value">{{ model_type|default('Panel Model') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Observations</div>
+                    <div class="metric-value">{{ nobs|default('N/A') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Residuals Analyzed</div>
+                    <div class="metric-value">{{ n_residuals|default(nobs)|default('N/A') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Diagnostics</div>
+                    <div class="metric-value">{{ n_diagnostics|default('7') }} plots</div>
+                </div>
+            </div>
+
+            <!-- Overall Status Alert -->
+            {% if diagnostics_summary %}
+            <div class="alert alert-{{ diagnostics_summary.status|default('info') }} mt-4">
+                <strong>{{ diagnostics_summary.message|default('Residual diagnostics available below') }}</strong>
+                {% if diagnostics_summary.description %}
+                <p class="mt-2">{{ diagnostics_summary.description }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tab-container" id="residual-tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="overview-tab">
+                    Overview
+                </button>
+                <button class="tab-button" data-tab="diagnostics-tab">
+                    Diagnostic Plots
+                </button>
+                <button class="tab-button" data-tab="interpretation-tab">
+                    Interpretation Guide
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-contents">
+
+                <!-- Overview Tab -->
+                <div id="overview-tab" class="tab-content active">
+                    <section class="report-section">
+                        <h3 class="section-subtitle">About Residual Diagnostics</h3>
+
+                        <p class="text-muted mb-4">
+                            Residual diagnostics help assess whether the model assumptions are satisfied.
+                            These plots reveal patterns in residuals that may indicate model specification issues,
+                            heteroskedasticity, non-normality, or influential observations.
+                        </p>
+
+                        <div class="info-box">
+                            <h4 class="info-box-title">Available Diagnostic Plots</h4>
+                            <ul class="info-box-list">
+                                <li><strong>Q-Q Plot:</strong> Tests normality assumption of residuals</li>
+                                <li><strong>Residuals vs Fitted:</strong> Checks for non-linearity and heteroskedasticity</li>
+                                <li><strong>Scale-Location:</strong> Detects heteroskedasticity (non-constant variance)</li>
+                                <li><strong>Residuals vs Leverage:</strong> Identifies influential observations</li>
+                                <li><strong>Residual Time Series:</strong> Checks for autocorrelation patterns</li>
+                                <li><strong>Residual Distribution:</strong> Shows distribution shape with KDE overlay</li>
+                                <li><strong>Residual ACF:</strong> Autocorrelation function plot (if available)</li>
+                            </ul>
+                        </div>
+
+                        {% if model_info %}
+                        <h4 class="section-subtitle mt-6">Model Information</h4>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <tbody>
+                                    {% if model_info.estimator %}
+                                    <tr>
+                                        <td><strong>Estimator</strong></td>
+                                        <td>{{ model_info.estimator }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if model_info.formula %}
+                                    <tr>
+                                        <td><strong>Formula</strong></td>
+                                        <td><code>{{ model_info.formula }}</code></td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if model_info.nobs %}
+                                    <tr>
+                                        <td><strong>Observations</strong></td>
+                                        <td>{{ model_info.nobs }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if model_info.n_entities %}
+                                    <tr>
+                                        <td><strong>Entities</strong></td>
+                                        <td>{{ model_info.n_entities }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if model_info.n_periods %}
+                                    <tr>
+                                        <td><strong>Time Periods</strong></td>
+                                        <td>{{ model_info.n_periods }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if model_info.r_squared %}
+                                    <tr>
+                                        <td><strong>R-squared</strong></td>
+                                        <td>{{ "%.4f"|format(model_info.r_squared) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <!-- Diagnostic Plots Tab -->
+                <div id="diagnostics-tab" class="tab-content">
+                    {% if residual_charts %}
+                    <section class="report-section">
+                        <h3 class="section-subtitle">Residual Diagnostic Plots</h3>
+
+                        <p class="text-muted mb-6">
+                            Interactive diagnostic plots for comprehensive residual analysis.
+                            Hover over data points for detailed information, zoom to focus on specific areas.
+                        </p>
+
+                        <!-- Q-Q Plot -->
+                        {% if residual_charts.qq_plot %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Q-Q Plot (Quantile-Quantile)</h4>
+                            <p class="chart-description">
+                                Tests normality assumption. Points should fall along the diagonal line if residuals are normally distributed.
+                                Deviations indicate departures from normality.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.qq_plot|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Residuals vs Fitted -->
+                        {% if residual_charts.residual_vs_fitted %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Residuals vs Fitted Values</h4>
+                            <p class="chart-description">
+                                Checks for non-linearity and heteroskedasticity. Should show random scatter around zero
+                                with no clear patterns. LOWESS curve helps identify systematic deviations.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.residual_vs_fitted|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Scale-Location -->
+                        {% if residual_charts.scale_location %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Scale-Location Plot</h4>
+                            <p class="chart-description">
+                                Detects heteroskedasticity (non-constant variance). Horizontal line with equally spread points
+                                indicates homoskedasticity. Upward/downward trends suggest heteroskedasticity.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.scale_location|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Residuals vs Leverage -->
+                        {% if residual_charts.residual_vs_leverage %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Residuals vs Leverage</h4>
+                            <p class="chart-description">
+                                Identifies influential observations. Points beyond Cook's distance contours (dashed lines)
+                                are potentially influential and may affect model fit significantly.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.residual_vs_leverage|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Residual Time Series -->
+                        {% if residual_charts.residual_timeseries %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Residual Time Series</h4>
+                            <p class="chart-description">
+                                Shows residuals over time to detect autocorrelation patterns. Should appear random
+                                with no systematic trends or cycles.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.residual_timeseries|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Residual Distribution -->
+                        {% if residual_charts.residual_distribution %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Residual Distribution</h4>
+                            <p class="chart-description">
+                                Histogram with kernel density estimate (KDE) overlay. Should approximate normal distribution
+                                (bell curve). Deviations indicate non-normality.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.residual_distribution|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- ACF Plot (if available) -->
+                        {% if residual_charts.residual_acf %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Autocorrelation Function (ACF)</h4>
+                            <p class="chart-description">
+                                Shows correlation between residuals at different lags. Bars should fall within confidence bands
+                                (blue shaded area) if no significant autocorrelation exists.
+                            </p>
+                            <div class="chart-container">
+                                {{ residual_charts.residual_acf|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Chart Instructions -->
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Chart Interactions</h4>
+                            <ul class="info-box-list">
+                                <li><strong>Hover:</strong> Move your mouse over data points to see detailed information</li>
+                                <li><strong>Zoom:</strong> Click and drag to zoom into a region, or use the zoom buttons</li>
+                                <li><strong>Pan:</strong> After zooming, click and drag to pan around</li>
+                                <li><strong>Reset:</strong> Click the "Reset axes" button to restore the original view</li>
+                                <li><strong>Export:</strong> Use the camera icon to download the chart as a PNG image</li>
+                            </ul>
+                        </div>
+                    </section>
+                    {% else %}
+                    <section class="report-section">
+                        <div class="alert alert-info">
+                            <strong>No diagnostic plots available.</strong>
+                            Generate residual diagnostics using the visualization system.
+                        </div>
+                    </section>
+                    {% endif %}
+                </div>
+
+                <!-- Interpretation Guide Tab -->
+                <div id="interpretation-tab" class="tab-content">
+                    <section class="report-section">
+                        <h3 class="section-subtitle">Interpretation Guide</h3>
+
+                        <h4 class="section-subtitle mt-6">Q-Q Plot</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Points should fall along the diagonal reference line.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> Points closely follow the line</li>
+                            <li>✗ <strong>Heavy tails:</strong> Points curve away at extremes (non-normal)</li>
+                            <li>✗ <strong>Light tails:</strong> S-shaped pattern (non-normal)</li>
+                            <li>✗ <strong>Skewness:</strong> Points systematically above/below line</li>
+                        </ul>
+
+                        <h4 class="section-subtitle mt-6">Residuals vs Fitted Values</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Random scatter around horizontal zero line.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> No patterns, random scatter</li>
+                            <li>✗ <strong>Non-linearity:</strong> Curved LOWESS line (add polynomial terms)</li>
+                            <li>✗ <strong>Heteroskedasticity:</strong> Funnel shape (variance increases/decreases)</li>
+                            <li>✗ <strong>Outliers:</strong> Points far from zero line</li>
+                        </ul>
+
+                        <h4 class="section-subtitle mt-6">Scale-Location Plot</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Horizontal line with equal vertical spread.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> Horizontal LOWESS line, constant spread</li>
+                            <li>✗ <strong>Heteroskedasticity:</strong> Upward/downward trending line</li>
+                            <li>✗ <strong>Increasing variance:</strong> Spread increases with fitted values</li>
+                        </ul>
+                        <p class="text-muted mb-4">
+                            <strong>Remedies:</strong> Use robust standard errors, WLS, or log transformation.
+                        </p>
+
+                        <h4 class="section-subtitle mt-6">Residuals vs Leverage</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Points inside Cook's distance contours.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> All points inside dashed contours</li>
+                            <li>⚠ <strong>High leverage:</strong> Points far right (influential on fitted values)</li>
+                            <li>✗ <strong>Influential:</strong> Points outside Cook's distance (high leverage + large residual)</li>
+                        </ul>
+                        <p class="text-muted mb-4">
+                            <strong>Actions:</strong> Investigate influential points - data errors? Outliers? Structural breaks?
+                        </p>
+
+                        <h4 class="section-subtitle mt-6">Residual Time Series</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Random fluctuation around zero.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> No visible patterns or trends</li>
+                            <li>✗ <strong>Autocorrelation:</strong> Clusters of positive/negative residuals</li>
+                            <li>✗ <strong>Trends:</strong> Systematic upward/downward movement</li>
+                            <li>✗ <strong>Cycles:</strong> Repeated patterns over time</li>
+                        </ul>
+                        <p class="text-muted mb-4">
+                            <strong>Remedies:</strong> Add lagged dependent variable, use clustered SE, or AR errors.
+                        </p>
+
+                        <h4 class="section-subtitle mt-6">Residual Distribution</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Bell-shaped (normal) distribution.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Good:</strong> Symmetric, bell-shaped histogram</li>
+                            <li>✗ <strong>Skewness:</strong> Long tail on one side</li>
+                            <li>✗ <strong>Kurtosis:</strong> Too peaked or too flat</li>
+                            <li>✗ <strong>Bimodal:</strong> Two peaks (mixture of populations?)</li>
+                        </ul>
+
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">General Recommendations</h4>
+                            <ul class="info-box-list">
+                                <li><strong>Multiple issues:</strong> Prioritize fixing the most severe problems first</li>
+                                <li><strong>Outliers:</strong> Investigate before removing - may contain important information</li>
+                                <li><strong>Heteroskedasticity:</strong> Robust standard errors are often sufficient</li>
+                                <li><strong>Non-normality:</strong> Less critical for large samples (CLT applies)</li>
+                                <li><strong>Autocorrelation:</strong> Critical for panel data - use clustered/HAC errors</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        {% include 'common/footer.html' %}
+    </div>
+
+    <!-- Plotly.js -->
+    {{ plotly_js|safe }}
+
+    <!-- Embedded JavaScript -->
+    <script>
+        {{ js_inline|safe }}
+    </script>
+
+    <!-- Initialize tabs -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            PanelBoxTabs.init('residual-tabs');
+        });
+    </script>
+</body>
+</html>

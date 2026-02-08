@@ -297,6 +297,197 @@ class ReportManager:
             report_type="gmm", template=template, context=context, include_plotly=True
         )
 
+    def generate_residual_report(
+        self,
+        residual_data: Dict[str, Any],
+        title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        interactive: bool = True,
+    ) -> str:
+        """
+        Generate a residual diagnostics report.
+
+        Convenience method for residual diagnostic reports.
+
+        Parameters
+        ----------
+        residual_data : dict
+            Residual diagnostics data with charts from create_residual_diagnostics()
+            Expected keys:
+            - 'residual_charts': dict with diagnostic plot HTML
+            - 'model_info': dict with model information (optional)
+            - 'diagnostics_summary': dict with summary info (optional)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+        interactive : bool, default=True
+            Generate interactive report with Plotly charts
+
+        Returns
+        -------
+        str
+            Complete HTML residual diagnostics report
+
+        Examples
+        --------
+        >>> from panelbox.visualization import create_residual_diagnostics
+        >>> # After model estimation
+        >>> results = model.fit()
+        >>> diagnostics = create_residual_diagnostics(results, theme='professional')
+        >>>
+        >>> residual_data = {
+        ...     'residual_charts': diagnostics,
+        ...     'model_info': {
+        ...         'estimator': 'FixedEffects',
+        ...         'nobs': 1000,
+        ...         'n_entities': 100
+        ...     }
+        ... }
+        >>>
+        >>> html = report_mgr.generate_residual_report(
+        ...     residual_data=residual_data,
+        ...     title='Residual Diagnostics',
+        ...     subtitle='Model specification checks'
+        ... )
+        """
+        # Determine template
+        if interactive:
+            template = "residuals/interactive/index.html"
+        else:
+            template = "residuals/static/index.html"  # Future: static version
+
+        # Extract model info if provided
+        model_info = residual_data.get("model_info", {})
+
+        # Build context
+        context = {
+            "report_title": title or "Residual Diagnostics Report",
+            "report_subtitle": subtitle,
+            "model_type": model_info.get("estimator", model_info.get("model_type")),
+            "nobs": model_info.get("nobs"),
+            "n_entities": model_info.get("n_entities"),
+            "n_periods": model_info.get("n_periods"),
+            "n_residuals": model_info.get("nobs"),  # Same as nobs
+            **residual_data,
+            # Spread model_info for template convenience
+            **model_info,
+        }
+
+        # Count number of diagnostic plots
+        if "residual_charts" in residual_data:
+            context["n_diagnostics"] = len(residual_data["residual_charts"])
+
+        # Generate
+        return self.generate_report(
+            report_type="residuals",
+            template=template,
+            context=context,
+            include_plotly=interactive,
+        )
+
+    def generate_comparison_report(
+        self,
+        comparison_data: Dict[str, Any],
+        title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        interactive: bool = True,
+    ) -> str:
+        """
+        Generate a model comparison report.
+
+        Convenience method for model comparison reports.
+
+        Parameters
+        ----------
+        comparison_data : dict
+            Model comparison data with charts from create_comparison_charts()
+            Expected keys:
+            - 'comparison_charts': dict with comparison chart HTML
+            - 'models_info': list of dicts with model information (optional)
+            - 'comparison_summary': dict with summary info (optional)
+            - 'best_model_aic': name of best model by AIC (optional)
+            - 'best_model_bic': name of best model by BIC (optional)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+        interactive : bool, default=True
+            Generate interactive report with Plotly charts
+
+        Returns
+        -------
+        str
+            Complete HTML model comparison report
+
+        Examples
+        --------
+        >>> from panelbox.visualization import create_comparison_charts
+        >>> # After estimating multiple models
+        >>> results_list = [model1.fit(), model2.fit(), model3.fit()]
+        >>> model_names = ['Pooled OLS', 'Fixed Effects', 'Random Effects']
+        >>>
+        >>> charts = create_comparison_charts(
+        ...     results_list=results_list,
+        ...     model_names=model_names,
+        ...     theme='professional'
+        ... )
+        >>>
+        >>> comparison_data = {
+        ...     'comparison_charts': charts,
+        ...     'models_info': [
+        ...         {'name': 'Pooled OLS', 'estimator': 'PooledOLS', 'nobs': 1000,
+        ...          'r_squared': 0.65, 'aic': 2500, 'bic': 2550},
+        ...         {'name': 'Fixed Effects', 'estimator': 'PanelOLS', 'nobs': 1000,
+        ...          'r_squared': 0.78, 'aic': 2300, 'bic': 2400},
+        ...         {'name': 'Random Effects', 'estimator': 'RandomEffects', 'nobs': 1000,
+        ...          'r_squared': 0.72, 'aic': 2350, 'bic': 2420}
+        ...     ],
+        ...     'best_model_aic': 'Fixed Effects',
+        ...     'best_model_bic': 'Fixed Effects'
+        ... }
+        >>>
+        >>> html = report_mgr.generate_comparison_report(
+        ...     comparison_data=comparison_data,
+        ...     title='Model Comparison',
+        ...     subtitle='Pooled vs Fixed vs Random Effects'
+        ... )
+        """
+        # Determine template
+        if interactive:
+            template = "comparison/interactive/index.html"
+        else:
+            template = "comparison/static/index.html"  # Future: static version
+
+        # Extract models info if provided
+        models_info = comparison_data.get("models_info", [])
+
+        # Build context
+        context = {
+            "report_title": title or "Model Comparison Report",
+            "report_subtitle": subtitle,
+            "n_models": len(models_info) if models_info else comparison_data.get("n_models"),
+            "best_model_aic": comparison_data.get("best_model_aic"),
+            "best_model_bic": comparison_data.get("best_model_bic"),
+            "models_info": models_info,
+            # Header compatibility - use first model's info if available
+            "model_type": f"Comparison ({len(models_info)} models)" if models_info else "Model Comparison",
+            "nobs": models_info[0].get("nobs") if models_info else None,
+            **comparison_data,
+        }
+
+        # Count number of comparison charts
+        if "comparison_charts" in comparison_data:
+            context["n_charts"] = len(comparison_data["comparison_charts"])
+
+        # Generate
+        return self.generate_report(
+            report_type="comparison",
+            template=template,
+            context=context,
+            include_plotly=interactive,
+        )
+
     def save_report(
         self, html: str, output_path: Union[str, Path], overwrite: bool = False
     ) -> Path:

@@ -33,7 +33,7 @@ class ValidationTransformer:
         """Initialize transformer with validation report."""
         self.report = validation_report
 
-    def transform(self, include_charts: bool = True) -> Dict[str, Any]:
+    def transform(self, include_charts: bool = True, use_new_visualization: bool = True) -> Dict[str, Any]:
         """
         Transform validation report into template data.
 
@@ -41,6 +41,10 @@ class ValidationTransformer:
         ----------
         include_charts : bool, default=True
             Include chart data for interactive reports
+        use_new_visualization : bool, default=True
+            Use new visualization system (PanelBox 0.5.0+).
+            If True, returns pre-rendered chart HTML.
+            If False, returns raw chart data (legacy mode).
 
         Returns
         -------
@@ -52,6 +56,14 @@ class ValidationTransformer:
         >>> data = transformer.transform(include_charts=True)
         >>> print(data.keys())
         dict_keys(['model_info', 'tests', 'summary', 'recommendations', 'charts'])
+
+        >>> # Use new visualization system (default)
+        >>> data = transformer.transform(use_new_visualization=True)
+        >>> # data['charts']['test_overview'] is pre-rendered HTML
+
+        >>> # Use legacy mode for backward compatibility
+        >>> data = transformer.transform(use_new_visualization=False)
+        >>> # data['charts']['test_overview'] is raw data dict
         """
         data = {
             "model_info": self._transform_model_info(),
@@ -61,7 +73,7 @@ class ValidationTransformer:
         }
 
         if include_charts:
-            data["charts"] = self._prepare_chart_data()
+            data["charts"] = self._prepare_chart_data(use_new_visualization=use_new_visualization)
 
         return data
 
@@ -302,14 +314,100 @@ class ValidationTransformer:
 
         return recommendations
 
-    def _prepare_chart_data(self) -> Dict[str, Any]:
+    def _prepare_chart_data(self, use_new_visualization: bool = True) -> Dict[str, Any]:
         """
-        Prepare data for interactive charts.
+        Prepare chart data or generate pre-rendered charts.
+
+        Parameters
+        ----------
+        use_new_visualization : bool, default=True
+            If True, use new visualization system and return HTML charts.
+            If False, return raw data dicts (legacy mode for backward compatibility).
 
         Returns
         -------
         dict
-            Chart data for Plotly
+            If use_new_visualization=True: {'test_overview': '<div>...</div>', ...}
+            If use_new_visualization=False: {'test_overview': {data dict}, ...}
+
+        Notes
+        -----
+        The new visualization system (use_new_visualization=True) uses the
+        panelbox.visualization module to generate professional, themed charts.
+
+        Legacy mode (use_new_visualization=False) returns raw data dicts for
+        backward compatibility with old templates that use inline JavaScript.
+        """
+        if not use_new_visualization:
+            # Legacy mode - return raw data dicts
+            return self._prepare_chart_data_legacy()
+
+        # NEW: Use visualization system
+        try:
+            from panelbox.visualization import create_validation_charts
+        except ImportError:
+            # Fallback if visualization module not available
+            import warnings
+            warnings.warn(
+                "New visualization system not available. Falling back to legacy mode. "
+                "Install panelbox.visualization or set use_new_visualization=False.",
+                UserWarning
+            )
+            return self._prepare_chart_data_legacy()
+
+        # Use the already-existing prepare_visualization_data() method
+        viz_data = self.prepare_visualization_data()
+
+        # Generate charts using new visualization system
+        try:
+            chart_objects = create_validation_charts(
+                validation_data=viz_data,
+                theme='professional',
+                interactive=True,
+                charts=['test_overview', 'pvalue_distribution', 'test_statistics'],
+                include_html=False  # Get chart objects, not HTML strings yet
+            )
+
+            # Convert chart objects to HTML (div only, no full document)
+            charts_html = {}
+            for name, chart_obj in chart_objects.items():
+                # Get just the div, not a full HTML document
+                # include_plotlyjs=False to avoid duplicate Plotly library
+                # full_html=False to get just the div
+                charts_html[name] = chart_obj.to_html(
+                    include_plotlyjs=False,
+                    full_html=False,
+                    div_id=f"chart-{name}"
+                )
+
+            return charts_html
+
+        except Exception as e:
+            # Fallback to legacy mode if chart generation fails
+            import warnings
+            warnings.warn(
+                f"Failed to generate charts with new visualization system: {e}. "
+                "Falling back to legacy mode.",
+                UserWarning
+            )
+            return self._prepare_chart_data_legacy()
+
+    def _prepare_chart_data_legacy(self) -> Dict[str, Any]:
+        """
+        Prepare raw chart data (legacy mode).
+
+        This method is kept for backward compatibility with old templates
+        that use inline JavaScript to render charts client-side.
+
+        Returns
+        -------
+        dict
+            Chart data dictionaries for manual Plotly rendering
+
+        Notes
+        -----
+        This is the original implementation of _prepare_chart_data().
+        It returns raw data that templates can pass to Plotly.newPlot().
         """
         charts = {}
 
@@ -360,20 +458,79 @@ class ValidationTransformer:
         # 3. Statistics by Test
         test_stats = []
         test_labels = []
+        test_categories_list = []
 
-        for test_dict in [
-            self.report.specification_tests,
-            self.report.serial_tests,
-            self.report.het_tests,
-            self.report.cd_tests,
+        for category_name, test_dict in [
+            ("Specification", self.report.specification_tests),
+            ("Serial Correlation", self.report.serial_tests),
+            ("Heteroskedasticity", self.report.het_tests),
+            ("Cross-Sectional Dep.", self.report.cd_tests),
         ]:
             for name, result in test_dict.items():
                 test_labels.append(name)
                 test_stats.append(result.statistic)
+                test_categories_list.append(category_name)
 
-        charts["test_statistics"] = {"test_names": test_labels, "statistics": test_stats}
+        charts["test_statistics"] = {
+            "test_names": test_labels,
+            "statistics": test_stats,
+            "categories": test_categories_list,  # Added for new visualization system
+            "pvalues": all_pvalues  # Added for size scaling in scatter plot
+        }
 
         return charts
+
+    def prepare_visualization_data(self) -> Dict[str, Any]:
+        """
+        Prepare data specifically for the new visualization system.
+
+        This method creates a comprehensive data structure that can be
+        passed directly to create_validation_charts() from panelbox.visualization.
+
+        Returns
+        -------
+        dict
+            Data structure compatible with panelbox.visualization API
+
+        Examples
+        --------
+        >>> from panelbox.visualization import create_validation_charts
+        >>> transformer = ValidationTransformer(validation_report)
+        >>> viz_data = transformer.prepare_visualization_data()
+        >>> charts = create_validation_charts(viz_data, theme='professional')
+
+        Notes
+        -----
+        This is the recommended method for integrating with the new
+        visualization system introduced in PanelBox 0.5.0+.
+        """
+        # Prepare test list with full metadata
+        tests = []
+
+        for category_name, test_dict in [
+            ("Specification", self.report.specification_tests),
+            ("Serial Correlation", self.report.serial_tests),
+            ("Heteroskedasticity", self.report.het_tests),
+            ("Cross-Sectional Dependence", self.report.cd_tests),
+        ]:
+            for name, result in test_dict.items():
+                tests.append({
+                    'name': name,
+                    'category': category_name,
+                    'statistic': result.statistic,
+                    'pvalue': result.pvalue,
+                    'df': result.df if hasattr(result, 'df') else None,
+                    'conclusion': result.conclusion if hasattr(result, 'conclusion') else '',
+                    'passed': not result.reject_null,
+                    'alpha': result.alpha if hasattr(result, 'alpha') else 0.05,
+                    'metadata': result.metadata if hasattr(result, 'metadata') else {}
+                })
+
+        return {
+            'tests': tests,
+            'model_info': self.report.model_info,
+            'charts': self._prepare_chart_data_legacy()  # For backward compatibility - use legacy to avoid recursion
+        }
 
     @staticmethod
     def _format_pvalue(pvalue: float) -> str:

@@ -52,18 +52,31 @@ class HausmanTestResult:
         self.diff = diff
         self.alpha = alpha
 
+        # Metadata for compatibility with ValidationReport
+        self.metadata = {
+            "recommendation": None,  # Will be set below
+            "fe_params": fe_params.to_dict(),
+            "re_params": re_params.to_dict(),
+            "diff": diff.to_dict(),
+        }
+
         # Determine conclusion
         if pvalue < alpha:
+            self.reject_null = True
             self.conclusion = (
                 f"Reject H0 at {alpha*100:.0f}% level. " "Use Fixed Effects (RE is inconsistent)."
             )
             self.recommendation = "Fixed Effects"
         else:
+            self.reject_null = False
             self.conclusion = (
                 f"Fail to reject H0 at {alpha*100:.0f}% level. "
                 "Random Effects is consistent and efficient."
             )
             self.recommendation = "Random Effects"
+
+        # Update metadata with recommendation
+        self.metadata["recommendation"] = self.recommendation
 
     def __str__(self) -> str:
         """String representation."""
