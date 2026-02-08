@@ -1,11 +1,21 @@
 """Version information for panelbox."""
 
-__version__ = "0.4.3"
+__version__ = "0.5.0"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
 
 # Version history
+# 0.5.0 (2026-02-08): Comprehensive Visualization System
+#                     - 28+ interactive Plotly charts for panel data analysis
+#                     - Phase 6: Panel-specific visualizations (entity/time effects, between-within, structure)
+#                     - Phase 7: Econometric test visualizations (ACF/PACF, unit root, cointegration, CD)
+#                     - 3 professional themes (Professional, Academic, Presentation)
+#                     - Registry/Factory pattern for extensibility
+#                     - HTML report generation with interactive charts
+#                     - Complete export system (HTML, JSON, PNG, SVG, PDF)
+#                     - High-level convenience APIs for common use cases
+#                     - 90+ tests, comprehensive documentation
 # 0.4.0 (2026-02-05): Robust Standard Errors
 #                     - HC0-HC3: Heteroskedasticity-robust standard errors (White 1980, MacKinnon-White 1985)
 #                     - Clustered SE: One-way and two-way clustering (Cameron-Gelbach-Miller 2011)

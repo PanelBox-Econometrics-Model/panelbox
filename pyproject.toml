@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panelbox"
-version = "0.4.3"
-description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Bootstrap, Sensitivity Analysis"
+version = "0.5.0"
+description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Bootstrap, Sensitivity Analysis, Interactive Visualizations (28+ Charts)"
 authors = [
     {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},
     {name = "Paulo Dourado", email = "paulodourado.unb@gmail.com"}
@@ -31,7 +31,12 @@ keywords = [
     "HAC",
     "bootstrap",
     "sensitivity analysis",
-    "robustness"
+    "robustness",
+    "visualization",
+    "plotly",
+    "interactive charts",
+    "data visualization",
+    "econometric tests"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
