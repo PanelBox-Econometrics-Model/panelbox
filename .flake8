@@ -38,6 +38,7 @@ per-file-ignores =
     panelbox/report/exporters/markdown_exporter.py:C901
     panelbox/validation/unit_root/llc.py:C901
     panelbox/validation/validation_report.py:C901
+    panelbox/visualization/transformers/comparison.py:C901
 
 # Complexity
 max-complexity = 15
