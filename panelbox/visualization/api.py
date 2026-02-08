@@ -1161,3 +1161,268 @@ def create_panel_structure_plot(
         theme=theme,
         **kwargs
     )
+
+
+# =============================================================================
+# Econometric Test Visualization APIs (Phase 7)
+# =============================================================================
+
+def create_acf_pacf_plot(
+    residuals: Any,
+    max_lags: Optional[int] = None,
+    confidence_level: float = 0.95,
+    show_ljung_box: bool = True,
+    theme: Union[str, Theme, None] = "academic",
+    **kwargs
+) -> Any:
+    """
+    Create ACF and PACF plots for serial correlation analysis.
+
+    Displays autocorrelation (ACF) and partial autocorrelation (PACF)
+    in a two-panel subplot with confidence bands and Ljung-Box test results.
+
+    Parameters
+    ----------
+    residuals : array-like
+        Residuals or time series data to analyze
+    max_lags : int, optional
+        Maximum number of lags to display (default: min(20, T/4))
+    confidence_level : float
+        Confidence level for bands (0.95 or 0.99)
+    show_ljung_box : bool
+        Whether to display Ljung-Box test results
+    theme : str or Theme
+        Visual theme ('academic', 'professional', 'presentation')
+    **kwargs
+        Additional chart options
+
+    Returns
+    -------
+    Chart
+        ACF/PACF chart object
+
+    Examples
+    --------
+    >>> from panelbox.visualization import create_acf_pacf_plot
+    >>>
+    >>> # From residuals
+    >>> chart = create_acf_pacf_plot(
+    ...     residuals,
+    ...     max_lags=20,
+    ...     confidence_level=0.95,
+    ...     show_ljung_box=True,
+    ...     theme='academic'
+    ... )
+    >>> chart.show()
+    >>>
+    >>> # From PanelResults
+    >>> chart = create_acf_pacf_plot(
+    ...     panel_results.resids,
+    ...     max_lags=30
+    ... )
+    """
+    if isinstance(theme, str):
+        theme = get_theme(theme)
+
+    # Prepare data
+    data = {
+        'residuals': residuals,
+        'confidence_level': confidence_level,
+        'show_ljung_box': show_ljung_box
+    }
+
+    if max_lags is not None:
+        data['max_lags'] = max_lags
+
+    return ChartFactory.create(
+        'acf_pacf_plot',
+        data=data,
+        theme=theme,
+        **kwargs
+    )
+
+
+def create_unit_root_test_plot(
+    test_results: Union[Dict[str, Any], Any],
+    include_series: bool = False,
+    theme: Union[str, Theme, None] = "professional",
+    **kwargs
+) -> Any:
+    """
+    Create unit root test results visualization.
+
+    Displays test statistics vs critical values with color-coded significance
+    levels and optional time series overlay.
+
+    Parameters
+    ----------
+    test_results : dict or test object
+        Test results with keys:
+        - 'test_names': list of test names
+        - 'test_stats': list of test statistics
+        - 'critical_values': dict with critical values
+        - 'pvalues': list of p-values
+        - 'series': optional time series (if include_series=True)
+        - 'time_index': optional time index (if include_series=True)
+    include_series : bool
+        Whether to include time series subplot
+    theme : str or Theme
+        Visual theme
+    **kwargs
+        Additional chart options
+
+    Returns
+    -------
+    Chart
+        Unit root test chart object
+
+    Examples
+    --------
+    >>> from panelbox.visualization import create_unit_root_test_plot
+    >>>
+    >>> results = {
+    ...     'test_names': ['ADF', 'PP', 'KPSS'],
+    ...     'test_stats': [-3.5, -3.8, 0.3],
+    ...     'critical_values': {'1%': -3.96, '5%': -3.41, '10%': -3.13},
+    ...     'pvalues': [0.008, 0.003, 0.15]
+    ... }
+    >>>
+    >>> chart = create_unit_root_test_plot(
+    ...     results,
+    ...     theme='professional'
+    ... )
+    >>> chart.show()
+    """
+    if isinstance(theme, str):
+        theme = get_theme(theme)
+
+    # If test_results is not a dict, try to extract data from test object
+    if not isinstance(test_results, dict):
+        # Try to extract from statsmodels-like test result
+        data = {}
+        if hasattr(test_results, 'test_name'):
+            data['test_names'] = [test_results.test_name]
+        if hasattr(test_results, 'statistic'):
+            data['test_stats'] = [test_results.statistic]
+        if hasattr(test_results, 'critical_values'):
+            data['critical_values'] = test_results.critical_values
+        if hasattr(test_results, 'pvalue'):
+            data['pvalues'] = [test_results.pvalue]
+
+        test_results = data
+
+    return ChartFactory.create(
+        'unit_root_test_plot',
+        data=test_results,
+        theme=theme,
+        **kwargs
+    )
+
+
+def create_cointegration_heatmap(
+    cointegration_results: Dict[str, Any],
+    theme: Union[str, Theme, None] = "academic",
+    **kwargs
+) -> Any:
+    """
+    Create cointegration test results heatmap.
+
+    Displays pairwise cointegration p-values in a heatmap format with
+    color-coded significance levels.
+
+    Parameters
+    ----------
+    cointegration_results : dict
+        Dictionary with keys:
+        - 'variables': list of variable names
+        - 'pvalues': n x n matrix of p-values
+        - 'test_name': name of test (optional)
+        - 'test_stats': n x n matrix of statistics (optional)
+    theme : str or Theme
+        Visual theme
+    **kwargs
+        Additional chart options
+
+    Returns
+    -------
+    Chart
+        Cointegration heatmap chart object
+
+    Examples
+    --------
+    >>> from panelbox.visualization import create_cointegration_heatmap
+    >>>
+    >>> results = {
+    ...     'variables': ['GDP', 'Consumption', 'Investment'],
+    ...     'pvalues': [[1.0, 0.02, 0.15],
+    ...                 [0.02, 1.0, 0.08],
+    ...                 [0.15, 0.08, 1.0]],
+    ...     'test_name': 'Engle-Granger'
+    ... }
+    >>>
+    >>> chart = create_cointegration_heatmap(results)
+    >>> chart.show()
+    """
+    if isinstance(theme, str):
+        theme = get_theme(theme)
+
+    return ChartFactory.create(
+        'cointegration_heatmap',
+        data=cointegration_results,
+        theme=theme,
+        **kwargs
+    )
+
+
+def create_cross_sectional_dependence_plot(
+    cd_results: Dict[str, Any],
+    theme: Union[str, Theme, None] = "professional",
+    **kwargs
+) -> Any:
+    """
+    Create cross-sectional dependence test visualization.
+
+    Displays Pesaran CD test statistic with gauge indicator and
+    optional entity-level correlation bars.
+
+    Parameters
+    ----------
+    cd_results : dict
+        Dictionary with keys:
+        - 'cd_statistic': Pesaran CD statistic
+        - 'pvalue': p-value
+        - 'avg_correlation': average absolute correlation (optional)
+        - 'entity_correlations': list of entity correlations (optional)
+    theme : str or Theme
+        Visual theme
+    **kwargs
+        Additional chart options
+
+    Returns
+    -------
+    Chart
+        Cross-sectional dependence chart object
+
+    Examples
+    --------
+    >>> from panelbox.visualization import create_cross_sectional_dependence_plot
+    >>>
+    >>> results = {
+    ...     'cd_statistic': 5.23,
+    ...     'pvalue': 0.001,
+    ...     'avg_correlation': 0.42,
+    ...     'entity_correlations': [0.3, 0.5, 0.6, 0.2]
+    ... }
+    >>>
+    >>> chart = create_cross_sectional_dependence_plot(results)
+    >>> chart.show()
+    """
+    if isinstance(theme, str):
+        theme = get_theme(theme)
+
+    return ChartFactory.create(
+        'cross_sectional_dependence_plot',
+        data=cd_results,
+        theme=theme,
+        **kwargs
+    )

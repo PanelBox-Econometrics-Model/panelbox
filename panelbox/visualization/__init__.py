@@ -122,6 +122,12 @@ try:
         BetweenWithinPlot,
         PanelStructurePlot,
     )
+    from .plotly.econometric_tests import (
+        ACFPACFPlot,
+        UnitRootTestPlot,
+        CointegrationHeatmap,
+        CrossSectionalDependencePlot,
+    )
 
     _has_plotly_charts = True
 except ImportError:
@@ -156,6 +162,10 @@ except ImportError:
     TimeEffectsPlot = None
     BetweenWithinPlot = None
     PanelStructurePlot = None
+    ACFPACFPlot = None
+    UnitRootTestPlot = None
+    CointegrationHeatmap = None
+    CrossSectionalDependencePlot = None
     _has_plotly_charts = False
 
 # High-level convenience APIs (Phase 2)
@@ -172,6 +182,10 @@ try:
         create_time_effects_plot,
         create_between_within_plot,
         create_panel_structure_plot,
+        create_acf_pacf_plot,
+        create_unit_root_test_plot,
+        create_cointegration_heatmap,
+        create_cross_sectional_dependence_plot,
     )
 
     _has_api = True
@@ -187,6 +201,10 @@ except ImportError:
     create_time_effects_plot = None
     create_between_within_plot = None
     create_panel_structure_plot = None
+    create_acf_pacf_plot = None
+    create_unit_root_test_plot = None
+    create_cointegration_heatmap = None
+    create_cross_sectional_dependence_plot = None
     _has_api = False
 
 __all__ = [
@@ -252,6 +270,15 @@ __all__ = [
     "create_time_effects_plot",
     "create_between_within_plot",
     "create_panel_structure_plot",
+    # Econometric test APIs (Phase 7)
+    "ACFPACFPlot",
+    "UnitRootTestPlot",
+    "CointegrationHeatmap",
+    "CrossSectionalDependencePlot",
+    "create_acf_pacf_plot",
+    "create_unit_root_test_plot",
+    "create_cointegration_heatmap",
+    "create_cross_sectional_dependence_plot",
     # Export functions
     "export_chart",
     "export_charts",
