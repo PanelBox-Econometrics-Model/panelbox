@@ -5,14 +5,13 @@ This module provides interactive Plotly charts for visualizing
 validation test results from panel data models.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from ..base import PlotlyChartBase
-from ..config.color_schemes import SIGNIFICANCE_COLORS, get_color_for_pvalue
+from ..config.color_schemes import get_color_for_pvalue
 from ..registry import register_chart
 
 

@@ -51,7 +51,7 @@ class ChartNotFoundError(VisualizationError):
         message = f"Chart type '{chart_type}' not found in registry."
 
         if available_charts:
-            suggestion = f"Available chart types:\n" + "\n".join(
+            suggestion = "Available chart types:\n" + "\n".join(
                 f"  • {ct}" for ct in sorted(available_charts)[:10]
             )
             if len(available_charts) > 10:

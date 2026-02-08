@@ -5,7 +5,7 @@ This module provides transformers to extract and prepare data from PanelResults
 and PanelData objects for panel-specific charts.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd

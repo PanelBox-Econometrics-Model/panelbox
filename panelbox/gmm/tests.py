@@ -22,7 +22,7 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 from scipy import stats

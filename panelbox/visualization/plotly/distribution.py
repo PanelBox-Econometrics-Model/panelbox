@@ -5,11 +5,10 @@ This module provides charts for visualizing data distributions, including
 histograms, kernel density estimates, violin plots, and box plots.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from scipy import stats
 
 from ..base import PlotlyChartBase

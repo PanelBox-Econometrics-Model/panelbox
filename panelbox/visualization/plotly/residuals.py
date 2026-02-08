@@ -5,11 +5,10 @@ This module provides interactive Plotly charts for visualizing
 residual diagnostics from panel data models.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from scipy import stats
 
 from ..base import PlotlyChartBase
@@ -854,8 +853,6 @@ class PartialRegressionPlot(PlotlyChartBase):
         # Add regression line if requested
         if add_regression_line:
             # Compute OLS fit
-            from numpy.polynomial import Polynomial
-
             # Fit line (y_resid = slope * x_resid)
             slope = np.sum(x_resid * y_resid) / np.sum(x_resid**2)
 

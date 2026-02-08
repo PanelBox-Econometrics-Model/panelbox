@@ -5,7 +5,7 @@ This module provides fundamental chart types that serve as examples
 and building blocks for more complex visualizations.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import plotly.graph_objects as go
 

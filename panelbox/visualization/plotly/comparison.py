@@ -6,11 +6,10 @@ including coefficient comparisons, forest plots, fit statistics, and
 information criteria.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
@@ -53,7 +52,6 @@ class CoefficientComparisonChart(PlotlyChartBase):
         models = data.get("models", [])
         coefficients = data.get("coefficients", {})
         std_errors = data.get("std_errors", {})
-        show_significance = data.get("show_significance", True)
         ci_level = data.get("ci_level", 0.95)
 
         # Calculate confidence intervals
@@ -63,8 +61,6 @@ class CoefficientComparisonChart(PlotlyChartBase):
 
         # Add bars for each model
         variables = list(coefficients.keys())
-        x_positions = np.arange(len(variables))
-        bar_width = 0.8 / len(models)
 
         for i, model in enumerate(models):
             coef_values = [coefficients[var][i] for var in variables]
@@ -74,10 +70,6 @@ class CoefficientComparisonChart(PlotlyChartBase):
                 errors = [std_errors[var][i] * z_score for var in variables]
             else:
                 errors = None
-
-            # Offset for grouped bars
-            offset = (i - len(models) / 2 + 0.5) * bar_width
-            x_pos = x_positions + offset
 
             # Add bars
             fig.add_trace(

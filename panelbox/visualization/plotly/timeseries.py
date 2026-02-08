@@ -5,7 +5,7 @@ This module provides charts for visualizing panel data over time, including
 multi-line plots, trend analysis, and faceted time series.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd

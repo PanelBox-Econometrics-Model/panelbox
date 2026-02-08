@@ -5,7 +5,7 @@ This module provides a test runner that compares multiple fitted panel
 models and returns ComparisonResult objects.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import pandas as pd
 

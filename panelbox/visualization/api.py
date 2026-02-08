@@ -882,8 +882,6 @@ def create_panel_charts(
     >>> # In Jinja2 template:
     >>> # {{ charts.entity_effects|safe }}
     """
-    from .transformers.panel import PanelDataTransformer
-
     # Default to all chart types if none specified
     if chart_types is None:
         # Try to detect what charts are possible
