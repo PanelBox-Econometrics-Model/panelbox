@@ -32,6 +32,12 @@ per-file-ignores =
     __init__.py:F401,F403
     # F401: module imported but unused (expected in __init__)
     # F403: 'from module import *' used (acceptable in __init__)
+    # C901: Complexity warnings for specific files with complex logic
+    panelbox/models/static/between.py:C901
+    panelbox/models/static/fixed_effects.py:C901
+    panelbox/report/exporters/markdown_exporter.py:C901
+    panelbox/validation/unit_root/llc.py:C901
+    panelbox/validation/validation_report.py:C901
 
 # Complexity
 max-complexity = 15
