@@ -22,8 +22,8 @@ Examples:
     >>> print(charts)
 """
 
-from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Union
 
 
 @dataclass
@@ -63,17 +63,17 @@ Example:
 # Chart recommendation database
 CHART_RECOMMENDATIONS = {
     # Residual Diagnostics
-    'residual_qq_plot': ChartRecommendation(
-        chart_name='QQ Plot',
-        display_name='Q-Q Plot for Normality',
-        chart_type='residual_qq_plot',
-        description='Quantile-quantile plot to assess if residuals follow a normal distribution',
+    "residual_qq_plot": ChartRecommendation(
+        chart_name="QQ Plot",
+        display_name="Q-Q Plot for Normality",
+        chart_type="residual_qq_plot",
+        description="Quantile-quantile plot to assess if residuals follow a normal distribution",
         use_cases=[
-            'Checking normality assumption of residuals',
-            'Identifying heavy-tailed or skewed distributions',
-            'Detecting outliers in residuals'
+            "Checking normality assumption of residuals",
+            "Identifying heavy-tailed or skewed distributions",
+            "Detecting outliers in residuals",
         ],
-        api_function='create_residual_diagnostics()',
+        api_function="create_residual_diagnostics()",
         code_example="""from panelbox.visualization import create_residual_diagnostics
 
 diagnostics = create_residual_diagnostics(
@@ -82,20 +82,19 @@ diagnostics = create_residual_diagnostics(
     theme='academic'
 )
 diagnostics['qq_plot'].show()""",
-        category='Residual Diagnostics'
+        category="Residual Diagnostics",
     ),
-
-    'residual_vs_fitted': ChartRecommendation(
-        chart_name='Residual vs Fitted',
-        display_name='Residual vs Fitted Values',
-        chart_type='residual_vs_fitted',
-        description='Scatter plot of residuals against fitted values to detect heteroskedasticity',
+    "residual_vs_fitted": ChartRecommendation(
+        chart_name="Residual vs Fitted",
+        display_name="Residual vs Fitted Values",
+        chart_type="residual_vs_fitted",
+        description="Scatter plot of residuals against fitted values to detect heteroskedasticity",
         use_cases=[
-            'Detecting heteroskedasticity (non-constant variance)',
-            'Identifying non-linear patterns',
-            'Checking for specification errors'
+            "Detecting heteroskedasticity (non-constant variance)",
+            "Identifying non-linear patterns",
+            "Checking for specification errors",
         ],
-        api_function='create_residual_diagnostics()',
+        api_function="create_residual_diagnostics()",
         code_example="""from panelbox.visualization import create_residual_diagnostics
 
 diagnostics = create_residual_diagnostics(
@@ -104,20 +103,19 @@ diagnostics = create_residual_diagnostics(
     theme='professional'
 )
 diagnostics['residual_vs_fitted'].show()""",
-        category='Residual Diagnostics'
+        category="Residual Diagnostics",
     ),
-
-    'scale_location': ChartRecommendation(
-        chart_name='Scale-Location Plot',
-        display_name='Scale-Location (Spread-Level) Plot',
-        chart_type='scale_location',
-        description='Plot of sqrt(|standardized residuals|) vs fitted values for variance homogeneity',
+    "scale_location": ChartRecommendation(
+        chart_name="Scale-Location Plot",
+        display_name="Scale-Location (Spread-Level) Plot",
+        chart_type="scale_location",
+        description="Plot of sqrt(|standardized residuals|) vs fitted values for variance homogeneity",
         use_cases=[
-            'Testing homoskedasticity assumption',
-            'Detecting variance changes across fitted values',
-            'Comparing variance stability'
+            "Testing homoskedasticity assumption",
+            "Detecting variance changes across fitted values",
+            "Comparing variance stability",
         ],
-        api_function='create_residual_diagnostics()',
+        api_function="create_residual_diagnostics()",
         code_example="""from panelbox.visualization import create_residual_diagnostics
 
 diagnostics = create_residual_diagnostics(
@@ -126,20 +124,19 @@ diagnostics = create_residual_diagnostics(
     theme='academic'
 )
 diagnostics['scale_location'].show()""",
-        category='Residual Diagnostics'
+        category="Residual Diagnostics",
     ),
-
-    'residual_vs_leverage': ChartRecommendation(
-        chart_name='Residual vs Leverage',
-        display_name='Residual vs Leverage (Influence Plot)',
-        chart_type='residual_vs_leverage',
-        description='Identify influential observations using leverage and standardized residuals',
+    "residual_vs_leverage": ChartRecommendation(
+        chart_name="Residual vs Leverage",
+        display_name="Residual vs Leverage (Influence Plot)",
+        chart_type="residual_vs_leverage",
+        description="Identify influential observations using leverage and standardized residuals",
         use_cases=[
-            'Finding influential observations (high leverage + large residual)',
-            'Detecting outliers',
-            "Computing Cook's distance for influence"
+            "Finding influential observations (high leverage + large residual)",
+            "Detecting outliers",
+            "Computing Cook's distance for influence",
         ],
-        api_function='create_residual_diagnostics()',
+        api_function="create_residual_diagnostics()",
         code_example="""from panelbox.visualization import create_residual_diagnostics
 
 diagnostics = create_residual_diagnostics(
@@ -148,21 +145,20 @@ diagnostics = create_residual_diagnostics(
     theme='professional'
 )
 diagnostics['residual_vs_leverage'].show()""",
-        category='Residual Diagnostics'
+        category="Residual Diagnostics",
     ),
-
-    'acf_pacf_plot': ChartRecommendation(
-        chart_name='ACF/PACF Plot',
-        display_name='Autocorrelation & Partial Autocorrelation',
-        chart_type='acf_pacf_plot',
-        description='Dual plot showing ACF and PACF for detecting serial correlation patterns',
+    "acf_pacf_plot": ChartRecommendation(
+        chart_name="ACF/PACF Plot",
+        display_name="Autocorrelation & Partial Autocorrelation",
+        chart_type="acf_pacf_plot",
+        description="Dual plot showing ACF and PACF for detecting serial correlation patterns",
         use_cases=[
-            'Detecting serial correlation in residuals',
-            'Identifying AR/MA patterns',
-            'Ljung-Box test for autocorrelation',
-            'Time series model specification'
+            "Detecting serial correlation in residuals",
+            "Identifying AR/MA patterns",
+            "Ljung-Box test for autocorrelation",
+            "Time series model specification",
         ],
-        api_function='create_acf_pacf_plot()',
+        api_function="create_acf_pacf_plot()",
         code_example="""from panelbox.visualization import create_acf_pacf_plot
 
 chart = create_acf_pacf_plot(
@@ -173,21 +169,20 @@ chart = create_acf_pacf_plot(
     theme='academic'
 )
 chart.show()""",
-        category='Econometric Tests'
+        category="Econometric Tests",
     ),
-
     # Validation Charts
-    'validation_dashboard': ChartRecommendation(
-        chart_name='Validation Dashboard',
-        display_name='Comprehensive Validation Dashboard',
-        chart_type='validation_dashboard',
-        chart_description='Complete overview of all validation test results in one dashboard',
+    "validation_dashboard": ChartRecommendation(
+        chart_name="Validation Dashboard",
+        display_name="Comprehensive Validation Dashboard",
+        chart_type="validation_dashboard",
+        chart_description="Complete overview of all validation test results in one dashboard",
         use_cases=[
-            'Getting overall model validation status',
-            'Executive summary of all tests',
-            'Quick model health check'
+            "Getting overall model validation status",
+            "Executive summary of all tests",
+            "Quick model health check",
         ],
-        api_function='create_validation_charts()',
+        api_function="create_validation_charts()",
         code_example="""from panelbox.visualization import create_validation_charts
 
 charts = create_validation_charts(
@@ -196,21 +191,20 @@ charts = create_validation_charts(
     interactive=True
 )
 charts['dashboard'].show()""",
-        category='Validation'
+        category="Validation",
     ),
-
-    'unit_root_test_plot': ChartRecommendation(
-        chart_name='Unit Root Test',
-        display_name='Unit Root Test Results',
-        chart_type='unit_root_test_plot',
-        description='Bar chart with color-coded significance for stationarity tests',
+    "unit_root_test_plot": ChartRecommendation(
+        chart_name="Unit Root Test",
+        display_name="Unit Root Test Results",
+        chart_type="unit_root_test_plot",
+        description="Bar chart with color-coded significance for stationarity tests",
         use_cases=[
-            'Testing for unit roots (non-stationarity)',
-            'Comparing multiple tests (ADF, PP, KPSS)',
-            'Panel unit root tests (IPS, LLC, Fisher)',
-            'Visualizing test statistics vs critical values'
+            "Testing for unit roots (non-stationarity)",
+            "Comparing multiple tests (ADF, PP, KPSS)",
+            "Panel unit root tests (IPS, LLC, Fisher)",
+            "Visualizing test statistics vs critical values",
         ],
-        api_function='create_unit_root_test_plot()',
+        api_function="create_unit_root_test_plot()",
         code_example="""from panelbox.visualization import create_unit_root_test_plot
 
 results = {
@@ -221,21 +215,20 @@ results = {
 }
 chart = create_unit_root_test_plot(results, theme='professional')
 chart.show()""",
-        category='Econometric Tests'
+        category="Econometric Tests",
     ),
-
     # Panel-Specific Charts
-    'entity_effects_plot': ChartRecommendation(
-        chart_name='Entity Effects',
-        display_name='Entity Fixed/Random Effects',
-        chart_type='entity_effects_plot',
-        description='Visualize entity-specific effects with confidence intervals',
+    "entity_effects_plot": ChartRecommendation(
+        chart_name="Entity Effects",
+        display_name="Entity Fixed/Random Effects",
+        chart_type="entity_effects_plot",
+        description="Visualize entity-specific effects with confidence intervals",
         use_cases=[
-            'Displaying fixed effects by entity',
-            'Comparing entity-level heterogeneity',
-            'Identifying entities with significant effects'
+            "Displaying fixed effects by entity",
+            "Comparing entity-level heterogeneity",
+            "Identifying entities with significant effects",
         ],
-        api_function='create_entity_effects_plot()',
+        api_function="create_entity_effects_plot()",
         code_example="""from panelbox.visualization import create_entity_effects_plot
 
 chart = create_entity_effects_plot(
@@ -244,20 +237,19 @@ chart = create_entity_effects_plot(
     sort_by='effect'
 )
 chart.show()""",
-        category='Panel-Specific'
+        category="Panel-Specific",
     ),
-
-    'time_effects_plot': ChartRecommendation(
-        chart_name='Time Effects',
-        display_name='Time Period Effects',
-        chart_type='time_effects_plot',
-        description='Visualize time-specific effects across periods',
+    "time_effects_plot": ChartRecommendation(
+        chart_name="Time Effects",
+        display_name="Time Period Effects",
+        chart_type="time_effects_plot",
+        description="Visualize time-specific effects across periods",
         use_cases=[
-            'Displaying time fixed effects',
-            'Identifying temporal trends',
-            'Detecting time-specific shocks'
+            "Displaying time fixed effects",
+            "Identifying temporal trends",
+            "Detecting time-specific shocks",
         ],
-        api_function='create_time_effects_plot()',
+        api_function="create_time_effects_plot()",
         code_example="""from panelbox.visualization import create_time_effects_plot
 
 chart = create_time_effects_plot(
@@ -266,20 +258,19 @@ chart = create_time_effects_plot(
     show_trend=True
 )
 chart.show()""",
-        category='Panel-Specific'
+        category="Panel-Specific",
     ),
-
-    'between_within_plot': ChartRecommendation(
-        chart_name='Between-Within Variation',
-        display_name='Between-Within Variance Decomposition',
-        chart_type='between_within_plot',
-        description='Decompose total variance into between and within components',
+    "between_within_plot": ChartRecommendation(
+        chart_name="Between-Within Variation",
+        display_name="Between-Within Variance Decomposition",
+        chart_type="between_within_plot",
+        description="Decompose total variance into between and within components",
         use_cases=[
-            'Understanding variance sources in panel data',
-            'Comparing between-entity vs within-entity variation',
-            'Assessing suitability of FE vs RE models'
+            "Understanding variance sources in panel data",
+            "Comparing between-entity vs within-entity variation",
+            "Assessing suitability of FE vs RE models",
         ],
-        api_function='create_between_within_plot()',
+        api_function="create_between_within_plot()",
         code_example="""from panelbox.visualization import create_between_within_plot
 
 chart = create_between_within_plot(
@@ -289,21 +280,20 @@ chart = create_between_within_plot(
     style='stacked'  # or 'grouped', 'percentage'
 )
 chart.show()""",
-        category='Panel-Specific'
+        category="Panel-Specific",
     ),
-
-    'panel_structure_plot': ChartRecommendation(
-        chart_name='Panel Structure',
-        display_name='Panel Structure & Balance',
-        chart_type='panel_structure_plot',
-        description='Heatmap showing panel balance and missing data patterns',
+    "panel_structure_plot": ChartRecommendation(
+        chart_name="Panel Structure",
+        display_name="Panel Structure & Balance",
+        chart_type="panel_structure_plot",
+        description="Heatmap showing panel balance and missing data patterns",
         use_cases=[
-            'Visualizing panel structure',
-            'Identifying missing observations',
-            'Assessing panel balance',
-            'Detecting attrition patterns'
+            "Visualizing panel structure",
+            "Identifying missing observations",
+            "Assessing panel balance",
+            "Detecting attrition patterns",
         ],
-        api_function='create_panel_structure_plot()',
+        api_function="create_panel_structure_plot()",
         code_example="""from panelbox.visualization import create_panel_structure_plot
 
 chart = create_panel_structure_plot(
@@ -311,21 +301,20 @@ chart = create_panel_structure_plot(
     theme='professional'
 )
 chart.show()""",
-        category='Panel-Specific'
+        category="Panel-Specific",
     ),
-
     # Cointegration & Cross-Sectional Dependence
-    'cointegration_heatmap': ChartRecommendation(
-        chart_name='Cointegration Heatmap',
-        display_name='Pairwise Cointegration Matrix',
-        chart_type='cointegration_heatmap',
-        description='Heatmap of pairwise cointegration test p-values',
+    "cointegration_heatmap": ChartRecommendation(
+        chart_name="Cointegration Heatmap",
+        display_name="Pairwise Cointegration Matrix",
+        chart_type="cointegration_heatmap",
+        description="Heatmap of pairwise cointegration test p-values",
         use_cases=[
-            'Testing for cointegration between variables',
-            'Engle-Granger or Johansen test results',
-            'Identifying long-run relationships'
+            "Testing for cointegration between variables",
+            "Engle-Granger or Johansen test results",
+            "Identifying long-run relationships",
         ],
-        api_function='create_cointegration_heatmap()',
+        api_function="create_cointegration_heatmap()",
         code_example="""from panelbox.visualization import create_cointegration_heatmap
 
 results = {
@@ -335,20 +324,19 @@ results = {
 }
 chart = create_cointegration_heatmap(results, theme='academic')
 chart.show()""",
-        category='Econometric Tests'
+        category="Econometric Tests",
     ),
-
-    'cross_sectional_dependence_plot': ChartRecommendation(
-        chart_name='Cross-Sectional Dependence',
-        display_name='Pesaran CD Test Visualization',
-        chart_type='cross_sectional_dependence_plot',
-        description='Gauge indicator showing cross-sectional dependence with optional entity breakdown',
+    "cross_sectional_dependence_plot": ChartRecommendation(
+        chart_name="Cross-Sectional Dependence",
+        display_name="Pesaran CD Test Visualization",
+        chart_type="cross_sectional_dependence_plot",
+        description="Gauge indicator showing cross-sectional dependence with optional entity breakdown",
         use_cases=[
-            'Testing for cross-sectional dependence in panels',
-            'Pesaran CD test results',
-            'Identifying correlation across entities'
+            "Testing for cross-sectional dependence in panels",
+            "Pesaran CD test results",
+            "Identifying correlation across entities",
         ],
-        api_function='create_cross_sectional_dependence_plot()',
+        api_function="create_cross_sectional_dependence_plot()",
         code_example="""from panelbox.visualization import create_cross_sectional_dependence_plot
 
 results = {
@@ -359,21 +347,20 @@ results = {
 }
 chart = create_cross_sectional_dependence_plot(results, theme='professional')
 chart.show()""",
-        category='Econometric Tests'
+        category="Econometric Tests",
     ),
-
     # Model Comparison
-    'coefficient_comparison': ChartRecommendation(
-        chart_name='Coefficient Comparison',
-        display_name='Model Coefficient Comparison',
-        chart_type='coefficient_comparison',
-        description='Compare coefficient estimates across multiple models',
+    "coefficient_comparison": ChartRecommendation(
+        chart_name="Coefficient Comparison",
+        display_name="Model Coefficient Comparison",
+        chart_type="coefficient_comparison",
+        description="Compare coefficient estimates across multiple models",
         use_cases=[
-            'Comparing coefficients across models',
-            'Assessing robustness of estimates',
-            'Visualizing model differences'
+            "Comparing coefficients across models",
+            "Assessing robustness of estimates",
+            "Visualizing model differences",
         ],
-        api_function='create_comparison_charts()',
+        api_function="create_comparison_charts()",
         code_example="""from panelbox.visualization import create_comparison_charts
 
 charts = create_comparison_charts(
@@ -382,86 +369,86 @@ charts = create_comparison_charts(
     theme='professional'
 )
 charts['coefficients'].show()""",
-        category='Model Comparison'
+        category="Model Comparison",
     ),
 }
 
 
 # Decision tree logic
 DECISION_TREE = {
-    'root': {
-        'question': 'What is the primary goal of your analysis?',
-        'options': {
-            '1': {'label': 'Residual Diagnostics', 'next': 'residual_diagnostics'},
-            '2': {'label': 'Model Validation', 'next': 'model_validation'},
-            '3': {'label': 'Model Comparison', 'next': 'model_comparison'},
-            '4': {'label': 'Panel Data Analysis', 'next': 'panel_analysis'},
-            '5': {'label': 'Econometric Tests', 'next': 'econometric_tests'},
-            '6': {'label': 'Exploratory Data Analysis', 'next': 'eda'},
-        }
+    "root": {
+        "question": "What is the primary goal of your analysis?",
+        "options": {
+            "1": {"label": "Residual Diagnostics", "next": "residual_diagnostics"},
+            "2": {"label": "Model Validation", "next": "model_validation"},
+            "3": {"label": "Model Comparison", "next": "model_comparison"},
+            "4": {"label": "Panel Data Analysis", "next": "panel_analysis"},
+            "5": {"label": "Econometric Tests", "next": "econometric_tests"},
+            "6": {"label": "Exploratory Data Analysis", "next": "eda"},
+        },
     },
-
-    'residual_diagnostics': {
-        'question': 'What aspect of residuals do you want to check?',
-        'options': {
-            '1': {'label': 'Normality', 'recommend': 'residual_qq_plot'},
-            '2': {'label': 'Heteroskedasticity', 'recommend': 'residual_vs_fitted'},
-            '3': {'label': 'Variance Stability', 'recommend': 'scale_location'},
-            '4': {'label': 'Influential Observations', 'recommend': 'residual_vs_leverage'},
-            '5': {'label': 'Serial Correlation', 'recommend': 'acf_pacf_plot'},
-            '6': {'label': 'All Diagnostics', 'recommend': 'residual_diagnostics_all'},
-        }
+    "residual_diagnostics": {
+        "question": "What aspect of residuals do you want to check?",
+        "options": {
+            "1": {"label": "Normality", "recommend": "residual_qq_plot"},
+            "2": {"label": "Heteroskedasticity", "recommend": "residual_vs_fitted"},
+            "3": {"label": "Variance Stability", "recommend": "scale_location"},
+            "4": {"label": "Influential Observations", "recommend": "residual_vs_leverage"},
+            "5": {"label": "Serial Correlation", "recommend": "acf_pacf_plot"},
+            "6": {"label": "All Diagnostics", "recommend": "residual_diagnostics_all"},
+        },
     },
-
-    'model_validation': {
-        'question': 'What type of validation do you need?',
-        'options': {
-            '1': {'label': 'Overall Validation Status', 'recommend': 'validation_dashboard'},
-            '2': {'label': 'Stationarity Tests', 'recommend': 'unit_root_test_plot'},
-            '3': {'label': 'Specification Tests', 'recommend': 'validation_dashboard'},
-            '4': {'label': 'P-value Distribution', 'recommend': 'validation_pvalue_distribution'},
-        }
+    "model_validation": {
+        "question": "What type of validation do you need?",
+        "options": {
+            "1": {"label": "Overall Validation Status", "recommend": "validation_dashboard"},
+            "2": {"label": "Stationarity Tests", "recommend": "unit_root_test_plot"},
+            "3": {"label": "Specification Tests", "recommend": "validation_dashboard"},
+            "4": {"label": "P-value Distribution", "recommend": "validation_pvalue_distribution"},
+        },
     },
-
-    'model_comparison': {
-        'question': 'What do you want to compare across models?',
-        'options': {
-            '1': {'label': 'Coefficients', 'recommend': 'coefficient_comparison'},
-            '2': {'label': 'Model Fit (R², AIC, BIC)', 'recommend': 'model_fit_comparison'},
-            '3': {'label': 'Information Criteria', 'recommend': 'information_criteria'},
-            '4': {'label': 'Forest Plot (Coefficients)', 'recommend': 'forest_plot'},
-        }
+    "model_comparison": {
+        "question": "What do you want to compare across models?",
+        "options": {
+            "1": {"label": "Coefficients", "recommend": "coefficient_comparison"},
+            "2": {"label": "Model Fit (R², AIC, BIC)", "recommend": "model_fit_comparison"},
+            "3": {"label": "Information Criteria", "recommend": "information_criteria"},
+            "4": {"label": "Forest Plot (Coefficients)", "recommend": "forest_plot"},
+        },
     },
-
-    'panel_analysis': {
-        'question': 'What panel data characteristic do you want to analyze?',
-        'options': {
-            '1': {'label': 'Entity-Specific Effects', 'recommend': 'entity_effects_plot'},
-            '2': {'label': 'Time-Period Effects', 'recommend': 'time_effects_plot'},
-            '3': {'label': 'Between-Within Variation', 'recommend': 'between_within_plot'},
-            '4': {'label': 'Panel Structure/Balance', 'recommend': 'panel_structure_plot'},
-            '5': {'label': 'Cross-Sectional Dependence', 'recommend': 'cross_sectional_dependence_plot'},
-        }
+    "panel_analysis": {
+        "question": "What panel data characteristic do you want to analyze?",
+        "options": {
+            "1": {"label": "Entity-Specific Effects", "recommend": "entity_effects_plot"},
+            "2": {"label": "Time-Period Effects", "recommend": "time_effects_plot"},
+            "3": {"label": "Between-Within Variation", "recommend": "between_within_plot"},
+            "4": {"label": "Panel Structure/Balance", "recommend": "panel_structure_plot"},
+            "5": {
+                "label": "Cross-Sectional Dependence",
+                "recommend": "cross_sectional_dependence_plot",
+            },
+        },
     },
-
-    'econometric_tests': {
-        'question': 'What econometric property do you want to test?',
-        'options': {
-            '1': {'label': 'Serial Correlation (ACF/PACF)', 'recommend': 'acf_pacf_plot'},
-            '2': {'label': 'Unit Roots / Stationarity', 'recommend': 'unit_root_test_plot'},
-            '3': {'label': 'Cointegration', 'recommend': 'cointegration_heatmap'},
-            '4': {'label': 'Cross-Sectional Dependence', 'recommend': 'cross_sectional_dependence_plot'},
-        }
+    "econometric_tests": {
+        "question": "What econometric property do you want to test?",
+        "options": {
+            "1": {"label": "Serial Correlation (ACF/PACF)", "recommend": "acf_pacf_plot"},
+            "2": {"label": "Unit Roots / Stationarity", "recommend": "unit_root_test_plot"},
+            "3": {"label": "Cointegration", "recommend": "cointegration_heatmap"},
+            "4": {
+                "label": "Cross-Sectional Dependence",
+                "recommend": "cross_sectional_dependence_plot",
+            },
+        },
     },
-
-    'eda': {
-        'question': 'What type of exploratory analysis?',
-        'options': {
-            '1': {'label': 'Distribution', 'recommend': 'histogram'},
-            '2': {'label': 'Correlation', 'recommend': 'correlation_heatmap'},
-            '3': {'label': 'Time Series', 'recommend': 'panel_timeseries'},
-            '4': {'label': 'Group Comparison', 'recommend': 'box_plot'},
-        }
+    "eda": {
+        "question": "What type of exploratory analysis?",
+        "options": {
+            "1": {"label": "Distribution", "recommend": "histogram"},
+            "2": {"label": "Correlation", "recommend": "correlation_heatmap"},
+            "3": {"label": "Time Series", "recommend": "panel_timeseries"},
+            "4": {"label": "Group Comparison", "recommend": "box_plot"},
+        },
     },
 }
 
@@ -470,7 +457,7 @@ def suggest_chart(
     purpose: Optional[str] = None,
     data_type: Optional[str] = None,
     interactive: bool = False,
-    keywords: Optional[List[str]] = None
+    keywords: Optional[List[str]] = None,
 ) -> Union[List[ChartRecommendation], ChartRecommendation]:
     """
     Suggest appropriate chart types based on analysis purpose.
@@ -521,42 +508,42 @@ def suggest_chart(
 
 def _interactive_decision_tree() -> ChartRecommendation:
     """Run interactive CLI decision tree."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("📊 PanelBox Chart Selection Assistant")
-    print("="*70)
+    print("=" * 70)
     print("\nThis tool will help you choose the right chart for your analysis.\n")
 
-    current_node = 'root'
+    current_node = "root"
 
     while current_node:
         node = DECISION_TREE[current_node]
         print(f"\n{node['question']}\n")
 
-        for key, option in node['options'].items():
+        for key, option in node["options"].items():
             print(f"  [{key}] {option['label']}")
 
         print("\n  [q] Quit")
 
         choice = input("\nYour choice: ").strip().lower()
 
-        if choice == 'q':
+        if choice == "q":
             print("\nExiting chart selector. Goodbye!")
             return None
 
-        if choice not in node['options']:
+        if choice not in node["options"]:
             print("❌ Invalid choice. Please try again.")
             continue
 
-        option = node['options'][choice]
+        option = node["options"][choice]
 
-        if 'recommend' in option:
+        if "recommend" in option:
             # Terminal node - return recommendation
-            chart_key = option['recommend']
+            chart_key = option["recommend"]
             if chart_key in CHART_RECOMMENDATIONS:
                 recommendation = CHART_RECOMMENDATIONS[chart_key]
-                print("\n" + "="*70)
+                print("\n" + "=" * 70)
                 print("✅ RECOMMENDATION")
-                print("="*70)
+                print("=" * 70)
                 print(recommendation)
                 return recommendation
             else:
@@ -564,7 +551,7 @@ def _interactive_decision_tree() -> ChartRecommendation:
                 return None
         else:
             # Continue to next node
-            current_node = option['next']
+            current_node = option["next"]
 
     return None
 
@@ -576,10 +563,13 @@ def _search_by_keywords(keywords: List[str]) -> List[ChartRecommendation]:
 
     for chart in CHART_RECOMMENDATIONS.values():
         searchable_text = (
-            chart.display_name + ' ' +
-            chart.description + ' ' +
-            ' '.join(chart.use_cases) + ' ' +
-            chart.category
+            chart.display_name
+            + " "
+            + chart.description
+            + " "
+            + " ".join(chart.use_cases)
+            + " "
+            + chart.category
         ).lower()
 
         if any(kw in searchable_text for kw in keywords_lower):
@@ -627,6 +617,6 @@ def get_categories() -> List[str]:
     return sorted(set(c.category for c in CHART_RECOMMENDATIONS.values()))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run interactive mode when executed as script
     suggest_chart(interactive=True)

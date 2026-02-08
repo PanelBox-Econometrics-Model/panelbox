@@ -191,7 +191,9 @@ class ChartFactory:
             config = spec.get("config")
 
             # Create chart
-            chart = ChartFactory.create(chart_type=chart_type, data=data, theme=theme, config=config)
+            chart = ChartFactory.create(
+                chart_type=chart_type, data=data, theme=theme, config=config
+            )
 
             charts[name] = chart
 

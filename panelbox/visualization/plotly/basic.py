@@ -98,7 +98,9 @@ class BarChart(PlotlyChartBase):
 
         # If y is a list, check it matches x length
         if isinstance(data["y"], list) and len(data["y"]) != len(data["x"]):
-            raise ValueError(f"Length of 'y' ({len(data['y'])}) must match length of 'x' ({len(data['x'])})")
+            raise ValueError(
+                f"Length of 'y' ({len(data['y'])}) must match length of 'x' ({len(data['x'])})"
+            )
 
     def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Preprocess data to standardize format."""

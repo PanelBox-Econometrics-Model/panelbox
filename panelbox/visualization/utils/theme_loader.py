@@ -25,67 +25,67 @@ Examples:
 """
 
 import json
-import yaml
+from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-from dataclasses import asdict
 
+import yaml
+
+from ..exceptions import InvalidThemeError, ThemeLoadError
 from ..themes import Theme
-from ..exceptions import ThemeLoadError, InvalidThemeError
-
 
 # Theme schema for validation
 THEME_SCHEMA = {
-    'required_fields': [
-        'name',
-        'colors',
-        'font_family',
-        'font_size',
+    "required_fields": [
+        "name",
+        "colors",
+        "font_family",
+        "font_size",
     ],
-    'optional_fields': [
-        'background_color',
-        'text_color',
-        'grid_color',
-        'success_color',
-        'warning_color',
-        'danger_color',
-        'info_color',
-        'axis_line_color',
-        'title_font_size',
-        'subtitle_font_size',
-        'axis_label_font_size',
-        'legend_font_size',
-        'annotation_font_size',
-        'marker_size',
-        'line_width',
-        'border_width',
-        'corner_radius',
-        'spacing',
-        'height',
-        'width',
-        'margin',
+    "optional_fields": [
+        "background_color",
+        "text_color",
+        "grid_color",
+        "success_color",
+        "warning_color",
+        "danger_color",
+        "info_color",
+        "axis_line_color",
+        "title_font_size",
+        "subtitle_font_size",
+        "axis_label_font_size",
+        "legend_font_size",
+        "annotation_font_size",
+        "marker_size",
+        "line_width",
+        "border_width",
+        "corner_radius",
+        "spacing",
+        "height",
+        "width",
+        "margin",
     ],
-    'types': {
-        'name': str,
-        'colors': list,
-        'font_family': str,
-        'font_size': int,
-        'background_color': str,
-        'text_color': str,
-        'grid_color': str,
-        'success_color': str,
-        'warning_color': str,
-        'danger_color': str,
-        'info_color': str,
-        'title_font_size': int,
-        'subtitle_font_size': int,
-        'height': int,
-        'width': int,
-        'marker_size': int,
-        'line_width': (int, float),
-        'border_width': int,
-        'spacing': int,
-    }
+    "types": {
+        "name": str,
+        "colors": list,
+        "font_family": str,
+        "font_size": int,
+        "background_color": str,
+        "text_color": str,
+        "grid_color": str,
+        "success_color": str,
+        "warning_color": str,
+        "danger_color": str,
+        "info_color": str,
+        "title_font_size": int,
+        "subtitle_font_size": int,
+        "height": int,
+        "width": int,
+        "marker_size": int,
+        "line_width": (int, float),
+        "border_width": int,
+        "spacing": int,
+    },
 }
 
 
@@ -130,15 +130,15 @@ def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
 
     try:
         # Load file based on extension
-        with open(file_path, 'r', encoding='utf-8') as f:
-            if file_path.suffix in ['.yaml', '.yml']:
+        with open(file_path, "r", encoding="utf-8") as f:
+            if file_path.suffix in [".yaml", ".yml"]:
                 theme_data = yaml.safe_load(f)
-            elif file_path.suffix == '.json':
+            elif file_path.suffix == ".json":
                 theme_data = json.load(f)
             else:
                 raise ThemeLoadError(
                     str(file_path),
-                    f"Unsupported file format: {file_path.suffix}. Use .yaml, .yml, or .json"
+                    f"Unsupported file format: {file_path.suffix}. Use .yaml, .yml, or .json",
                 )
 
         if theme_data is None:
@@ -159,10 +159,7 @@ def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
 
 
 def save_theme(
-    theme: Theme,
-    file_path: Union[str, Path],
-    format: str = 'yaml',
-    include_defaults: bool = False
+    theme: Theme, file_path: Union[str, Path], format: str = "yaml", include_defaults: bool = False
 ) -> None:
     """
     Save a theme to YAML or JSON file.
@@ -205,10 +202,10 @@ def save_theme(
         theme_dict = {k: v for k, v in theme_dict.items() if v is not None}
 
     try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            if format.lower() in ['yaml', 'yml']:
+        with open(file_path, "w", encoding="utf-8") as f:
+            if format.lower() in ["yaml", "yml"]:
                 yaml.dump(theme_dict, f, default_flow_style=False, sort_keys=False)
-            elif format.lower() == 'json':
+            elif format.lower() == "json":
                 json.dump(theme_dict, f, indent=2)
             else:
                 raise ValueError(f"Unsupported format: {format}. Use 'yaml' or 'json'")
@@ -271,21 +268,15 @@ def _validate_theme_data(theme_data: Dict, file_path: str) -> None:
         If validation fails
     """
     # Check required fields
-    missing_fields = [
-        field for field in THEME_SCHEMA['required_fields']
-        if field not in theme_data
-    ]
+    missing_fields = [field for field in THEME_SCHEMA["required_fields"] if field not in theme_data]
 
     if missing_fields:
-        raise ThemeLoadError(
-            file_path,
-            f"Missing required fields: {', '.join(missing_fields)}"
-        )
+        raise ThemeLoadError(file_path, f"Missing required fields: {', '.join(missing_fields)}")
 
     # Validate field types
     for field, value in theme_data.items():
-        if field in THEME_SCHEMA['types']:
-            expected_type = THEME_SCHEMA['types'][field]
+        if field in THEME_SCHEMA["types"]:
+            expected_type = THEME_SCHEMA["types"][field]
 
             # Handle union types (e.g., int or float)
             if isinstance(expected_type, tuple):
@@ -293,31 +284,30 @@ def _validate_theme_data(theme_data: Dict, file_path: str) -> None:
                     raise ThemeLoadError(
                         file_path,
                         f"Field '{field}' has invalid type. "
-                        f"Expected one of {expected_type}, got {type(value)}"
+                        f"Expected one of {expected_type}, got {type(value)}",
                     )
             else:
                 if not isinstance(value, expected_type):
                     raise ThemeLoadError(
                         file_path,
                         f"Field '{field}' has invalid type. "
-                        f"Expected {expected_type}, got {type(value)}"
+                        f"Expected {expected_type}, got {type(value)}",
                     )
 
     # Validate colors array
-    if 'colors' in theme_data:
-        colors = theme_data['colors']
+    if "colors" in theme_data:
+        colors = theme_data["colors"]
         if not isinstance(colors, list) or len(colors) < 3:
             raise ThemeLoadError(
-                file_path,
-                "Field 'colors' must be a list with at least 3 color values"
+                file_path, "Field 'colors' must be a list with at least 3 color values"
             )
 
         # Validate hex colors
         for color in colors:
-            if not isinstance(color, str) or not color.startswith('#'):
+            if not isinstance(color, str) or not color.startswith("#"):
                 raise ThemeLoadError(
                     file_path,
-                    f"Invalid color value: '{color}'. Colors must be hex strings (e.g., '#FF5733')"
+                    f"Invalid color value: '{color}'. Colors must be hex strings (e.g., '#FF5733')",
                 )
 
 
@@ -336,26 +326,19 @@ def _create_theme_from_dict(theme_data: Dict) -> Theme:
         Theme object
     """
     # Filter to only valid Theme fields
-    valid_fields = (
-        THEME_SCHEMA['required_fields'] +
-        THEME_SCHEMA['optional_fields']
-    )
+    valid_fields = THEME_SCHEMA["required_fields"] + THEME_SCHEMA["optional_fields"]
 
-    filtered_data = {
-        k: v for k, v in theme_data.items()
-        if k in valid_fields
-    }
+    filtered_data = {k: v for k, v in theme_data.items() if k in valid_fields}
 
     try:
         return Theme(**filtered_data)
     except TypeError as e:
         raise InvalidThemeError(
-            theme_data.get('name', 'unknown'),
-            f"Invalid theme structure: {str(e)}"
+            theme_data.get("name", "unknown"), f"Invalid theme structure: {str(e)}"
         )
 
 
-def create_theme_template(output_path: Union[str, Path], format: str = 'yaml') -> None:
+def create_theme_template(output_path: Union[str, Path], format: str = "yaml") -> None:
     """
     Create a template theme file with all available options.
 
@@ -374,54 +357,54 @@ def create_theme_template(output_path: Union[str, Path], format: str = 'yaml') -
     >>> theme = load_theme('my_theme_template.yaml')
     """
     template = {
-        'name': 'My Custom Theme',
-        'colors': [
-            '#1f77b4',  # Blue
-            '#ff7f0e',  # Orange
-            '#2ca02c',  # Green
-            '#d62728',  # Red
-            '#9467bd',  # Purple
-            '#8c564b',  # Brown
-            '#e377c2',  # Pink
-            '#7f7f7f',  # Gray
-            '#bcbd22',  # Yellow-green
-            '#17becf',  # Cyan
+        "name": "My Custom Theme",
+        "colors": [
+            "#1f77b4",  # Blue
+            "#ff7f0e",  # Orange
+            "#2ca02c",  # Green
+            "#d62728",  # Red
+            "#9467bd",  # Purple
+            "#8c564b",  # Brown
+            "#e377c2",  # Pink
+            "#7f7f7f",  # Gray
+            "#bcbd22",  # Yellow-green
+            "#17becf",  # Cyan
         ],
-        'font_family': 'Inter, system-ui, -apple-system, sans-serif',
-        'font_size': 12,
-        'background_color': '#ffffff',
-        'text_color': '#333333',
-        'grid_color': '#e0e0e0',
-        'success_color': '#10b981',
-        'warning_color': '#f59e0b',
-        'danger_color': '#ef4444',
-        'info_color': '#3b82f6',
-        'axis_line_color': '#666666',
-        'title_font_size': 20,
-        'subtitle_font_size': 14,
-        'axis_label_font_size': 11,
-        'legend_font_size': 11,
-        'annotation_font_size': 10,
-        'marker_size': 8,
-        'line_width': 2.0,
-        'border_width': 1,
-        'corner_radius': 4,
-        'spacing': 10,
-        'height': 500,
-        'width': 800,
-        'margin': {'l': 80, 'r': 40, 't': 80, 'b': 60}
+        "font_family": "Inter, system-ui, -apple-system, sans-serif",
+        "font_size": 12,
+        "background_color": "#ffffff",
+        "text_color": "#333333",
+        "grid_color": "#e0e0e0",
+        "success_color": "#10b981",
+        "warning_color": "#f59e0b",
+        "danger_color": "#ef4444",
+        "info_color": "#3b82f6",
+        "axis_line_color": "#666666",
+        "title_font_size": 20,
+        "subtitle_font_size": 14,
+        "axis_label_font_size": 11,
+        "legend_font_size": 11,
+        "annotation_font_size": 10,
+        "marker_size": 8,
+        "line_width": 2.0,
+        "border_width": 1,
+        "corner_radius": 4,
+        "spacing": 10,
+        "height": 500,
+        "width": 800,
+        "margin": {"l": 80, "r": 40, "t": 80, "b": 60},
     }
 
     output_path = Path(output_path)
 
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
-            if format.lower() in ['yaml', 'yml']:
+        with open(output_path, "w", encoding="utf-8") as f:
+            if format.lower() in ["yaml", "yml"]:
                 # Add comments for YAML
                 f.write("# PanelBox Custom Theme Template\n")
                 f.write("# Edit values below to create your custom theme\n\n")
                 yaml.dump(template, f, default_flow_style=False, sort_keys=False)
-            elif format.lower() == 'json':
+            elif format.lower() == "json":
                 json.dump(template, f, indent=2)
             else:
                 raise ValueError(f"Unsupported format: {format}")
@@ -452,7 +435,7 @@ def list_builtin_themes() -> List[str]:
     >>> print(themes)
     ['professional', 'academic', 'presentation']
     """
-    return ['professional', 'academic', 'presentation']
+    return ["professional", "academic", "presentation"]
 
 
 def get_theme_colors(theme_name_or_path: Union[str, Path]) -> List[str]:
@@ -488,13 +471,13 @@ def get_theme_colors(theme_name_or_path: Union[str, Path]) -> List[str]:
     return theme.colors
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create template when run as script
     import sys
 
     if len(sys.argv) > 1:
         output_file = sys.argv[1]
     else:
-        output_file = 'custom_theme_template.yaml'
+        output_file = "custom_theme_template.yaml"
 
     create_theme_template(output_file)

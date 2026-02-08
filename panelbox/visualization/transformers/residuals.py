@@ -65,9 +65,7 @@ class ResidualDataTransformer:
         fitted = self._extract_fitted(results)
 
         # Compute standardized residuals
-        standardized_residuals = self._compute_standardized_residuals(
-            residuals, results
-        )
+        standardized_residuals = self._compute_standardized_residuals(residuals, results)
 
         # Extract or compute leverage and influence measures
         leverage = self._compute_leverage(results)
@@ -81,14 +79,14 @@ class ResidualDataTransformer:
         model_info = self._extract_model_info(results)
 
         return {
-            'residuals': residuals,
-            'fitted': fitted,
-            'standardized_residuals': standardized_residuals,
-            'leverage': leverage,
-            'cooks_d': cooks_d,
-            'time_index': time_index,
-            'entity_id': entity_id,
-            'model_info': model_info
+            "residuals": residuals,
+            "fitted": fitted,
+            "standardized_residuals": standardized_residuals,
+            "leverage": leverage,
+            "cooks_d": cooks_d,
+            "time_index": time_index,
+            "entity_id": entity_id,
+            "model_info": model_info,
         }
 
     def _extract_residuals(self, results: Any) -> np.ndarray:
@@ -105,9 +103,9 @@ class ResidualDataTransformer:
         ndarray
             Residuals array
         """
-        if hasattr(results, 'resid'):
+        if hasattr(results, "resid"):
             return np.asarray(results.resid)
-        elif hasattr(results, 'residuals'):
+        elif hasattr(results, "residuals"):
             return np.asarray(results.residuals)
         else:
             raise AttributeError("Results object has no residuals attribute")
@@ -126,18 +124,16 @@ class ResidualDataTransformer:
         ndarray
             Fitted values array
         """
-        if hasattr(results, 'fittedvalues'):
+        if hasattr(results, "fittedvalues"):
             return np.asarray(results.fittedvalues)
-        elif hasattr(results, 'fitted_values'):
+        elif hasattr(results, "fitted_values"):
             return np.asarray(results.fitted_values)
-        elif hasattr(results, 'predict'):
+        elif hasattr(results, "predict"):
             return np.asarray(results.predict())
         else:
             raise AttributeError("Cannot extract fitted values from results")
 
-    def _compute_standardized_residuals(
-        self, residuals: np.ndarray, results: Any
-    ) -> np.ndarray:
+    def _compute_standardized_residuals(self, residuals: np.ndarray, results: Any) -> np.ndarray:
         """
         Compute standardized residuals.
 
@@ -154,13 +150,13 @@ class ResidualDataTransformer:
             Standardized residuals
         """
         # Try to get standard error from results
-        if hasattr(results, 'scale'):
+        if hasattr(results, "scale"):
             scale = results.scale
-        elif hasattr(results, 'mse_resid'):
+        elif hasattr(results, "mse_resid"):
             scale = results.mse_resid
         else:
             # Compute from residuals
-            scale = np.var(residuals, ddof=results.df_resid if hasattr(results, 'df_resid') else 1)
+            scale = np.var(residuals, ddof=results.df_resid if hasattr(results, "df_resid") else 1)
 
         return residuals / np.sqrt(scale)
 
@@ -179,16 +175,16 @@ class ResidualDataTransformer:
             Leverage values if computable, else None
         """
         # Try to get from results
-        if hasattr(results, 'get_influence'):
+        if hasattr(results, "get_influence"):
             try:
                 influence = results.get_influence()
-                if hasattr(influence, 'hat_matrix_diag'):
+                if hasattr(influence, "hat_matrix_diag"):
                     return np.asarray(influence.hat_matrix_diag)
             except:
                 pass
 
         # Try to compute from model matrix
-        if hasattr(results, 'model') and hasattr(results.model, 'exog'):
+        if hasattr(results, "model") and hasattr(results.model, "exog"):
             try:
                 X = results.model.exog
                 # H = X(X'X)^(-1)X'
@@ -202,10 +198,7 @@ class ResidualDataTransformer:
         return None
 
     def _compute_cooks_distance(
-        self,
-        results: Any,
-        standardized_residuals: np.ndarray,
-        leverage: Optional[np.ndarray]
+        self, results: Any, standardized_residuals: np.ndarray, leverage: Optional[np.ndarray]
     ) -> Optional[np.ndarray]:
         """
         Compute Cook's distance.
@@ -228,10 +221,10 @@ class ResidualDataTransformer:
             return None
 
         # Try to get from results first
-        if hasattr(results, 'get_influence'):
+        if hasattr(results, "get_influence"):
             try:
                 influence = results.get_influence()
-                if hasattr(influence, 'cooks_distance'):
+                if hasattr(influence, "cooks_distance"):
                     cooks_d, _ = influence.cooks_distance
                     return np.asarray(cooks_d)
             except:
@@ -239,10 +232,10 @@ class ResidualDataTransformer:
 
         # Compute manually
         # Cook's D = (standardized_resid^2 / p) * (leverage / (1 - leverage)^2)
-        p = results.df_model if hasattr(results, 'df_model') else len(results.params)
+        p = results.df_model if hasattr(results, "df_model") else len(results.params)
 
-        with np.errstate(divide='ignore', invalid='ignore'):
-            cooks_d = (standardized_residuals ** 2 / p) * (leverage / (1 - leverage) ** 2)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            cooks_d = (standardized_residuals**2 / p) * (leverage / (1 - leverage) ** 2)
             cooks_d = np.where(np.isfinite(cooks_d), cooks_d, 0)
 
         return cooks_d
@@ -262,18 +255,18 @@ class ResidualDataTransformer:
             Time index if available
         """
         # Try to get from model data
-        if hasattr(results, 'model') and hasattr(results.model, 'data'):
+        if hasattr(results, "model") and hasattr(results.model, "data"):
             data = results.model.data
-            if hasattr(data, 'row_labels'):
+            if hasattr(data, "row_labels"):
                 # MultiIndex case (entity, time)
-                if hasattr(data.row_labels, 'get_level_values'):
+                if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(1).values
                     except:
                         pass
 
         # Try from original data
-        if hasattr(results, '_data') and hasattr(results._data, 'time_index'):
+        if hasattr(results, "_data") and hasattr(results._data, "time_index"):
             return np.asarray(results._data.time_index)
 
         return None
@@ -293,18 +286,18 @@ class ResidualDataTransformer:
             Entity IDs if available
         """
         # Try to get from model data
-        if hasattr(results, 'model') and hasattr(results.model, 'data'):
+        if hasattr(results, "model") and hasattr(results.model, "data"):
             data = results.model.data
-            if hasattr(data, 'row_labels'):
+            if hasattr(data, "row_labels"):
                 # MultiIndex case (entity, time)
-                if hasattr(data.row_labels, 'get_level_values'):
+                if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(0).values
                     except:
                         pass
 
         # Try from original data
-        if hasattr(results, '_data') and hasattr(results._data, 'entity_id'):
+        if hasattr(results, "_data") and hasattr(results._data, "entity_id"):
             return np.asarray(results._data.entity_id)
 
         return None
@@ -326,24 +319,25 @@ class ResidualDataTransformer:
         info = {}
 
         # Extract common attributes
-        attrs = [
-            'nobs', 'df_resid', 'df_model', 'rsquared', 'rsquared_adj',
-            'fvalue', 'f_pvalue'
-        ]
+        attrs = ["nobs", "df_resid", "df_model", "rsquared", "rsquared_adj", "fvalue", "f_pvalue"]
 
         for attr in attrs:
             if hasattr(results, attr):
                 info[attr] = getattr(results, attr)
 
         # Get model type
-        if hasattr(results, 'model'):
+        if hasattr(results, "model"):
             model = results.model
-            info['model_type'] = model.__class__.__name__ if hasattr(model, '__class__') else 'Unknown'
+            info["model_type"] = (
+                model.__class__.__name__ if hasattr(model, "__class__") else "Unknown"
+            )
 
         # Get parameter names
-        if hasattr(results, 'params'):
-            info['param_names'] = list(results.params.index) if hasattr(results.params, 'index') else []
-            info['n_params'] = len(results.params)
+        if hasattr(results, "params"):
+            info["param_names"] = (
+                list(results.params.index) if hasattr(results.params, "index") else []
+            )
+            info["n_params"] = len(results.params)
 
         return info
 
@@ -364,10 +358,10 @@ class ResidualDataTransformer:
         residuals = self._extract_residuals(results)
 
         return {
-            'residuals': residuals,
-            'standardized': True,
-            'show_confidence': True,
-            'confidence_level': 0.95
+            "residuals": residuals,
+            "standardized": True,
+            "show_confidence": True,
+            "confidence_level": 0.95,
         }
 
     def prepare_residual_fitted_data(self, results: Any) -> Dict[str, Any]:
@@ -387,12 +381,7 @@ class ResidualDataTransformer:
         residuals = self._extract_residuals(results)
         fitted = self._extract_fitted(results)
 
-        return {
-            'fitted': fitted,
-            'residuals': residuals,
-            'add_lowess': True,
-            'add_reference': True
-        }
+        return {"fitted": fitted, "residuals": residuals, "add_lowess": True, "add_reference": True}
 
     def prepare_scale_location_data(self, results: Any) -> Dict[str, Any]:
         """
@@ -411,11 +400,7 @@ class ResidualDataTransformer:
         residuals = self._extract_residuals(results)
         fitted = self._extract_fitted(results)
 
-        return {
-            'fitted': fitted,
-            'residuals': residuals,
-            'add_lowess': True
-        }
+        return {"fitted": fitted, "residuals": residuals, "add_lowess": True}
 
     def prepare_leverage_data(self, results: Any) -> Dict[str, Any]:
         """
@@ -437,16 +422,16 @@ class ResidualDataTransformer:
         cooks_d = self._compute_cooks_distance(results, standardized_residuals, leverage)
 
         data = {
-            'residuals': standardized_residuals,
-            'leverage': leverage if leverage is not None else np.zeros_like(residuals),
-            'show_contours': leverage is not None
+            "residuals": standardized_residuals,
+            "leverage": leverage if leverage is not None else np.zeros_like(residuals),
+            "show_contours": leverage is not None,
         }
 
         if cooks_d is not None:
-            data['cooks_d'] = cooks_d
+            data["cooks_d"] = cooks_d
 
-        if hasattr(results, 'params'):
-            data['params'] = results.params
+        if hasattr(results, "params"):
+            data["params"] = results.params
 
         return data
 
@@ -468,16 +453,13 @@ class ResidualDataTransformer:
         time_index = self._extract_time_index(results)
         entity_id = self._extract_entity_id(results)
 
-        data = {
-            'residuals': residuals,
-            'add_bands': True
-        }
+        data = {"residuals": residuals, "add_bands": True}
 
         if time_index is not None:
-            data['time_index'] = time_index
+            data["time_index"] = time_index
 
         if entity_id is not None:
-            data['entity_id'] = entity_id
+            data["entity_id"] = entity_id
 
         return data
 
@@ -497,9 +479,4 @@ class ResidualDataTransformer:
         """
         residuals = self._extract_residuals(results)
 
-        return {
-            'residuals': residuals,
-            'bins': 'auto',
-            'show_kde': True,
-            'show_normal': True
-        }
+        return {"residuals": residuals, "bins": "auto", "show_kde": True, "show_normal": True}

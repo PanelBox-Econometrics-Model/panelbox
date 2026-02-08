@@ -89,17 +89,17 @@ class PesaranCDTest(ValidationTest):
 
     | CD Statistic | P-value | Interpretation |
     |--------------|---------|----------------|
-    | \|CD\| < 1.645 | > 0.10 | No evidence of dependence |
-    | 1.645 < \|CD\| < 1.96 | 0.05-0.10 | Weak evidence |
-    | 1.96 < \|CD\| < 2.576 | 0.01-0.05 | Moderate dependence |
-    | \|CD\| > 2.576 | < 0.01 | Strong dependence |
+    | |CD| < 1.645 | > 0.10 | No evidence of dependence |
+    | 1.645 < |CD| < 1.96 | 0.05-0.10 | Weak evidence |
+    | 1.96 < |CD| < 2.576 | 0.01-0.05 | Moderate dependence |
+    | |CD| > 2.576 | < 0.01 | Strong dependence |
 
     **Average Correlation Guidelines:**
 
-    - \|ρ̄\| < 0.1: Weak dependence (likely negligible)
-    - 0.1 ≤ \|ρ̄\| < 0.3: Moderate dependence (consider robust SEs)
-    - 0.3 ≤ \|ρ̄\| < 0.5: Strong dependence (require spatial models)
-    - \|ρ̄\| ≥ 0.5: Very strong dependence (serious misspecification)
+    - |ρ̄| < 0.1: Weak dependence (likely negligible)
+    - 0.1 ≤ |ρ̄| < 0.3: Moderate dependence (consider robust SEs)
+    - 0.3 ≤ |ρ̄| < 0.5: Strong dependence (require spatial models)
+    - |ρ̄| ≥ 0.5: Very strong dependence (serious misspecification)
 
     **If Cross-Sectional Dependence is Detected:**
 

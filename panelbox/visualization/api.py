@@ -17,7 +17,7 @@ def create_validation_charts(
     theme: Union[str, Theme, None] = "professional",
     interactive: bool = True,
     charts: Optional[List[str]] = None,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Create validation charts from ValidationReport or dict.
@@ -110,72 +110,72 @@ def create_validation_charts(
 
     # Determine which charts to create
     if charts is None:
-        charts = ['test_overview', 'pvalue_distribution', 'test_statistics']
+        charts = ["test_overview", "pvalue_distribution", "test_statistics"]
         # Add dashboard if requested or if it's a comprehensive report
-        if validation_data.get('tests') and len(validation_data['tests']) > 5:
-            charts.append('dashboard')
+        if validation_data.get("tests") and len(validation_data["tests"]) > 5:
+            charts.append("dashboard")
 
     # Extract options
-    alpha = kwargs.get('alpha', 0.05)
-    include_html = kwargs.get('include_html', False)
-    config = kwargs.get('config', {})
+    alpha = kwargs.get("alpha", 0.05)
+    include_html = kwargs.get("include_html", False)
+    config = kwargs.get("config", {})
 
     # Result dictionary
     result_charts = {}
 
     # Create each requested chart
     for chart_name in charts:
-        if chart_name == 'test_overview':
+        if chart_name == "test_overview":
             chart_data = _prepare_test_overview_data(validation_data)
             chart = ChartFactory.create(
-                chart_type='validation_test_overview',
+                chart_type="validation_test_overview",
                 data=chart_data,
                 theme=resolved_theme,
-                config=config.get('test_overview', {})
+                config=config.get("test_overview", {}),
             )
-            result_charts['test_overview'] = chart.to_html() if include_html else chart
+            result_charts["test_overview"] = chart.to_html() if include_html else chart
 
-        elif chart_name == 'pvalue_distribution':
+        elif chart_name == "pvalue_distribution":
             chart_data = _prepare_pvalue_distribution_data(validation_data, alpha)
             chart = ChartFactory.create(
-                chart_type='validation_pvalue_distribution',
+                chart_type="validation_pvalue_distribution",
                 data=chart_data,
                 theme=resolved_theme,
-                config=config.get('pvalue_distribution', {})
+                config=config.get("pvalue_distribution", {}),
             )
-            result_charts['pvalue_distribution'] = chart.to_html() if include_html else chart
+            result_charts["pvalue_distribution"] = chart.to_html() if include_html else chart
 
-        elif chart_name == 'test_statistics':
+        elif chart_name == "test_statistics":
             chart_data = _prepare_test_statistics_data(validation_data)
             chart = ChartFactory.create(
-                chart_type='validation_test_statistics',
+                chart_type="validation_test_statistics",
                 data=chart_data,
                 theme=resolved_theme,
-                config=config.get('test_statistics', {})
+                config=config.get("test_statistics", {}),
             )
-            result_charts['test_statistics'] = chart.to_html() if include_html else chart
+            result_charts["test_statistics"] = chart.to_html() if include_html else chart
 
-        elif chart_name == 'comparison_heatmap':
+        elif chart_name == "comparison_heatmap":
             # Requires multiple models
-            if 'models' in validation_data:
+            if "models" in validation_data:
                 chart_data = _prepare_comparison_heatmap_data(validation_data)
                 chart = ChartFactory.create(
-                    chart_type='validation_comparison_heatmap',
+                    chart_type="validation_comparison_heatmap",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('comparison_heatmap', {})
+                    config=config.get("comparison_heatmap", {}),
                 )
-                result_charts['comparison_heatmap'] = chart.to_html() if include_html else chart
+                result_charts["comparison_heatmap"] = chart.to_html() if include_html else chart
 
-        elif chart_name == 'dashboard':
+        elif chart_name == "dashboard":
             chart_data = _prepare_dashboard_data(validation_data, alpha)
             chart = ChartFactory.create(
-                chart_type='validation_dashboard',
+                chart_type="validation_dashboard",
                 data=chart_data,
                 theme=resolved_theme,
-                config=config.get('dashboard', {})
+                config=config.get("dashboard", {}),
             )
-            result_charts['dashboard'] = chart.to_html() if include_html else chart
+            result_charts["dashboard"] = chart.to_html() if include_html else chart
 
     return result_charts
 
@@ -184,72 +184,74 @@ def _prepare_test_overview_data(validation_data: Dict) -> Dict:
     """Prepare data for test overview chart."""
     # Group tests by category
     categories = {}
-    for test in validation_data.get('tests', []):
-        category = test.get('category', 'Other')
+    for test in validation_data.get("tests", []):
+        category = test.get("category", "Other")
         if category not in categories:
-            categories[category] = {'passed': 0, 'failed': 0}
+            categories[category] = {"passed": 0, "failed": 0}
 
-        if test.get('passed', False) or test.get('pvalue', 1.0) >= test.get('alpha', 0.05):
-            categories[category]['passed'] += 1
+        if test.get("passed", False) or test.get("pvalue", 1.0) >= test.get("alpha", 0.05):
+            categories[category]["passed"] += 1
         else:
-            categories[category]['failed'] += 1
+            categories[category]["failed"] += 1
 
     return {
-        'categories': list(categories.keys()),
-        'passed': [v['passed'] for v in categories.values()],
-        'failed': [v['failed'] for v in categories.values()]
+        "categories": list(categories.keys()),
+        "passed": [v["passed"] for v in categories.values()],
+        "failed": [v["failed"] for v in categories.values()],
     }
 
 
 def _prepare_pvalue_distribution_data(validation_data: Dict, alpha: float) -> Dict:
     """Prepare data for p-value distribution chart."""
-    tests = validation_data.get('tests', [])
+    tests = validation_data.get("tests", [])
 
     return {
-        'test_names': [t.get('name', f"Test {i}") for i, t in enumerate(tests)],
-        'pvalues': [t.get('pvalue', 1.0) for t in tests],
-        'alpha': alpha
+        "test_names": [t.get("name", f"Test {i}") for i, t in enumerate(tests)],
+        "pvalues": [t.get("pvalue", 1.0) for t in tests],
+        "alpha": alpha,
     }
 
 
 def _prepare_test_statistics_data(validation_data: Dict) -> Dict:
     """Prepare data for test statistics chart."""
-    tests = validation_data.get('tests', [])
+    tests = validation_data.get("tests", [])
 
     return {
-        'test_names': [t.get('name', f"Test {i}") for i, t in enumerate(tests)],
-        'statistics': [abs(t.get('statistic', 0.0)) for t in tests],
-        'categories': [t.get('category', 'Other') for t in tests],
-        'pvalues': [t.get('pvalue', 1.0) for t in tests]
+        "test_names": [t.get("name", f"Test {i}") for i, t in enumerate(tests)],
+        "statistics": [abs(t.get("statistic", 0.0)) for t in tests],
+        "categories": [t.get("category", "Other") for t in tests],
+        "pvalues": [t.get("pvalue", 1.0) for t in tests],
     }
 
 
 def _prepare_comparison_heatmap_data(validation_data: Dict) -> Dict:
     """Prepare data for comparison heatmap."""
-    models = validation_data.get('models', [])
-    tests = validation_data.get('test_names', [])
-    matrix = validation_data.get('pvalue_matrix', [])
+    models = validation_data.get("models", [])
+    tests = validation_data.get("test_names", [])
+    matrix = validation_data.get("pvalue_matrix", [])
 
-    return {
-        'models': models,
-        'tests': tests,
-        'matrix': matrix
-    }
+    return {"models": models, "tests": tests, "matrix": matrix}
 
 
 def _prepare_dashboard_data(validation_data: Dict, alpha: float) -> Dict:
     """Prepare data for validation dashboard."""
     return {
-        'overview': _prepare_test_overview_data(validation_data),
-        'pvalues': _prepare_pvalue_distribution_data(validation_data, alpha),
-        'statistics': _prepare_test_statistics_data(validation_data),
-        'summary': {
-            'total_tests': len(validation_data.get('tests', [])),
-            'passed': sum(1 for t in validation_data.get('tests', [])
-                         if t.get('passed', False) or t.get('pvalue', 1.0) >= alpha),
-            'failed': sum(1 for t in validation_data.get('tests', [])
-                         if not (t.get('passed', False) or t.get('pvalue', 1.0) >= alpha))
-        }
+        "overview": _prepare_test_overview_data(validation_data),
+        "pvalues": _prepare_pvalue_distribution_data(validation_data, alpha),
+        "statistics": _prepare_test_statistics_data(validation_data),
+        "summary": {
+            "total_tests": len(validation_data.get("tests", [])),
+            "passed": sum(
+                1
+                for t in validation_data.get("tests", [])
+                if t.get("passed", False) or t.get("pvalue", 1.0) >= alpha
+            ),
+            "failed": sum(
+                1
+                for t in validation_data.get("tests", [])
+                if not (t.get("passed", False) or t.get("pvalue", 1.0) >= alpha)
+            ),
+        },
     }
 
 
@@ -257,7 +259,7 @@ def create_residual_diagnostics(
     results: Any,
     theme: Union[str, Theme, None] = "professional",
     charts: Optional[List[str]] = None,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Create residual diagnostic plots.
@@ -316,17 +318,17 @@ def create_residual_diagnostics(
     # Determine which charts to create
     if charts is None:
         charts = [
-            'qq_plot',
-            'residual_vs_fitted',
-            'scale_location',
-            'residual_vs_leverage',
-            'residual_timeseries',
-            'residual_distribution'
+            "qq_plot",
+            "residual_vs_fitted",
+            "scale_location",
+            "residual_vs_leverage",
+            "residual_timeseries",
+            "residual_distribution",
         ]
 
     # Extract options
-    include_html = kwargs.get('include_html', False)
-    config = kwargs.get('config', {})
+    include_html = kwargs.get("include_html", False)
+    config = kwargs.get("config", {})
 
     # Result dictionary
     result_charts = {}
@@ -334,69 +336,70 @@ def create_residual_diagnostics(
     # Create each requested chart
     for chart_name in charts:
         try:
-            if chart_name == 'qq_plot':
+            if chart_name == "qq_plot":
                 chart_data = transformer.prepare_qq_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_qq_plot',
+                    chart_type="residual_qq_plot",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('qq_plot', {})
+                    config=config.get("qq_plot", {}),
                 )
-                result_charts['qq_plot'] = chart.to_html() if include_html else chart
+                result_charts["qq_plot"] = chart.to_html() if include_html else chart
 
-            elif chart_name == 'residual_vs_fitted':
+            elif chart_name == "residual_vs_fitted":
                 chart_data = transformer.prepare_residual_fitted_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_vs_fitted',
+                    chart_type="residual_vs_fitted",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('residual_vs_fitted', {})
+                    config=config.get("residual_vs_fitted", {}),
                 )
-                result_charts['residual_vs_fitted'] = chart.to_html() if include_html else chart
+                result_charts["residual_vs_fitted"] = chart.to_html() if include_html else chart
 
-            elif chart_name == 'scale_location':
+            elif chart_name == "scale_location":
                 chart_data = transformer.prepare_scale_location_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_scale_location',
+                    chart_type="residual_scale_location",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('scale_location', {})
+                    config=config.get("scale_location", {}),
                 )
-                result_charts['scale_location'] = chart.to_html() if include_html else chart
+                result_charts["scale_location"] = chart.to_html() if include_html else chart
 
-            elif chart_name == 'residual_vs_leverage':
+            elif chart_name == "residual_vs_leverage":
                 chart_data = transformer.prepare_leverage_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_vs_leverage',
+                    chart_type="residual_vs_leverage",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('residual_vs_leverage', {})
+                    config=config.get("residual_vs_leverage", {}),
                 )
-                result_charts['residual_vs_leverage'] = chart.to_html() if include_html else chart
+                result_charts["residual_vs_leverage"] = chart.to_html() if include_html else chart
 
-            elif chart_name == 'residual_timeseries':
+            elif chart_name == "residual_timeseries":
                 chart_data = transformer.prepare_timeseries_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_timeseries',
+                    chart_type="residual_timeseries",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('residual_timeseries', {})
+                    config=config.get("residual_timeseries", {}),
                 )
-                result_charts['residual_timeseries'] = chart.to_html() if include_html else chart
+                result_charts["residual_timeseries"] = chart.to_html() if include_html else chart
 
-            elif chart_name == 'residual_distribution':
+            elif chart_name == "residual_distribution":
                 chart_data = transformer.prepare_distribution_data(results)
                 chart = ChartFactory.create(
-                    chart_type='residual_distribution',
+                    chart_type="residual_distribution",
                     data=chart_data,
                     theme=resolved_theme,
-                    config=config.get('residual_distribution', {})
+                    config=config.get("residual_distribution", {}),
                 )
-                result_charts['residual_distribution'] = chart.to_html() if include_html else chart
+                result_charts["residual_distribution"] = chart.to_html() if include_html else chart
 
         except Exception as e:
             # Log error but continue with other charts
             import warnings
+
             warnings.warn(f"Failed to create {chart_name}: {str(e)}")
 
     return result_charts
@@ -407,7 +410,7 @@ def create_comparison_charts(
     names: Optional[List[str]] = None,
     theme: Union[str, Theme, None] = "professional",
     charts: Optional[List[str]] = None,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Create model comparison charts.
@@ -449,8 +452,8 @@ def create_comparison_charts(
     ...     theme='presentation'
     ... )
     """
-    from .transformers.comparison import ComparisonDataTransformer
     from .factory import ChartFactory
+    from .transformers.comparison import ComparisonDataTransformer
 
     # Get theme
     resolved_theme = get_theme(theme) if theme else None
@@ -460,43 +463,57 @@ def create_comparison_charts(
 
     # Determine which charts to create
     if charts is None:
-        charts = ['coefficients', 'fit_comparison', 'ic_comparison']
+        charts = ["coefficients", "fit_comparison", "ic_comparison"]
 
     # Create charts
     result_charts = {}
 
     for chart_name in charts:
         try:
-            if chart_name == 'coefficients':
+            if chart_name == "coefficients":
                 # Coefficient comparison chart
                 chart_data = transformer.prepare_coefficient_comparison(
-                    results_list, names=names, variables=kwargs.get('variables')
+                    results_list, names=names, variables=kwargs.get("variables")
                 )
-                chart = ChartFactory.create('comparison_coefficients', data=chart_data, theme=resolved_theme)
-                result_charts['coefficients'] = chart.to_html() if kwargs.get('include_html') else chart
+                chart = ChartFactory.create(
+                    "comparison_coefficients", data=chart_data, theme=resolved_theme
+                )
+                result_charts["coefficients"] = (
+                    chart.to_html() if kwargs.get("include_html") else chart
+                )
 
-            elif chart_name == 'forest_plot':
+            elif chart_name == "forest_plot":
                 # Forest plot (single model only)
                 if len(results_list) == 1:
                     chart_data = transformer.prepare_forest_plot(
-                        results_list[0], variables=kwargs.get('variables')
+                        results_list[0], variables=kwargs.get("variables")
                     )
-                    chart = ChartFactory.create('comparison_forest_plot', data=chart_data, theme=resolved_theme)
-                    result_charts['forest_plot'] = chart.to_html() if kwargs.get('include_html') else chart
+                    chart = ChartFactory.create(
+                        "comparison_forest_plot", data=chart_data, theme=resolved_theme
+                    )
+                    result_charts["forest_plot"] = (
+                        chart.to_html() if kwargs.get("include_html") else chart
+                    )
                 else:
                     warnings.warn("Forest plot requires single model. Skipping.")
 
-            elif chart_name == 'fit_comparison':
+            elif chart_name == "fit_comparison":
                 # Model fit comparison
                 chart_data = transformer.prepare_model_fit_comparison(results_list, names=names)
-                chart = ChartFactory.create('comparison_model_fit', data=chart_data, theme=resolved_theme)
-                result_charts['fit_comparison'] = chart.to_html() if kwargs.get('include_html') else chart
+                chart = ChartFactory.create(
+                    "comparison_model_fit", data=chart_data, theme=resolved_theme
+                )
+                result_charts["fit_comparison"] = (
+                    chart.to_html() if kwargs.get("include_html") else chart
+                )
 
-            elif chart_name == 'ic_comparison':
+            elif chart_name == "ic_comparison":
                 # Information criteria comparison
                 chart_data = transformer.prepare_ic_comparison(results_list, names=names)
-                chart = ChartFactory.create('comparison_ic', data=chart_data, theme=resolved_theme)
-                result_charts['ic_comparison'] = chart.to_html() if kwargs.get('include_html') else chart
+                chart = ChartFactory.create("comparison_ic", data=chart_data, theme=resolved_theme)
+                result_charts["ic_comparison"] = (
+                    chart.to_html() if kwargs.get("include_html") else chart
+                )
 
             else:
                 warnings.warn(f"Unknown chart type: {chart_name}")
@@ -510,12 +527,12 @@ def create_comparison_charts(
 def export_charts(
     charts: Dict[str, Any],
     output_dir: str,
-    format: str = 'png',
-    prefix: str = '',
+    format: str = "png",
+    prefix: str = "",
     width: Optional[int] = None,
     height: Optional[int] = None,
     scale: float = 1.0,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, str]:
     """
     Batch export multiple charts to image files.
@@ -591,10 +608,9 @@ def export_charts(
             continue
 
         # Check if chart has save_image method
-        if not hasattr(chart, 'save_image'):
+        if not hasattr(chart, "save_image"):
             warnings.warn(
-                f"Chart '{chart_name}' does not have save_image() method. "
-                f"Skipping export."
+                f"Chart '{chart_name}' does not have save_image() method. " f"Skipping export."
             )
             continue
 
@@ -605,12 +621,7 @@ def export_charts(
 
             # Export chart
             chart.save_image(
-                str(file_path),
-                format=format,
-                width=width,
-                height=height,
-                scale=scale,
-                **kwargs
+                str(file_path), format=format, width=width, height=height, scale=scale, **kwargs
             )
 
             exported_paths[chart_name] = str(file_path)
@@ -628,7 +639,7 @@ def export_chart(
     width: Optional[int] = None,
     height: Optional[int] = None,
     scale: float = 1.0,
-    **kwargs
+    **kwargs,
 ) -> str:
     """
     Export a single chart to an image file.
@@ -679,20 +690,13 @@ def export_chart(
     >>> # Export as SVG
     >>> export_chart(chart, 'output/test_overview.svg')
     """
-    if not hasattr(chart, 'save_image'):
+    if not hasattr(chart, "save_image"):
         raise ValueError(
             f"Chart type {type(chart).__name__} does not have save_image() method. "
             f"Only PlotlyChartBase charts support image export."
         )
 
-    chart.save_image(
-        file_path,
-        format=format,
-        width=width,
-        height=height,
-        scale=scale,
-        **kwargs
-    )
+    chart.save_image(file_path, format=format, width=width, height=height, scale=scale, **kwargs)
 
     return file_path
 
@@ -700,12 +704,12 @@ def export_chart(
 def export_charts_multiple_formats(
     charts: Dict[str, Any],
     output_dir: str,
-    formats: List[str] = ['png', 'svg'],
-    prefix: str = '',
+    formats: List[str] = ["png", "svg"],
+    prefix: str = "",
     width: Optional[int] = None,
     height: Optional[int] = None,
     scale: float = 1.0,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, Dict[str, str]]:
     """
     Export multiple charts to multiple formats at once.
@@ -767,7 +771,7 @@ def export_charts_multiple_formats(
             width=width,
             height=height,
             scale=scale,
-            **kwargs
+            **kwargs,
         )
         all_paths[fmt] = paths
 
@@ -779,7 +783,7 @@ def create_panel_charts(
     chart_types: Optional[List[str]] = None,
     theme: Union[str, Theme, None] = "professional",
     include_html: bool = True,
-    **kwargs
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Create panel-specific charts from panel estimation results.
@@ -886,23 +890,23 @@ def create_panel_charts(
         chart_types = []
 
         # Check if we can create effects charts (requires model results)
-        if hasattr(panel_results, 'entity_effects') or hasattr(panel_results, 'params'):
-            chart_types.extend(['entity_effects', 'time_effects'])
+        if hasattr(panel_results, "entity_effects") or hasattr(panel_results, "params"):
+            chart_types.extend(["entity_effects", "time_effects"])
 
         # Check if we can create variance/structure charts (requires data)
-        if hasattr(panel_results, 'dataframe') or hasattr(panel_results, 'model'):
-            chart_types.extend(['between_within', 'structure'])
+        if hasattr(panel_results, "dataframe") or hasattr(panel_results, "model"):
+            chart_types.extend(["between_within", "structure"])
 
         # Fallback: try all
         if not chart_types:
-            chart_types = ['entity_effects', 'time_effects', 'between_within', 'structure']
+            chart_types = ["entity_effects", "time_effects", "between_within", "structure"]
 
     # Map chart type names to registry names
     chart_map = {
-        'entity_effects': 'panel_entity_effects',
-        'time_effects': 'panel_time_effects',
-        'between_within': 'panel_between_within',
-        'structure': 'panel_structure',
+        "entity_effects": "panel_entity_effects",
+        "time_effects": "panel_time_effects",
+        "between_within": "panel_between_within",
+        "structure": "panel_structure",
     }
 
     # Get theme
@@ -922,10 +926,7 @@ def create_panel_charts(
         try:
             # Create chart
             chart = ChartFactory.create(
-                registry_name,
-                data=panel_results,
-                theme=theme_obj,
-                **kwargs
+                registry_name, data=panel_results, theme=theme_obj, **kwargs
             )
 
             # Convert to HTML if requested
@@ -941,9 +942,7 @@ def create_panel_charts(
 
 
 def create_entity_effects_plot(
-    panel_results: Any,
-    theme: Union[str, Theme, None] = "professional",
-    **kwargs
+    panel_results: Any, theme: Union[str, Theme, None] = "professional", **kwargs
 ) -> Any:
     """
     Create entity effects visualization.
@@ -982,20 +981,14 @@ def create_entity_effects_plot(
     # Transform PanelResults to entity effects data if needed
     if not isinstance(panel_results, dict):
         from .transformers.panel import PanelDataTransformer
+
         panel_results = PanelDataTransformer.extract_entity_effects(panel_results)
 
-    return ChartFactory.create(
-        'panel_entity_effects',
-        data=panel_results,
-        theme=theme,
-        **kwargs
-    )
+    return ChartFactory.create("panel_entity_effects", data=panel_results, theme=theme, **kwargs)
 
 
 def create_time_effects_plot(
-    panel_results: Any,
-    theme: Union[str, Theme, None] = "professional",
-    **kwargs
+    panel_results: Any, theme: Union[str, Theme, None] = "professional", **kwargs
 ) -> Any:
     """
     Create time effects visualization.
@@ -1034,22 +1027,18 @@ def create_time_effects_plot(
     # Transform PanelResults to time effects data if needed
     if not isinstance(panel_results, dict):
         from .transformers.panel import PanelDataTransformer
+
         panel_results = PanelDataTransformer.extract_time_effects(panel_results)
 
-    return ChartFactory.create(
-        'panel_time_effects',
-        data=panel_results,
-        theme=theme,
-        **kwargs
-    )
+    return ChartFactory.create("panel_time_effects", data=panel_results, theme=theme, **kwargs)
 
 
 def create_between_within_plot(
     panel_data: Any,
     variables: Optional[List[str]] = None,
     theme: Union[str, Theme, None] = "professional",
-    style: str = 'stacked',
-    **kwargs
+    style: str = "stacked",
+    **kwargs,
 ) -> Any:
     """
     Create between-within variance decomposition chart.
@@ -1093,28 +1082,20 @@ def create_between_within_plot(
     # Prepare data if needed
     if variables is not None and not isinstance(panel_data, dict):
         from .transformers.panel import PanelDataTransformer
-        panel_data = PanelDataTransformer.calculate_between_within(
-            panel_data,
-            variables=variables
-        )
+
+        panel_data = PanelDataTransformer.calculate_between_within(panel_data, variables=variables)
 
     # Pass style as config to avoid chart_type parameter conflict
-    config = kwargs.pop('config', {})
-    config['chart_type'] = style
+    config = kwargs.pop("config", {})
+    config["chart_type"] = style
 
     return ChartFactory.create(
-        'panel_between_within',
-        data=panel_data,
-        theme=theme,
-        config=config,
-        **kwargs
+        "panel_between_within", data=panel_data, theme=theme, config=config, **kwargs
     )
 
 
 def create_panel_structure_plot(
-    panel_data: Any,
-    theme: Union[str, Theme, None] = "professional",
-    **kwargs
+    panel_data: Any, theme: Union[str, Theme, None] = "professional", **kwargs
 ) -> Any:
     """
     Create panel structure visualization.
@@ -1153,19 +1134,16 @@ def create_panel_structure_plot(
     # Transform DataFrame to structure data if needed
     if not isinstance(panel_data, dict):
         from .transformers.panel import PanelDataTransformer
+
         panel_data = PanelDataTransformer.analyze_panel_structure(panel_data)
 
-    return ChartFactory.create(
-        'panel_structure',
-        data=panel_data,
-        theme=theme,
-        **kwargs
-    )
+    return ChartFactory.create("panel_structure", data=panel_data, theme=theme, **kwargs)
 
 
 # =============================================================================
 # Econometric Test Visualization APIs (Phase 7)
 # =============================================================================
+
 
 def create_acf_pacf_plot(
     residuals: Any,
@@ -1173,7 +1151,7 @@ def create_acf_pacf_plot(
     confidence_level: float = 0.95,
     show_ljung_box: bool = True,
     theme: Union[str, Theme, None] = "academic",
-    **kwargs
+    **kwargs,
 ) -> Any:
     """
     Create ACF and PACF plots for serial correlation analysis.
@@ -1226,27 +1204,22 @@ def create_acf_pacf_plot(
 
     # Prepare data
     data = {
-        'residuals': residuals,
-        'confidence_level': confidence_level,
-        'show_ljung_box': show_ljung_box
+        "residuals": residuals,
+        "confidence_level": confidence_level,
+        "show_ljung_box": show_ljung_box,
     }
 
     if max_lags is not None:
-        data['max_lags'] = max_lags
+        data["max_lags"] = max_lags
 
-    return ChartFactory.create(
-        'acf_pacf_plot',
-        data=data,
-        theme=theme,
-        **kwargs
-    )
+    return ChartFactory.create("acf_pacf_plot", data=data, theme=theme, **kwargs)
 
 
 def create_unit_root_test_plot(
     test_results: Union[Dict[str, Any], Any],
     include_series: bool = False,
     theme: Union[str, Theme, None] = "professional",
-    **kwargs
+    **kwargs,
 ) -> Any:
     """
     Create unit root test results visualization.
@@ -1300,29 +1273,22 @@ def create_unit_root_test_plot(
     if not isinstance(test_results, dict):
         # Try to extract from statsmodels-like test result
         data = {}
-        if hasattr(test_results, 'test_name'):
-            data['test_names'] = [test_results.test_name]
-        if hasattr(test_results, 'statistic'):
-            data['test_stats'] = [test_results.statistic]
-        if hasattr(test_results, 'critical_values'):
-            data['critical_values'] = test_results.critical_values
-        if hasattr(test_results, 'pvalue'):
-            data['pvalues'] = [test_results.pvalue]
+        if hasattr(test_results, "test_name"):
+            data["test_names"] = [test_results.test_name]
+        if hasattr(test_results, "statistic"):
+            data["test_stats"] = [test_results.statistic]
+        if hasattr(test_results, "critical_values"):
+            data["critical_values"] = test_results.critical_values
+        if hasattr(test_results, "pvalue"):
+            data["pvalues"] = [test_results.pvalue]
 
         test_results = data
 
-    return ChartFactory.create(
-        'unit_root_test_plot',
-        data=test_results,
-        theme=theme,
-        **kwargs
-    )
+    return ChartFactory.create("unit_root_test_plot", data=test_results, theme=theme, **kwargs)
 
 
 def create_cointegration_heatmap(
-    cointegration_results: Dict[str, Any],
-    theme: Union[str, Theme, None] = "academic",
-    **kwargs
+    cointegration_results: Dict[str, Any], theme: Union[str, Theme, None] = "academic", **kwargs
 ) -> Any:
     """
     Create cointegration test results heatmap.
@@ -1367,17 +1333,12 @@ def create_cointegration_heatmap(
         theme = get_theme(theme)
 
     return ChartFactory.create(
-        'cointegration_heatmap',
-        data=cointegration_results,
-        theme=theme,
-        **kwargs
+        "cointegration_heatmap", data=cointegration_results, theme=theme, **kwargs
     )
 
 
 def create_cross_sectional_dependence_plot(
-    cd_results: Dict[str, Any],
-    theme: Union[str, Theme, None] = "professional",
-    **kwargs
+    cd_results: Dict[str, Any], theme: Union[str, Theme, None] = "professional", **kwargs
 ) -> Any:
     """
     Create cross-sectional dependence test visualization.
@@ -1421,8 +1382,5 @@ def create_cross_sectional_dependence_plot(
         theme = get_theme(theme)
 
     return ChartFactory.create(
-        'cross_sectional_dependence_plot',
-        data=cd_results,
-        theme=theme,
-        **kwargs
+        "cross_sectional_dependence_plot", data=cd_results, theme=theme, **kwargs
     )
