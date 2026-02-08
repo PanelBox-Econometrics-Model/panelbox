@@ -5,10 +5,12 @@
     {% endif %}
 
     <div class="report-meta">
+        {% if model_type %}
         <div class="report-meta-item">
             <span class="report-meta-label">Model:</span>
             <span>{{ model_type }}</span>
         </div>
+        {% endif %}
 
         {% if formula %}
         <div class="report-meta-item">
@@ -17,10 +19,12 @@
         </div>
         {% endif %}
 
+        {% if nobs %}
         <div class="report-meta-item">
             <span class="report-meta-label">Observations:</span>
             <span>{{ nobs|number_format }}</span>
         </div>
+        {% endif %}
 
         {% if n_entities %}
         <div class="report-meta-item">

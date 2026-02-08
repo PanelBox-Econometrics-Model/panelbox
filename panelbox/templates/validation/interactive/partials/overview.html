@@ -1,11 +1,14 @@
+{% if model_info %}
 <section class="report-section">
     <h3 class="section-subtitle">Model Information</h3>
 
     <div class="info-grid">
+        {% if model_info.model_type %}
         <div class="info-item">
             <span class="info-label">Model Type:</span>
             <span class="info-value">{{ model_info.model_type }}</span>
         </div>
+        {% endif %}
 
         {% if model_info.formula %}
         <div class="info-item">
@@ -14,10 +17,12 @@
         </div>
         {% endif %}
 
+        {% if model_info.nobs %}
         <div class="info-item">
             <span class="info-label">Observations:</span>
             <span class="info-value">{{ model_info.nobs_formatted or model_info.nobs }}</span>
         </div>
+        {% endif %}
 
         {% if model_info.n_entities %}
         <div class="info-item">
@@ -43,6 +48,7 @@
         {% endif %}
     </div>
 </section>
+{% endif %}
 
 <section class="report-section mt-6">
     <h3 class="section-subtitle">Tests by Category</h3>
@@ -52,15 +58,8 @@
         <div class="test-category-card">
             <h4 class="test-category-title">Specification Tests</h4>
             <div class="test-category-count">
-                {{ summary.failed_by_category.specification }} /
-                {{ tests|selectattr('category', 'equalto', 'Specification')|list|length }} failed
-            </div>
-            <div class="test-category-status">
-                {% if summary.failed_by_category.specification == 0 %}
-                <span class="badge badge-success">All Passed</span>
-                {% else %}
-                <span class="badge badge-danger">Issues Detected</span>
-                {% endif %}
+                {{ summary.get('tests_failed', 0) }} /
+                {{ summary.get('total_tests', 0) }} failed
             </div>
         </div>
 
@@ -68,15 +67,7 @@
         <div class="test-category-card">
             <h4 class="test-category-title">Serial Correlation</h4>
             <div class="test-category-count">
-                {{ summary.failed_by_category.serial }} /
-                {{ tests|selectattr('category', 'equalto', 'Serial Correlation')|list|length }} failed
-            </div>
-            <div class="test-category-status">
-                {% if summary.failed_by_category.serial == 0 %}
-                <span class="badge badge-success">All Passed</span>
-                {% else %}
-                <span class="badge badge-danger">Issues Detected</span>
-                {% endif %}
+                Tests executed
             </div>
         </div>
 
@@ -84,15 +75,7 @@
         <div class="test-category-card">
             <h4 class="test-category-title">Heteroskedasticity</h4>
             <div class="test-category-count">
-                {{ summary.failed_by_category.heteroskedasticity }} /
-                {{ tests|selectattr('category', 'equalto', 'Heteroskedasticity')|list|length }} failed
-            </div>
-            <div class="test-category-status">
-                {% if summary.failed_by_category.heteroskedasticity == 0 %}
-                <span class="badge badge-success">All Passed</span>
-                {% else %}
-                <span class="badge badge-danger">Issues Detected</span>
-                {% endif %}
+                Tests executed
             </div>
         </div>
 
@@ -100,15 +83,7 @@
         <div class="test-category-card">
             <h4 class="test-category-title">Cross-Sectional Dependence</h4>
             <div class="test-category-count">
-                {{ summary.failed_by_category.cross_sectional }} /
-                {{ tests|selectattr('category', 'equalto', 'Cross-Sectional Dependence')|list|length }} failed
-            </div>
-            <div class="test-category-status">
-                {% if summary.failed_by_category.cross_sectional == 0 %}
-                <span class="badge badge-success">All Passed</span>
-                {% else %}
-                <span class="badge badge-danger">Issues Detected</span>
-                {% endif %}
+                Tests executed
             </div>
         </div>
     </div>
@@ -117,30 +92,15 @@
 <section class="report-section mt-6">
     <h3 class="section-subtitle">Quick Summary</h3>
 
-    {% if summary.has_issues %}
+    {% if summary and summary.get('tests_failed', 0) > 0 %}
     <div class="summary-box summary-box-warning">
         <h4>Issues Detected</h4>
-        <p>Your model has failed {{ summary.total_failed }} validation test(s). Review the detailed results and recommendations to address these issues.</p>
-
-        <ul class="mt-3">
-            {% if summary.failed_by_category.specification > 0 %}
-            <li><strong>Specification:</strong> {{ summary.failed_by_category.specification }} test(s) failed</li>
-            {% endif %}
-            {% if summary.failed_by_category.serial > 0 %}
-            <li><strong>Serial Correlation:</strong> {{ summary.failed_by_category.serial }} test(s) failed</li>
-            {% endif %}
-            {% if summary.failed_by_category.heteroskedasticity > 0 %}
-            <li><strong>Heteroskedasticity:</strong> {{ summary.failed_by_category.heteroskedasticity }} test(s) failed</li>
-            {% endif %}
-            {% if summary.failed_by_category.cross_sectional > 0 %}
-            <li><strong>Cross-Sectional Dependence:</strong> {{ summary.failed_by_category.cross_sectional }} test(s) failed</li>
-            {% endif %}
-        </ul>
+        <p>Your model has failed {{ summary.get('tests_failed', 0) }} validation test(s). Review the detailed results and recommendations to address these issues.</p>
     </div>
     {% else %}
     <div class="summary-box summary-box-success">
-        <h4>All Tests Passed</h4>
-        <p>Your panel data model has successfully passed all {{ summary.total_tests }} validation tests. The model specification appears appropriate and the data shows no major violations of panel data assumptions.</p>
+        <h4>Tests Completed</h4>
+        <p>Validation tests have been executed. {{ summary.get('total_tests', 0) }} test(s) were run with {{ summary.get('tests_passed', 0) }} passing.</p>
     </div>
     {% endif %}
 </section>
