@@ -10,6 +10,8 @@
 [![Documentation Status](https://readthedocs.org/projects/panelbox/badge/?version=latest)](https://panelbox.readthedocs.io/)
 [![Development Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Tests](https://img.shields.io/badge/tests-1257%20passed-success.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-85%25%2B-brightgreen.svg)]()
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 </div>
