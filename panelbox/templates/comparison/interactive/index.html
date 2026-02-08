@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include 'common/meta.html' %}
+
+    <!-- Embedded CSS -->
+    <style>
+        {{ css_inline|safe }}
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        {% include 'common/header.html' %}
+
+        <!-- Model Comparison Summary -->
+        <section class="report-section">
+            <h2 class="section-title">Model Comparison Summary</h2>
+
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Models Compared</div>
+                    <div class="metric-value">{{ n_models|default('N/A') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Comparison Charts</div>
+                    <div class="metric-value">{{ n_charts|default('4') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Best Model (AIC)</div>
+                    <div class="metric-value">{{ best_model_aic|default('N/A') }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Best Model (BIC)</div>
+                    <div class="metric-value">{{ best_model_bic|default('N/A') }}</div>
+                </div>
+            </div>
+
+            <!-- Overall Status Alert -->
+            {% if comparison_summary %}
+            <div class="alert alert-{{ comparison_summary.status|default('info') }} mt-4">
+                <strong>{{ comparison_summary.message|default('Model comparison results available below') }}</strong>
+                {% if comparison_summary.description %}
+                <p class="mt-2">{{ comparison_summary.description }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tab-container" id="comparison-tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="overview-tab">
+                    Overview
+                </button>
+                <button class="tab-button" data-tab="charts-tab">
+                    Comparison Charts
+                </button>
+                <button class="tab-button" data-tab="interpretation-tab">
+                    Interpretation Guide
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-contents">
+
+                <!-- Overview Tab -->
+                <div id="overview-tab" class="tab-content active">
+                    <section class="report-section">
+                        <h3 class="section-subtitle">About Model Comparison</h3>
+
+                        <p class="text-muted mb-4">
+                            Model comparison helps you select the best specification for your panel data analysis.
+                            These charts visualize differences in coefficients, model fit, and information criteria
+                            across multiple model specifications.
+                        </p>
+
+                        <div class="info-box">
+                            <h4 class="info-box-title">Available Comparison Charts</h4>
+                            <ul class="info-box-list">
+                                <li><strong>Coefficient Comparison:</strong> Compare estimated coefficients across models</li>
+                                <li><strong>Forest Plot:</strong> Visualize coefficient estimates with confidence intervals</li>
+                                <li><strong>Model Fit Comparison:</strong> Compare R-squared and adjusted R-squared</li>
+                                <li><strong>Information Criteria:</strong> Compare AIC and BIC for model selection</li>
+                            </ul>
+                        </div>
+
+                        {% if models_info %}
+                        <h4 class="section-subtitle mt-6">Models Being Compared</h4>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Model</th>
+                                        <th>Estimator</th>
+                                        <th>Observations</th>
+                                        <th>R-squared</th>
+                                        <th>AIC</th>
+                                        <th>BIC</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in models_info %}
+                                    <tr>
+                                        <td><strong>{{ model.name }}</strong></td>
+                                        <td>{{ model.estimator|default('N/A') }}</td>
+                                        <td>{{ model.nobs|default('N/A') }}</td>
+                                        <td>{{ "%.4f"|format(model.r_squared) if model.r_squared else 'N/A' }}</td>
+                                        <td>{{ "%.2f"|format(model.aic) if model.aic else 'N/A' }}</td>
+                                        <td>{{ "%.2f"|format(model.bic) if model.bic else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Model Selection Criteria</h4>
+                            <ul class="info-box-list">
+                                <li><strong>AIC (Akaike Information Criterion):</strong> Lower is better. Balances fit and complexity.</li>
+                                <li><strong>BIC (Bayesian Information Criterion):</strong> Lower is better. More conservative penalty for complexity.</li>
+                                <li><strong>R-squared:</strong> Higher is better. Proportion of variance explained.</li>
+                                <li><strong>Adjusted R-squared:</strong> Accounts for number of predictors.</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Comparison Charts Tab -->
+                <div id="charts-tab" class="tab-content">
+                    {% if comparison_charts %}
+                    <section class="report-section">
+                        <h3 class="section-subtitle">Model Comparison Charts</h3>
+
+                        <p class="text-muted mb-6">
+                            Interactive comparison charts for comprehensive model evaluation.
+                            Hover over data points for detailed information, zoom to focus on specific areas.
+                        </p>
+
+                        <!-- Coefficient Comparison -->
+                        {% if comparison_charts.coefficient_comparison %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Coefficient Comparison</h4>
+                            <p class="chart-description">
+                                Compare coefficient estimates across all models. Each variable shows estimates from different models
+                                side-by-side, making it easy to see how specifications affect parameter estimates.
+                            </p>
+                            <div class="chart-container">
+                                {{ comparison_charts.coefficient_comparison|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Forest Plot -->
+                        {% if comparison_charts.forest_plot %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Forest Plot</h4>
+                            <p class="chart-description">
+                                Visualize coefficient estimates with 95% confidence intervals. Points represent point estimates,
+                                horizontal lines show confidence intervals. Coefficients that don't overlap zero are statistically significant.
+                            </p>
+                            <div class="chart-container">
+                                {{ comparison_charts.forest_plot|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Model Fit Comparison -->
+                        {% if comparison_charts.fit_comparison %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Model Fit Comparison</h4>
+                            <p class="chart-description">
+                                Compare R-squared and adjusted R-squared across models. Higher values indicate better fit,
+                                but beware of overfitting. Adjusted R-squared penalizes model complexity.
+                            </p>
+                            <div class="chart-container">
+                                {{ comparison_charts.fit_comparison|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Information Criteria Comparison -->
+                        {% if comparison_charts.ic_comparison %}
+                        <div class="chart-section mb-8">
+                            <h4 class="chart-title">Information Criteria Comparison</h4>
+                            <p class="chart-description">
+                                Compare AIC and BIC across models. Lower values are better. BIC penalizes complexity more heavily than AIC.
+                                Use these criteria for model selection when models are not nested.
+                            </p>
+                            <div class="chart-container">
+                                {{ comparison_charts.ic_comparison|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Chart Instructions -->
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Chart Interactions</h4>
+                            <ul class="info-box-list">
+                                <li><strong>Hover:</strong> Move your mouse over data points to see detailed information</li>
+                                <li><strong>Zoom:</strong> Click and drag to zoom into a region, or use the zoom buttons</li>
+                                <li><strong>Pan:</strong> After zooming, click and drag to pan around</li>
+                                <li><strong>Reset:</strong> Click the "Reset axes" button to restore the original view</li>
+                                <li><strong>Export:</strong> Use the camera icon to download the chart as a PNG image</li>
+                                <li><strong>Toggle Series:</strong> Click on legend items to show/hide specific models</li>
+                            </ul>
+                        </div>
+                    </section>
+                    {% else %}
+                    <section class="report-section">
+                        <div class="alert alert-info">
+                            <strong>No comparison charts available.</strong>
+                            Generate model comparison charts using the visualization system.
+                        </div>
+                    </section>
+                    {% endif %}
+                </div>
+
+                <!-- Interpretation Guide Tab -->
+                <div id="interpretation-tab" class="tab-content">
+                    <section class="report-section">
+                        <h3 class="section-subtitle">Interpretation Guide</h3>
+
+                        <h4 class="section-subtitle mt-6">Coefficient Comparison</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Consistency and magnitude of coefficient estimates across models.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Robust coefficients:</strong> Similar estimates across different specifications</li>
+                            <li>⚠ <strong>Sensitivity:</strong> Coefficients that change dramatically may indicate specification issues</li>
+                            <li>⚠ <strong>Sign changes:</strong> Coefficient changing sign is a red flag for omitted variable bias</li>
+                            <li>✓ <strong>Precision improvement:</strong> Confidence intervals narrowing with better specification</li>
+                        </ul>
+
+                        <h4 class="section-subtitle mt-6">Forest Plot</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Confidence intervals and statistical significance across models.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Significance:</strong> Intervals not crossing zero indicate significance at α=0.05</li>
+                            <li>✓ <strong>Precision:</strong> Narrower intervals = more precise estimates</li>
+                            <li>⚠ <strong>Inconsistent significance:</strong> Variable significant in some models but not others</li>
+                            <li>✓ <strong>Overlapping intervals:</strong> Estimates not significantly different from each other</li>
+                        </ul>
+
+                        <h4 class="section-subtitle mt-6">Model Fit Comparison</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Balance between fit and complexity.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Higher R²:</strong> Better fit, but watch for overfitting</li>
+                            <li>✓ <strong>Adjusted R²:</strong> Accounts for number of predictors (use this for comparison)</li>
+                            <li>⚠ <strong>Marginal improvements:</strong> Small R² increases may not justify added complexity</li>
+                            <li>⚠ <strong>Very high R²:</strong> May indicate overfitting or multicollinearity</li>
+                        </ul>
+                        <p class="text-muted mb-4">
+                            <strong>Note:</strong> R² is only comparable across models with the same dependent variable.
+                        </p>
+
+                        <h4 class="section-subtitle mt-6">Information Criteria (AIC/BIC)</h4>
+                        <p class="mb-4">
+                            <strong>What to look for:</strong> Lowest values, considering your research goals.
+                        </p>
+                        <ul class="info-box-list mb-4">
+                            <li>✓ <strong>Lower is better:</strong> Both AIC and BIC penalize poor fit and complexity</li>
+                            <li><strong>AIC:</strong> Better for prediction, less conservative</li>
+                            <li><strong>BIC:</strong> Better for explanation, more conservative (stronger penalty)</li>
+                            <li>⚠ <strong>Small differences:</strong> ΔIC < 2 suggests models are similar</li>
+                            <li>⚠ <strong>Moderate differences:</strong> 2 < ΔIC < 10 suggests some support for both</li>
+                            <li>✓ <strong>Large differences:</strong> ΔIC > 10 provides strong evidence for better model</li>
+                        </ul>
+                        <p class="text-muted mb-4">
+                            <strong>Rule of thumb:</strong> If BIC and AIC disagree, BIC often selects simpler models.
+                        </p>
+
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Model Selection Strategy</h4>
+                            <ol class="info-box-list">
+                                <li><strong>Start simple:</strong> Begin with baseline specification</li>
+                                <li><strong>Add controls:</strong> Include theoretically relevant variables</li>
+                                <li><strong>Test robustness:</strong> Check coefficient stability across specifications</li>
+                                <li><strong>Compare fit:</strong> Use AIC/BIC for nested and non-nested models</li>
+                                <li><strong>Consider theory:</strong> Statistical fit is not the only criterion</li>
+                                <li><strong>Report multiple models:</strong> Show robustness of key findings</li>
+                            </ol>
+                        </div>
+
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Common Pitfalls</h4>
+                            <ul class="info-box-list">
+                                <li>❌ <strong>Data mining:</strong> Don't just pick the model with highest R²</li>
+                                <li>❌ <strong>Overfitting:</strong> Complex models may not generalize</li>
+                                <li>❌ <strong>Ignoring theory:</strong> Statistical fit doesn't guarantee correct specification</li>
+                                <li>❌ <strong>Comparing incomparable:</strong> Different samples, different dependent variables</li>
+                                <li>✓ <strong>Best practice:</strong> Use multiple criteria and theoretical reasoning</li>
+                            </ul>
+                        </div>
+
+                        <div class="info-box mt-6">
+                            <h4 class="info-box-title">Reporting Recommendations</h4>
+                            <ul class="info-box-list">
+                                <li>Report multiple models showing robustness of key findings</li>
+                                <li>Explain your model selection criteria clearly</li>
+                                <li>Discuss sensitivity of key coefficients to specification</li>
+                                <li>Include both statistical criteria (AIC/BIC) and theoretical justification</li>
+                                <li>Be transparent about specification searches you conducted</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        {% include 'common/footer.html' %}
+    </div>
+
+    <!-- Plotly.js -->
+    {{ plotly_js|safe }}
+
+    <!-- Embedded JavaScript -->
+    <script>
+        {{ js_inline|safe }}
+    </script>
+
+    <!-- Initialize tabs -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            PanelBoxTabs.init('comparison-tabs');
+        });
+    </script>
+</body>
+</html>

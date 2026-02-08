@@ -6,6 +6,7 @@
         zoom in/out, and pan to focus on specific areas of interest.
     </p>
 
+    {% if charts %}
     <!-- Test Overview Chart -->
     <div class="chart-section mb-8">
         <h4 class="chart-title">Test Results by Category</h4>
@@ -13,7 +14,7 @@
             Stacked bar chart showing the number of passed and failed tests in each category.
         </p>
         <div class="chart-container">
-            <div id="chart-test-overview" class="chart-plot"></div>
+            {{ charts.test_overview|safe }}
         </div>
     </div>
 
@@ -25,7 +26,7 @@
             threshold (α = 0.05) indicate potential issues.
         </p>
         <div class="chart-container">
-            <div id="chart-pvalue-dist" class="chart-plot"></div>
+            {{ charts.pvalue_distribution|safe }}
         </div>
         <div class="chart-note mt-2">
             <strong>Note:</strong> The red dashed line represents the 5% significance level (α = 0.05).
@@ -40,7 +41,7 @@
             Scatter plot of test statistics for all validation tests. Each point represents a test result.
         </p>
         <div class="chart-container">
-            <div id="chart-test-stats" class="chart-plot"></div>
+            {{ charts.test_statistics|safe }}
         </div>
     </div>
 
@@ -55,4 +56,9 @@
             <li><strong>Export:</strong> Use the camera icon to download the chart as a PNG image</li>
         </ul>
     </div>
+    {% else %}
+    <div class="alert alert-info">
+        <strong>No charts available.</strong> Charts will be displayed when validation tests are run.
+    </div>
+    {% endif %}
 </section>

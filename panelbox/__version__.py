@@ -1,6 +1,6 @@
 """Version information for panelbox."""
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
