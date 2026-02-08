@@ -6,6 +6,7 @@ and PanelData objects for panel-specific charts.
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
 
@@ -49,17 +50,17 @@ class PanelDataTransformer:
         """
         try:
             # Try to access entity effects directly
-            if hasattr(panel_results, 'entity_effects'):
+            if hasattr(panel_results, "entity_effects"):
                 effects_df = panel_results.entity_effects
 
                 return {
-                    'entity_id': list(effects_df.index),
-                    'effect': list(effects_df.values.flatten()),
-                    'std_error': None  # TODO: Calculate standard errors
+                    "entity_id": list(effects_df.index),
+                    "effect": list(effects_df.values.flatten()),
+                    "std_error": None,  # TODO: Calculate standard errors
                 }
 
             # Alternative: calculate from residuals
-            elif hasattr(panel_results, 'resids') and hasattr(panel_results, 'entity_info'):
+            elif hasattr(panel_results, "resids") and hasattr(panel_results, "entity_info"):
                 residuals = panel_results.resids
                 entity_info = panel_results.entity_info
 
@@ -67,8 +68,8 @@ class PanelDataTransformer:
                 entity_ids = []
                 effects = []
 
-                for entity_id in entity_info['entity_ids']:
-                    entity_mask = entity_info['entity_labels'] == entity_id
+                for entity_id in entity_info["entity_ids"]:
+                    entity_mask = entity_info["entity_labels"] == entity_id
                     entity_resids = residuals[entity_mask]
 
                     # Mean residual is the entity effect
@@ -77,38 +78,38 @@ class PanelDataTransformer:
                     entity_ids.append(entity_id)
                     effects.append(entity_effect)
 
-                return {
-                    'entity_id': entity_ids,
-                    'effect': effects,
-                    'std_error': None
-                }
+                return {"entity_id": entity_ids, "effect": effects, "std_error": None}
 
             # Fallback: try to extract from model internals
-            elif hasattr(panel_results, 'model') and hasattr(panel_results.model, 'entity_ids'):
+            elif hasattr(panel_results, "model") and hasattr(panel_results.model, "entity_ids"):
                 # Extract entity dummies if available
                 entity_ids = panel_results.model.entity_ids
 
                 # Try to get effects from params
-                if hasattr(panel_results, 'params'):
+                if hasattr(panel_results, "params"):
                     # Look for entity effect parameters
                     param_names = list(panel_results.params.index)
-                    entity_params = [p for p in param_names if 'entity' in p.lower() or 'C(' in p]
+                    entity_params = [p for p in param_names if "entity" in p.lower() or "C(" in p]
 
                     if entity_params:
                         effects = [panel_results.params[p] for p in entity_params]
-                        std_errors = [panel_results.std_errors[p] for p in entity_params] if hasattr(panel_results, 'std_errors') else None
+                        std_errors = (
+                            [panel_results.std_errors[p] for p in entity_params]
+                            if hasattr(panel_results, "std_errors")
+                            else None
+                        )
 
                         return {
-                            'entity_id': entity_ids[:len(effects)],
-                            'effect': effects,
-                            'std_error': std_errors
+                            "entity_id": entity_ids[: len(effects)],
+                            "effect": effects,
+                            "std_error": std_errors,
                         }
 
                 # If no params found, return dummy data
                 return {
-                    'entity_id': list(entity_ids),
-                    'effect': [0.0] * len(entity_ids),
-                    'std_error': None
+                    "entity_id": list(entity_ids),
+                    "effect": [0.0] * len(entity_ids),
+                    "std_error": None,
                 }
 
             else:
@@ -151,17 +152,17 @@ class PanelDataTransformer:
         """
         try:
             # Try to access time effects directly
-            if hasattr(panel_results, 'time_effects'):
+            if hasattr(panel_results, "time_effects"):
                 effects_df = panel_results.time_effects
 
                 return {
-                    'time': list(effects_df.index),
-                    'effect': list(effects_df.values.flatten()),
-                    'std_error': None  # TODO: Calculate standard errors
+                    "time": list(effects_df.index),
+                    "effect": list(effects_df.values.flatten()),
+                    "std_error": None,  # TODO: Calculate standard errors
                 }
 
             # Alternative: calculate from residuals
-            elif hasattr(panel_results, 'resids') and hasattr(panel_results, 'time_info'):
+            elif hasattr(panel_results, "resids") and hasattr(panel_results, "time_info"):
                 residuals = panel_results.resids
                 time_info = panel_results.time_info
 
@@ -169,8 +170,8 @@ class PanelDataTransformer:
                 time_periods = []
                 effects = []
 
-                for time_period in time_info['time_periods']:
-                    time_mask = time_info['time_labels'] == time_period
+                for time_period in time_info["time_periods"]:
+                    time_mask = time_info["time_labels"] == time_period
                     time_resids = residuals[time_mask]
 
                     # Mean residual is the time effect
@@ -179,16 +180,12 @@ class PanelDataTransformer:
                     time_periods.append(time_period)
                     effects.append(time_effect)
 
-                return {
-                    'time': time_periods,
-                    'effect': effects,
-                    'std_error': None
-                }
+                return {"time": time_periods, "effect": effects, "std_error": None}
 
             # Fallback: extract from params
-            elif hasattr(panel_results, 'params'):
+            elif hasattr(panel_results, "params"):
                 param_names = list(panel_results.params.index)
-                time_params = [p for p in param_names if 'time' in p.lower() or 'year' in p.lower()]
+                time_params = [p for p in param_names if "time" in p.lower() or "year" in p.lower()]
 
                 if time_params:
                     # Try to extract time periods from param names
@@ -200,20 +197,21 @@ class PanelDataTransformer:
                         # Extract year/time from parameter name
                         # E.g., "C(year)[T.2001]" -> 2001
                         import re
-                        match = re.search(r'\[T\.(\d+)\]', param)
+
+                        match = re.search(r"\[T\.(\d+)\]", param)
                         if match:
                             time_periods.append(int(match.group(1)))
                         else:
                             time_periods.append(param)
 
                         effects.append(panel_results.params[param])
-                        if hasattr(panel_results, 'std_errors'):
+                        if hasattr(panel_results, "std_errors"):
                             std_errors.append(panel_results.std_errors[param])
 
                     return {
-                        'time': time_periods,
-                        'effect': effects,
-                        'std_error': std_errors if std_errors else None
+                        "time": time_periods,
+                        "effect": effects,
+                        "std_error": std_errors if std_errors else None,
                     }
 
             raise AttributeError("Cannot extract time effects from provided object")
@@ -227,8 +225,7 @@ class PanelDataTransformer:
 
     @staticmethod
     def calculate_between_within(
-        panel_data,
-        variables: Optional[List[str]] = None
+        panel_data, variables: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Calculate between and within variance decomposition.
@@ -260,7 +257,7 @@ class PanelDataTransformer:
         """
         try:
             # Convert to DataFrame if needed
-            if hasattr(panel_data, 'dataframe'):
+            if hasattr(panel_data, "dataframe"):
                 df = panel_data.dataframe
             elif isinstance(panel_data, pd.DataFrame):
                 df = panel_data
@@ -275,12 +272,7 @@ class PanelDataTransformer:
             if not isinstance(df.index, pd.MultiIndex):
                 raise ValueError("DataFrame must have MultiIndex (entity, time)")
 
-            results = {
-                'variables': [],
-                'between_var': [],
-                'within_var': [],
-                'total_var': []
-            }
+            results = {"variables": [], "between_var": [], "within_var": [], "total_var": []}
 
             # Calculate for each variable
             for var in variables:
@@ -296,13 +288,13 @@ class PanelDataTransformer:
 
                 # Within variance: variance of deviations from entity means
                 # For each observation, subtract its entity mean
-                deviations = df[var] - df[var].groupby(level=0).transform('mean')
+                deviations = df[var] - df[var].groupby(level=0).transform("mean")
                 within_var = deviations.var()
 
-                results['variables'].append(var)
-                results['total_var'].append(total_var)
-                results['between_var'].append(between_var)
-                results['within_var'].append(within_var)
+                results["variables"].append(var)
+                results["total_var"].append(total_var)
+                results["between_var"].append(between_var)
+                results["within_var"].append(within_var)
 
             return results
 
@@ -341,7 +333,7 @@ class PanelDataTransformer:
         """
         try:
             # Convert to DataFrame if needed
-            if hasattr(panel_data, 'dataframe'):
+            if hasattr(panel_data, "dataframe"):
                 df = panel_data.dataframe
             elif isinstance(panel_data, pd.DataFrame):
                 df = panel_data
@@ -373,14 +365,12 @@ class PanelDataTransformer:
             # Calculate statistics
             total_cells = n_entities * n_periods
             present_cells = np.sum(presence_matrix)
-            is_balanced = (present_cells == total_cells)
+            is_balanced = present_cells == total_cells
             balance_percentage = (present_cells / total_cells) * 100
 
             # Find complete entities
             complete_entities = [
-                entities[i]
-                for i in range(n_entities)
-                if np.sum(presence_matrix[i, :]) == n_periods
+                entities[i] for i in range(n_entities) if np.sum(presence_matrix[i, :]) == n_periods
             ]
 
             # Calculate attrition rate (entities leaving over time)
@@ -389,20 +379,21 @@ class PanelDataTransformer:
             if n_periods > 1:
                 # Percentage decline from first to last period
                 attrition_rate = (
-                    (entities_per_period[0] - entities_per_period[-1]) /
-                    entities_per_period[0] * 100
+                    (entities_per_period[0] - entities_per_period[-1])
+                    / entities_per_period[0]
+                    * 100
                 )
 
             return {
-                'entities': entities,
-                'time_periods': time_periods,
-                'presence_matrix': presence_matrix,
-                'is_balanced': is_balanced,
-                'balance_percentage': balance_percentage,
-                'complete_entities': complete_entities,
-                'n_entities': n_entities,
-                'n_periods': n_periods,
-                'attrition_rate': attrition_rate
+                "entities": entities,
+                "time_periods": time_periods,
+                "presence_matrix": presence_matrix,
+                "is_balanced": is_balanced,
+                "balance_percentage": balance_percentage,
+                "complete_entities": complete_entities,
+                "n_entities": n_entities,
+                "n_periods": n_periods,
+                "attrition_rate": attrition_rate,
             }
 
         except Exception as e:
@@ -435,6 +426,6 @@ class PanelDataTransformer:
         between_within = PanelDataTransformer.calculate_between_within(panel_data)
 
         return {
-            'structure': structure,
-            'variance_decomposition': between_within,
+            "structure": structure,
+            "variance_decomposition": between_within,
         }

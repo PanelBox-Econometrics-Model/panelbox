@@ -33,7 +33,9 @@ class ValidationTransformer:
         """Initialize transformer with validation report."""
         self.report = validation_report
 
-    def transform(self, include_charts: bool = True, use_new_visualization: bool = True) -> Dict[str, Any]:
+    def transform(
+        self, include_charts: bool = True, use_new_visualization: bool = True
+    ) -> Dict[str, Any]:
         """
         Transform validation report into template data.
 
@@ -348,10 +350,11 @@ class ValidationTransformer:
         except ImportError:
             # Fallback if visualization module not available
             import warnings
+
             warnings.warn(
                 "New visualization system not available. Falling back to legacy mode. "
                 "Install panelbox.visualization or set use_new_visualization=False.",
-                UserWarning
+                UserWarning,
             )
             return self._prepare_chart_data_legacy()
 
@@ -362,10 +365,10 @@ class ValidationTransformer:
         try:
             chart_objects = create_validation_charts(
                 validation_data=viz_data,
-                theme='professional',
+                theme="professional",
                 interactive=True,
-                charts=['test_overview', 'pvalue_distribution', 'test_statistics'],
-                include_html=False  # Get chart objects, not HTML strings yet
+                charts=["test_overview", "pvalue_distribution", "test_statistics"],
+                include_html=False,  # Get chart objects, not HTML strings yet
             )
 
             # Convert chart objects to HTML (div only, no full document)
@@ -375,9 +378,7 @@ class ValidationTransformer:
                 # include_plotlyjs=False to avoid duplicate Plotly library
                 # full_html=False to get just the div
                 charts_html[name] = chart_obj.to_html(
-                    include_plotlyjs=False,
-                    full_html=False,
-                    div_id=f"chart-{name}"
+                    include_plotlyjs=False, full_html=False, div_id=f"chart-{name}"
                 )
 
             return charts_html
@@ -385,10 +386,11 @@ class ValidationTransformer:
         except Exception as e:
             # Fallback to legacy mode if chart generation fails
             import warnings
+
             warnings.warn(
                 f"Failed to generate charts with new visualization system: {e}. "
                 "Falling back to legacy mode.",
-                UserWarning
+                UserWarning,
             )
             return self._prepare_chart_data_legacy()
 
@@ -475,7 +477,7 @@ class ValidationTransformer:
             "test_names": test_labels,
             "statistics": test_stats,
             "categories": test_categories_list,  # Added for new visualization system
-            "pvalues": all_pvalues  # Added for size scaling in scatter plot
+            "pvalues": all_pvalues,  # Added for size scaling in scatter plot
         }
 
         return charts
@@ -514,22 +516,24 @@ class ValidationTransformer:
             ("Cross-Sectional Dependence", self.report.cd_tests),
         ]:
             for name, result in test_dict.items():
-                tests.append({
-                    'name': name,
-                    'category': category_name,
-                    'statistic': result.statistic,
-                    'pvalue': result.pvalue,
-                    'df': result.df if hasattr(result, 'df') else None,
-                    'conclusion': result.conclusion if hasattr(result, 'conclusion') else '',
-                    'passed': not result.reject_null,
-                    'alpha': result.alpha if hasattr(result, 'alpha') else 0.05,
-                    'metadata': result.metadata if hasattr(result, 'metadata') else {}
-                })
+                tests.append(
+                    {
+                        "name": name,
+                        "category": category_name,
+                        "statistic": result.statistic,
+                        "pvalue": result.pvalue,
+                        "df": result.df if hasattr(result, "df") else None,
+                        "conclusion": result.conclusion if hasattr(result, "conclusion") else "",
+                        "passed": not result.reject_null,
+                        "alpha": result.alpha if hasattr(result, "alpha") else 0.05,
+                        "metadata": result.metadata if hasattr(result, "metadata") else {},
+                    }
+                )
 
         return {
-            'tests': tests,
-            'model_info': self.report.model_info,
-            'charts': self._prepare_chart_data_legacy()  # For backward compatibility - use legacy to avoid recursion
+            "tests": tests,
+            "model_info": self.report.model_info,
+            "charts": self._prepare_chart_data_legacy(),  # For backward compatibility - use legacy to avoid recursion
         }
 
     @staticmethod

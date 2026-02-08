@@ -51,9 +51,8 @@ class ChartNotFoundError(VisualizationError):
         message = f"Chart type '{chart_type}' not found in registry."
 
         if available_charts:
-            suggestion = (
-                f"Available chart types:\n" +
-                "\n".join(f"  • {ct}" for ct in sorted(available_charts)[:10])
+            suggestion = f"Available chart types:\n" + "\n".join(
+                f"  • {ct}" for ct in sorted(available_charts)[:10]
             )
             if len(available_charts) > 10:
                 suggestion += f"\n  ... and {len(available_charts) - 10} more"
@@ -77,9 +76,8 @@ class MissingDataError(VisualizationError):
         chart_type : str
             The chart type being created
         """
-        message = (
-            f"Missing required data for '{chart_type}' chart: " +
-            ", ".join(f"'{k}'" for k in missing_keys)
+        message = f"Missing required data for '{chart_type}' chart: " + ", ".join(
+            f"'{k}'" for k in missing_keys
         )
 
         suggestion = (
@@ -162,16 +160,15 @@ class ExportError(VisualizationError):
         message = f"Failed to export chart to {export_format}: {reason}"
 
         suggestions_by_format = {
-            'png': "PNG export requires kaleido package: pip install kaleido",
-            'svg': "SVG export requires kaleido package: pip install kaleido",
-            'pdf': "PDF export requires kaleido package: pip install kaleido",
-            'html': "HTML export should work without additional dependencies.",
-            'json': "JSON export should work without additional dependencies.",
+            "png": "PNG export requires kaleido package: pip install kaleido",
+            "svg": "SVG export requires kaleido package: pip install kaleido",
+            "pdf": "PDF export requires kaleido package: pip install kaleido",
+            "html": "HTML export should work without additional dependencies.",
+            "json": "JSON export should work without additional dependencies.",
         }
 
         suggestion = suggestions_by_format.get(
-            export_format.lower(),
-            "Check that all required dependencies are installed."
+            export_format.lower(), "Check that all required dependencies are installed."
         )
 
         super().__init__(message, suggestion)
@@ -261,11 +258,7 @@ def raise_if_missing_data(data: dict, required_keys: List[str], chart_type: str)
         raise MissingDataError(missing, chart_type)
 
 
-def validate_data_structure(
-    data,
-    expected_type: type,
-    param_name: str = 'data'
-) -> None:
+def validate_data_structure(data, expected_type: type, param_name: str = "data") -> None:
     """
     Validate that data matches expected type.
 
@@ -284,10 +277,7 @@ def validate_data_structure(
         If data type doesn't match expected
     """
     if not isinstance(data, expected_type):
-        raise InvalidDataStructureError(
-            expected=str(expected_type),
-            received=str(type(data))
-        )
+        raise InvalidDataStructureError(expected=str(expected_type), received=str(type(data)))
 
 
 # Helper function for better error messages
@@ -309,6 +299,7 @@ def did_you_mean(invalid_name: str, valid_names: List[str], threshold: int = 3) 
     str or None
         Suggested valid name if found, None otherwise
     """
+
     def levenshtein_distance(s1: str, s2: str) -> int:
         """Compute Levenshtein distance between two strings."""
         if len(s1) < len(s2):
@@ -329,7 +320,7 @@ def did_you_mean(invalid_name: str, valid_names: List[str], threshold: int = 3) 
         return previous_row[-1]
 
     # Find closest match
-    min_distance = float('inf')
+    min_distance = float("inf")
     closest_match = None
 
     for valid_name in valid_names:

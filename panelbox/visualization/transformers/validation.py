@@ -63,10 +63,10 @@ class ValidationDataTransformer:
         model_info = self._extract_model_info(validation_report)
 
         return {
-            'tests': tests,
-            'categories': categories,
-            'summary': summary,
-            'model_info': model_info
+            "tests": tests,
+            "categories": categories,
+            "summary": summary,
+            "model_info": model_info,
         }
 
     def _extract_tests(self, validation_report: Any) -> List[Dict[str, Any]]:
@@ -86,24 +86,24 @@ class ValidationDataTransformer:
         tests = []
 
         # Extract from specification tests
-        if hasattr(validation_report, 'specification_tests'):
+        if hasattr(validation_report, "specification_tests"):
             for name, result in validation_report.specification_tests.items():
-                tests.append(self._format_test_result(name, result, 'Specification'))
+                tests.append(self._format_test_result(name, result, "Specification"))
 
         # Extract from serial correlation tests
-        if hasattr(validation_report, 'serial_tests'):
+        if hasattr(validation_report, "serial_tests"):
             for name, result in validation_report.serial_tests.items():
-                tests.append(self._format_test_result(name, result, 'Serial Correlation'))
+                tests.append(self._format_test_result(name, result, "Serial Correlation"))
 
         # Extract from heteroskedasticity tests
-        if hasattr(validation_report, 'het_tests'):
+        if hasattr(validation_report, "het_tests"):
             for name, result in validation_report.het_tests.items():
-                tests.append(self._format_test_result(name, result, 'Heteroskedasticity'))
+                tests.append(self._format_test_result(name, result, "Heteroskedasticity"))
 
         # Extract from cross-sectional dependence tests
-        if hasattr(validation_report, 'cd_tests'):
+        if hasattr(validation_report, "cd_tests"):
             for name, result in validation_report.cd_tests.items():
-                tests.append(self._format_test_result(name, result, 'Cross-Sectional Dependence'))
+                tests.append(self._format_test_result(name, result, "Cross-Sectional Dependence"))
 
         return tests
 
@@ -126,22 +126,22 @@ class ValidationDataTransformer:
             Standardized test result dictionary
         """
         test_dict = {
-            'name': name,
-            'category': category,
-            'statistic': getattr(result, 'statistic', None),
-            'pvalue': getattr(result, 'pvalue', None),
-            'df': getattr(result, 'df', None),
-            'conclusion': getattr(result, 'conclusion', ''),
-            'passed': not getattr(result, 'reject_null', True),  # Inverted logic
+            "name": name,
+            "category": category,
+            "statistic": getattr(result, "statistic", None),
+            "pvalue": getattr(result, "pvalue", None),
+            "df": getattr(result, "df", None),
+            "conclusion": getattr(result, "conclusion", ""),
+            "passed": not getattr(result, "reject_null", True),  # Inverted logic
         }
 
         # Add alpha if available
-        if hasattr(result, 'alpha'):
-            test_dict['alpha'] = result.alpha
+        if hasattr(result, "alpha"):
+            test_dict["alpha"] = result.alpha
 
         # Add metadata if available
-        if hasattr(result, 'metadata'):
-            test_dict['metadata'] = result.metadata
+        if hasattr(result, "metadata"):
+            test_dict["metadata"] = result.metadata
 
         return test_dict
 
@@ -162,7 +162,7 @@ class ValidationDataTransformer:
         categories = {}
 
         for test in tests:
-            category = test['category']
+            category = test["category"]
             if category not in categories:
                 categories[category] = []
             categories[category].append(test)
@@ -184,24 +184,14 @@ class ValidationDataTransformer:
             Summary statistics
         """
         if not tests:
-            return {
-                'total_tests': 0,
-                'passed': 0,
-                'failed': 0,
-                'pass_rate': 0.0
-            }
+            return {"total_tests": 0, "passed": 0, "failed": 0, "pass_rate": 0.0}
 
         total = len(tests)
-        passed = sum(1 for t in tests if t.get('passed', False))
+        passed = sum(1 for t in tests if t.get("passed", False))
         failed = total - passed
         pass_rate = 100.0 * passed / total if total > 0 else 0.0
 
-        return {
-            'total_tests': total,
-            'passed': passed,
-            'failed': failed,
-            'pass_rate': pass_rate
-        }
+        return {"total_tests": total, "passed": passed, "failed": failed, "pass_rate": pass_rate}
 
     def _extract_model_info(self, validation_report: Any) -> Dict[str, Any]:
         """
@@ -219,7 +209,7 @@ class ValidationDataTransformer:
         """
         model_info = {}
 
-        if hasattr(validation_report, 'model_info'):
+        if hasattr(validation_report, "model_info"):
             model_info = validation_report.model_info.copy()
 
         return model_info

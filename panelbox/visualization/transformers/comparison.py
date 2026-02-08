@@ -5,6 +5,7 @@ Converts multiple model results into formats expected by comparison charts.
 """
 
 from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 
@@ -36,9 +37,7 @@ class ComparisonDataTransformer:
     """
 
     def transform(
-        self,
-        results_list: List[Any],
-        names: Optional[List[str]] = None
+        self, results_list: List[Any], names: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Transform multiple model results to comparison format.
@@ -72,7 +71,7 @@ class ComparisonDataTransformer:
         """
         # Generate default names if not provided
         if names is None:
-            names = [f'Model {i+1}' for i in range(len(results_list))]
+            names = [f"Model {i+1}" for i in range(len(results_list))]
 
         # Extract all data
         coefficients = self._extract_coefficients(results_list)
@@ -82,12 +81,12 @@ class ComparisonDataTransformer:
         ic_values = self._extract_ic_values(results_list)
 
         return {
-            'models': names,
-            'coefficients': coefficients,
-            'std_errors': std_errors,
-            'pvalues': pvalues,
-            'fit_metrics': fit_metrics,
-            'ic_values': ic_values
+            "models": names,
+            "coefficients": coefficients,
+            "std_errors": std_errors,
+            "pvalues": pvalues,
+            "fit_metrics": fit_metrics,
+            "ic_values": ic_values,
         }
 
     def _extract_coefficients(self, results_list: List[Any]) -> Dict[str, List[float]]:
@@ -107,8 +106,8 @@ class ComparisonDataTransformer:
         # Get all unique variables across models
         all_vars = set()
         for results in results_list:
-            if hasattr(results, 'params'):
-                if hasattr(results.params, 'index'):
+            if hasattr(results, "params"):
+                if hasattr(results.params, "index"):
                     all_vars.update(results.params.index)
 
         # Extract coefficients for each variable
@@ -116,15 +115,19 @@ class ComparisonDataTransformer:
         for var in all_vars:
             coefficients[var] = []
             for results in results_list:
-                if hasattr(results, 'params'):
-                    if hasattr(results.params, 'get'):
+                if hasattr(results, "params"):
+                    if hasattr(results.params, "get"):
                         # Pandas Series
                         value = results.params.get(var, np.nan)
-                    elif hasattr(results.params, 'index'):
+                    elif hasattr(results.params, "index"):
                         # Try to access by index
                         try:
                             idx = list(results.params.index).index(var)
-                            value = results.params.iloc[idx] if hasattr(results.params, 'iloc') else results.params[idx]
+                            value = (
+                                results.params.iloc[idx]
+                                if hasattr(results.params, "iloc")
+                                else results.params[idx]
+                            )
                         except (ValueError, KeyError, IndexError):
                             value = np.nan
                     else:
@@ -152,8 +155,8 @@ class ComparisonDataTransformer:
         # Get all unique variables
         all_vars = set()
         for results in results_list:
-            if hasattr(results, 'params'):
-                if hasattr(results.params, 'index'):
+            if hasattr(results, "params"):
+                if hasattr(results.params, "index"):
                     all_vars.update(results.params.index)
 
         # Extract standard errors for each variable
@@ -161,20 +164,24 @@ class ComparisonDataTransformer:
         for var in all_vars:
             std_errors[var] = []
             for results in results_list:
-                if hasattr(results, 'std_errors'):
+                if hasattr(results, "std_errors"):
                     # Access standard errors
-                    if hasattr(results.std_errors, 'get'):
+                    if hasattr(results.std_errors, "get"):
                         value = results.std_errors.get(var, np.nan)
-                    elif hasattr(results.std_errors, 'index'):
+                    elif hasattr(results.std_errors, "index"):
                         try:
                             idx = list(results.std_errors.index).index(var)
-                            value = results.std_errors.iloc[idx] if hasattr(results.std_errors, 'iloc') else results.std_errors[idx]
+                            value = (
+                                results.std_errors.iloc[idx]
+                                if hasattr(results.std_errors, "iloc")
+                                else results.std_errors[idx]
+                            )
                         except (ValueError, KeyError, IndexError):
                             value = np.nan
                     else:
                         value = np.nan
-                elif hasattr(results, 'bse'):  # Alternative attribute name
-                    if hasattr(results.bse, 'get'):
+                elif hasattr(results, "bse"):  # Alternative attribute name
+                    if hasattr(results.bse, "get"):
                         value = results.bse.get(var, np.nan)
                     else:
                         value = np.nan
@@ -201,8 +208,8 @@ class ComparisonDataTransformer:
         # Get all unique variables
         all_vars = set()
         for results in results_list:
-            if hasattr(results, 'params'):
-                if hasattr(results.params, 'index'):
+            if hasattr(results, "params"):
+                if hasattr(results.params, "index"):
                     all_vars.update(results.params.index)
 
         # Extract p-values for each variable
@@ -210,13 +217,17 @@ class ComparisonDataTransformer:
         for var in all_vars:
             pvalues[var] = []
             for results in results_list:
-                if hasattr(results, 'pvalues'):
-                    if hasattr(results.pvalues, 'get'):
+                if hasattr(results, "pvalues"):
+                    if hasattr(results.pvalues, "get"):
                         value = results.pvalues.get(var, np.nan)
-                    elif hasattr(results.pvalues, 'index'):
+                    elif hasattr(results.pvalues, "index"):
                         try:
                             idx = list(results.pvalues.index).index(var)
-                            value = results.pvalues.iloc[idx] if hasattr(results.pvalues, 'iloc') else results.pvalues[idx]
+                            value = (
+                                results.pvalues.iloc[idx]
+                                if hasattr(results.pvalues, "iloc")
+                                else results.pvalues[idx]
+                            )
                         except (ValueError, KeyError, IndexError):
                             value = np.nan
                     else:
@@ -241,41 +252,36 @@ class ComparisonDataTransformer:
         dict
             Dictionary with fit metrics
         """
-        metrics = {
-            'R²': [],
-            'Adj. R²': [],
-            'F-statistic': [],
-            'Log-Likelihood': []
-        }
+        metrics = {"R²": [], "Adj. R²": [], "F-statistic": [], "Log-Likelihood": []}
 
         for results in results_list:
             # R-squared
-            if hasattr(results, 'rsquared'):
-                metrics['R²'].append(float(results.rsquared))
+            if hasattr(results, "rsquared"):
+                metrics["R²"].append(float(results.rsquared))
             else:
-                metrics['R²'].append(np.nan)
+                metrics["R²"].append(np.nan)
 
             # Adjusted R-squared
-            if hasattr(results, 'rsquared_adj'):
-                metrics['Adj. R²'].append(float(results.rsquared_adj))
+            if hasattr(results, "rsquared_adj"):
+                metrics["Adj. R²"].append(float(results.rsquared_adj))
             else:
-                metrics['Adj. R²'].append(np.nan)
+                metrics["Adj. R²"].append(np.nan)
 
             # F-statistic
-            if hasattr(results, 'fvalue'):
-                metrics['F-statistic'].append(float(results.fvalue))
-            elif hasattr(results, 'f_statistic'):
-                metrics['F-statistic'].append(float(results.f_statistic))
+            if hasattr(results, "fvalue"):
+                metrics["F-statistic"].append(float(results.fvalue))
+            elif hasattr(results, "f_statistic"):
+                metrics["F-statistic"].append(float(results.f_statistic))
             else:
-                metrics['F-statistic'].append(np.nan)
+                metrics["F-statistic"].append(np.nan)
 
             # Log-likelihood
-            if hasattr(results, 'loglik'):
-                metrics['Log-Likelihood'].append(float(results.loglik))
-            elif hasattr(results, 'llf'):
-                metrics['Log-Likelihood'].append(float(results.llf))
+            if hasattr(results, "loglik"):
+                metrics["Log-Likelihood"].append(float(results.loglik))
+            elif hasattr(results, "llf"):
+                metrics["Log-Likelihood"].append(float(results.llf))
             else:
-                metrics['Log-Likelihood'].append(np.nan)
+                metrics["Log-Likelihood"].append(np.nan)
 
         # Remove metrics that are all NaN
         metrics = {k: v for k, v in metrics.items() if not all(np.isnan(v))}
@@ -296,30 +302,26 @@ class ComparisonDataTransformer:
         dict
             Dictionary with IC values
         """
-        ic_dict = {
-            'aic': [],
-            'bic': [],
-            'hqic': []
-        }
+        ic_dict = {"aic": [], "bic": [], "hqic": []}
 
         for results in results_list:
             # AIC
-            if hasattr(results, 'aic'):
-                ic_dict['aic'].append(float(results.aic))
+            if hasattr(results, "aic"):
+                ic_dict["aic"].append(float(results.aic))
             else:
-                ic_dict['aic'].append(np.nan)
+                ic_dict["aic"].append(np.nan)
 
             # BIC
-            if hasattr(results, 'bic'):
-                ic_dict['bic'].append(float(results.bic))
+            if hasattr(results, "bic"):
+                ic_dict["bic"].append(float(results.bic))
             else:
-                ic_dict['bic'].append(np.nan)
+                ic_dict["bic"].append(np.nan)
 
             # HQIC
-            if hasattr(results, 'hqic'):
-                ic_dict['hqic'].append(float(results.hqic))
+            if hasattr(results, "hqic"):
+                ic_dict["hqic"].append(float(results.hqic))
             else:
-                ic_dict['hqic'].append(np.nan)
+                ic_dict["hqic"].append(np.nan)
 
         # Remove IC that are all NaN
         ic_dict = {k: v for k, v in ic_dict.items() if not all(np.isnan(v))}
@@ -330,7 +332,7 @@ class ComparisonDataTransformer:
         self,
         results_list: List[Any],
         names: Optional[List[str]] = None,
-        variables: Optional[List[str]] = None
+        variables: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Prepare data for coefficient comparison chart.
@@ -353,21 +355,19 @@ class ComparisonDataTransformer:
 
         # Filter variables if specified
         if variables:
-            data['coefficients'] = {k: v for k, v in data['coefficients'].items() if k in variables}
-            data['std_errors'] = {k: v for k, v in data['std_errors'].items() if k in variables}
+            data["coefficients"] = {k: v for k, v in data["coefficients"].items() if k in variables}
+            data["std_errors"] = {k: v for k, v in data["std_errors"].items() if k in variables}
 
         return {
-            'models': data['models'],
-            'coefficients': data['coefficients'],
-            'std_errors': data['std_errors'],
-            'show_significance': True,
-            'ci_level': 0.95
+            "models": data["models"],
+            "coefficients": data["coefficients"],
+            "std_errors": data["std_errors"],
+            "show_significance": True,
+            "ci_level": 0.95,
         }
 
     def prepare_forest_plot(
-        self,
-        results: Any,
-        variables: Optional[List[str]] = None
+        self, results: Any, variables: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Prepare data for forest plot (single model).
@@ -403,18 +403,16 @@ class ComparisonDataTransformer:
         ci_upper = [e + 1.96 * se for e, se in zip(estimates, std_errors)]
 
         return {
-            'variables': variables,
-            'estimates': estimates,
-            'ci_lower': ci_lower,
-            'ci_upper': ci_upper,
-            'pvalues': pvalues,
-            'sort_by_size': False
+            "variables": variables,
+            "estimates": estimates,
+            "ci_lower": ci_lower,
+            "ci_upper": ci_upper,
+            "pvalues": pvalues,
+            "sort_by_size": False,
         }
 
     def prepare_model_fit_comparison(
-        self,
-        results_list: List[Any],
-        names: Optional[List[str]] = None
+        self, results_list: List[Any], names: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Prepare data for model fit comparison chart.
@@ -433,16 +431,10 @@ class ComparisonDataTransformer:
         """
         data = self.transform(results_list, names)
 
-        return {
-            'models': data['models'],
-            'metrics': data['fit_metrics'],
-            'normalize': False
-        }
+        return {"models": data["models"], "metrics": data["fit_metrics"], "normalize": False}
 
     def prepare_ic_comparison(
-        self,
-        results_list: List[Any],
-        names: Optional[List[str]] = None
+        self, results_list: List[Any], names: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Prepare data for information criteria comparison.
@@ -460,12 +452,12 @@ class ComparisonDataTransformer:
             Data for InformationCriteriaChart
         """
         data = self.transform(results_list, names)
-        ic = data['ic_values']
+        ic = data["ic_values"]
 
         return {
-            'models': data['models'],
-            'aic': ic.get('aic'),
-            'bic': ic.get('bic'),
-            'hqic': ic.get('hqic'),
-            'show_delta': True
+            "models": data["models"],
+            "aic": ic.get("aic"),
+            "bic": ic.get("bic"),
+            "hqic": ic.get("hqic"),
+            "show_delta": True,
         }

@@ -471,7 +471,9 @@ class ReportManager:
             "best_model_bic": comparison_data.get("best_model_bic"),
             "models_info": models_info,
             # Header compatibility - use first model's info if available
-            "model_type": f"Comparison ({len(models_info)} models)" if models_info else "Model Comparison",
+            "model_type": (
+                f"Comparison ({len(models_info)} models)" if models_info else "Model Comparison"
+            ),
             "nobs": models_info[0].get("nobs") if models_info else None,
             **comparison_data,
         }

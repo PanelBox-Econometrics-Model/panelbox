@@ -78,7 +78,9 @@ class ChartRegistry:
             raise TypeError(f"chart_class must be a class, got {type(chart_class)}")
 
         if not issubclass(chart_class, BaseChart):
-            raise ValueError(f"Chart class must inherit from BaseChart, got {chart_class.__bases__}")
+            raise ValueError(
+                f"Chart class must inherit from BaseChart, got {chart_class.__bases__}"
+            )
 
         if name in cls._registry:
             existing_class = cls._registry[name]
@@ -121,7 +123,8 @@ class ChartRegistry:
         if name not in cls._registry:
             available = ", ".join(sorted(cls._registry.keys()))
             raise ValueError(
-                f"Chart type '{name}' is not registered. " f"Available charts: {available or 'none'}"
+                f"Chart type '{name}' is not registered. "
+                f"Available charts: {available or 'none'}"
             )
 
         return cls._registry[name]
@@ -236,7 +239,9 @@ class ChartRegistry:
             "name": name,
             "class": chart_class.__name__,
             "module": chart_class.__module__,
-            "description": chart_class.__doc__.split("\n")[0] if chart_class.__doc__ else "No description",
+            "description": (
+                chart_class.__doc__.split("\n")[0] if chart_class.__doc__ else "No description"
+            ),
         }
 
 

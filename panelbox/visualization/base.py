@@ -330,7 +330,9 @@ class PlotlyChartBase(BaseChart):
     def __init__(self, theme: Optional[Theme] = None, config: Optional[Dict] = None):
         """Initialize Plotly chart."""
         if not HAS_PLOTLY:
-            raise ImportError("Plotly is required for PlotlyChartBase. Install with: pip install plotly")
+            raise ImportError(
+                "Plotly is required for PlotlyChartBase. Install with: pip install plotly"
+            )
 
         super().__init__(theme, config)
 
@@ -358,12 +360,14 @@ class PlotlyChartBase(BaseChart):
         if hasattr(figure, "data") and self.theme.color_scheme:
             for i, trace in enumerate(figure.data):
                 # Only apply to traces with markers (not Heatmap, etc.)
-                if hasattr(trace, 'marker') and hasattr(trace.marker, 'color'):
+                if hasattr(trace, "marker") and hasattr(trace.marker, "color"):
                     # Check if color is empty/None (handle both scalar and array cases)
                     color = trace.marker.color
-                    is_empty = (color is None or
-                              (isinstance(color, str) and not color) or
-                              (hasattr(color, '__len__') and len(color) == 0))
+                    is_empty = (
+                        color is None
+                        or (isinstance(color, str) and not color)
+                        or (hasattr(color, "__len__") and len(color) == 0)
+                    )
 
                     if is_empty:
                         color_idx = i % len(self.theme.color_scheme)
@@ -445,7 +449,9 @@ class PlotlyChartBase(BaseChart):
             "modeBarButtonsToRemove": ["lasso2d", "select2d"],
         }
 
-        return pio.to_html(self.figure, include_plotlyjs=include_plotlyjs, config=plotly_config, **kwargs)
+        return pio.to_html(
+            self.figure, include_plotlyjs=include_plotlyjs, config=plotly_config, **kwargs
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -467,7 +473,7 @@ class PlotlyChartBase(BaseChart):
         width: Optional[int] = None,
         height: Optional[int] = None,
         scale: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> bytes:
         """
         Export chart as image bytes.
@@ -517,19 +523,13 @@ class PlotlyChartBase(BaseChart):
 
         try:
             image_bytes = pio.to_image(
-                self.figure,
-                format=format,
-                width=width,
-                height=height,
-                scale=scale,
-                **kwargs
+                self.figure, format=format, width=width, height=height, scale=scale, **kwargs
             )
             return image_bytes
         except ValueError as e:
             if "kaleido" in str(e).lower():
                 raise ImportError(
-                    "kaleido is required for image export. "
-                    "Install with: pip install kaleido"
+                    "kaleido is required for image export. " "Install with: pip install kaleido"
                 ) from e
             raise
 
@@ -540,7 +540,7 @@ class PlotlyChartBase(BaseChart):
         width: Optional[int] = None,
         height: Optional[int] = None,
         scale: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Save chart as image file.
@@ -589,8 +589,9 @@ class PlotlyChartBase(BaseChart):
         # Infer format from file extension if not provided
         if format is None:
             import os
+
             _, ext = os.path.splitext(file_path)
-            format = ext.lstrip('.').lower()
+            format = ext.lstrip(".").lower()
             if not format:
                 raise ValueError(
                     "Cannot infer format from file_path. "
@@ -598,35 +599,28 @@ class PlotlyChartBase(BaseChart):
                 )
 
         # Validate format
-        valid_formats = ['png', 'svg', 'jpeg', 'jpg', 'pdf', 'webp']
+        valid_formats = ["png", "svg", "jpeg", "jpg", "pdf", "webp"]
         if format not in valid_formats:
             raise ValueError(
-                f"Invalid format '{format}'. "
-                f"Must be one of: {', '.join(valid_formats)}"
+                f"Invalid format '{format}'. " f"Must be one of: {', '.join(valid_formats)}"
             )
 
         # Get image bytes
         image_bytes = self.to_image(
-            format=format,
-            width=width,
-            height=height,
-            scale=scale,
-            **kwargs
+            format=format, width=width, height=height, scale=scale, **kwargs
         )
 
         # Write to file
         from pathlib import Path
+
         output_path = Path(file_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, 'wb') as f:
+        with open(output_path, "wb") as f:
             f.write(image_bytes)
 
     def to_png(
-        self,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        scale: float = 1.0
+        self, width: Optional[int] = None, height: Optional[int] = None, scale: float = 1.0
     ) -> bytes:
         """
         Export chart as PNG image bytes.
@@ -654,13 +648,9 @@ class PlotlyChartBase(BaseChart):
         >>> with open('chart.png', 'wb') as f:
         ...     f.write(png_bytes)
         """
-        return self.to_image(format='png', width=width, height=height, scale=scale)
+        return self.to_image(format="png", width=width, height=height, scale=scale)
 
-    def to_svg(
-        self,
-        width: Optional[int] = None,
-        height: Optional[int] = None
-    ) -> bytes:
+    def to_svg(self, width: Optional[int] = None, height: Optional[int] = None) -> bytes:
         """
         Export chart as SVG image bytes.
 
@@ -685,13 +675,9 @@ class PlotlyChartBase(BaseChart):
         >>> with open('chart.svg', 'wb') as f:
         ...     f.write(svg_bytes)
         """
-        return self.to_image(format='svg', width=width, height=height)
+        return self.to_image(format="svg", width=width, height=height)
 
-    def to_pdf(
-        self,
-        width: Optional[int] = None,
-        height: Optional[int] = None
-    ) -> bytes:
+    def to_pdf(self, width: Optional[int] = None, height: Optional[int] = None) -> bytes:
         """
         Export chart as PDF bytes.
 
@@ -716,7 +702,7 @@ class PlotlyChartBase(BaseChart):
         >>> with open('chart.pdf', 'wb') as f:
         ...     f.write(pdf_bytes)
         """
-        return self.to_image(format='pdf', width=width, height=height)
+        return self.to_image(format="pdf", width=width, height=height)
 
 
 class MatplotlibChartBase(BaseChart):
@@ -749,7 +735,8 @@ class MatplotlibChartBase(BaseChart):
         """Initialize Matplotlib chart."""
         if not HAS_MATPLOTLIB:
             raise ImportError(
-                "Matplotlib is required for MatplotlibChartBase. " "Install with: pip install matplotlib"
+                "Matplotlib is required for MatplotlibChartBase. "
+                "Install with: pip install matplotlib"
             )
 
         super().__init__(theme, config)

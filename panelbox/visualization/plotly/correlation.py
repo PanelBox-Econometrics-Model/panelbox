@@ -6,6 +6,7 @@ including heatmaps and pairwise scatter matrices.
 """
 
 from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -38,12 +39,12 @@ class CorrelationHeatmapChart(PlotlyChartBase):
 
     def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
         """Create correlation heatmap."""
-        corr_matrix = data.get('correlation_matrix')
-        variable_names = data.get('variable_names', None)
-        show_values = data.get('show_values', True)
-        mask_diagonal = data.get('mask_diagonal', False)
-        mask_upper = data.get('mask_upper', False)
-        threshold = data.get('threshold', None)
+        corr_matrix = data.get("correlation_matrix")
+        variable_names = data.get("variable_names", None)
+        show_values = data.get("show_values", True)
+        mask_diagonal = data.get("mask_diagonal", False)
+        mask_upper = data.get("mask_upper", False)
+        threshold = data.get("threshold", None)
 
         # Convert to numpy if pandas
         if isinstance(corr_matrix, pd.DataFrame):
@@ -52,7 +53,7 @@ class CorrelationHeatmapChart(PlotlyChartBase):
             corr_matrix = corr_matrix.values
 
         if variable_names is None:
-            variable_names = [f'Var{i+1}' for i in range(corr_matrix.shape[0])]
+            variable_names = [f"Var{i+1}" for i in range(corr_matrix.shape[0])]
 
         # Apply masks
         plot_matrix = corr_matrix.copy()
@@ -70,44 +71,45 @@ class CorrelationHeatmapChart(PlotlyChartBase):
 
         # Create text annotations
         if show_values:
-            text = [[f'{val:.2f}' if not np.isnan(val) else '' for val in row]
-                    for row in plot_matrix]
+            text = [
+                [f"{val:.2f}" if not np.isnan(val) else "" for val in row] for row in plot_matrix
+            ]
         else:
             text = None
 
         # Create heatmap
-        fig = go.Figure(data=go.Heatmap(
-            z=plot_matrix,
-            x=variable_names,
-            y=variable_names,
-            colorscale='RdBu_r',  # Red-Blue diverging
-            zmid=0,
-            zmin=-1,
-            zmax=1,
-            text=text,
-            texttemplate='%{text}' if text else None,
-            textfont={"size": 10},
-            hovertemplate=(
-                '<b>%{y} vs %{x}</b><br>' +
-                'Correlation: %{z:.3f}<br>' +
-                '<extra></extra>'
-            ),
-            colorbar=dict(
-                title='Correlation',
-                tickvals=[-1, -0.5, 0, 0.5, 1],
-                ticktext=['-1', '-0.5', '0', '0.5', '1']
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=plot_matrix,
+                x=variable_names,
+                y=variable_names,
+                colorscale="RdBu_r",  # Red-Blue diverging
+                zmid=0,
+                zmin=-1,
+                zmax=1,
+                text=text,
+                texttemplate="%{text}" if text else None,
+                textfont={"size": 10},
+                hovertemplate=(
+                    "<b>%{y} vs %{x}</b><br>" + "Correlation: %{z:.3f}<br>" + "<extra></extra>"
+                ),
+                colorbar=dict(
+                    title="Correlation",
+                    tickvals=[-1, -0.5, 0, 0.5, 1],
+                    ticktext=["-1", "-0.5", "0", "0.5", "1"],
+                ),
             )
-        ))
+        )
 
         # Update layout
         fig.update_layout(
-            title=data.get('title', 'Correlation Heatmap'),
-            xaxis_title=data.get('xaxis_title', ''),
-            yaxis_title=data.get('yaxis_title', ''),
-            xaxis=dict(side='bottom'),
-            yaxis=dict(autorange='reversed'),  # Top to bottom
-            width=data.get('width', 700),
-            height=data.get('height', 650)
+            title=data.get("title", "Correlation Heatmap"),
+            xaxis_title=data.get("xaxis_title", ""),
+            yaxis_title=data.get("yaxis_title", ""),
+            xaxis=dict(side="bottom"),
+            yaxis=dict(autorange="reversed"),  # Top to bottom
+            width=data.get("width", 700),
+            height=data.get("height", 650),
         )
 
         # Make square aspect ratio
@@ -138,10 +140,10 @@ class PairwiseCorrelationChart(PlotlyChartBase):
 
     def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
         """Create pairwise correlation scatter matrix."""
-        df = data.get('data')
-        variables = data.get('variables', None)
-        group_col = data.get('group', None)
-        show_diagonal_hist = data.get('show_diagonal_hist', True)
+        df = data.get("data")
+        variables = data.get("variables", None)
+        group_col = data.get("group", None)
+        show_diagonal_hist = data.get("show_diagonal_hist", True)
 
         # Convert to DataFrame if not already
         if not isinstance(df, pd.DataFrame):
@@ -156,6 +158,7 @@ class PairwiseCorrelationChart(PlotlyChartBase):
         if len(variables) > 8:
             variables = variables[:8]
             import warnings
+
             warnings.warn("Too many variables. Limiting to first 8 for performance.")
 
         n_vars = len(variables)
@@ -167,7 +170,7 @@ class PairwiseCorrelationChart(PlotlyChartBase):
             shared_xaxes=True,
             shared_yaxes=True,
             vertical_spacing=0.02,
-            horizontal_spacing=0.02
+            horizontal_spacing=0.02,
         )
 
         # Group data if specified
@@ -199,10 +202,10 @@ class PairwiseCorrelationChart(PlotlyChartBase):
                                 marker_color=colors[g_idx % len(colors)] if colors else None,
                                 opacity=0.7,
                                 showlegend=(row == 1 and col == 1 and group is not None),
-                                legendgroup=str(group) if group is not None else None
+                                legendgroup=str(group) if group is not None else None,
                             ),
                             row=row,
-                            col=col
+                            col=col,
                         )
                 else:
                     # Off-diagonal: scatter plot
@@ -216,22 +219,22 @@ class PairwiseCorrelationChart(PlotlyChartBase):
                             go.Scatter(
                                 x=subset[var_x],
                                 y=subset[var_y],
-                                mode='markers',
+                                mode="markers",
                                 name=str(group) if group is not None else None,
                                 marker=dict(
                                     size=4,
                                     color=colors[g_idx % len(colors)] if colors else None,
-                                    opacity=0.5
+                                    opacity=0.5,
                                 ),
                                 showlegend=False,
                                 hovertemplate=(
-                                    f'<b>{var_x}</b>: %{{x:.2f}}<br>' +
-                                    f'<b>{var_y}</b>: %{{y:.2f}}<br>' +
-                                    '<extra></extra>'
-                                )
+                                    f"<b>{var_x}</b>: %{{x:.2f}}<br>"
+                                    + f"<b>{var_y}</b>: %{{y:.2f}}<br>"
+                                    + "<extra></extra>"
+                                ),
                             ),
                             row=row,
-                            col=col
+                            col=col,
                         )
 
                 # Add axis labels only on edges
@@ -242,11 +245,11 @@ class PairwiseCorrelationChart(PlotlyChartBase):
 
         # Update layout
         fig.update_layout(
-            title=data.get('title', 'Pairwise Correlation Matrix'),
+            title=data.get("title", "Pairwise Correlation Matrix"),
             showlegend=group_col is not None,
-            hovermode='closest',
-            height=data.get('height', 150 * n_vars),
-            width=data.get('width', 150 * n_vars)
+            hovermode="closest",
+            height=data.get("height", 150 * n_vars),
+            width=data.get("width", 150 * n_vars),
         )
 
         return fig
