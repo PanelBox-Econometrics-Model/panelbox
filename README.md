@@ -66,7 +66,65 @@ pip install -e .
 
 ## Quick Start
 
-### Static Panel Models
+### 🎯 Experiment Pattern (Recommended - v0.6.0+)
+
+```python
+import panelbox as pb
+import pandas as pd
+
+# Load your panel data
+data = pd.read_csv('panel_data.csv')
+
+# Create experiment
+experiment = pb.PanelExperiment(
+    data=data,
+    formula="invest ~ value + capital",
+    entity_col="firm",
+    time_col="year"
+)
+
+# Fit multiple models at once
+experiment.fit_all_models(names=['pooled', 'fe', 're'])
+
+# Validate model specification
+validation_result = experiment.validate_model('fe')
+print(validation_result.summary())
+validation_result.save_html('validation_report.html', test_type='validation')
+
+# Compare models and select best one
+comparison_result = experiment.compare_models(['pooled', 'fe', 're'])
+print(f"Best model: {comparison_result.best_model}")
+comparison_result.save_html('comparison_report.html', test_type='comparison')
+
+# Analyze residuals (v0.7.0)
+residual_result = experiment.analyze_residuals('fe')
+print(residual_result.summary())
+
+# Check diagnostic tests
+stat, pvalue = residual_result.shapiro_test
+print(f"Shapiro-Wilk normality test: p={pvalue:.4f}")
+
+dw = residual_result.durbin_watson
+print(f"Durbin-Watson statistic: {dw:.4f}")
+
+residual_result.save_html('residuals_report.html', test_type='residuals')
+
+# Generate master report with all sub-reports (NEW in v0.8.0!)
+experiment.save_master_report(
+    'master_report.html',
+    theme='professional',
+    reports=[
+        {'type': 'validation', 'title': 'Model Validation',
+         'description': 'Specification tests', 'file_path': 'validation_report.html'},
+        {'type': 'comparison', 'title': 'Model Comparison',
+         'description': 'Compare pooled, FE, RE', 'file_path': 'comparison_report.html'},
+        {'type': 'residuals', 'title': 'Residual Diagnostics',
+         'description': 'Diagnostic tests', 'file_path': 'residuals_report.html'}
+    ]
+)
+```
+
+### Static Panel Models (Traditional API)
 
 ```python
 import panelbox as pb
@@ -262,7 +320,7 @@ If you use PanelBox in your research, please cite:
   author = {Haase, Gustavo and Dourado, Paulo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
-  version = {1.0.0},
+  version = {0.7.0},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
 }
 ```
@@ -302,9 +360,49 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for complete version history.
 
-### Latest Release: v1.0.0 (2026-02-05)
+### Latest Release: v0.8.0 (2026-02-08)
 
-**Production Release - Complete Panel Data Econometrics Suite**
+**🎯 Test Runners & Master Report**
+
+**Test Runners (NEW in v0.8.0):**
+- ✨ **ValidationTest** - Configurable test runner with 3 presets (quick, basic, full)
+- ✨ **ComparisonTest** - Multi-model comparison with automatic metrics extraction
+- ✨ Clean one-liner APIs for running tests on any fitted model
+- ✨ Integrates seamlessly with PanelExperiment workflow
+
+**Master Report System (NEW in v0.8.0):**
+- ✨ **Master HTML Report** - Comprehensive overview of entire experiment
+- ✨ **Experiment Overview** - Formula, observations, entities, time periods
+- ✨ **Models Summary** - Grid with key metrics (R², AIC, BIC) for all fitted models
+- ✨ **Reports Navigation** - Click through to validation, comparison, and residuals reports
+- ✨ **Quick Start Guide** - Embedded code examples in the report
+- ✨ **Responsive Design** - Professional layouts for all screen sizes
+
+### Previous Release: v0.7.0 (2026-02-08)
+
+**🎯 Advanced Features & Production Polish**
+
+**Experiment Pattern & Result Containers:**
+- ✨ **PanelExperiment** - Factory-based model management with automatic storage
+- ✨ **ValidationResult** - Container for validation test results with HTML/JSON export
+- ✨ **ComparisonResult** - Container for model comparison with best model selection
+- ✨ **ResidualResult** (NEW!) - Container for residual diagnostics with 4 tests
+- ✨ One-liner workflows: `validate_model()`, `compare_models()`, `analyze_residuals()`
+
+**Comprehensive Visualization System:**
+- ✨ 35+ interactive Plotly charts for panel data analysis
+- ✨ 3 professional themes (Professional, Academic, Presentation)
+- ✨ Interactive HTML reports with embedded charts
+- ✨ Multiple export formats (HTML, JSON, PNG, SVG, PDF)
+- ✨ High-level convenience APIs for common visualizations
+
+**Residual Diagnostics (NEW in v0.7.0):**
+- ✨ **Shapiro-Wilk test** - Test for normality of residuals
+- ✨ **Jarque-Bera test** - Alternative normality test
+- ✨ **Durbin-Watson statistic** - Autocorrelation detection
+- ✨ **Ljung-Box test** - Serial correlation up to 10 lags
+- ✨ Summary statistics (mean, std, skewness, kurtosis)
+- ✨ Professional summary output with interpretation guidelines
 
 **Static Panel Models:**
 - ✨ Pooled OLS, Fixed Effects, Random Effects, Between, First Differences
@@ -324,10 +422,11 @@ See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/
 - ✨ Professional report generation (HTML, Markdown, LaTeX)
 
 **Quality & Performance:**
-- 🔧 600+ tests, 93% passing
-- 🔧 Type-checked with MyPy (77.5% error reduction)
-- 🔧 Validated against Stata xtabond2 and R plm
-- ⚡ Numba-optimized (up to 348x speedup)
+- 🔧 Complete result container trilogy (Validation, Comparison, Residual)
+- 🔧 Zero console warnings
+- 🔧 16 new tests for ResidualResult (85% coverage)
+- 🔧 HTML reports with embedded interactive charts
+- ✅ Production-ready package
 
 ---
 

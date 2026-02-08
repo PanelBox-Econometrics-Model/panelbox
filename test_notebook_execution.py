@@ -9,13 +9,14 @@ import traceback
 from pathlib import Path
 
 # Adicionar panelbox ao path
-sys.path.insert(0, '/home/guhaase/projetos/panelbox')
+sys.path.insert(0, "/home/guhaase/projetos/panelbox")
+
 
 def execute_notebook_cells(notebook_path):
     """Executa células do notebook e identifica erros."""
 
     # Ler notebook
-    with open(notebook_path, 'r') as f:
+    with open(notebook_path, "r") as f:
         nb = json.load(f)
 
     print(f"📓 Testando notebook: {notebook_path}")
@@ -27,17 +28,17 @@ def execute_notebook_cells(notebook_path):
     errors = []
     successes = 0
 
-    for i, cell in enumerate(nb['cells']):
-        if cell.get('cell_type') != 'code':
+    for i, cell in enumerate(nb["cells"]):
+        if cell.get("cell_type") != "code":
             continue
 
-        source = ''.join(cell.get('source', []))
+        source = "".join(cell.get("source", []))
 
         # Pular células vazias
         if not source.strip():
             continue
 
-        print(f"Célula {i}: ", end='')
+        print(f"Célula {i}: ", end="")
 
         try:
             # Executar célula
@@ -49,15 +50,17 @@ def execute_notebook_cells(notebook_path):
             error_msg = str(e)
             print(f"❌ {error_type}: {error_msg}")
 
-            errors.append({
-                'cell': i,
-                'type': error_type,
-                'message': error_msg,
-                'source': source[:200] + '...' if len(source) > 200 else source
-            })
+            errors.append(
+                {
+                    "cell": i,
+                    "type": error_type,
+                    "message": error_msg,
+                    "source": source[:200] + "..." if len(source) > 200 else source,
+                }
+            )
 
             # Parar em alguns erros críticos
-            if error_type in ['SyntaxError', 'IndentationError']:
+            if error_type in ["SyntaxError", "IndentationError"]:
                 print(f"\n⚠️  Erro crítico de sintaxe na célula {i}. Parando.")
                 break
 
@@ -77,12 +80,24 @@ def execute_notebook_cells(notebook_path):
 
     return errors
 
-if __name__ == '__main__':
-    notebook_path = 'examples/jupyter/06_visualization_reports.ipynb'
 
-    print("="*70)
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Test notebook execution")
+    parser.add_argument(
+        "notebook",
+        nargs="?",
+        default="examples/jupyter/10_complete_workflow_v08.ipynb",
+        help="Path to notebook file",
+    )
+    args = parser.parse_args()
+
+    notebook_path = args.notebook
+
+    print("=" * 70)
     print("TESTE DE EXECUÇÃO DO NOTEBOOK")
-    print("="*70)
+    print("=" * 70)
     print()
 
     errors = execute_notebook_cells(notebook_path)

@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "passed": 8,
+    "failed": 2,
+    "pass_rate": 0.8
+  },
+  "timestamp": "2026-02-08T11:34:38.931489",
+  "report_title": "Test Result Report",
+  "_metadata": {
+    "timestamp": "2026-02-08T11:34:38.931489",
+    "class": "TestResult"
+  }
+}
