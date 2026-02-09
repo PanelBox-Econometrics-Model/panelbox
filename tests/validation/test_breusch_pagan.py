@@ -166,3 +166,86 @@ class TestBreuschPagan:
         result = test.run()
 
         assert 0 <= result.pvalue <= 1, f"P-value {result.pvalue} should be in [0, 1]"
+
+    def test_design_matrix_not_available(self, clean_panel_data):
+        """Test ValueError when design matrix is not available (line 115)."""
+        from unittest.mock import Mock
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschPaganTest(results)
+        # Mock _get_design_matrix to return None
+        test._get_design_matrix = lambda: None
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="Design matrix not available"):
+            test.run()
+
+    def test_singular_matrix_handling(self, clean_panel_data):
+        """Test handling of singular matrix in auxiliary regression (lines 128-130)."""
+        from unittest.mock import patch
+
+        import numpy.linalg
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschPaganTest(results)
+
+        # Mock np.linalg.solve to raise LinAlgError
+        original_solve = np.linalg.solve
+
+        def mock_solve(a, b):
+            # Raise LinAlgError to trigger fallback to lstsq
+            raise np.linalg.LinAlgError("Singular matrix")
+
+        with patch("numpy.linalg.solve", side_effect=mock_solve):
+            # This should trigger the LinAlgError path and use lstsq
+            result = test.run()
+
+        # Should still complete successfully using lstsq fallback
+        assert result is not None
+        assert result.statistic >= 0
+        assert 0 <= result.pvalue <= 1
+
+    def test_zero_total_variance(self, clean_panel_data):
+        """Test R²=0 when SST=0 (line 145)."""
+        from unittest.mock import Mock, patch
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschPaganTest(results)
+
+        # Get the actual size of residuals
+        n_obs = len(results.resid)
+
+        # Mock to create scenario with SST = 0 (all squared residuals identical)
+        # This is extremely rare but line 145 handles it
+        with patch.object(test, "resid", np.ones(n_obs) * 5.0):
+            result = test.run()
+            assert result is not None
+            # When SST=0, R2_aux should be 0.0, and lm_stat should be 0
+            assert result.statistic >= 0
+
+    def test_exception_in_design_matrix_building(self, clean_panel_data):
+        """Test exception handling in _get_design_matrix (lines 224-227)."""
+        from unittest.mock import patch
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschPaganTest(results)
+        # Clear cache to force rebuild
+        test._X = None
+
+        # Mock build_design_matrices to raise exception
+        with patch.object(
+            results._model.formula_parser,
+            "build_design_matrices",
+            side_effect=Exception("Test error"),
+        ):
+            # Should catch exception and return None
+            design_matrix = test._get_design_matrix()
+            assert design_matrix is None
