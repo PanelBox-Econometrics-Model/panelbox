@@ -221,3 +221,173 @@ class TestMundlak:
         assert result.conclusion is not None
         assert isinstance(result.conclusion, str)
         assert len(result.conclusion) > 0
+
+    def test_missing_data_error(self, clean_panel_data):
+        """Test ValueError when data/formula not available (line 114)."""
+        from unittest.mock import Mock
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        # Mock _get_data_full to return None
+        test._get_data_full = lambda: (None, None, None, None, None)
+
+        with pytest.raises(ValueError, match="Data, formula, and variable names required"):
+            test.run()
+
+    def test_no_time_varying_regressors_error(self, clean_panel_data):
+        """Test ValueError when all regressors are time-invariant (line 139)."""
+        # Create data with only time-invariant regressor
+        data_invariant = clean_panel_data.copy()
+        # Entity-specific constant (no time variation)
+        data_invariant["x_const"] = data_invariant.groupby("entity")["entity"].transform("first")
+
+        # Create RE model with only constant regressor
+        # This is tricky - we need to construct data where all regressors are time-invariant
+        # Use a regressor that has zero within-group variance
+        data_invariant["x1"] = data_invariant.groupby("entity")["x1"].transform("mean")
+        data_invariant["x2"] = data_invariant.groupby("entity")["x2"].transform("mean")
+
+        re = RandomEffects("y ~ x1 + x2", data_invariant, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        with pytest.raises(ValueError, match="No time-varying regressors found"):
+            test.run()
+
+    def test_model_estimation_failure(self, clean_panel_data):
+        """Test handling of model estimation failure (lines 181-183)."""
+        from unittest.mock import patch
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Mock PooledOLS.fit to raise an exception
+        with patch(
+            "panelbox.models.static.pooled_ols.PooledOLS.fit",
+            side_effect=RuntimeError("Test error"),
+        ):
+            with pytest.raises(ValueError, match="Failed to estimate augmented model"):
+                test.run()
+
+    def test_vcov_singular_matrix_handling(self, clean_panel_data):
+        """Test handling of singular vcov matrix (lines 206-207)."""
+        from unittest.mock import patch
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Mock np.linalg.inv to raise LinAlgError only for small matrices (vcov)
+        original_inv = np.linalg.inv
+        calls = [0]
+
+        def mock_inv(a):
+            calls[0] += 1
+            # Raise on the second call which should be the vcov inversion
+            # First call is during model fitting (large matrix)
+            if calls[0] >= 2 and a.shape[0] == 2:  # vcov for 2 mean variables
+                raise np.linalg.LinAlgError("Singular matrix")
+            return original_inv(a)
+
+        with patch("numpy.linalg.inv", side_effect=mock_inv):
+            # Should use pinv fallback
+            result = test.run()
+            assert result is not None
+            assert result.statistic >= 0
+
+    def test_get_data_full_missing_model(self, clean_panel_data):
+        """Test _get_data_full when model reference missing (line 273)."""
+        from unittest.mock import Mock
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        # Remove _model reference
+        delattr(results, "_model")
+
+        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        assert data is None
+        assert formula is None
+
+    def test_get_data_full_missing_attributes(self, clean_panel_data):
+        """Test _get_data_full when model attributes missing (line 278)."""
+        from unittest.mock import Mock
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        # Mock model without required attributes
+        results._model = Mock(spec=[])
+
+        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        assert data is None
+
+    def test_get_data_full_missing_formula(self, clean_panel_data):
+        """Test _get_data_full when formula missing (line 295)."""
+        from unittest.mock import Mock
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        # Remove formula attribute
+        if hasattr(results._model, "formula"):
+            delattr(results._model, "formula")
+
+        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        assert formula is None
+
+    def test_get_data_full_exception_handling(self, clean_panel_data):
+        """Test _get_data_full exception handling (lines 315-316)."""
+        from unittest.mock import Mock, patch
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Patch the copy method to raise exception
+        with patch.object(results._model.data.data, "copy", side_effect=RuntimeError("Test error")):
+            data, formula, entity_col, time_col, var_names = test._get_data_full()
+            assert data is None
+
+    def test_get_data_legacy_method(self, clean_panel_data):
+        """Test legacy _get_data method (lines 332-351)."""
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+        X, y, entities = test._get_data()
+
+        # Should return data successfully
+        assert X is not None
+        assert y is not None
+        assert entities is not None
+
+    def test_get_data_legacy_exception_handling(self, clean_panel_data):
+        """Test _get_data exception handling (lines 350-351)."""
+        from unittest.mock import Mock, patch
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Patch build_design_matrices to raise exception
+        with patch.object(
+            results._model.formula_parser,
+            "build_design_matrices",
+            side_effect=RuntimeError("Test error"),
+        ):
+            X, y, entities = test._get_data()
+            # Should catch exception and return None
+            assert X is None
+            assert y is None
+            assert entities is None
