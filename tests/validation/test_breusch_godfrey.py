@@ -167,3 +167,74 @@ class TestBreuschGodfrey:
         assert result is not None
         assert hasattr(result, "statistic")
         assert hasattr(result, "pvalue")
+
+    def test_design_matrix_not_available(self, clean_panel_data):
+        """Test ValueError when design matrix is not available."""
+        from unittest.mock import Mock
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Mock _get_design_matrix to return None
+        test = BreuschGodfreyTest(results)
+        original_method = test._get_design_matrix
+        test._get_design_matrix = lambda: None
+
+        # Should raise ValueError (line 112)
+        with pytest.raises(ValueError, match="Design matrix not available"):
+            test.run(lags=1)
+
+        # Restore original method
+        test._get_design_matrix = original_method
+
+    def test_missing_entity_time_index(self, clean_panel_data):
+        """Test AttributeError when entity_index/time_index missing."""
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Remove entity_index to trigger AttributeError (line 246)
+        if hasattr(results, "entity_index"):
+            delattr(results, "entity_index")
+
+        test = BreuschGodfreyTest(results)
+
+        # Should raise AttributeError
+        with pytest.raises(AttributeError, match="entity_index"):
+            test.run(lags=1)
+
+    def test_model_none_in_design_matrix(self, clean_panel_data):
+        """Test case where _model is None in _get_design_matrix."""
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschGodfreyTest(results)
+
+        # Set _model to None to trigger line 253
+        original_model = results._model
+        results._model = None
+
+        # Should return None
+        design_matrix = test._get_design_matrix()
+        assert design_matrix is None
+
+        # Restore
+        results._model = original_model
+
+    def test_exception_in_design_matrix_building(self, clean_panel_data):
+        """Test exception handling in design matrix building."""
+        from unittest.mock import Mock, patch
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BreuschGodfreyTest(results)
+
+        # Mock build_design_matrices to raise an exception (lines 264-265)
+        with patch.object(
+            results._model.formula_parser,
+            "build_design_matrices",
+            side_effect=Exception("Test error"),
+        ):
+            # Should catch exception and return None
+            design_matrix = test._get_design_matrix()
+            assert design_matrix is None
