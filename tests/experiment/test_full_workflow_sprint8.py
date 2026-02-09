@@ -143,16 +143,16 @@ class TestFullWorkflowSprint8:
         assert master_path.exists()
 
         # Step 8: Verify HTML content
-        val_html = val_path.read_text()
+        val_html = val_path.read_text(encoding="utf-8")
         assert "validation" in val_html.lower()
 
-        comp_html = comp_path.read_text()
+        comp_html = comp_path.read_text(encoding="utf-8")
         assert "comparison" in comp_html.lower()
 
-        res_html = res_path.read_text()
+        res_html = res_path.read_text(encoding="utf-8")
         assert "residual" in res_html.lower()
 
-        master_html = master_path.read_text()
+        master_html = master_path.read_text(encoding="utf-8")
         assert "master" in master_html.lower() or "experiment" in master_html.lower()
         assert "ols" in master_html.lower()
         assert "fe" in master_html.lower()
@@ -176,7 +176,7 @@ class TestFullWorkflowSprint8:
         assert master_path.stat().st_size > 0
 
         # Verify content
-        master_html = master_path.read_text()
+        master_html = master_path.read_text(encoding="utf-8")
         assert "ols" in master_html.lower()
         assert "fe" in master_html.lower()
 

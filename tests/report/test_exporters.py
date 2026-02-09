@@ -43,7 +43,7 @@ class TestHTMLExporter:
             exported_path = html_exporter.export(sample_html, output_path)
 
             assert exported_path.exists()
-            assert exported_path.read_text()
+            assert exported_path.read_text(encoding="utf-8")
 
     def test_export_with_metadata(self, html_exporter, sample_html):
         """Test export with metadata."""
@@ -52,7 +52,7 @@ class TestHTMLExporter:
 
             html_exporter.export(sample_html, output_path, add_metadata=True)
 
-            content = output_path.read_text()
+            content = output_path.read_text(encoding="utf-8")
             assert "PanelBox HTML Export" in content
             assert "Exported:" in content
 
@@ -161,7 +161,7 @@ class TestLaTeXExporter:
             saved_path = latex_exporter.save(latex, output_path)
 
             assert saved_path.exists()
-            content = saved_path.read_text()
+            content = saved_path.read_text(encoding="utf-8")
             assert "Hausman Test" in content
 
     def test_save_with_preamble(self, latex_exporter, sample_tests):
@@ -173,7 +173,7 @@ class TestLaTeXExporter:
 
             latex_exporter.save(latex, output_path, add_preamble=True)
 
-            content = output_path.read_text()
+            content = output_path.read_text(encoding="utf-8")
             assert "\\documentclass" in content
             assert "\\begin{document}" in content
             assert "\\end{document}" in content
@@ -272,5 +272,5 @@ class TestMarkdownExporter:
             saved_path = md_exporter.save(markdown, output_path)
 
             assert saved_path.exists()
-            content = saved_path.read_text()
+            content = saved_path.read_text(encoding="utf-8")
             assert "Hausman Test" in content

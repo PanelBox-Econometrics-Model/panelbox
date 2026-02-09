@@ -122,7 +122,7 @@ class TestReportManager:
             assert saved_path.stat().st_size > 0
 
             # Read and verify
-            content = saved_path.read_text()
+            content = saved_path.read_text(encoding="utf-8")
             assert "Test Report" in content
 
     def test_save_report_overwrite(self, report_manager, sample_validation_data):
