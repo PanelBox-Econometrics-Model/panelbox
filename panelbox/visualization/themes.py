@@ -14,7 +14,7 @@ Available Themes
 
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
 @dataclass
@@ -312,7 +312,7 @@ _THEME_REGISTRY: Dict[str, Theme] = {
 }
 
 
-def get_theme(theme: str | Theme) -> Theme:
+def get_theme(theme: Union[str, Theme]) -> Theme:
     """
     Get theme by name or return theme object.
 
