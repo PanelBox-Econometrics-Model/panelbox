@@ -826,6 +826,8 @@ class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj):
         """Convert numpy types to JSON-serializable types."""
+        import datetime
+
         # Handle numpy arrays
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -833,13 +835,19 @@ class NumpyEncoder(json.JSONEncoder):
         # Handle numpy scalars
         if isinstance(obj, (np.integer, np.int_)):
             return int(obj)
-        if isinstance(obj, (np.floating, np.float_)):
+        if isinstance(obj, np.floating):
             # Handle NaN and Inf
             if np.isnan(obj) or np.isinf(obj):
                 return None
             return float(obj)
         if isinstance(obj, np.bool_):
             return bool(obj)
+
+        # Handle datetime objects
+        if isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
+        if isinstance(obj, datetime.time):
+            return obj.isoformat()
 
         # Default behavior
         return super().default(obj)
