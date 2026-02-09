@@ -204,3 +204,39 @@ class TestWhite:
         # Should accept False
         result_false = test.run(cross_terms=False)
         assert result_false is not None
+
+    def test_design_matrix_not_available(self, clean_panel_data):
+        """Test ValueError when design matrix is not available (line 106)."""
+        from unittest.mock import Mock
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = WhiteTest(results)
+        # Mock _get_design_matrix to return None
+        test._get_design_matrix = lambda: None
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="Design matrix not available"):
+            test.run()
+
+    def test_exception_in_design_matrix_building(self, clean_panel_data):
+        """Test exception handling in _get_design_matrix (lines 215-216)."""
+        from unittest.mock import patch
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = WhiteTest(results)
+        # Clear the cache to force the method to call build_design_matrices
+        test._X = None
+
+        # Mock build_design_matrices to raise exception
+        with patch.object(
+            results._model.formula_parser,
+            "build_design_matrices",
+            side_effect=Exception("Test error"),
+        ):
+            # Should catch exception and return None
+            design_matrix = test._get_design_matrix()
+            assert design_matrix is None
