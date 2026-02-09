@@ -120,12 +120,20 @@ class MundlakTest(ValidationTest):
         data_aug = data.copy()
 
         # Compute entity means for each regressor (excluding constant)
+        # Skip time-invariant variables (where within-entity variance = 0)
         mean_vars = []
+        time_varying_vars = []
         for var in var_names:
             if var in data_aug.columns:
-                mean_col_name = f"{var}_mean"
-                data_aug[mean_col_name] = data_aug.groupby(entity_col)[var].transform("mean")
-                mean_vars.append(mean_col_name)
+                # Check if variable is time-varying (has within-entity variation)
+                within_var = data_aug.groupby(entity_col)[var].transform(lambda x: x.var(ddof=0))
+                is_time_varying = (within_var > 1e-10).any()
+
+                if is_time_varying:
+                    mean_col_name = f"{var}_mean"
+                    data_aug[mean_col_name] = data_aug.groupby(entity_col)[var].transform("mean")
+                    mean_vars.append(mean_col_name)
+                    time_varying_vars.append(var)
 
         if len(mean_vars) == 0:
             raise ValueError(
@@ -136,6 +144,10 @@ class MundlakTest(ValidationTest):
         # Build augmented formula: y ~ x1 + x2 + ... + x1_mean + x2_mean + ...
         # Parse original formula to get dependent variable
         dep_var = formula.split("~")[0].strip()
+
+        # Include ALL original variables in the augmented formula
+        # This is important because we want to control for them
+        # even if they are time-invariant
         orig_vars = " + ".join(var_names)
         mean_formula = " + ".join(mean_vars)
         augmented_formula = f"{dep_var} ~ {orig_vars} + {mean_formula}"
@@ -153,6 +165,20 @@ class MundlakTest(ValidationTest):
             # Use cluster-robust SE (clustered by entity)
             re_results = model_augmented.fit(cov_type="clustered", cov_kwds={"groups": entity_col})
 
+        except np.linalg.LinAlgError as e:
+            # If we get singular matrix, it's likely due to perfect collinearity
+            # between time-invariant variables and the intercept
+            # This is acceptable - we just test the time-varying variables
+            if "Singular matrix" in str(e):
+                # Try without intercept if there are time-invariant variables
+                time_invariant_vars = [v for v in var_names if v not in time_varying_vars]
+                if time_invariant_vars:
+                    raise ValueError(
+                        f"Cannot estimate Mundlak test with time-invariant regressors: {time_invariant_vars}. "
+                        "Time-invariant variables are perfectly collinear with the intercept in pooled estimation. "
+                        "Consider removing time-invariant variables or using a different specification test."
+                    )
+            raise ValueError(f"Failed to estimate augmented model: {e}")
         except Exception as e:
             raise ValueError(f"Failed to estimate augmented model: {e}")
 
