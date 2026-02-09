@@ -211,3 +211,65 @@ class TestBaltagiWuTest:
         assert result.metadata["se_lbi"] > 0
         # For unbalanced panels, variance should be larger than balanced
         assert result.metadata["min_time_periods"] < result.metadata["max_time_periods"]
+
+    def test_no_valid_observations_after_diff(self, balanced_panel_data):
+        """Test ValueError when no valid observations after differencing (line 125)."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BaltagiWuTest(results)
+
+        # Mock dropna to return empty DataFrame
+        original_dropna = pd.DataFrame.dropna
+
+        def mock_dropna(self, *args, **kwargs):
+            # Return empty DataFrame
+            return pd.DataFrame(columns=self.columns)
+
+        with patch.object(pd.DataFrame, "dropna", mock_dropna):
+            with pytest.raises(
+                ValueError, match="No valid observations after computing differences"
+            ):
+                test.run()
+
+    def test_zero_squared_residuals(self, balanced_panel_data):
+        """Test ValueError when sum of squared residuals is zero (line 136)."""
+        from unittest.mock import Mock
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Mock results.resid to be all zeros (perfect fit)
+        results.resid = np.zeros_like(results.resid)
+
+        test = BaltagiWuTest(results)
+
+        with pytest.raises(ValueError, match="Sum of squared residuals is zero"):
+            test.run()
+
+    def test_zero_se_lbi_error(self, balanced_panel_data):
+        """Test ValueError when standard error is zero (line 162)."""
+        from unittest.mock import patch
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = BaltagiWuTest(results)
+
+        # Mock np.sqrt to return 0 for se_lbi calculation
+        original_sqrt = np.sqrt
+
+        def mock_sqrt(x):
+            # Only mock the specific call for se_lbi
+            result = original_sqrt(x)
+            if isinstance(x, (int, float)) and 0 < x < 1:  # Likely variance_lbi
+                return 0.0
+            return result
+
+        with patch("numpy.sqrt", side_effect=mock_sqrt):
+            with pytest.raises(ValueError, match="Standard error is zero"):
+                test.run()
