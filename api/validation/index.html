@@ -1,0 +1,3102 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python library for panel data econometrics with GMM, Fixed Effects, and Random Effects">
+      
+      
+        <meta name="author" content="PanelBox Development Team">
+      
+      
+        <link rel="canonical" href="https://panelbox-econometrics-model.github.io/panelbox/api/validation/">
+      
+      
+        <link rel="prev" href="../results/">
+      
+      
+        <link rel="next" href="../datasets/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Validation - PanelBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#validation-tests-api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PanelBox Documentation" class="md-header__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PanelBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Validation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PanelBox Documentation" class="md-nav__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    PanelBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_static_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 2: Static Panel Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_gmm_intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 3: Introduction to GMM for Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/load_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Load Your Own Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/interpret_tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Interpret Diagnostic Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Explanation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Explanation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/panel_data_intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/fixed_vs_random/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fixed Effects vs Random Effects: A Deep Dive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/gmm_explained/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM for Panel Data: A Complete Explanation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gmm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#specification-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specification Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specification Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hausmantest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HausmanTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serial-correlation-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial Correlation Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Serial Correlation Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wooldridgeartest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WooldridgeARTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heteroskedasticity-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heteroskedasticity Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Heteroskedasticity Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breuschpagantest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BreuschPaganTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-sectional-dependence-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Sectional Dependence Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross-Sectional Dependence Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breuschpaganlmtest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BreuschPaganLMTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pesarancdtest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PesaranCDTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gmm-specific-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMM-Specific Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GMM-Specific Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hansen-j-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hansen J Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sargan-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sargan Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ar1-and-ar2-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AR(1) and AR(2) Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#difference-in-hansen-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Difference-in-Hansen Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="validation-tests-api">Validation Tests API<a class="headerlink" href="#validation-tests-api" title="Permanent link">&para;</a></h1>
+<p>API documentation for diagnostic and specification tests.</p>
+<hr />
+<h2 id="specification-tests">Specification Tests<a class="headerlink" href="#specification-tests" title="Permanent link">&para;</a></h2>
+<h3 id="hausmantest">HausmanTest<a class="headerlink" href="#hausmantest" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="panelbox.validation.specification.hausman.HausmanTest" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">panelbox.validation.specification.hausman.HausmanTest</span>
+
+
+<a href="#panelbox.validation.specification.hausman.HausmanTest" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">HausmanTest</span><span class="p">(</span><span class="n">fe_results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">,</span> <span class="n">re_results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+
+
+
+        <div class="language-text highlight"><pre><span></span><code>Hausman specification test for panel data.
+
+Tests the null hypothesis that the Random Effects estimator is consistent
+(and efficient) against the alternative that it is inconsistent.
+
+The test compares Fixed Effects (always consistent under standard assumptions)
+with Random Effects (consistent only if E[u_i | X_it] = 0).
+</code></pre></div>
+
+
+<details class="----parameters" open>
+  <summary><div class="language-text highlight"><pre><span></span><code>Parameters
+</code></pre></div></summary>
+  <div class="language-text highlight"><pre><span></span><code>fe_results : PanelResults
+    Results from Fixed Effects estimation
+re_results : PanelResults
+    Results from Random Effects estimation
+</code></pre></div>
+</details>
+
+<details class="----notes" open>
+  <summary><div class="language-text highlight"><pre><span></span><code>Notes
+</code></pre></div></summary>
+  <div class="language-text highlight"><pre><span></span><code>**Theoretical Foundation:**
+
+The Hausman test is based on the principle that under the null hypothesis
+(no correlation between regressors and individual effects), both FE and RE
+are consistent, but RE is more efficient. Under the alternative (correlation
+exists), FE remains consistent while RE becomes inconsistent.
+
+**Test Statistic:**
+
+The Hausman statistic is computed as:
+
+    H = (β̂_FE - β̂_RE)&#39; [Var(β̂_FE) - Var(β̂_RE)]^{-1} (β̂_FE - β̂_RE)
+
+Under H0, this follows χ²(k) where k is the number of coefficients tested.
+
+**Hypotheses:**
+
+- H0: Cov(X_it, α_i) = 0 → Random Effects is consistent and efficient
+- H1: Cov(X_it, α_i) ≠ 0 → Random Effects is inconsistent, use Fixed Effects
+
+**Decision Rule:**
+
+- **Reject H0** (p-value &lt; α): Use Fixed Effects
+  - Evidence of correlation between X and α_i
+  - RE estimates are biased and inconsistent
+  - FE estimates are consistent (albeit less efficient)
+
+- **Fail to reject H0** (p-value ≥ α): Use Random Effects
+  - No evidence of correlation between X and α_i
+  - RE estimates are consistent and efficient
+  - Gain efficiency over FE, especially with time-invariant regressors
+
+**Interpretation Guidelines:**
+
+| P-value | Decision | Interpretation |
+|---------|----------|----------------|
+| &lt; 0.01  | Strong rejection | Strong evidence for FE |
+| 0.01-0.05 | Rejection | Moderate evidence for FE |
+| 0.05-0.10 | Borderline | Consider robustness checks |
+| &gt; 0.10  | Fail to reject | Use RE for efficiency |
+
+**Common Issues:**
+
+1. **Negative test statistic**: Can occur due to:
+   - Small sample sizes
+   - Weak instruments in RE estimation
+   - Solution: Use generalized inverse (automatically handled)
+
+2. **Large differences in coefficients**: Suggests:
+   - Strong correlation between X and α_i
+   - FE and RE model different relationships
+   - Decision clear: use FE
+
+3. **Small differences but significant test**: Can indicate:
+   - Large sample size detecting small deviations
+   - Consider economic significance, not just statistical
+
+**Practical Considerations:**
+
+- Always estimate both FE and RE before testing
+- Examine coefficient differences, not just test statistic
+- Consider theory: does correlation make sense?
+- RE allows time-invariant regressors; FE does not
+- For GMM models, use Hansen/Sargan tests instead
+</code></pre></div>
+</details>
+
+<details class="----references" open>
+  <summary><div class="language-text highlight"><pre><span></span><code>References
+</code></pre></div></summary>
+  <div class="language-text highlight"><pre><span></span><code>.. [1] Hausman, J. A. (1978). &quot;Specification tests in econometrics.&quot;
+       *Econometrica*, 46(6), 1251-1271.
+
+.. [2] Wooldridge, J. M. (2010). &quot;Econometric Analysis of Cross Section
+       and Panel Data&quot; (2nd ed.). MIT Press. Chapter 10.
+
+.. [3] Baltagi, B. H. (2021). &quot;Econometric Analysis of Panel Data&quot;
+       (6th ed.). Springer. Chapter 4.
+</code></pre></div>
+</details>
+
+<details class="----see-also" open>
+  <summary><div class="language-text highlight"><pre><span></span><code>See Also
+</code></pre></div></summary>
+  <div class="language-text highlight"><pre><span></span><code>FixedEffects : Fixed Effects estimator (within transformation)
+RandomEffects : Random Effects estimator (GLS)
+MundlakTest : Alternative specification test including time-averages
+</code></pre></div>
+</details>
+
+<details class="----examples" open>
+  <summary><div class="language-text highlight"><pre><span></span><code>Examples
+</code></pre></div></summary>
+  <div class="language-text highlight"><pre><span></span><code>**Basic usage:**
+
+&gt;&gt;&gt; import panelbox as pb
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Estimate both models
+&gt;&gt;&gt; fe = pb.FixedEffects(data, &quot;y&quot;, [&quot;x1&quot;, &quot;x2&quot;], &quot;firm&quot;, &quot;year&quot;)
+&gt;&gt;&gt; fe_results = fe.fit()
+&gt;&gt;&gt;
+&gt;&gt;&gt; re = pb.RandomEffects(data, &quot;y&quot;, [&quot;x1&quot;, &quot;x2&quot;], &quot;firm&quot;, &quot;year&quot;)
+&gt;&gt;&gt; re_results = re.fit()
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Run Hausman test
+&gt;&gt;&gt; hausman = pb.HausmanTest(fe_results, re_results)
+&gt;&gt;&gt; result = hausman.run()
+&gt;&gt;&gt; print(result)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Use recommendation
+&gt;&gt;&gt; if result.recommendation == &quot;Fixed Effects&quot;:
+...     final_results = fe_results
+&gt;&gt;&gt; else:
+...     final_results = re_results
+
+**Interpreting results:**
+
+&gt;&gt;&gt; # Examine test statistic and p-value
+&gt;&gt;&gt; print(f&quot;Chi2 statistic: {result.statistic:.3f}&quot;)
+&gt;&gt;&gt; print(f&quot;P-value: {result.pvalue:.4f}&quot;)
+&gt;&gt;&gt; print(f&quot;Degrees of freedom: {result.df}&quot;)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Check coefficient differences
+&gt;&gt;&gt; print(&quot;
+</code></pre></div>
+<p>Coefficient Comparison:")
+    &gt;&gt;&gt; for var in result.fe_params.index:
+    ...     diff_pct = 100 * result.diff[var] / result.fe_params[var]
+    ...     print(f"{var}: {diff_pct:.1f}% difference")</p>
+<div class="language-text highlight"><pre><span></span><code>**Different significance levels:**
+
+&gt;&gt;&gt; # Test at 1% level for more stringent requirement
+&gt;&gt;&gt; result_strict = hausman.run(alpha=0.01)
+&gt;&gt;&gt; print(result_strict.conclusion)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Test at 10% level for more lenient requirement
+&gt;&gt;&gt; result_lenient = hausman.run(alpha=0.10)
+&gt;&gt;&gt; print(result_lenient.conclusion)
+</code></pre></div>
+</details>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+<h5 id="panelbox.validation.specification.hausman.HausmanTest-functions">Functions<a href="#panelbox.validation.specification.hausman.HausmanTest-functions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+<div class="doc doc-object doc-function">
+
+
+<h6 id="panelbox.validation.specification.hausman.HausmanTest.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#panelbox.validation.specification.hausman.HausmanTest.run" class="headerlink" title="Permanent link">&para;</a></h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">run</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HausmanTestResult</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run the Hausman test.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level for test</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="panelbox.validation.specification.hausman.HausmanTestResult">HausmanTestResult</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Test results</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The Hausman test statistic is:</p>
+<div class="language-text highlight"><pre><span></span><code>H = (b_FE - b_RE)&#39; [Var(b_FE) - Var(b_RE)]^{-1} (b_FE - b_RE)
+</code></pre></div>
+<p>which follows a chi-squared distribution with K degrees of freedom,
+where K is the number of coefficients being tested.</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">hausman</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chi2 statistic: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P-value: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recommendation: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">recommendation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="serial-correlation-tests">Serial Correlation Tests<a class="headerlink" href="#serial-correlation-tests" title="Permanent link">&para;</a></h2>
+<h3 id="wooldridgeartest">WooldridgeARTest<a class="headerlink" href="#wooldridgeartest" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest</span>
+
+
+<a href="#panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">WooldridgeARTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="panelbox.validation.base.ValidationTest">ValidationTest</span></code></p>
+
+
+
+        <p>Wooldridge test for first-order autocorrelation in panel data.</p>
+<p>This test is specifically designed for fixed effects models and tests
+for AR(1) autocorrelation in the idiosyncratic errors.</p>
+<p>The test is based on regressing the first-differenced residuals on their
+own lag and testing if the coefficient equals -0.5 (which is the value
+under H0 of no serial correlation).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation (preferably Fixed Effects)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p><strong>Test Procedure:</strong></p>
+<p>The Wooldridge test implements the following steps:</p>
+<ol>
+<li>
+<p><strong>Compute first differences of residuals:</strong></p>
+<p>Δe_it = e_it - e_{i,t-1}</p>
+</li>
+<li>
+<p><strong>Regress Δe_it on Δe_{i,t-1}:</strong></p>
+<p>Δe_it = β · Δe_{i,t-1} + ν_it</p>
+</li>
+<li>
+<p><strong>Test H0: β = -0.5</strong></p>
+</li>
+</ol>
+<p>Under the null hypothesis of no serial correlation:</p>
+<div class="language-text highlight"><pre><span></span><code>Cov(Δe_it, Δe_{i,t-1}) = E[(e_it - e_{i,t-1})(e_{i,t-1} - e_{i,t-2})]
+                        = -σ²_e
+</code></pre></div>
+<p>And since Var(Δe_it) ≈ 2σ²_e, we expect β ≈ -0.5.</p>
+<p><strong>Test Statistic:</strong></p>
+<p>The F-statistic is computed as:</p>
+<div class="language-text highlight"><pre><span></span><code>F = [(β̂ + 0.5) / SE(β̂)]²  ~  F(1, N-1)
+</code></pre></div>
+<p>where N is the number of entities.</p>
+<p><strong>When to Use:</strong></p>
+<p>This test is particularly useful for:</p>
+<ul>
+<li><strong>Fixed Effects models</strong>: Designed specifically for FE estimation</li>
+<li><strong>GMM model validation</strong>: Testing AR(1) assumption before GMM</li>
+<li><strong>Dynamic panels</strong>: Checking for residual autocorrelation after
+  including lagged dependent variable</li>
+<li><strong>Pre-testing</strong>: Before using cluster-robust standard errors</li>
+</ul>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li>Simple to implement and interpret</li>
+<li>Does not require strong distributional assumptions</li>
+<li>Robust to heteroskedasticity</li>
+<li>Works with unbalanced panels (requires T ≥ 3 for each entity)</li>
+</ul>
+<p><strong>Limitations:</strong></p>
+<ol>
+<li><strong>Only tests AR(1)</strong>: Does not detect higher-order autocorrelation</li>
+<li><strong>Minimum T requirement</strong>: Needs T ≥ 3 per entity</li>
+<li><strong>FE-specific</strong>: Less powerful for other estimators</li>
+<li><strong>Small N issues</strong>: F-distribution approximation may be poor with few entities</li>
+</ol>
+<p><strong>Interpretation:</strong></p>
+<table>
+<thead>
+<tr>
+<th>P-value</th>
+<th>Decision</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt; 0.01</td>
+<td>Strong rejection</td>
+<td>Strong AR(1) autocorrelation</td>
+</tr>
+<tr>
+<td>0.01-0.05</td>
+<td>Rejection</td>
+<td>Moderate autocorrelation</td>
+</tr>
+<tr>
+<td>0.05-0.10</td>
+<td>Borderline</td>
+<td>Consider robust SEs</td>
+</tr>
+<tr>
+<td>&gt; 0.10</td>
+<td>Fail to reject</td>
+<td>No evidence of AR(1)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>If Autocorrelation is Detected:</strong></p>
+<ul>
+<li>Use <strong>cluster-robust standard errors</strong> (cluster by entity)</li>
+<li>Use <strong>Driscoll-Kraay standard errors</strong> (robust to both serial
+  correlation and cross-sectional dependence)</li>
+<li>Consider <strong>AR(1) error structure</strong> in GLS estimation</li>
+<li>For dynamic models, use <strong>GMM estimators</strong> (System GMM)</li>
+</ul>
+<p><strong>Comparison with Stata:</strong></p>
+<p>This test is equivalent to Stata's <code>xtserial</code> command:</p>
+<div class="language-stata highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">xtreg</span> y x1 x2, fe
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>xtserial y x1 x2
+</span></code></pre></div>
+</details>
+
+<details class="references" open>
+  <summary>References</summary>
+  <p>.. [1] Wooldridge, J. M. (2002). "Econometric Analysis of Cross Section
+       and Panel Data." MIT Press, Section 10.4.1.</p>
+<p>.. [2] Drukker, D. M. (2003). "Testing for serial correlation in linear
+       panel-data models." <em>Stata Journal</em>, 3(2), 168-177.</p>
+<p>.. [3] Wooldridge, J. M. (2010). "Econometric Analysis of Cross Section
+       and Panel Data" (2<sup>nd</sup> ed.). MIT Press, Chapter 10.</p>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>BaltagiWuTest : Alternative test for serial correlation in panel data
+BreuschGodfreyTest : Lagrange Multiplier test for serial correlation</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p><strong>Basic usage with Fixed Effects:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">panelbox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pb</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Estimate Fixed Effects model</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Test for autocorrelation</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.serial_correlation</span><span class="w"> </span><span class="kn">import</span> <span class="n">WooldridgeARTest</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">WooldridgeARTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Interpreting results:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;F-statistic: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P-value: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">pvalue</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Evidence of AR(1) autocorrelation&quot;</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Consider using cluster-robust standard errors&quot;</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No evidence of autocorrelation&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Accessing additional information:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Estimated coefficient and its standard error</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;β̂ = </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;coefficient&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SE(β̂) = </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;std_error&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected under H0: β = -0.5&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Sample information</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of entities: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;n_entities&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observations used: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;n_obs_used&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Different significance level:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Test at 1% level</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result_strict</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result_strict</span><span class="o">.</span><span class="n">conclusion</span><span class="p">)</span>
+</span></code></pre></div>
+
+        <p>Initialize Wooldridge AR test.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation (preferably Fixed Effects)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+<h5 id="panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest-functions">Functions<a href="#panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest-functions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+<div class="doc doc-object doc-function">
+
+
+<h6 id="panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest.run" class="headerlink" title="Permanent link">&para;</a></h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">run</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationTestResult</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run Wooldridge test for AR(1) autocorrelation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="panelbox.validation.base.ValidationTestResult">ValidationTestResult</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Test results</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If panel has fewer than 3 time periods</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="heteroskedasticity-tests">Heteroskedasticity Tests<a class="headerlink" href="#heteroskedasticity-tests" title="Permanent link">&para;</a></h2>
+<h3 id="breuschpagantest">BreuschPaganTest<a class="headerlink" href="#breuschpagantest" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest</span>
+
+
+<a href="#panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="panelbox.validation.base.ValidationTest">ValidationTest</span></code></p>
+
+
+
+        <p>Breusch-Pagan LM test for heteroskedasticity.</p>
+<p>Tests the null hypothesis that the error variance is constant
+(homoskedasticity) against the alternative that the variance
+is a function of the regressors.</p>
+<p>H0: sigma²_i = sigma² (homoskedasticity)
+H1: sigma²_i = h(X_i) (heteroskedasticity)</p>
+<p>The test regresses squared residuals on the original regressors
+and tests if the coefficients are jointly zero using an LM statistic.</p>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The test statistic is n*R² from the auxiliary regression, which
+follows a chi-squared distribution with k degrees of freedom
+under the null hypothesis, where k is the number of regressors
+(excluding the constant).</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.models.static.pooled_ols</span><span class="w"> </span><span class="kn">import</span> <span class="n">PooledOLS</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">PooledOLS</span><span class="p">(</span><span class="s2">&quot;y ~ x1 + x2&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.heteroskedasticity.breusch_pagan</span><span class="w"> </span><span class="kn">import</span> <span class="n">BreuschPaganTest</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">BreuschPaganTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+
+        <p>Initialize Breusch-Pagan test.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+<h5 id="panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest-functions">Functions<a href="#panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest-functions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+<div class="doc doc-object doc-function">
+
+
+<h6 id="panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest.run" class="headerlink" title="Permanent link">&para;</a></h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">run</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationTestResult</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run Breusch-Pagan LM test for heteroskedasticity.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="panelbox.validation.base.ValidationTestResult">ValidationTestResult</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Test results</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If design matrix is not available</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The test procedure:
+1. Estimate the original model and obtain residuals e
+2. Compute squared residuals e²
+3. Regress e² on the original regressors X
+4. Compute LM statistic = n*R² from this auxiliary regression
+5. Compare to chi-squared(k) distribution</p>
+</details>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="cross-sectional-dependence-tests">Cross-Sectional Dependence Tests<a class="headerlink" href="#cross-sectional-dependence-tests" title="Permanent link">&para;</a></h2>
+<h3 id="breuschpaganlmtest">BreuschPaganLMTest<a class="headerlink" href="#breuschpaganlmtest" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest</span>
+
+
+<a href="#panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="panelbox.validation.base.ValidationTest">ValidationTest</span></code></p>
+
+
+
+        <p>Breusch-Pagan LM test for cross-sectional dependence.</p>
+<p>Tests the null hypothesis that residuals are cross-sectionally
+independent (no contemporaneous correlation across entities).</p>
+<p>H0: Corr(e_it, e_jt) = 0 for all i ≠ j
+H1: Some Corr(e_it, e_jt) ≠ 0</p>
+<p>The test is based on the sum of squared pairwise correlation
+coefficients of residuals.</p>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The test statistic is:</p>
+<p>LM = T * sum_{i&lt;j} rho_ij²</p>
+<p>where rho_ij is the sample correlation between residuals of
+entity i and entity j, and the sum is over all N(N-1)/2 pairs.</p>
+<p>Under H0, LM ~ Chi2(N(N-1)/2)</p>
+<p>This test is appropriate for panels with:
+- Fixed T (time periods)
+- N not too large (becomes over-sized as N → ∞)
+- For large N, use Pesaran CD test instead</p>
+<p>The test requires a balanced panel or will use pairwise complete
+observations for each entity pair.</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.models.static.pooled_ols</span><span class="w"> </span><span class="kn">import</span> <span class="n">PooledOLS</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">PooledOLS</span><span class="p">(</span><span class="s2">&quot;y ~ x1 + x2&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.cross_sectional_dependence.breusch_pagan_lm</span><span class="w"> </span><span class="kn">import</span> <span class="n">BreuschPaganLMTest</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+
+        <p>Initialize Breusch-Pagan LM test.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+<h5 id="panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest-functions">Functions<a href="#panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest-functions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+<div class="doc doc-object doc-function">
+
+
+<h6 id="panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest.run" class="headerlink" title="Permanent link">&para;</a></h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">run</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationTestResult</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run Breusch-Pagan LM test for cross-sectional dependence.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="panelbox.validation.base.ValidationTestResult">ValidationTestResult</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Test results</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="warning" open>
+  <summary>Warnings</summary>
+  <p>This test can be over-sized (reject H0 too often) when N is large.
+For large N (&gt; 30), consider using the Pesaran CD test instead.</p>
+</details>
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p>The test requires computing N(N-1)/2 pairwise correlations.
+For large N, this can be computationally intensive.</p>
+</details>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h3 id="pesarancdtest">PesaranCDTest<a class="headerlink" href="#pesarancdtest" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h4 id="panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest</span>
+
+
+<a href="#panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">PesaranCDTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="panelbox.validation.base.ValidationTest">ValidationTest</span></code></p>
+
+
+
+        <p>Pesaran CD test for cross-sectional dependence.</p>
+<p>Tests the null hypothesis of cross-sectional independence against the
+alternative of cross-sectional dependence.</p>
+<p>The test is based on the average of pairwise correlation coefficients
+of the residuals.</p>
+<p>H0: No cross-sectional dependence (residuals are independent across entities)
+H1: Cross-sectional dependence present</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p><strong>Test Statistic:</strong></p>
+<p>The Pesaran CD statistic is computed as:</p>
+<div class="language-text highlight"><pre><span></span><code>CD = √(2T / (N(N-1))) × Σᵢ&lt;ⱼ ρ̂ᵢⱼ
+</code></pre></div>
+<p>where:
+- N = number of entities
+- T = number of time periods
+- ρ̂ᵢⱼ = sample correlation of residuals between entities i and j</p>
+<p>Under H0, CD ~ N(0,1) asymptotically as N → ∞.</p>
+<p><strong>When to Use:</strong></p>
+<p>This test is particularly useful for:</p>
+<ul>
+<li><strong>Checking model validity</strong>: Detecting omitted spatial effects or
+  common shocks not captured by time effects</li>
+<li><strong>Panel VAR models</strong>: Testing for cross-sectional independence</li>
+<li><strong>Large N panels</strong>: Works well even when T is small</li>
+<li><strong>Pre-testing</strong>: Before applying Driscoll-Kraay or panel-corrected
+  standard errors</li>
+</ul>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li>Simple and computationally efficient (O(N²) complexity)</li>
+<li>Valid for both balanced and unbalanced panels</li>
+<li>Works well for small T, large N panels</li>
+<li>Does not require normality assumptions</li>
+<li>Robust to heteroskedasticity</li>
+</ul>
+<p><strong>Limitations:</strong></p>
+<ol>
+<li><strong>Requires T ≥ 3</strong>: Need minimum time periods to compute correlations</li>
+<li><strong>Large N required</strong>: Asymptotic distribution requires N → ∞</li>
+<li><strong>Not powerful for weak dependence</strong>: May miss weak spatial patterns</li>
+<li><strong>Assumes no structural breaks</strong>: Common shocks should be stable</li>
+</ol>
+<p><strong>Interpretation:</strong></p>
+<table>
+<thead>
+<tr>
+<th>CD Statistic</th>
+<th>P-value</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>CD</td>
+<td>&lt; 1.645</td>
+</tr>
+<tr>
+<td>1.645 &lt;</td>
+<td>CD</td>
+<td>&lt; 1.96</td>
+</tr>
+<tr>
+<td>1.96 &lt;</td>
+<td>CD</td>
+<td>&lt; 2.576</td>
+</tr>
+<tr>
+<td></td>
+<td>CD</td>
+<td>&gt; 2.576</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Average Correlation Guidelines:</strong></p>
+<ul>
+<li>|ρ̄| &lt; 0.1: Weak dependence (likely negligible)</li>
+<li>0.1 ≤ |ρ̄| &lt; 0.3: Moderate dependence (consider robust SEs)</li>
+<li>0.3 ≤ |ρ̄| &lt; 0.5: Strong dependence (require spatial models)</li>
+<li>|ρ̄| ≥ 0.5: Very strong dependence (serious misspecification)</li>
+</ul>
+<p><strong>If Cross-Sectional Dependence is Detected:</strong></p>
+<ol>
+<li>
+<p><strong>Include time fixed effects</strong> to control for common shocks:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                    <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Use Driscoll-Kraay standard errors</strong> (robust to cross-sectional
+   and serial correlation):
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cov_type</span><span class="o">=</span><span class="s2">&quot;driscoll-kraay&quot;</span><span class="p">)</span>
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Use panel-corrected standard errors (PCSE)</strong>:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cov_type</span><span class="o">=</span><span class="s2">&quot;pcse&quot;</span><span class="p">)</span>
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Consider spatial panel models</strong> if geographic structure is known</p>
+</li>
+<li>
+<p><strong>Add common correlated effects</strong> (Pesaran CCE estimator)</p>
+</li>
+</ol>
+<p><strong>Comparison with Stata:</strong></p>
+<p>This test is equivalent to Stata's <code>xtcd</code> command:</p>
+<div class="language-stata highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">xtreg</span> y x1 x2, fe
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>xtcd, pesaran
+</span></code></pre></div>
+</details>
+
+<details class="references" open>
+  <summary>References</summary>
+  <p>.. [1] Pesaran, M. H. (2004). "General diagnostic tests for cross section
+       dependence in panels." <em>University of Cambridge Working Paper</em>,
+       No. 0435.</p>
+<p>.. [2] Pesaran, M. H. (2015). "Testing weak cross-sectional dependence in
+       large panels." <em>Econometric Reviews</em>, 34(6-10), 1089-1117.</p>
+<p>.. [3] De Hoyos, R. E., &amp; Sarafidis, V. (2006). "Testing for cross-sectional
+       dependence in panel-data models." <em>Stata Journal</em>, 6(4), 482-496.</p>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>BreuschPaganLMTest : Lagrange Multiplier test for cross-sectional dependence
+FreesTest : Distribution-free test for cross-sectional dependence</p>
+</details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p><strong>Basic usage:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">panelbox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pb</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Estimate model</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Test for cross-sectional dependence</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.cross_sectional_dependence</span><span class="w"> </span><span class="kn">import</span> <span class="n">PesaranCDTest</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">PesaranCDTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Interpreting results:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CD statistic: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P-value: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Check average correlation</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">avg_corr</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;avg_abs_correlation&#39;</span><span class="p">]</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average absolute correlation: </span><span class="si">{</span><span class="n">avg_corr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">pvalue</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Evidence of cross-sectional dependence&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">... </span>    <span class="k">if</span> <span class="n">avg_corr</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Use Driscoll-Kraay standard errors&quot;</span><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="gp">... </span>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Consider spatial panel model&quot;</span><span class="p">)</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="gp">&gt;&gt;&gt; </span><span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No evidence of cross-sectional dependence&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Examining correlation patterns:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Access detailed correlation statistics</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of entity pairs: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;n_pairs&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average correlation: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;avg_correlation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max absolute correlation: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;max_abs_correlation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Range: [</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;min_correlation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">... </span>      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;max_correlation&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+    <p><strong>Testing with time effects:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Include time effects to control for common shocks</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fe_te</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">... </span>                        <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results_te</span> <span class="o">=</span> <span class="n">fe_te</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Re-test</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test_te</span> <span class="o">=</span> <span class="n">PesaranCDTest</span><span class="p">(</span><span class="n">results_te</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result_te</span> <span class="o">=</span> <span class="n">test_te</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CD with time effects: </span><span class="si">{</span><span class="n">result_te</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reduction in dependence: &quot;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">... </span>      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">result_te</span><span class="o">.</span><span class="n">statistic</span><span class="o">/</span><span class="n">result</span><span class="o">.</span><span class="n">statistic</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+
+        <p>Initialize Pesaran CD test.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from panel model estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+<h5 id="panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest-functions">Functions<a href="#panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest-functions" class="headerlink" title="Permanent link">&para;</a></h5>
+
+<div class="doc doc-object doc-function">
+
+
+<h6 id="panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest.run" class="headerlink" title="Permanent link">&para;</a></h6>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">run</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationTestResult</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run Pesaran CD test for cross-sectional dependence.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="panelbox.validation.base.ValidationTestResult">ValidationTestResult</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Test results</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If required data indices are not available or T &lt; 3</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="gmm-specific-tests">GMM-Specific Tests<a class="headerlink" href="#gmm-specific-tests" title="Permanent link">&para;</a></h2>
+<h3 id="hansen-j-test">Hansen J Test<a class="headerlink" href="#hansen-j-test" title="Permanent link">&para;</a></h3>
+<p>The Hansen J test is automatically computed for GMM models and available via:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">results</span> <span class="o">=</span> <span class="n">gmm</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hansen J statistic: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">hansen_j</span><span class="o">.</span><span class="n">statistic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hansen J p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">hansen_j</span><span class="o">.</span><span class="n">pvalue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>See <a href="../results/#hansen-j-test">GMM Results</a> for details.</p>
+<h3 id="sargan-test">Sargan Test<a class="headerlink" href="#sargan-test" title="Permanent link">&para;</a></h3>
+<p>Similar to Hansen J but not robust to heteroskedasticity:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sargan statistic: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">sargan</span><span class="o">.</span><span class="n">statistic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sargan p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">sargan</span><span class="o">.</span><span class="n">pvalue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="ar1-and-ar2-tests">AR(1) and AR(2) Tests<a class="headerlink" href="#ar1-and-ar2-tests" title="Permanent link">&para;</a></h3>
+<p>Tests for serial correlation in differenced residuals:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AR(1) p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">ar1_test</span><span class="o">.</span><span class="n">pvalue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AR(2) p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">ar2_test</span><span class="o">.</span><span class="n">pvalue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>Critical:</strong> AR(2) should NOT reject (p &gt; 0.10)</p>
+<h3 id="difference-in-hansen-test">Difference-in-Hansen Test<a class="headerlink" href="#difference-in-hansen-test" title="Permanent link">&para;</a></h3>
+<p>For System GMM only, tests validity of level instruments:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Diff-Hansen p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">diff_hansen</span><span class="o">.</span><span class="n">pvalue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../results/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Results">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Results
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../datasets/" class="md-footer__link md-footer__link--next" aria-label="Next: Datasets">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Datasets
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 PanelBox Development Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/panelbox/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

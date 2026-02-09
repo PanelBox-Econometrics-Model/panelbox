@@ -1,0 +1,2260 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python library for panel data econometrics with GMM, Fixed Effects, and Random Effects">
+      
+      
+        <meta name="author" content="PanelBox Development Team">
+      
+      
+        <link rel="canonical" href="https://panelbox-econometrics-model.github.io/panelbox/guides/panel_data_intro/">
+      
+      
+        <link rel="prev" href="../../how-to/interpret_tests/">
+      
+      
+        <link rel="next" href="../fixed_vs_random/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Introduction to Panel Data - PanelBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#introduction-to-panel-data" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PanelBox Documentation" class="md-header__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PanelBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction to Panel Data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PanelBox Documentation" class="md-nav__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    PanelBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_static_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 2: Static Panel Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_gmm_intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 3: Introduction to GMM for Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/load_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Load Your Own Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/interpret_tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Interpret Diagnostic Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Explanation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Explanation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to Panel Data
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-panel-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is Panel Data?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#panel-data-vs-other-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Data vs Other Data Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Panel Data vs Other Data Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cross-sectional-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Sectional Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-series-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time-Series Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panel-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types-of-panel-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types of Panel Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types of Panel Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#balanced-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balanced Panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unbalanced-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unbalanced Panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#short-vs-long-panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short vs Long Panels
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advantages-of-panel-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advantages of Panel Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advantages of Panel Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-control-for-unobserved-heterogeneity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Control for Unobserved Heterogeneity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-more-degrees-of-freedom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. More Degrees of Freedom
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-study-dynamics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Study Dynamics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-identify-effects-better" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Identify Effects Better
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-reduce-collinearity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Reduce Collinearity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disadvantages-and-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disadvantages and Challenges
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disadvantages and Challenges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-data-collection-costs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Data Collection Costs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-attrition-bias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Attrition Bias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-limited-time-variation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Limited Time Variation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-short-panels-and-bias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Short Panels and Bias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-complex-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Complex Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#panel-data-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Data Notation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Panel Data Notation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Notation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-subscript-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Subscript Conventions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panel-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Transformations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-panel-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Panel Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="When to Use Panel Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use-panel-methods-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Panel Methods When:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-cross-sectional-methods-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Cross-Sectional Methods When:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-time-series-methods-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Time-Series Methods When:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Applications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Applications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microeconometrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microeconometrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macroeconomics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Macroeconomics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#health-economics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health Economics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development-economics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Economics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-why-panel-data-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Why Panel Data Matters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example: Why Panel Data Matters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cross-sectional-analysis-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Sectional Analysis (Wrong)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panel-analysis-correct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Analysis (Correct)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Changed?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fixed_vs_random/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fixed Effects vs Random Effects: A Deep Dive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gmm_explained/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM for Panel Data: A Complete Explanation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/gmm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="introduction-to-panel-data">Introduction to Panel Data<a class="headerlink" href="#introduction-to-panel-data" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Understanding panel data structure, advantages, and when to use panel methods.</p>
+</blockquote>
+<h2 id="what-is-panel-data">What is Panel Data?<a class="headerlink" href="#what-is-panel-data" title="Permanent link">&para;</a></h2>
+<p>Panel data (also called <strong>longitudinal data</strong> or <strong>cross-sectional time-series data</strong>) combines two dimensions:</p>
+<ol>
+<li><strong>Cross-sectional</strong>: Multiple entities (firms, individuals, countries, etc.)</li>
+<li><strong>Time-series</strong>: Each entity observed over multiple time periods</li>
+</ol>
+<p><strong>Example:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>   firm  year   sales  profit
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>0     1  2020   100.0    10.0
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>1     1  2021   120.0    15.0
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>2     1  2022   135.0    18.0
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>3     2  2020    80.0     8.0
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>4     2  2021    85.0     9.0
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>5     2  2022    90.0    10.0
+</span></code></pre></div>
+<p><strong>Structure:</strong>
+- <strong>N = 2 firms</strong> (cross-sectional units)
+- <strong>T = 3 years</strong> (time periods)
+- <strong>N × T = 6 observations</strong></p>
+<h2 id="panel-data-vs-other-data-types">Panel Data vs Other Data Types<a class="headerlink" href="#panel-data-vs-other-data-types" title="Permanent link">&para;</a></h2>
+<h3 id="cross-sectional-data">Cross-Sectional Data<a class="headerlink" href="#cross-sectional-data" title="Permanent link">&para;</a></h3>
+<p><strong>One</strong> observation per entity at <strong>one</strong> point in time:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>   firm   sales  profit
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>0     1   120.0    15.0
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>1     2    85.0     9.0
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>2     3   150.0    20.0
+</span></code></pre></div>
+<ul>
+<li><strong>N entities, T = 1</strong></li>
+<li>Cannot study dynamics (changes over time)</li>
+<li>Cannot control for unobserved time-invariant characteristics</li>
+</ul>
+<h3 id="time-series-data">Time-Series Data<a class="headerlink" href="#time-series-data" title="Permanent link">&para;</a></h3>
+<p><strong>One</strong> entity observed over <strong>multiple</strong> time periods:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>   year   gdp  inflation
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>0  2020  20.5       2.1
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>1  2021  21.2       2.5
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>2  2022  21.8       3.2
+</span></code></pre></div>
+<ul>
+<li><strong>N = 1 entity, T periods</strong></li>
+<li>Can study dynamics</li>
+<li>Cannot control for cross-sectional heterogeneity</li>
+</ul>
+<h3 id="panel-data">Panel Data<a class="headerlink" href="#panel-data" title="Permanent link">&para;</a></h3>
+<p><strong>Multiple</strong> entities over <strong>multiple</strong> time periods:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>   country  year   gdp  inflation
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>0      USA  2020  20.5       2.1
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>1      USA  2021  21.2       2.5
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>2      CAN  2020  1.65       0.7
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>3      CAN  2021  1.72       1.2
+</span></code></pre></div>
+<ul>
+<li><strong>N entities, T periods</strong></li>
+<li>Can study both dynamics AND control for heterogeneity</li>
+<li><strong>Best of both worlds!</strong></li>
+</ul>
+<h2 id="types-of-panel-data">Types of Panel Data<a class="headerlink" href="#types-of-panel-data" title="Permanent link">&para;</a></h2>
+<h3 id="balanced-panel">Balanced Panel<a class="headerlink" href="#balanced-panel" title="Permanent link">&para;</a></h3>
+<p>Every entity observed in <strong>all</strong> time periods.</p>
+<p><strong>Example:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>   firm  year  sales
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>0     1  2020    100
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>1     1  2021    120  ← Firm 1: all 3 years ✓
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>2     1  2022    135
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>3     2  2020     80
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>4     2  2021     85  ← Firm 2: all 3 years ✓
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>5     2  2022     90
+</span></code></pre></div>
+<p><strong>Characteristics:</strong>
+- All N entities have exactly T observations
+- Total observations = N × T
+- Easier to analyze (some methods require balance)</p>
+<h3 id="unbalanced-panel">Unbalanced Panel<a class="headerlink" href="#unbalanced-panel" title="Permanent link">&para;</a></h3>
+<p>Some entities missing in some periods.</p>
+<p><strong>Example:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>   firm  year  sales
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>0     1  2020    100
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>1     1  2021    120  ← Firm 1: only 2 years
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>2     2  2020     80
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>3     2  2021     85
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>4     2  2022     90  ← Firm 2: all 3 years
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>5     3  2021    200
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>6     3  2022    215  ← Firm 3: only 2 years
+</span></code></pre></div>
+<p><strong>Characteristics:</strong>
+- Different T_i for different entities
+- Total observations &lt; N × T_max
+- Common in practice (attrition, entry/exit)
+- PanelBox handles unbalanced panels automatically</p>
+<h3 id="short-vs-long-panels">Short vs Long Panels<a class="headerlink" href="#short-vs-long-panels" title="Permanent link">&para;</a></h3>
+<p><strong>Short (wide) panel:</strong> Large N, small T
+- Example: N = 10,000 individuals, T = 5 years
+- Typical in microeconometrics (firm, household data)
+- Asymptotic theory: N → ∞, T fixed
+- <strong>Use:</strong> Fixed Effects, Random Effects, GMM</p>
+<p><strong>Long (narrow) panel:</strong> Small N, large T
+- Example: N = 50 countries, T = 60 years
+- Typical in macroeconomics
+- Asymptotic theory: T → ∞ (or both N,T → ∞)
+- <strong>Use:</strong> Panel cointegration, panel VARs, unit root tests</p>
+<h2 id="advantages-of-panel-data">Advantages of Panel Data<a class="headerlink" href="#advantages-of-panel-data" title="Permanent link">&para;</a></h2>
+<h3 id="1-control-for-unobserved-heterogeneity">1. Control for Unobserved Heterogeneity<a class="headerlink" href="#1-control-for-unobserved-heterogeneity" title="Permanent link">&para;</a></h3>
+<p><strong>Problem (cross-sectional):</strong> Omitted variable bias</p>
+<p>Example: Estimate effect of education on wages</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>wage_i = β₀ + β₁·education_i + ε_i
+</span></code></pre></div>
+<p><strong>Omitted:</strong> "Ability" (unobserved, correlated with education)</p>
+<p><strong>Bias:</strong> β̂₁ overestimates education effect</p>
+<hr />
+<p><strong>Solution (panel):</strong> Individual fixed effects</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>wage_it = α_i + β₁·education_it + ε_it
+</span></code></pre></div>
+<p>Where <code>α_i</code> captures time-invariant ability.</p>
+<p><strong>Result:</strong> Consistent estimate of β₁ (controls for ability)</p>
+<h3 id="2-more-degrees-of-freedom">2. More Degrees of Freedom<a class="headerlink" href="#2-more-degrees-of-freedom" title="Permanent link">&para;</a></h3>
+<p><strong>Cross-sectional:</strong> N = 500 observations</p>
+<p><strong>Panel:</strong> N = 500 firms, T = 10 years → 5,000 observations</p>
+<p><strong>Benefits:</strong>
+- More precise estimates (smaller standard errors)
+- Can estimate more parameters
+- Better power for hypothesis tests</p>
+<h3 id="3-study-dynamics">3. Study Dynamics<a class="headerlink" href="#3-study-dynamics" title="Permanent link">&para;</a></h3>
+<p><strong>Panel allows:</strong> Including lagged dependent variables</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>y_it = γ·y_i,t-1 + β·x_it + α_i + ε_it
+</span></code></pre></div>
+<p><strong>Examples:</strong>
+- Investment depends on past investment (habit formation)
+- Current health depends on past health (state dependence)
+- GDP growth exhibits persistence</p>
+<p><strong>Cross-sectional data:</strong> Cannot estimate γ</p>
+<h3 id="4-identify-effects-better">4. Identify Effects Better<a class="headerlink" href="#4-identify-effects-better" title="Permanent link">&para;</a></h3>
+<p><strong>With panel data, you can identify:</strong></p>
+<ul>
+<li><strong>Within-entity effects:</strong> How does X affect Y <strong>within</strong> the same firm over time?</li>
+<li><strong>Between-entity effects:</strong> How do differences in X across firms relate to Y?</li>
+</ul>
+<p><strong>Example:</strong> Effect of firm size on productivity</p>
+<ul>
+<li><strong>Within:</strong> As a firm grows, does productivity increase?</li>
+<li><strong>Between:</strong> Are larger firms more productive than smaller ones?</li>
+</ul>
+<p>These can differ! Panel data lets you distinguish them.</p>
+<h3 id="5-reduce-collinearity">5. Reduce Collinearity<a class="headerlink" href="#5-reduce-collinearity" title="Permanent link">&para;</a></h3>
+<p><strong>Problem (cross-sectional):</strong> Two variables highly correlated</p>
+<p><strong>Panel:</strong> Variation <strong>within</strong> entities over time may differ from variation <strong>between</strong> entities</p>
+<p><strong>Example:</strong>
+- Cross-sectionally: Education and income highly correlated
+- Within-person over time: Education changes slowly, income fluctuates</p>
+<p><strong>Result:</strong> Better identification of separate effects</p>
+<h2 id="disadvantages-and-challenges">Disadvantages and Challenges<a class="headerlink" href="#disadvantages-and-challenges" title="Permanent link">&para;</a></h2>
+<h3 id="1-data-collection-costs">1. Data Collection Costs<a class="headerlink" href="#1-data-collection-costs" title="Permanent link">&para;</a></h3>
+<p><strong>Panel data requires:</strong>
+- Tracking same entities over time
+- Consistent measurement across periods
+- Dealing with attrition (entities leaving sample)</p>
+<p><strong>Cost:</strong> More expensive than single cross-section</p>
+<h3 id="2-attrition-bias">2. Attrition Bias<a class="headerlink" href="#2-attrition-bias" title="Permanent link">&para;</a></h3>
+<p><strong>Problem:</strong> Entities drop out non-randomly</p>
+<p><strong>Example:</strong> Less profitable firms exit market</p>
+<p><strong>Bias:</strong> Surviving firms are systematically different</p>
+<p><strong>Solutions:</strong>
+- Attrition correction models
+- Selection models (Heckman)
+- Inverse probability weighting</p>
+<h3 id="3-limited-time-variation">3. Limited Time Variation<a class="headerlink" href="#3-limited-time-variation" title="Permanent link">&para;</a></h3>
+<p><strong>Problem:</strong> Some variables don't change much over time</p>
+<p><strong>Example:</strong> Education, gender, country of birth</p>
+<p><strong>Issue:</strong> Fixed Effects <strong>drops</strong> time-invariant variables</p>
+<p><strong>Trade-off:</strong> Can't estimate effect of time-invariant X with FE</p>
+<h3 id="4-short-panels-and-bias">4. Short Panels and Bias<a class="headerlink" href="#4-short-panels-and-bias" title="Permanent link">&para;</a></h3>
+<p><strong>Problem:</strong> With small T, Fixed Effects has bias (Nickell bias)</p>
+<p><strong>Magnitude:</strong> O(1/T), so T &lt; 10 can be problematic</p>
+<p><strong>Solution:</strong> Use GMM estimators instead</p>
+<h3 id="5-complex-analysis">5. Complex Analysis<a class="headerlink" href="#5-complex-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Panel methods are more complex:</strong>
+- Need to choose between Pooled OLS, FE, RE, GMM
+- More diagnostic tests required
+- More assumptions to verify
+- Computational burden (large N × T)</p>
+<h2 id="panel-data-notation">Panel Data Notation<a class="headerlink" href="#panel-data-notation" title="Permanent link">&para;</a></h2>
+<h3 id="standard-notation">Standard Notation<a class="headerlink" href="#standard-notation" title="Permanent link">&para;</a></h3>
+<p><strong>Entity index:</strong> i = 1, 2, ..., N</p>
+<p><strong>Time index:</strong> t = 1, 2, ..., T (or T_i if unbalanced)</p>
+<p><strong>Observation:</strong> y_it (outcome for entity i at time t)</p>
+<p><strong>Regressor:</strong> X_it (can be scalar or vector)</p>
+<h3 id="common-subscript-conventions">Common Subscript Conventions<a class="headerlink" href="#common-subscript-conventions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>y_it</td>
+<td>Observation i at time t</td>
+<td>sales_it</td>
+</tr>
+<tr>
+<td>y_i,t-1</td>
+<td>Observation i at time t-1 (lag)</td>
+<td>sales_i,t-1</td>
+</tr>
+<tr>
+<td>ȳ_i</td>
+<td>Entity i mean over time</td>
+<td>ȳ_i = (1/T)Σ_t y_it</td>
+</tr>
+<tr>
+<td>ȳ_t</td>
+<td>Time t mean over entities</td>
+<td>ȳ_t = (1/N)Σ_i y_it</td>
+</tr>
+<tr>
+<td>ȳ</td>
+<td>Grand mean</td>
+<td>ȳ = (1/NT)Σ_i Σ_t y_it</td>
+</tr>
+</tbody>
+</table>
+<h3 id="panel-transformations">Panel Transformations<a class="headerlink" href="#panel-transformations" title="Permanent link">&para;</a></h3>
+<p><strong>Within (demeaning):</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ỹ_it = y_it - ȳ_i
+</span></code></pre></div>
+Removes entity-specific means (used in Fixed Effects)</p>
+<p><strong>Between (entity means):</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ȳ_i = (1/T_i)Σ_t y_it
+</span></code></pre></div>
+Cross-sectional regression of entity means</p>
+<p><strong>First-difference:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Δy_it = y_it - y_i,t-1
+</span></code></pre></div>
+Removes time-invariant effects (used in Difference GMM)</p>
+<h2 id="when-to-use-panel-methods">When to Use Panel Methods<a class="headerlink" href="#when-to-use-panel-methods" title="Permanent link">&para;</a></h2>
+<h3 id="use-panel-methods-when">Use Panel Methods When:<a class="headerlink" href="#use-panel-methods-when" title="Permanent link">&para;</a></h3>
+<p>✅ You have multiple entities observed over multiple periods</p>
+<p>✅ Unobserved entity-specific effects likely exist</p>
+<p>✅ These effects may be correlated with regressors</p>
+<p>✅ You want to study dynamics or changes over time</p>
+<p>✅ You want more precise estimates (more data)</p>
+<h3 id="use-cross-sectional-methods-when">Use Cross-Sectional Methods When:<a class="headerlink" href="#use-cross-sectional-methods-when" title="Permanent link">&para;</a></h3>
+<p>❌ Only one time period available</p>
+<p>❌ No unobserved heterogeneity</p>
+<p>❌ Pooled OLS is sufficient (Breusch-Pagan test confirms)</p>
+<p>❌ Time dimension is irrelevant to research question</p>
+<h3 id="use-time-series-methods-when">Use Time-Series Methods When:<a class="headerlink" href="#use-time-series-methods-when" title="Permanent link">&para;</a></h3>
+<p>❌ Only one entity</p>
+<p>❌ Focus is on aggregate dynamics, forecasting</p>
+<p>❌ Interested in unit roots, cointegration for single series</p>
+<h2 id="common-applications">Common Applications<a class="headerlink" href="#common-applications" title="Permanent link">&para;</a></h2>
+<h3 id="microeconometrics">Microeconometrics<a class="headerlink" href="#microeconometrics" title="Permanent link">&para;</a></h3>
+<p><strong>Labor economics:</strong>
+- Wage determination over worker careers
+- Effect of education/training on earnings
+- Employment dynamics</p>
+<p><strong>Corporate finance:</strong>
+- Firm investment decisions
+- Capital structure choices
+- Dividend policy</p>
+<p><strong>Industrial organization:</strong>
+- Firm productivity evolution
+- Market entry/exit
+- Price dynamics</p>
+<h3 id="macroeconomics">Macroeconomics<a class="headerlink" href="#macroeconomics" title="Permanent link">&para;</a></h3>
+<p><strong>Growth:</strong>
+- Determinants of economic growth across countries
+- Convergence testing
+- Institutions and development</p>
+<p><strong>Trade:</strong>
+- Gravity models of bilateral trade
+- Effects of trade agreements
+- Exchange rate effects</p>
+<p><strong>Public finance:</strong>
+- Tax competition between jurisdictions
+- Government spending effects
+- Fiscal policy effectiveness</p>
+<h3 id="health-economics">Health Economics<a class="headerlink" href="#health-economics" title="Permanent link">&para;</a></h3>
+<p><strong>Individual health:</strong>
+- Health production functions
+- Effect of insurance on utilization
+- Lifestyle choices and outcomes</p>
+<p><strong>Hospital performance:</strong>
+- Quality and efficiency over time
+- Policy interventions
+- Technology adoption</p>
+<h3 id="development-economics">Development Economics<a class="headerlink" href="#development-economics" title="Permanent link">&para;</a></h3>
+<p><strong>Households:</strong>
+- Poverty dynamics
+- Consumption smoothing
+- Migration decisions</p>
+<p><strong>Villages/regions:</strong>
+- Development program effects
+- Infrastructure impact
+- Climate shocks</p>
+<h2 id="example-why-panel-data-matters">Example: Why Panel Data Matters<a class="headerlink" href="#example-why-panel-data-matters" title="Permanent link">&para;</a></h2>
+<h3 id="cross-sectional-analysis-wrong">Cross-Sectional Analysis (Wrong)<a class="headerlink" href="#cross-sectional-analysis-wrong" title="Permanent link">&para;</a></h3>
+<p><strong>Data:</strong> 100 firms in 2022</p>
+<p><strong>Model:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>profit_i = β₀ + β₁·size_i + ε_i
+</span></code></pre></div></p>
+<p><strong>Result:</strong> β̂₁ = 0.15 (larger firms more profitable)</p>
+<p><strong>Problem:</strong> Omitted variable bias!
+- Management quality (α_i) affects both size and profit
+- Correlation between α_i and size biases β̂₁ upward</p>
+<h3 id="panel-analysis-correct">Panel Analysis (Correct)<a class="headerlink" href="#panel-analysis-correct" title="Permanent link">&para;</a></h3>
+<p><strong>Data:</strong> Same 100 firms, 2015-2022 (T=8 years)</p>
+<p><strong>Model:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>profit_it = α_i + β₁·size_it + ε_it
+</span></code></pre></div></p>
+<p><strong>Result:</strong> β̂₁ = 0.08 (smaller effect after controlling for α_i)</p>
+<p><strong>Interpretation:</strong> Within a firm, size increases profit by 0.08 (not 0.15)</p>
+<p><strong>Key insight:</strong> Cross-sectional estimate was biased by 87.5%!</p>
+<h3 id="what-changed">What Changed?<a class="headerlink" href="#what-changed" title="Permanent link">&para;</a></h3>
+<p>Fixed Effects controls for <strong>time-invariant</strong> firm characteristics:
+- Management quality
+- Industry
+- Location
+- Culture
+- Brand value</p>
+<p><strong>Result:</strong> Estimates the <strong>causal effect</strong> of size on profit</p>
+<h2 id="key-takeaways">Key Takeaways<a class="headerlink" href="#key-takeaways" title="Permanent link">&para;</a></h2>
+<p>✅ <strong>Panel data</strong> = Cross-sectional + Time-series</p>
+<p>✅ <strong>Advantages:</strong>
+- Control for unobserved heterogeneity
+- Study dynamics
+- More data (precision)
+- Better identification</p>
+<p>⚠️ <strong>Challenges:</strong>
+- Data collection costs
+- Attrition
+- Complexity of methods
+- Short panel bias</p>
+<p>🎯 <strong>When to use:</strong>
+- Multiple entities, multiple periods
+- Unobserved effects likely correlated with X
+- Want to study changes over time</p>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p><strong>Learn the methods:</strong></p>
+<ol>
+<li>
+<p><strong><a href="../../tutorials/01_getting_started/">Tutorial 1: Getting Started</a></strong>: Your first panel model</p>
+</li>
+<li>
+<p><strong><a href="../../tutorials/02_static_models/">Tutorial 2: Static Models</a></strong>: Pooled OLS, FE, RE</p>
+</li>
+<li>
+<p><strong><a href="../../how-to/choose_model/">How-To: Choose Model</a></strong>: Decision guide</p>
+</li>
+</ol>
+<p><strong>Deep dives:</strong></p>
+<ol>
+<li>
+<p><strong><a href="../fixed_vs_random/">Guide: Fixed vs Random</a></strong>: Detailed comparison</p>
+</li>
+<li>
+<p><strong><a href="../gmm_explained/">Guide: GMM Explained</a></strong>: Dynamic panel methods</p>
+</li>
+</ol>
+<p><strong>Further reading:</strong></p>
+<ul>
+<li><strong>Hsiao (2014)</strong>: <em>Analysis of Panel Data</em> (3<sup>rd</sup> ed.)</li>
+<li><strong>Wooldridge (2010)</strong>: <em>Econometric Analysis of Cross Section and Panel Data</em></li>
+<li><strong>Baltagi (2021)</strong>: <em>Econometric Analysis of Panel Data</em> (6<sup>th</sup> ed.)</li>
+</ul>
+<hr />
+<p><strong>Panel data is powerful because it lets you see both across entities AND over time—giving you two sources of variation to identify effects more credibly.</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../how-to/interpret_tests/" class="md-footer__link md-footer__link--prev" aria-label="Previous: How to Interpret Diagnostic Tests">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                How to Interpret Diagnostic Tests
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../fixed_vs_random/" class="md-footer__link md-footer__link--next" aria-label="Next: Fixed Effects vs Random Effects: A Deep Dive">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Fixed Effects vs Random Effects: A Deep Dive
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 PanelBox Development Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/panelbox/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

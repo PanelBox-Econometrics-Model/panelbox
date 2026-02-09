@@ -1,0 +1,2299 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python library for panel data econometrics with GMM, Fixed Effects, and Random Effects">
+      
+      
+        <meta name="author" content="PanelBox Development Team">
+      
+      
+        <link rel="canonical" href="https://panelbox-econometrics-model.github.io/panelbox/guides/gmm_explained/">
+      
+      
+        <link rel="prev" href="../fixed_vs_random/">
+      
+      
+        <link rel="next" href="../../api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>GMM for Panel Data: A Complete Explanation - PanelBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gmm-for-panel-data-a-complete-explanation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PanelBox Documentation" class="md-header__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PanelBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              GMM for Panel Data: A Complete Explanation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PanelBox Documentation" class="md-nav__button md-logo" aria-label="PanelBox Documentation" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    PanelBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PanelBox-Econometrics-Model/panelbox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_static_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 2: Static Panel Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_gmm_intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial 3: Introduction to GMM for Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/load_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Load Your Own Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/choose_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/interpret_tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Interpret Diagnostic Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Explanation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Explanation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../panel_data_intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fixed_vs_random/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fixed Effects vs Random Effects: A Deep Dive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM for Panel Data: A Complete Explanation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM for Panel Data: A Complete Explanation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dynamic-panel-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Dynamic Panel Problem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Dynamic Panel Problem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-fixed-effects-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Fixed Effects Fails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-gmm-solution-moment-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The GMM Solution: Moment Conditions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The GMM Solution: Moment Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-insight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Insight
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#first-differencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-Differencing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instruments-the-gmm-idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instruments: The GMM Idea
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#difference-gmm-arellano-bond-1991" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Difference GMM (Arellano-Bond 1991)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Difference GMM (Arellano-Bond 1991)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#moment-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moment Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instrument-matrix-without-collapse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instrument Matrix (Without Collapse)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#collapsed-instruments-roodman-2009" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Collapsed Instruments (Roodman 2009)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gmm-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMM Estimation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windmeijer-correction-2005" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windmeijer Correction (2005)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-gmm-blundell-bond-1998" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System GMM (Blundell-Bond 1998)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="System GMM (Blundell-Bond 1998)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-system-gmm-idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The System GMM Idea
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#additional-moment-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Moment Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#efficiency-gain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Efficiency Gain
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estimation-steps-detailed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estimation Steps (Detailed)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Estimation Steps (Detailed)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-step-system-gmm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Step System GMM
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diagnostic-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostic Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diagnostic Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hansen-j-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hansen J Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ar1-and-ar2-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AR(1) and AR(2) Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#difference-in-hansen-test-system-gmm-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Difference-in-Hansen Test (System GMM only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-gmm-works-and-when-it-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When GMM Works and When It Fails
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="When GMM Works and When It Fails">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gmm-works-well-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMM Works Well When:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gmm-fails-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMM Fails When:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practical Workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Practical Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-choose-difference-or-system-gmm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Choose Difference or System GMM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-start-conservative" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Start Conservative
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-check-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Check Diagnostics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-if-tests-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: If Tests Fail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-compare-difference-and-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Compare Difference and System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/gmm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GMM Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gmm-for-panel-data-a-complete-explanation">GMM for Panel Data: A Complete Explanation<a class="headerlink" href="#gmm-for-panel-data-a-complete-explanation" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Deep dive into the theory, mechanics, and intuition behind Generalized Method of Moments (GMM) estimators for dynamic panel data.</p>
+</blockquote>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>This guide provides a comprehensive explanation of GMM for panel data:</p>
+<ul>
+<li><strong>Why GMM is needed</strong> (the dynamic panel bias problem)</li>
+<li><strong>Moment conditions</strong> and instrument construction</li>
+<li><strong>Difference GMM</strong> (Arellano-Bond 1991)</li>
+<li><strong>System GMM</strong> (Blundell-Bond 1998)</li>
+<li><strong>Estimation mechanics</strong> (one-step, two-step)</li>
+<li><strong>Diagnostic tests</strong> and their interpretation</li>
+<li><strong>When GMM works</strong> and when it fails</li>
+</ul>
+<h2 id="the-dynamic-panel-problem">The Dynamic Panel Problem<a class="headerlink" href="#the-dynamic-panel-problem" title="Permanent link">&para;</a></h2>
+<h3 id="the-model">The Model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h3>
+<p>Consider a <strong>dynamic panel model</strong>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>y_it = γ y_{i,t-1} + X_it&#39;β + α_i + ε_it
+</span></code></pre></div>
+<p><strong>Where:</strong>
+- <code>y_{i,t-1}</code> = lagged dependent variable (dynamics)
+- <code>X_it</code> = exogenous regressors
+- <code>α_i</code> = entity-specific fixed effect
+- <code>ε_it</code> = idiosyncratic error</p>
+<p><strong>Assumptions:</strong>
+- E[α_i] = 0
+- E[ε_it] = 0
+- E[ε_it | ε_is] = 0 for all t ≠ s (no serial correlation)
+- E[X_it ε_is] = 0 for all t, s (strict exogeneity of X)</p>
+<h3 id="why-fixed-effects-fails">Why Fixed Effects Fails<a class="headerlink" href="#why-fixed-effects-fails" title="Permanent link">&para;</a></h3>
+<p><strong>Naive approach:</strong> Use Fixed Effects (within transformation)</p>
+<p><strong>Problem:</strong> Within transformation creates correlation!</p>
+<p><strong>Proof:</strong></p>
+<p>Within transformation:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>(y_it - ȳ_i) = γ(y_{i,t-1} - ȳ_i) + (X_it - X̄_i)&#39;β + (ε_it - ε̄_i)
+</span></code></pre></div></p>
+<p><strong>Note:</strong>
+- <code>ȳ_i = (1/T)Σ_t y_it</code> includes <code>y_i,t-1</code>, <code>y_it</code>, <code>y_{i,t+1}</code>, etc.
+- <code>ε̄_i = (1/T)Σ_t ε_it</code> includes <code>ε_it</code></p>
+<p><strong>Correlation:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Cov(y_{i,t-1} - ȳ_i, ε_it - ε̄_i) ≠ 0
+</span></code></pre></div></p>
+<p>Even though <code>E[y_{i,t-1} ε_it] = 0</code>, the demeaning creates dependence!</p>
+<p><strong>Result:</strong> <strong>Nickell bias</strong> (biased and inconsistent estimates)</p>
+<p><strong>Magnitude:</strong> Bias = O(1/T)
+- T = 5: Bias ≈ 20%
+- T = 10: Bias ≈ 10%
+- T = 20: Bias ≈ 5%</p>
+<p><strong>Implication:</strong> Severe for short panels (T &lt; 10)</p>
+<h2 id="the-gmm-solution-moment-conditions">The GMM Solution: Moment Conditions<a class="headerlink" href="#the-gmm-solution-moment-conditions" title="Permanent link">&para;</a></h2>
+<h3 id="key-insight">Key Insight<a class="headerlink" href="#key-insight" title="Permanent link">&para;</a></h3>
+<p><strong>Cannot</strong> use levels with FE (demeaning causes correlation)</p>
+<p><strong>Solution:</strong> Use <strong>first-differences</strong> to eliminate α_i</p>
+<h3 id="first-differencing">First-Differencing<a class="headerlink" href="#first-differencing" title="Permanent link">&para;</a></h3>
+<p><strong>Difference equation:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Δy_it = γ Δy_{i,t-1} + Δ X_it&#39;β + Δε_it
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>where Δy_it = y_it - y_{i,t-1}
+</span></code></pre></div></p>
+<p><strong>Success:</strong> Fixed effect α_i is gone!</p>
+<p><strong>New problem:</strong> <code>Δy_{i,t-1}</code> is <strong>still</strong> correlated with <code>Δε_it</code></p>
+<p><strong>Proof:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Δy_{i,t-1} = y_{i,t-1} - y_{i,t-2}
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Δε_it = ε_it - ε_{i,t-1}
+</span></code></pre></div></p>
+<p>So <code>Δy_{i,t-1}</code> includes <code>y_{i,t-1}</code> which depends on <code>ε_{i,t-1}</code>, which appears in <code>Δε_it</code>!</p>
+<p><strong>Conclusion:</strong> OLS on differenced equation is still biased</p>
+<h3 id="instruments-the-gmm-idea">Instruments: The GMM Idea<a class="headerlink" href="#instruments-the-gmm-idea" title="Permanent link">&para;</a></h3>
+<p><strong>Question:</strong> What variables are:
+1. Correlated with <code>Δy_{i,t-1}</code> (relevant)
+2. Uncorrelated with <code>Δε_it</code> (exogenous)</p>
+<p><strong>Answer:</strong> <strong>Lagged levels</strong> <code>y_{i,t-2}, y_{i,t-3}, ...</code></p>
+<p><strong>Why this works:</strong></p>
+<p><strong>Moment condition:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>E[y_{i,t-s} Δε_it] = E[y_{i,t-s} (ε_it - ε_{i,t-1})] = 0  for s ≥ 2
+</span></code></pre></div></p>
+<p><strong>Proof (for s = 2):</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>E[y_{i,t-2} ε_it] = 0  (ε_it is future, y_{i,t-2} is past)
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>E[y_{i,t-2} ε_{i,t-1}] = 0  (no serial correlation in ε)
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>→ E[y_{i,t-2} Δε_it] = 0 ✓
+</span></code></pre></div></p>
+<p><strong>This is the foundation of GMM!</strong></p>
+<h2 id="difference-gmm-arellano-bond-1991">Difference GMM (Arellano-Bond 1991)<a class="headerlink" href="#difference-gmm-arellano-bond-1991" title="Permanent link">&para;</a></h2>
+<h3 id="moment-conditions">Moment Conditions<a class="headerlink" href="#moment-conditions" title="Permanent link">&para;</a></h3>
+<p>For each time period t, we have moment conditions:</p>
+<p><strong>t = 3:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>E[y_{i1} (Δy_{i3} - γ Δy_{i2} - Δ X_{i3}&#39;β)] = 0
+</span></code></pre></div></p>
+<p><strong>t = 4:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>E[y_{i1} (Δy_{i4} - γ Δy_{i3} - Δ X_{i4}&#39;β)] = 0
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>E[y_{i2} (Δy_{i4} - γ Δy_{i3} - Δ X_{i4}&#39;β)] = 0
+</span></code></pre></div></p>
+<p><strong>General (for period t):</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>E[y_is Δε_it] = 0  for s = 1, ..., t-2
+</span></code></pre></div></p>
+<p><strong>Number of moment conditions:</strong> Grows with T
+- t = 3: 1 instrument
+- t = 4: 2 instruments
+- t = T: T-2 instruments
+- <strong>Total:</strong> (T-2)(T-1)/2 instruments (without collapse)</p>
+<h3 id="instrument-matrix-without-collapse">Instrument Matrix (Without Collapse)<a class="headerlink" href="#instrument-matrix-without-collapse" title="Permanent link">&para;</a></h3>
+<p>For T = 5:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Period | Instruments
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>-------|------------------
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  3    | y_i1
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  4    | y_i1, y_i2
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  5    | y_i1, y_i2, y_i3
+</span></code></pre></div>
+<p><strong>Matrix Z_i:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>        [y_i1   0     0    0  ]
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Z_i =   [  0  y_i1  y_i2  0  ]
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>        [  0    0   y_i1 y_i2 y_i3]
+</span></code></pre></div></p>
+<p><strong>Problem:</strong> Instrument count explodes!</p>
+<h3 id="collapsed-instruments-roodman-2009">Collapsed Instruments (Roodman 2009)<a class="headerlink" href="#collapsed-instruments-roodman-2009" title="Permanent link">&para;</a></h3>
+<p><strong>Instead of</strong> using all lags separately...</p>
+<p><strong>Use:</strong> One instrument per period (linear combination)</p>
+<p><strong>Collapsed Z_i for T = 5:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>        [y_i1         0            0      ]
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Z_i =   [  0     (y_i1+y_i2)/2      0      ]
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>        [  0          0      (y_i1+y_i2+y_i3)/3]
+</span></code></pre></div></p>
+<p><strong>Result:</strong> Number of instruments = T - 2 (linear in T, not quadratic!)</p>
+<p><strong>In PanelBox:</strong> <code>collapse=True</code> always does this</p>
+<h3 id="gmm-estimation">GMM Estimation<a class="headerlink" href="#gmm-estimation" title="Permanent link">&para;</a></h3>
+<p><strong>Step 1: Form moment conditions</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>m_i(θ) = Z_i&#39; Δε_i(θ)
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>where Δε_i(θ) = Δy_i - γ Δy_i,(-1) - ΔX_i β
+</span></code></pre></div>
+<p><strong>Step 2: Minimize objective function</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>θ̂ = argmin_θ [Σ_i m_i(θ)]&#39; W [Σ_i m_i(θ)]
+</span></code></pre></div>
+<p>where W is a weighting matrix</p>
+<p><strong>Step 3: Choose W</strong></p>
+<p><strong>One-step GMM:</strong> W = I (identity matrix)</p>
+<p><strong>Two-step GMM:</strong>
+1. Estimate with W = I, get residuals
+2. Estimate optimal W = Σ̂^(-1) where Σ̂ = (1/N)Σ_i Z_i' Δε̂_i Δε̂_i' Z_i
+3. Re-estimate with optimal W</p>
+<p><strong>Two-step is asymptotically efficient</strong> (smallest variance)</p>
+<h3 id="windmeijer-correction-2005">Windmeijer Correction (2005)<a class="headerlink" href="#windmeijer-correction-2005" title="Permanent link">&para;</a></h3>
+<p><strong>Problem:</strong> Two-step SEs are <strong>downward biased</strong> in finite samples</p>
+<p><strong>Magnitude:</strong> Bias can be 30-50% (SEs too small!)</p>
+<p><strong>Solution:</strong> Windmeijer finite-sample correction</p>
+<p><strong>In PanelBox:</strong> Automatically applied when <code>robust=True</code></p>
+<h2 id="system-gmm-blundell-bond-1998">System GMM (Blundell-Bond 1998)<a class="headerlink" href="#system-gmm-blundell-bond-1998" title="Permanent link">&para;</a></h2>
+<h3 id="motivation">Motivation<a class="headerlink" href="#motivation" title="Permanent link">&para;</a></h3>
+<p><strong>Problem with Difference GMM:</strong> When y_it is <strong>persistent</strong> (near unit root), lagged levels are <strong>weak instruments</strong> for first-differences.</p>
+<p><strong>Intuition:</strong>
+- If <code>y_it ≈ y_{i,t-1}</code> (highly persistent)
+- Then <code>Δy_it ≈ 0</code> (small variation)
+- And <code>y_{i,t-2}</code> doesn't predict <code>Δy_it</code> well (weak instrument)</p>
+<p><strong>Consequence:</strong> Large standard errors, imprecise estimates</p>
+<h3 id="the-system-gmm-idea">The System GMM Idea<a class="headerlink" href="#the-system-gmm-idea" title="Permanent link">&para;</a></h3>
+<p><strong>Add level equations</strong> to the system with <strong>lagged differences as instruments</strong></p>
+<p><strong>System:</strong></p>
+<ol>
+<li>
+<p><strong>Difference equations</strong> (Arellano-Bond):
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Δy_it = γ Δy_{i,t-1} + ΔX_it&#39;β + Δε_it
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>Instruments: y_{i,t-2}, y_{i,t-3}, ... (levels)
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Level equations</strong> (additional):
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>y_it = γ y_{i,t-1} + X_it&#39;β + η_i + ε_it
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Instruments: Δy_{i,t-1}, Δy_{i,t-2}, ... (differences)
+</span></code></pre></div></p>
+</li>
+</ol>
+<p><strong>Key:</strong> Use lags of <strong>differences</strong> as instruments for <strong>levels</strong></p>
+<h3 id="additional-moment-conditions">Additional Moment Conditions<a class="headerlink" href="#additional-moment-conditions" title="Permanent link">&para;</a></h3>
+<p><strong>For level equation:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>E[Δy_{i,t-1} (α_i + ε_it)] = 0
+</span></code></pre></div></p>
+<p><strong>Critical assumption (stationarity of initial conditions):</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>E[Δy_{i,1} α_i] = 0
+</span></code></pre></div></p>
+<p><strong>Interpretation:</strong> Initial deviations from steady-state are uncorrelated with fixed effects</p>
+<p><strong>When this holds:</strong>
+- Time-series is stationary
+- Panel doesn't start at "event time" (e.g., firm entry)</p>
+<p><strong>When this fails:</strong>
+- Panel starts at event (firm entry, policy change)
+- Initial period is special</p>
+<h3 id="efficiency-gain">Efficiency Gain<a class="headerlink" href="#efficiency-gain" title="Permanent link">&para;</a></h3>
+<p><strong>Why System GMM is more efficient:</strong></p>
+<ol>
+<li><strong>More moment conditions</strong> (level equations added)</li>
+<li><strong>Uses level variation</strong> (not just differences)</li>
+<li><strong>Better instruments for persistent series</strong></li>
+</ol>
+<p><strong>Typical gain:</strong> 20-50% reduction in standard errors</p>
+<p><strong>Trade-off:</strong> Stronger assumption (stationarity of initial conditions)</p>
+<h2 id="estimation-steps-detailed">Estimation Steps (Detailed)<a class="headerlink" href="#estimation-steps-detailed" title="Permanent link">&para;</a></h2>
+<h3 id="two-step-system-gmm">Two-Step System GMM<a class="headerlink" href="#two-step-system-gmm" title="Permanent link">&para;</a></h3>
+<p><strong>Step 1: First-step estimation</strong></p>
+<ol>
+<li>Form instrument matrix Z_i (difference + level instruments)</li>
+<li>Set W = I (identity)</li>
+<li>Compute:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>θ̂₁ = (Σ_i Z_i&#39; X̃_i)&#39; W (Σ_i Z_i&#39; X̃_i))^(-1) (Σ_i Z_i&#39; X̃_i)&#39; W (Σ_i Z_i&#39; ỹ_i)
+</span></code></pre></div></li>
+<li>Compute residuals: ε̂₁ = ỹ - X̃ θ̂₁</li>
+</ol>
+<p><strong>Step 2: Optimal weighting matrix</strong></p>
+<ol>
+<li>Construct Σ̂₁ = (1/N) Σ_i Z_i' ε̂₁ ε̂₁' Z_i</li>
+<li>Set W = Σ̂₁^(-1)</li>
+</ol>
+<p><strong>Step 3: Second-step estimation</strong></p>
+<ol>
+<li>Re-estimate with optimal W:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>θ̂₂ = (Σ_i Z_i&#39; X̃_i)&#39; W (Σ_i Z_i&#39; X̃_i))^(-1) (Σ_i Z_i&#39; X̃_i)&#39; W (Σ_i Z_i&#39; ỹ_i)
+</span></code></pre></div></li>
+</ol>
+<p><strong>Step 4: Windmeijer correction</strong></p>
+<ol>
+<li>Compute corrected variance:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Var(θ̂₂) = (1/N) D&#39;_N Σ̂_corr D_N
+</span></code></pre></div>
+   with finite-sample adjustment</li>
+</ol>
+<h2 id="diagnostic-tests">Diagnostic Tests<a class="headerlink" href="#diagnostic-tests" title="Permanent link">&para;</a></h2>
+<h3 id="hansen-j-test">Hansen J Test<a class="headerlink" href="#hansen-j-test" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose:</strong> Test overidentifying restrictions</p>
+<p><strong>Statistic:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>J = N · (Σ_i Z_i&#39; ê_i)&#39; Σ̂^(-1) (Σ_i Z_i&#39; ê_i) ~ χ²(q - k)
+</span></code></pre></div></p>
+<p>where q = # instruments, k = # parameters</p>
+<p><strong>Interpretation:</strong></p>
+<table>
+<thead>
+<tr>
+<th>J statistic</th>
+<th>p-value</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Small</td>
+<td>p &gt; 0.25</td>
+<td>Strong evidence instruments valid</td>
+</tr>
+<tr>
+<td>Moderate</td>
+<td>0.10 &lt; p &lt; 0.25</td>
+<td>Instruments likely valid</td>
+</tr>
+<tr>
+<td>Large</td>
+<td>p &lt; 0.10</td>
+<td>Instruments may be invalid</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Problem:</strong> With too many instruments, J → 0 (always p ≈ 1)</p>
+<p><strong>Solution:</strong> <strong>Always use collapse=True</strong></p>
+<h3 id="ar1-and-ar2-tests">AR(1) and AR(2) Tests<a class="headerlink" href="#ar1-and-ar2-tests" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose:</strong> Test for serial correlation in <strong>differenced</strong> errors</p>
+<p><strong>AR(m) statistic:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>AR(m) = (Σ_i Δê_it Δê_{i,t-m}) / √Var(Σ_i Δê_it Δê_{i,t-m})
+</span></code></pre></div></p>
+<p><strong>Under H₀:</strong> AR(m) ~ N(0, 1)</p>
+<p><strong>Expected results:</strong></p>
+<p><strong>AR(1) test:</strong>
+- <strong>Typically rejects</strong> (p &lt; 0.05) → Expected!
+- Mechanical due to MA(1) structure in Δε_it</p>
+<p><strong>AR(2) test:</strong>
+- <strong>Should NOT reject</strong> (p &gt; 0.10) → Critical!
+- If rejects → moment conditions E[y_{i,t-2} Δε_it] = 0 invalid</p>
+<p><strong>Intuition:</strong></p>
+<p>If AR(2) rejects:
+- Serial correlation in levels: E[ε_it ε_{i,t-2}] ≠ 0
+- Then E[y_{i,t-2} Δε_it] ≠ 0 (instruments invalid!)
+- GMM estimator is inconsistent</p>
+<h3 id="difference-in-hansen-test-system-gmm-only">Difference-in-Hansen Test (System GMM only)<a class="headerlink" href="#difference-in-hansen-test-system-gmm-only" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose:</strong> Test validity of additional level instruments</p>
+<p><strong>Statistic:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>Diff-Hansen = J_system - J_difference
+</span></code></pre></div></p>
+<p><strong>Under H₀:</strong> Diff-Hansen ~ χ²(q_level)</p>
+<p><strong>Interpretation:</strong></p>
+<table>
+<thead>
+<tr>
+<th>p-value</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p &gt; 0.10</td>
+<td>Level instruments valid</td>
+</tr>
+<tr>
+<td>p &lt; 0.10</td>
+<td>Level instruments invalid → Use Difference GMM</td>
+</tr>
+</tbody>
+</table>
+<p><strong>When to use:</strong> To check if System GMM assumptions hold</p>
+<h2 id="when-gmm-works-and-when-it-fails">When GMM Works and When It Fails<a class="headerlink" href="#when-gmm-works-and-when-it-fails" title="Permanent link">&para;</a></h2>
+<h3 id="gmm-works-well-when">GMM Works Well When:<a class="headerlink" href="#gmm-works-well-when" title="Permanent link">&para;</a></h3>
+<p>✅ <strong>Short panel</strong> (small T, large N)
+- T = 5-10 years, N = 500+ entities
+- Asymptotic theory relies on N → ∞</p>
+<p>✅ <strong>No serial correlation</strong> in ε_it
+- Critical for moment conditions
+- AR(2) test should pass</p>
+<p>✅ <strong>Moderate persistence</strong> (for Difference GMM)
+- 0.3 &lt; γ &lt; 0.8
+- Instruments have enough variation</p>
+<p>✅ <strong>High persistence</strong> (for System GMM)
+- γ &gt; 0.8
+- Additional level moments help</p>
+<p>✅ <strong>Enough lags available</strong>
+- Need t ≥ 3 for Difference GMM
+- Preferably T ≥ 5</p>
+<h3 id="gmm-fails-when">GMM Fails When:<a class="headerlink" href="#gmm-fails-when" title="Permanent link">&para;</a></h3>
+<p>❌ <strong>Too many instruments</strong>
+- Without collapse: q/N &gt; 1
+- Overfitting, Hansen J loses power</p>
+<p>❌ <strong>Serial correlation</strong> in levels
+- E[ε_it ε_{i,t-s}] ≠ 0 for s &gt; 0
+- Invalidates moment conditions
+- AR(2) test will reject</p>
+<p>❌ <strong>Weak instruments</strong> (Difference GMM)
+- Near unit root (γ ≈ 1)
+- Very persistent series
+- <strong>Solution:</strong> Use System GMM</p>
+<p>❌ <strong>Very short panel</strong> (T &lt; 5)
+- Too few instruments
+- Large bias</p>
+<p>❌ <strong>Measurement error</strong>
+- Amplified in differences
+- Larger bias than levels</p>
+<p>❌ <strong>Initial conditions violated</strong> (System GMM)
+- Panel starts at event time
+- E[Δy_{i1} α_i] ≠ 0
+- <strong>Solution:</strong> Use Difference GMM</p>
+<h2 id="practical-workflow">Practical Workflow<a class="headerlink" href="#practical-workflow" title="Permanent link">&para;</a></h2>
+<h3 id="step-1-choose-difference-or-system-gmm">Step 1: Choose Difference or System GMM<a class="headerlink" href="#step-1-choose-difference-or-system-gmm" title="Permanent link">&para;</a></h3>
+<p><strong>Flow:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>Is series highly persistent (ρ &gt; 0.8)?
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>  YES → Try System GMM (more efficient)
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>  NO → Start with Difference GMM (fewer assumptions)
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>Does panel start at event time?
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>  YES → Use Difference GMM
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>  NO → System GMM OK
+</span></code></pre></div>
+<h3 id="step-2-start-conservative">Step 2: Start Conservative<a class="headerlink" href="#step-2-start-conservative" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">gmm</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">DifferenceGMM</span><span class="p">(</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="n">dep_var</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    <span class="n">lags</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>              <span class="c1"># One lag of y</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>    <span class="n">exog_vars</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x1&#39;</span><span class="p">],</span>    <span class="c1"># Few exog vars</span>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>    <span class="n">id_var</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>    <span class="n">time_var</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>    <span class="n">collapse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>       <span class="c1"># ALWAYS</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>    <span class="n">robust</span><span class="o">=</span><span class="kc">True</span>          <span class="c1"># Windmeijer correction</span>
+</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="p">)</span>
+</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>
+</span><span id="__span-26-12"><a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="n">results</span> <span class="o">=</span> <span class="n">gmm</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span></code></pre></div>
+<h3 id="step-3-check-diagnostics">Step 3: Check Diagnostics<a class="headerlink" href="#step-3-check-diagnostics" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># Hansen J test</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hansen J p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">hansen_j</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="c1"># Want: p &gt; 0.10</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="c1"># AR(2) test</span>
+</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AR(2) p-value: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">ar2_test</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="c1"># Want: p &gt; 0.10</span>
+</span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>
+</span><span id="__span-27-9"><a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="c1"># Instrument ratio</span>
+</span><span id="__span-27-10"><a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Instrument ratio: </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">instrument_ratio</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-27-11"><a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="c1"># Want: &lt; 1.0 (or at most &lt; 2.0)</span>
+</span></code></pre></div>
+<h3 id="step-4-if-tests-fail">Step 4: If Tests Fail<a class="headerlink" href="#step-4-if-tests-fail" title="Permanent link">&para;</a></h3>
+<p><strong>If Hansen J fails (p &lt; 0.10):</strong>
+1. Check instrument count (collapse=True?)
+2. Remove potentially endogenous X variables
+3. Reduce number of lags used</p>
+<p><strong>If AR(2) fails (p &lt; 0.10):</strong>
+1. Add more lags of dependent variable (lags=2)
+2. Check for misspecification (omitted variables)
+3. Consider deeper lags as instruments (minlags=3)</p>
+<h3 id="step-5-compare-difference-and-system">Step 5: Compare Difference and System<a class="headerlink" href="#step-5-compare-difference-and-system" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># Estimate both</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="n">diff_gmm</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">DifferenceGMM</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">collapse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="n">sys_gmm</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">SystemGMM</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">collapse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="c1"># Compare</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Coefficient Comparison:&quot;</span><span class="p">)</span>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Difference GMM: </span><span class="si">{</span><span class="n">diff_gmm</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (SE: </span><span class="si">{</span><span class="n">diff_gmm</span><span class="o">.</span><span class="n">std_errors</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;System GMM: </span><span class="si">{</span><span class="n">sys_gmm</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (SE: </span><span class="si">{</span><span class="n">sys_gmm</span><span class="o">.</span><span class="n">std_errors</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="c1"># Efficiency gain</span>
+</span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a><span class="n">se_reduction</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sys_gmm</span><span class="o">.</span><span class="n">std_errors</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">diff_gmm</span><span class="o">.</span><span class="n">std_errors</span><span class="p">[</span><span class="s1">&#39;y_lag1&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">100</span>
+</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SE reduction: </span><span class="si">{</span><span class="n">se_reduction</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>
+</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="c1"># Check System GMM assumptions</span>
+</span><span id="__span-28-15"><a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Difference-in-Hansen p-value: </span><span class="si">{</span><span class="n">sys_gmm</span><span class="o">.</span><span class="n">diff_hansen</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="key-takeaways">Key Takeaways<a class="headerlink" href="#key-takeaways" title="Permanent link">&para;</a></h2>
+<p>🔑 <strong>GMM is needed</strong> when:
+- Lagged dependent variable (dynamics)
+- Fixed Effects creates Nickell bias
+- Short panel (T &lt; 20)</p>
+<p>🔑 <strong>Difference GMM:</strong>
+- First-difference to eliminate α_i
+- Use lagged levels as instruments
+- Moment condition: E[y_{i,t-s} Δε_it] = 0</p>
+<p>🔑 <strong>System GMM:</strong>
+- Add level equations to Difference GMM
+- Use lagged differences as instruments for levels
+- More efficient for persistent series
+- Extra assumption: E[Δy_{i1} α_i] = 0</p>
+<p>🔑 <strong>Always collapse:</strong>
+- Avoid instrument proliferation
+- Keep q/N &lt; 1
+- Instrument ratio &lt; 2.0</p>
+<p>🔑 <strong>Diagnostic tests are mandatory:</strong>
+- Hansen J &gt; 0.10 (instruments valid)
+- AR(2) &gt; 0.10 (no serial correlation)
+- If tests fail, <strong>do not use results!</strong></p>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p><strong>Hands-on learning:</strong></p>
+<ol>
+<li>
+<p><strong><a href="../../tutorials/03_gmm_intro/">Tutorial 3: GMM Intro</a></strong>: Practical GMM estimation</p>
+</li>
+<li>
+<p><strong><a href="../../how-to/interpret_tests/">How-To: Interpret Tests</a></strong>: Test interpretation details</p>
+</li>
+</ol>
+<p><strong>Further reading:</strong></p>
+<p><strong>Foundational papers:</strong>
+- <strong>Arellano &amp; Bond (1991)</strong>: "Some Tests of Specification for Panel Data", <em>Review of Economic Studies</em>
+- <strong>Blundell &amp; Bond (1998)</strong>: "Initial Conditions and Moment Restrictions", <em>Journal of Econometrics</em>
+- <strong>Windmeijer (2005)</strong>: "A Finite Sample Correction", <em>Journal of Econometrics</em></p>
+<p><strong>Practical guides:</strong>
+- <strong>Roodman (2009)</strong>: "How to do xtabond2", <em>The Stata Journal</em> (best practical guide)
+- <strong>Bond (2002)</strong>: "Dynamic Panel Data Models: A Guide", <em>Portuguese Economic Journal</em></p>
+<p><strong>Textbooks:</strong>
+- <strong>Baltagi (2021)</strong>: <em>Econometric Analysis of Panel Data</em>, Chapter 8
+- <strong>Wooldridge (2010)</strong>: <em>Cross Section and Panel Data</em>, Chapter 11
+- <strong>Arellano (2003)</strong>: <em>Panel Data Econometrics</em> (advanced)</p>
+<hr />
+<p><strong>GMM is powerful for dynamic panels, but requires careful diagnostic checking. Always use collapse, always check Hansen J and AR(2), and never report results if tests fail!</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../fixed_vs_random/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Fixed Effects vs Random Effects: A Deep Dive">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Fixed Effects vs Random Effects: A Deep Dive
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../api/" class="md-footer__link md-footer__link--next" aria-label="Next: API Reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                API Reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 PanelBox Development Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/PanelBox-Econometrics-Model/panelbox" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/panelbox/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
