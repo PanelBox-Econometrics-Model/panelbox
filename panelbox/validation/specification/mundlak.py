@@ -68,14 +68,6 @@ class MundlakTest(ValidationTest):
         """
         super().__init__(results)
 
-        if "Random Effects" not in self.model_type:
-            import warnings
-
-            warnings.warn(
-                "Mundlak test is designed for Random Effects models. "
-                f"Current model: {self.model_type}"
-            )
-
     def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:
         """
         Run Mundlak test for RE specification.
@@ -108,6 +100,13 @@ class MundlakTest(ValidationTest):
         and Stata. The augmented model is estimated using Random Effects with
         Swamy-Arora transformation to properly account for the panel structure.
         """
+        # Check that model is Random Effects
+        if "Random Effects" not in self.model_type:
+            raise ValueError(
+                "Mundlak test is only applicable to Random Effects models. "
+                f"Current model: {self.model_type}"
+            )
+
         # Get original data, formula, and variable names
         data, formula, entity_col, time_col, var_names = self._get_data_full()
 

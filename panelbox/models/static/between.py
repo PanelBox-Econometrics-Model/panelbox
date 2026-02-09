@@ -396,13 +396,15 @@ class BetweenEstimator(PanelModel):
         ess_between = np.sum(resid**2)
         rsquared_between = 1 - ess_between / tss_between if tss_between > 0 else 0.0
 
-        # Map fitted values back to original observations for overall R²
+        # Map fitted values and residuals back to original observations
         fitted_all = np.zeros(len(y_orig))
+        resid_all = np.zeros(len(y_orig))
         for i, entity in enumerate(unique_entities):
             mask = entities == entity
             fitted_all[mask] = fitted[i]
-
-        resid_all = y_orig - fitted_all
+            # For between estimator, all observations in entity get same residual
+            # (residual from entity mean regression)
+            resid_all[mask] = resid[i]
 
         # Overall R² (on all NT observations)
         tss_overall = np.sum((y_orig - y_orig.mean()) ** 2)

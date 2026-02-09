@@ -256,7 +256,7 @@ def clean_panel_data():
     - Homoskedastic errors
     - No cross-sectional dependence
     """
-    np.random.seed(126)
+    np.random.seed(125)
 
     n_entities = 50
     n_periods = 10

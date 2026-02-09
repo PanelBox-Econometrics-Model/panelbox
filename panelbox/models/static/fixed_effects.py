@@ -285,9 +285,67 @@ class FixedEffects(PanelModel):
         # Estimate coefficients on demeaned data
         beta, resid_demeaned, fitted_demeaned = compute_ols(y, X, self.weights)
 
-        # Compute residuals and fitted values in original scale
-        fitted = (X_orig @ beta).ravel()
-        resid = (y_orig - fitted).ravel()
+        # Compute fitted values from slopes only
+        fitted_from_slopes = (X_orig @ beta).ravel()
+
+        # Compute overall residual (contains fixed effects)
+        overall_resid = y_orig - fitted_from_slopes
+
+        # Extract fixed effects
+        entity_fe_array = np.zeros(len(y_orig))
+        time_fe_array = np.zeros(len(y_orig))
+        entity_fe_mean = 0.0
+        time_fe_mean = 0.0
+
+        if self.entity_effects:
+            # Entity fixed effects: mean residual by entity
+            unique_entities = np.unique(entities)
+            entity_fe_values = []
+            for entity in unique_entities:
+                mask = entities == entity
+                entity_mean_resid = overall_resid[mask].mean()
+                entity_fe_values.append(entity_mean_resid)
+
+            # Store mean for intercept adjustment
+            entity_fe_values = np.array(entity_fe_values)
+            entity_fe_mean = entity_fe_values.mean()
+
+            # Center fixed effects (identification constraint: mean = 0)
+            entity_fe_values_centered = entity_fe_values - entity_fe_mean
+
+            for i, entity in enumerate(unique_entities):
+                mask = entities == entity
+                entity_fe_array[mask] = entity_fe_values_centered[i]
+
+        if self.time_effects:
+            # Time fixed effects: mean residual by time (after removing entity FE if present)
+            resid_for_time = (
+                overall_resid - entity_fe_array if self.entity_effects else overall_resid
+            )
+            unique_times = np.unique(times)
+            time_fe_values = []
+            for time_val in unique_times:
+                mask = times == time_val
+                time_mean_resid = resid_for_time[mask].mean()
+                time_fe_values.append(time_mean_resid)
+
+            # Store mean for intercept adjustment
+            time_fe_values = np.array(time_fe_values)
+            time_fe_mean = time_fe_values.mean()
+
+            # Center fixed effects (identification constraint: mean = 0)
+            time_fe_values_centered = time_fe_values - time_fe_mean
+
+            for i, time_val in enumerate(unique_times):
+                mask = times == time_val
+                time_fe_array[mask] = time_fe_values_centered[i]
+
+        # Intercept term (accumulated from centered FE means)
+        intercept = entity_fe_mean + time_fe_mean
+
+        # Full fitted values include slopes + centered FE + intercept
+        fitted = fitted_from_slopes + entity_fe_array + time_fe_array + intercept
+        resid = y_orig - fitted
 
         # Degrees of freedom
         n = len(y_orig)
@@ -500,7 +558,13 @@ class FixedEffects(PanelModel):
                 entity_mean_resid = overall_resid[mask].mean()
                 entity_fe_values.append(entity_mean_resid)
 
-            self.entity_fe = pd.Series(entity_fe_values, index=unique_entities, name="entity_fe")
+            # Center fixed effects (identification constraint: mean = 0)
+            entity_fe_values = np.array(entity_fe_values)
+            entity_fe_values_centered = entity_fe_values - entity_fe_values.mean()
+
+            self.entity_fe = pd.Series(
+                entity_fe_values_centered, index=unique_entities, name="entity_fe"
+            )
 
         if self.time_effects:
             # Time fixed effects: mean residual by time (after removing entity FE if present)
@@ -521,7 +585,11 @@ class FixedEffects(PanelModel):
                 time_mean_resid = base_resid[mask].mean()
                 time_fe_values.append(time_mean_resid)
 
-            self.time_fe = pd.Series(time_fe_values, index=unique_times, name="time_fe")
+            # Center fixed effects (identification constraint: mean = 0)
+            time_fe_values = np.array(time_fe_values)
+            time_fe_values_centered = time_fe_values - time_fe_values.mean()
+
+            self.time_fe = pd.Series(time_fe_values_centered, index=unique_times, name="time_fe")
 
     def _estimate_coefficients(self) -> np.ndarray:
         """

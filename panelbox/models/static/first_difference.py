@@ -507,6 +507,13 @@ class FirstDifferenceEstimator(PanelModel):
                 times_diff_list.append(times_diff_entity)
                 valid_idx_list.append(valid_idx_entity)
 
+        # Check if we have any differenced observations
+        if len(y_diff_list) == 0:
+            raise ValueError(
+                "Insufficient observations for first differencing. "
+                "Each entity must have at least 2 time periods."
+            )
+
         # Concatenate all entities
         y_diff = np.concatenate(y_diff_list)
         X_diff = np.vstack(X_diff_list)
