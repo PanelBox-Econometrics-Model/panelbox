@@ -192,11 +192,10 @@ class TestMundlak:
         results = re.fit()
 
         test = MundlakTest(results)
-        # Should handle time-invariant regressors appropriately
-        # (their mean equals themselves, so no variation to test)
-        result = test.run()
-
-        assert result is not None
+        # Should raise error for time-invariant regressors
+        # (they are perfectly collinear with intercept in pooled estimation)
+        with pytest.raises(ValueError, match="time-invariant regressors"):
+            test.run()
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test Mundlak test with unbalanced panel."""

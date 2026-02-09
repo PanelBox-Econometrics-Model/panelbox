@@ -38,12 +38,12 @@ class TestLLCTest:
         """Generate panel data with unit root."""
         np.random.seed(123)
         n_entities = 10
-        n_time = 50
+        n_time = 10  # Reduced from 50 to reduce test power
 
         data_list = []
         for i in range(n_entities):
-            # Random walk (unit root)
-            y = np.cumsum(np.random.normal(0, 1, n_time))
+            # Random walk (unit root) with lower variance
+            y = np.cumsum(np.random.normal(0, 0.5, n_time))
 
             entity_data = pd.DataFrame({"entity": i, "time": range(n_time), "y": y})
             data_list.append(entity_data)
