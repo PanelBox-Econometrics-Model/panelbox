@@ -3,10 +3,10 @@
 ## Executive Summary
 **Date**: 2026-02-09
 **Starting Coverage**: 69.8%
-**Ending Coverage**: 70.03%
-**Progress**: +0.23 percentage points
-**New Commits**: 4 commits
-**New Tests Added**: 16 tests
+**Ending Coverage**: 70.08%
+**Progress**: +0.28 percentage points
+**New Commits**: 6 commits
+**New Tests Added**: 30 tests
 
 ## Modules Improved (Session 2)
 
@@ -56,22 +56,56 @@
 9. Legacy _get_data method coverage (lines 332-351)
 10. Exception handling in legacy method (lines 350-351)
 
+### Module 17: Pesaran CD Cross-Sectional Dependence Test
+- **File**: `panelbox/validation/cross_sectional_dependence/pesaran_cd.py`
+- **Coverage**: 96% → 100% (+4%)
+- **Tests Added**: 2 edge case tests
+- **Lines Covered**: +2 lines (46/46 total, 100% coverage)
+- **Missing Lines**: None (all lines covered)
+- **Commit**: e28db71
+
+**Tests Added**:
+1. Insufficient time periods error (line 250)
+2. Missing entity/time index error (line 340)
+
+### Module 18: Breusch-Pagan LM Cross-Sectional Dependence Test
+- **File**: `panelbox/validation/cross_sectional_dependence/breusch_pagan_lm.py`
+- **Coverage**: 94% → 100% (+6%)
+- **Tests Added**: 12 comprehensive tests (complete new test suite)
+- **Lines Covered**: +3 lines (52/52 total, 100% coverage)
+- **Missing Lines**: None (all lines covered)
+- **Commit**: 863bea9
+
+**Tests Added**:
+1. Detection of cross-sectional dependence
+2. No false positive with clean data
+3. Compatibility with Pooled OLS
+4. Result attributes verification
+5. LM statistic non-negativity
+6. Different significance level handling
+7. P-value bounds verification
+8. Balanced panel support
+9. Unbalanced panel support
+10. Insufficient entities error (line 118)
+11. No valid correlations error (line 152)
+12. Missing entity/time index error (line 227)
+
 ## Cumulative Progress (All Sessions)
 
 ### Overall Statistics
 - **Initial Coverage**: 67.0%
-- **Current Coverage**: 70.03%
-- **Total Progress**: +3.03 percentage points
-- **Total Commits**: 18 commits
-- **Total Tests Added**: ~240+ tests
-- **Total Modules Improved**: 16 modules
-- **Tests Passing**: 1,410 passed, 18 skipped
+- **Current Coverage**: 70.08%
+- **Total Progress**: +3.08 percentage points
+- **Total Commits**: 20 commits
+- **Total Tests Added**: ~254+ tests
+- **Total Modules Improved**: 18 modules
+- **Tests Passing**: 1,424 passed, 18 skipped
 
 ### Coverage Distribution
-- **100% Coverage**: 4 modules
+- **100% Coverage**: 6 modules
 - **95-99% Coverage**: 8 modules
 - **90-94% Coverage**: 4 modules
-- **Total 90%+ modules**: 16 modules
+- **Total 90%+ modules**: 18 modules
 
 ### High-Coverage Modules (90%+)
 1. HTML Exporter: 100%
@@ -79,25 +113,27 @@
 3. Formatting Utils: 100%
 4. Driscoll-Kraay SE: 100%
 5. Newey-West SE: 100%
-6. Jackknife: 99%
-7. Wooldridge AR: 98%
-8. Modified Wald: 97%
-9. Breusch-Pagan: 97%
-10. Mundlak: 95%
-11. Hausman: 94%
-12. White: 94%
-13. PCSE: 94%
-14. Baltagi-Wu: 93%
-15. Breusch-Godfrey: 92%
-16. Statistical Utils: ~80%
+6. Pesaran CD: 100%
+7. Breusch-Pagan LM: 100%
+8. Jackknife: 99%
+9. Wooldridge AR: 98%
+10. Modified Wald: 97%
+11. Breusch-Pagan (het): 97%
+12. Mundlak: 95%
+13. Hausman: 94%
+14. White: 94%
+15. PCSE: 94%
+16. Baltagi-Wu: 93%
+17. Breusch-Godfrey: 92%
+18. Statistical Utils: ~80%
 
 ## Path to 80% Coverage
 
 ### Current Status
 - **Target**: 80.0%
-- **Current**: 70.03%
-- **Remaining**: 9.97 percentage points
-- **Progress**: 30.4% of the way (3.03 / 9.97)
+- **Current**: 70.08%
+- **Remaining**: 9.92 percentage points
+- **Progress**: 30.7% of the way (3.08 / 10.00)
 
 ### Estimated Work Remaining
 To reach 80% coverage, we need approximately:
