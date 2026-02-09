@@ -449,7 +449,7 @@ Now that you've mastered the HTML report system:
 
 - Explore [GMM models](03_gmm_intro.md) for dynamic panels
 - Check [API Reference](../api/report.md) for detailed documentation
-- Try the [Jupyter notebook tutorial](../../examples/jupyter/10_complete_workflow_v08.ipynb)
+- Review the examples directory for complete workflow examples
 
 ## Summary
 
@@ -471,5 +471,5 @@ You learned how to:
 
 For more information:
 - [API Reference](../api/report.md)
-- [Jupyter Notebook Tutorial](../../examples/jupyter/10_complete_workflow_v08.ipynb)
-- [CHANGELOG](../../CHANGELOG.md)
+- Check the `examples/` directory for complete workflow examples
+- View the project CHANGELOG for latest updates
