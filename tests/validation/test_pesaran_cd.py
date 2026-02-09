@@ -128,12 +128,10 @@ class TestPesaranCD:
         data_single_period = balanced_panel_data[balanced_panel_data["time"] == 2020].copy()
 
         fe = FixedEffects("y ~ x1 + x2", data_single_period, "entity", "time")
-        results = fe.fit()
 
-        test = PesaranCDTest(results)
-        # Should raise error (can't compute correlations with T=1)
-        with pytest.raises(ValueError):
-            test.run()
+        # Should raise error (can't estimate FE with T=1)
+        with pytest.raises(ValueError, match="Insufficient degrees of freedom"):
+            results = fe.fit()
 
     def test_pvalue_bounds(self, clean_panel_data):
         """Test that p-value is between 0 and 1."""

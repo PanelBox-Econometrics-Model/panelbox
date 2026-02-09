@@ -223,7 +223,7 @@ def compute_clustered_meat(
         meat += np.outer(score_c, score_c)
 
     # Apply finite-sample correction
-    if df_correction:
+    if df_correction and n_clusters > 1:
         correction = (n_clusters / (n_clusters - 1)) * ((n - 1) / (n - k))
         meat *= correction
 

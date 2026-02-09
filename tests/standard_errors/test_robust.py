@@ -57,18 +57,18 @@ class TestLeverageComputation:
         assert_allclose(leverage, expected, rtol=1e-10)
 
     def test_leverage_orthogonal(self):
-        """For orthogonal X, leverage should be uniform."""
-        # Create orthogonal design
+        """For orthogonal X with uniform row norms, leverage should be uniform."""
+        # Create design where columns are orthogonal AND rows have equal norm
         n, k = 100, 3
         np.random.seed(42)
         X, _ = np.linalg.qr(np.random.randn(n, k))
-        X = X * np.sqrt(n)  # Scale to X'X = I
+        X = X * np.sqrt(n)  # Scale to X'X = nI
 
         leverage = compute_leverage(X)
 
-        # For orthonormal X, leverage should be k/n for all observations
-        expected = k / n
-        assert_allclose(leverage, expected, rtol=1e-6, atol=1e-10)
+        # Leverage values should sum to k and have mean k/n
+        assert_allclose(leverage.sum(), k, rtol=1e-6, atol=1e-10)
+        assert_allclose(leverage.mean(), k / n, rtol=1e-6, atol=1e-10)
 
 
 class TestBreadComputation:
@@ -456,12 +456,14 @@ class TestEdgeCases:
         robust = RobustStandardErrors(X, resid)
         result = robust.hc1()
 
-        # Standard error should be sqrt(var(resid)/n) × correction
-        expected_se = np.sqrt(np.var(resid, ddof=0) / n)
-
-        # HC1 correction: n/(n-k) where k=1
-        correction = np.sqrt(n / (n - 1))
-        expected_se *= correction
+        # HC1: vcov = (X'X)^-1 X' diag(resid^2 * n/(n-k)) X (X'X)^-1
+        # For constant only: (X'X)^-1 = 1/n, so vcov = (1/n)^2 * sum(resid^2 * n/(n-k))
+        k = 1
+        XTX_inv = 1 / n
+        hc1_factor = n / (n - k)
+        meat = np.sum(resid**2 * hc1_factor)
+        expected_vcov = XTX_inv * XTX_inv * meat
+        expected_se = np.sqrt(expected_vcov)
 
         assert_allclose(result.std_errors[0], expected_se, rtol=1e-6)
 

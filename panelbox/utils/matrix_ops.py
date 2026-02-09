@@ -210,7 +210,7 @@ def compute_panel_rsquared(
     fitted_means = np.array([fitted[groups == g].mean() for g in unique_groups])
     y_grand_mean = y.mean()
     tss_between = np.sum((y_means - y_grand_mean) ** 2)
-    ess_between = np.sum((fitted_means - y_grand_mean) ** 2)
-    rsquared_between = ess_between / tss_between if tss_between > 0 else 0.0
+    rss_between = np.sum((y_means - fitted_means) ** 2)
+    rsquared_between = 1 - (rss_between / tss_between) if tss_between > 0 else 0.0
 
     return rsquared_within, rsquared_between, rsquared_overall
