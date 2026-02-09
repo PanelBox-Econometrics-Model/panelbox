@@ -240,3 +240,43 @@ class TestWhite:
             # Should catch exception and return None
             design_matrix = test._get_design_matrix()
             assert design_matrix is None
+
+    def test_singular_matrix_handling(self, clean_panel_data):
+        """Test handling of singular matrix with lstsq fallback (lines 150-151)."""
+        from unittest.mock import patch
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = WhiteTest(results)
+
+        # Mock np.linalg.solve to raise LinAlgError
+        original_solve = np.linalg.solve
+
+        def mock_solve(a, b):
+            # Raise LinAlgError to trigger lstsq fallback
+            raise np.linalg.LinAlgError("Singular matrix")
+
+        with patch("numpy.linalg.solve", side_effect=mock_solve):
+            # Should use lstsq fallback and complete successfully
+            result = test.run(cross_terms=False)
+            assert result is not None
+            assert result.statistic >= 0
+
+    def test_zero_total_variance_edge_case(self, clean_panel_data):
+        """Test edge case when SST is zero (line 164)."""
+        from unittest.mock import Mock
+
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Create residuals with zero variance (all same value)
+        results.resid = np.ones(len(results.resid))
+
+        test = WhiteTest(results)
+        # This should trigger the SST <= 0 case, setting R2_aux = 0
+        result = test.run(cross_terms=False)
+
+        # Should complete successfully with R2_aux = 0
+        assert result is not None
+        assert result.statistic >= 0
