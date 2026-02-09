@@ -1,7 +1,0 @@
-# PanelBox Report System - Dependencies
-#
-# Required dependencies for report generation
-jinja2>=3.0.0
-
-# Optional dependencies for enhanced functionality
-matplotlib>=3.5.0  # For static charts
