@@ -42,15 +42,24 @@ jobs:
       run: |
         pytest --cov=panelbox --cov-report=xml --cov-report=term-missing
 
+    - name: Verify coverage.xml was created
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+      run: |
+        ls -la coverage.xml
+        echo "Coverage file size: $(wc -c < coverage.xml) bytes"
+        echo "First 10 lines of coverage.xml:"
+        head -10 coverage.xml
+
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
       uses: codecov/codecov-action@v4
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
+        verbose: true
 
   lint:
     runs-on: ubuntu-latest
