@@ -191,3 +191,30 @@ class TestPesaranCD:
 
         # Details should contain N (number of entities)
         assert "n_entities" in result.details or "N" in result.details
+
+    def test_insufficient_time_periods_error(self, balanced_panel_data):
+        """Test ValueError when T < 3 (line 250)."""
+        # Create data with only 2 time periods
+        data_short = balanced_panel_data[balanced_panel_data["time"].isin([2020, 2021])].copy()
+
+        fe = FixedEffects("y ~ x1 + x2", data_short, "entity", "time")
+        results = fe.fit()
+
+        test = PesaranCDTest(results)
+        with pytest.raises(ValueError, match="requires at least 3 time periods"):
+            test.run()
+
+    def test_missing_entity_time_index_error(self, clean_panel_data):
+        """Test AttributeError when entity_index/time_index missing (line 340)."""
+        fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Remove required attributes
+        if hasattr(results, "entity_index"):
+            delattr(results, "entity_index")
+        if hasattr(results, "time_index"):
+            delattr(results, "time_index")
+
+        test = PesaranCDTest(results)
+        with pytest.raises(AttributeError, match="entity_index.*time_index"):
+            test.run()
