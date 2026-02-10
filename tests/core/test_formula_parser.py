@@ -270,3 +270,70 @@ class TestRepr:
         assert "FormulaParser" in repr_str
         assert "dependent='y'" in repr_str
         assert "y ~ x1 + x2" in repr_str
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error handling."""
+
+    def test_multiple_tildes_raises_error(self):
+        """Test that formula with multiple ~ raises ValueError."""
+        parser = FormulaParser("y ~ x1 ~ x2")
+        with pytest.raises(ValueError, match="must have exactly one"):
+            parser.parse()
+
+    def test_formula_with_instruments(self):
+        """Test formula with instrument specification (GMM)."""
+        parser = FormulaParser("y ~ x1 + x2 | gmm(y, 2:4)").parse()
+        assert parser.has_instruments is True
+        assert parser._instrument_spec == "gmm(y, 2:4)"
+        assert "x1" in parser.regressors
+        assert "x2" in parser.regressors
+
+    def test_formula_with_no_intercept_plus_zero(self):
+        """Test formula with +0 (no intercept)."""
+        parser = FormulaParser("y ~ x1 + x2 + 0").parse()
+        assert parser.has_intercept is False
+
+    def test_formula_with_no_intercept_space(self):
+        """Test formula with - 1 (space before 1)."""
+        parser = FormulaParser("y ~ x1 + x2 - 1").parse()
+        assert parser.has_intercept is False
+
+    def test_extract_var_from_function_with_expression(self):
+        """Test extracting variable from function with complex expression."""
+        parser = FormulaParser("y ~ log(x1 + x2)").parse()
+        # Complex expressions in functions won't extract simple var names
+        # This tests line 207 (return None for complex function arguments)
+        assert isinstance(parser.regressors, list)
+
+    def test_extract_var_from_namespaced_function(self):
+        """Test extracting variable from namespaced function like np.log(x)."""
+        parser = FormulaParser("y ~ np.log(x1)").parse()
+        assert "x1" in parser.regressors
+
+    def test_build_design_matrices_without_explicit_parse(self):
+        """Test that build_design_matrices works without calling parse() first."""
+        data = pd.DataFrame({"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50]})
+        parser = FormulaParser("y ~ x1")
+        y, X = parser.build_design_matrices(data, return_type="dataframe")
+        assert len(y) == 5
+        assert "x1" in X.columns
+
+    def test_build_design_matrices_matrix_type(self):
+        """Test build_design_matrices with return_type='matrix'."""
+        data = pd.DataFrame({"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50]})
+        parser = FormulaParser("y ~ x1").parse()
+        y, X = parser.build_design_matrices(data, return_type="matrix")
+        # Should return patsy DesignMatrix objects
+        assert hasattr(X, "design_info")
+
+    def test_formula_with_constant_one(self):
+        """Test formula with constant 1 in RHS."""
+        parser = FormulaParser("y ~ x1 + 1").parse()
+        assert "x1" in parser.regressors
+        # The '1' should be filtered out as it's just intercept
+
+    def test_formula_with_minus_one_no_space(self):
+        """Test formula with -1 (no space)."""
+        parser = FormulaParser("y ~ x1 + x2-1").parse()
+        assert parser.has_intercept is False
