@@ -506,6 +506,14 @@ class PanelIV(PanelModel):
         # Add first stage results to results object
         results.first_stage_results = self.first_stage_results
 
+        # Add IV-specific model info attributes
+        results.endogenous_vars = endogenous_vars
+        results.exogenous_vars = exogenous_vars
+        results.instruments = self.instruments
+        results.n_instruments = len(self.instruments)
+        results.n_endogenous = len(endogenous_vars)
+        results.weak_instruments = self.weak_instruments
+
         return results
 
     def _compute_covariance(
@@ -548,9 +556,10 @@ class PanelIV(PanelModel):
             sigma2 = np.sum(residuals**2) / (n - k)
             cov_params = sigma2 * XtX_inv
 
-        elif cov_type in ["robust", "hc1", "hc0", "hc2", "hc3"]:
-            # Robust covariance
-            cov_params = robust_covariance(X, residuals, method=cov_type)
+        elif cov_type.upper() in ["ROBUST", "HC1", "HC0", "HC2", "HC3"]:
+            # Robust covariance - map to uppercase for compatibility
+            result = robust_covariance(X, residuals, method=cov_type.upper())
+            cov_params = result.cov_matrix
 
         elif cov_type == "clustered":
             # Clustered by entity

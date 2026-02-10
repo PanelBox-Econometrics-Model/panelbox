@@ -230,6 +230,27 @@ class TestStaticValidationRendererEdgeCases:
             pytest.skip("Matplotlib not available")
         return StaticValidationRenderer(dpi=50)
 
+    @pytest.fixture
+    def validation_data(self):
+        """Create sample validation data."""
+        return {
+            "charts": {
+                "test_overview": {
+                    "categories": ["Autocorr", "Heterosk", "Normality"],
+                    "passed": [3, 2, 1],
+                    "failed": [0, 1, 2],
+                },
+                "pvalue_distribution": {
+                    "test_names": ["DW", "BP", "White", "JB"],
+                    "pvalues": [0.001, 0.03, 0.08, 0.6],
+                },
+                "test_statistics": {
+                    "test_names": ["DW", "BP", "White"],
+                    "statistics": [2.1, 15.3, 28.4],
+                },
+            }
+        }
+
     @pytest.mark.skipif(not MATPLOTLIB_AVAILABLE, reason="Matplotlib not available")
     def test_render_with_empty_arrays(self, renderer):
         """Test rendering with empty data arrays."""

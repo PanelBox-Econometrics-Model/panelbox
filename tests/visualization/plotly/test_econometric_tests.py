@@ -62,6 +62,16 @@ class TestCalculatePACF:
         pacf = calculate_pacf(residuals, 5)
         assert len(pacf) == 6
 
+    def test_pacf_linalg_error_handling(self):
+        """Test PACF handles LinAlgError during matrix solve."""
+        # Create residuals that will cause numerical issues in matrix solve
+        # This will trigger the except np.linalg.LinAlgError block
+        residuals = np.array([0] * 50 + [1] * 50)
+        pacf = calculate_pacf(residuals, 10)
+        assert len(pacf) == 11
+        # When error occurs, pacf should be set to 0.0 for that lag
+        assert all(np.isfinite(pacf))
+
 
 class TestLjungBoxTest:
     """Test Ljung-Box test function."""

@@ -1,18 +1,16 @@
-Você deve aumentar a cobertura de testes do projeto panelbox para 80%.
+Você deve aumentar a cobertura de testes do projeto panelbox para 85%.
 
 INSTRUÇÕES DE AUTONOMIA:
 - NÃO pare para pedir confirmação entre tarefas
 - Execute o ciclo completo automaticamente: analisar cobertura → identificar gaps → escrever testes → rodar cobertura → repetir
 - Use 'pytest --cov=panelbox --cov-report=term-missing' para verificar cobertura
-- Continue iterando módulo por módulo até atingir 80%
-- Só apresente o resultado final quando a cobertura global atingir >= 80%
+- Continue iterando módulo por módulo até atingir 85%
+- Só apresente o resultado final quando a cobertura global atingir >= 85%
 
-sugiro uma abordagem incremental focando nos módulos centrais primeiro:
-
-1. **Fase 1** (meta 30%): Testar módulos core (models, standard_errors)
-2. **Fase 2** (meta 50%): Testar validation
-3. **Fase 3** (meta 70%): Testar experiment e report
-4. **Fase 4** (meta 80%): Testar visualization e CLI
+- Módulos com alta cobertura mas poucas linhas faltando (97-99%)
+- `visualization/plotly/residuals.py`: 98% (5 linhas)
+- `visualization/plotly/validation.py`: 97% (6 linhas)
+- `validation/serial_correlation/wooldridge_ar.py`: 98% (1 linha)
 
 Para cada módulo:
 1. Rode cobertura atual
