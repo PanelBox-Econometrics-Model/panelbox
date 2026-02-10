@@ -176,7 +176,7 @@ chart.show()""",
         chart_name="Validation Dashboard",
         display_name="Comprehensive Validation Dashboard",
         chart_type="validation_dashboard",
-        chart_description="Complete overview of all validation test results in one dashboard",
+        description="Complete overview of all validation test results in one dashboard",
         use_cases=[
             "Getting overall model validation status",
             "Executive summary of all tests",
