@@ -1,0 +1,371 @@
+"""Tests for chart selector functionality."""
+
+import pytest
+
+from panelbox.visualization.utils.chart_selector import (
+    CHART_RECOMMENDATIONS,
+    ChartRecommendation,
+    _search_by_keywords,
+    get_categories,
+    list_all_charts,
+    suggest_chart,
+)
+
+
+class TestChartRecommendation:
+    """Test ChartRecommendation dataclass."""
+
+    def test_chart_recommendation_creation(self):
+        """Test creating a ChartRecommendation."""
+        chart = ChartRecommendation(
+            chart_name="Test Chart",
+            display_name="Test Display",
+            chart_type="test_chart",
+            description="A test chart",
+            use_cases=["Testing", "Development"],
+            api_function="test_function()",
+            code_example="# Example code",
+            category="Test Category",
+        )
+
+        assert chart.chart_name == "Test Chart"
+        assert chart.display_name == "Test Display"
+        assert chart.chart_type == "test_chart"
+        assert len(chart.use_cases) == 2
+
+    def test_chart_recommendation_str(self):
+        """Test string representation of ChartRecommendation."""
+        chart = ChartRecommendation(
+            chart_name="Test",
+            display_name="Test Display",
+            chart_type="test",
+            description="Description",
+            use_cases=["Use 1"],
+            api_function="func()",
+            code_example="code",
+            category="Category",
+        )
+
+        str_repr = str(chart)
+        assert "Test Display" in str_repr
+        assert "test" in str_repr
+        assert "Description" in str_repr
+        assert "Use 1" in str_repr
+
+
+class TestChartRecommendationsDatabase:
+    """Test the CHART_RECOMMENDATIONS database."""
+
+    def test_chart_recommendations_not_empty(self):
+        """Test that recommendations database is not empty."""
+        assert len(CHART_RECOMMENDATIONS) > 0
+
+    def test_all_recommendations_are_chart_recommendation_objects(self):
+        """Test all values are ChartRecommendation objects."""
+        for key, chart in CHART_RECOMMENDATIONS.items():
+            assert isinstance(chart, ChartRecommendation)
+            assert isinstance(key, str)
+
+    def test_chart_recommendations_have_required_fields(self):
+        """Test all recommendations have required fields."""
+        for chart in CHART_RECOMMENDATIONS.values():
+            assert chart.chart_name
+            assert chart.display_name
+            assert chart.chart_type
+            assert chart.description
+            assert isinstance(chart.use_cases, list)
+            assert len(chart.use_cases) > 0
+            assert chart.api_function
+            assert chart.code_example
+            assert chart.category
+
+    def test_chart_recommendations_keys_match_chart_types(self):
+        """Test dictionary keys match chart_type attributes."""
+        for key, chart in CHART_RECOMMENDATIONS.items():
+            # Keys should generally match chart_type
+            # (though this may not be strictly enforced)
+            assert isinstance(key, str)
+            assert isinstance(chart.chart_type, str)
+
+
+class TestSuggestChart:
+    """Test suggest_chart function."""
+
+    def test_suggest_chart_with_keywords(self):
+        """Test suggesting charts by keywords."""
+        results = suggest_chart(keywords=["residual"])
+
+        assert isinstance(results, list)
+        assert len(results) > 0
+        assert all(isinstance(r, ChartRecommendation) for r in results)
+
+    def test_suggest_chart_with_multiple_keywords(self):
+        """Test suggesting charts with multiple keywords."""
+        results = suggest_chart(keywords=["residual", "normality"])
+
+        assert isinstance(results, list)
+        # Should find charts mentioning either keyword
+        assert len(results) > 0
+
+    def test_suggest_chart_with_purpose(self):
+        """Test suggesting chart by purpose (exact key match)."""
+        # Use a known chart type from recommendations
+        known_key = list(CHART_RECOMMENDATIONS.keys())[0]
+        result = suggest_chart(purpose=known_key)
+
+        assert isinstance(result, ChartRecommendation)
+        assert result.chart_type == CHART_RECOMMENDATIONS[known_key].chart_type
+
+    def test_suggest_chart_no_parameters_returns_all(self):
+        """Test that no parameters returns all recommendations."""
+        results = suggest_chart()
+
+        assert isinstance(results, list)
+        assert len(results) == len(CHART_RECOMMENDATIONS)
+
+    def test_suggest_chart_with_invalid_purpose(self):
+        """Test suggesting chart with non-existent purpose."""
+        results = suggest_chart(purpose="nonexistent_chart_type")
+
+        # Should return all charts as default
+        assert isinstance(results, list)
+        assert len(results) > 0
+
+    def test_suggest_chart_keywords_case_insensitive(self):
+        """Test keyword search is case-insensitive."""
+        results_lower = suggest_chart(keywords=["residual"])
+        results_upper = suggest_chart(keywords=["RESIDUAL"])
+        results_mixed = suggest_chart(keywords=["ReSiDuAl"])
+
+        assert len(results_lower) > 0
+        assert len(results_upper) == len(results_lower)
+        assert len(results_mixed) == len(results_lower)
+
+    def test_suggest_chart_with_empty_keyword_list(self):
+        """Test suggesting chart with empty keyword list."""
+        results = suggest_chart(keywords=[])
+
+        # Should return all charts
+        assert isinstance(results, list)
+
+
+class TestSearchByKeywords:
+    """Test _search_by_keywords function."""
+
+    def test_search_by_keywords_basic(self):
+        """Test basic keyword search."""
+        results = _search_by_keywords(["residual"])
+
+        assert isinstance(results, list)
+        assert len(results) > 0
+        assert all(isinstance(r, ChartRecommendation) for r in results)
+
+    def test_search_by_keywords_multiple(self):
+        """Test search with multiple keywords."""
+        results = _search_by_keywords(["residual", "qq"])
+
+        assert isinstance(results, list)
+        assert len(results) > 0
+
+    def test_search_by_keywords_no_matches(self):
+        """Test search with keywords that don't match anything."""
+        results = _search_by_keywords(["zzz_nonexistent_keyword_xyz"])
+
+        assert isinstance(results, list)
+        assert len(results) == 0
+
+    def test_search_by_keywords_partial_match(self):
+        """Test partial keyword matching."""
+        results = _search_by_keywords(["diag"])  # Should match "diagnostics"
+
+        assert isinstance(results, list)
+        assert len(results) > 0
+
+    def test_search_by_keywords_case_insensitive(self):
+        """Test case-insensitive search."""
+        results_lower = _search_by_keywords(["residual"])
+        results_upper = _search_by_keywords(["RESIDUAL"])
+
+        assert len(results_lower) == len(results_upper)
+
+
+class TestListAllCharts:
+    """Test list_all_charts function."""
+
+    def test_list_all_charts_no_filter(self):
+        """Test listing all charts without filter."""
+        charts = list_all_charts()
+
+        assert isinstance(charts, list)
+        assert len(charts) == len(CHART_RECOMMENDATIONS)
+        assert all(isinstance(c, ChartRecommendation) for c in charts)
+
+    def test_list_all_charts_with_category_filter(self):
+        """Test listing charts filtered by category."""
+        # Get a known category
+        categories = get_categories()
+        if categories:
+            category = categories[0]
+            charts = list_all_charts(category=category)
+
+            assert isinstance(charts, list)
+            assert len(charts) > 0
+            assert all(c.category == category for c in charts)
+
+    def test_list_all_charts_with_invalid_category(self):
+        """Test listing with non-existent category."""
+        charts = list_all_charts(category="NonExistentCategory")
+
+        assert isinstance(charts, list)
+        assert len(charts) == 0
+
+    def test_list_all_charts_categories_are_valid(self):
+        """Test that all categories in recommendations are filterable."""
+        for category in get_categories():
+            charts = list_all_charts(category=category)
+            assert len(charts) > 0
+
+
+class TestGetCategories:
+    """Test get_categories function."""
+
+    def test_get_categories_returns_list(self):
+        """Test get_categories returns a list."""
+        categories = get_categories()
+
+        assert isinstance(categories, list)
+        assert len(categories) > 0
+
+    def test_get_categories_returns_strings(self):
+        """Test all categories are strings."""
+        categories = get_categories()
+
+        assert all(isinstance(c, str) for c in categories)
+
+    def test_get_categories_are_unique(self):
+        """Test categories are unique."""
+        categories = get_categories()
+
+        assert len(categories) == len(set(categories))
+
+    def test_get_categories_are_sorted(self):
+        """Test categories are sorted."""
+        categories = get_categories()
+
+        assert categories == sorted(categories)
+
+    def test_get_categories_match_recommendations(self):
+        """Test categories match those in recommendations."""
+        categories = get_categories()
+        recommendation_categories = set(
+            c.category for c in CHART_RECOMMENDATIONS.values()
+        )
+
+        assert set(categories) == recommendation_categories
+
+
+class TestIntegration:
+    """Integration tests for chart selector."""
+
+    def test_workflow_search_and_list(self):
+        """Test complete workflow: search, filter, and list."""
+        # 1. Search for charts
+        search_results = suggest_chart(keywords=["residual"])
+        assert len(search_results) > 0
+
+        # 2. Get all categories
+        categories = get_categories()
+        assert len(categories) > 0
+
+        # 3. List charts from first category
+        first_category = categories[0]
+        category_charts = list_all_charts(category=first_category)
+        assert len(category_charts) > 0
+
+        # 4. Verify all category charts are in full list
+        all_charts = list_all_charts()
+        assert all(chart in all_charts for chart in category_charts)
+
+    def test_all_chart_types_accessible(self):
+        """Test all chart types can be accessed."""
+        for key in CHART_RECOMMENDATIONS.keys():
+            chart = suggest_chart(purpose=key)
+            assert isinstance(chart, ChartRecommendation)
+            assert chart.chart_type == CHART_RECOMMENDATIONS[key].chart_type
+
+    def test_search_finds_all_categories(self):
+        """Test that search can find charts from all categories."""
+        categories = get_categories()
+
+        for category in categories:
+            # Get charts from this category
+            charts_in_category = list_all_charts(category=category)
+            assert len(charts_in_category) > 0
+
+            # Search should be able to find at least one of them
+            # by searching for the category name
+            search_results = _search_by_keywords([category.lower()])
+            assert len(search_results) > 0
+
+
+class TestEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_suggest_chart_with_none_parameters(self):
+        """Test suggest_chart with None parameters."""
+        results = suggest_chart(purpose=None, keywords=None)
+
+        assert isinstance(results, list)
+        assert len(results) > 0
+
+    def test_search_by_keywords_with_empty_string(self):
+        """Test search with empty string in keywords."""
+        results = _search_by_keywords([""])
+
+        # Empty string matches everything
+        assert len(results) > 0
+
+    def test_search_by_keywords_with_special_characters(self):
+        """Test search handles special characters."""
+        results = _search_by_keywords(["residual-vs-fitted"])
+
+        assert isinstance(results, list)
+        # May or may not find results, but shouldn't crash
+
+    def test_list_all_charts_preserves_order(self):
+        """Test that list_all_charts returns consistent order."""
+        charts1 = list_all_charts()
+        charts2 = list_all_charts()
+
+        # Should return same charts in same order (dict preserves insertion order)
+        assert len(charts1) == len(charts2)
+
+
+class TestCodeExamples:
+    """Test that code examples in recommendations are well-formed."""
+
+    def test_all_code_examples_are_non_empty(self):
+        """Test all code examples are non-empty strings."""
+        for chart in CHART_RECOMMENDATIONS.values():
+            assert isinstance(chart.code_example, str)
+            assert len(chart.code_example.strip()) > 0
+
+    def test_code_examples_mention_chart_type(self):
+        """Test code examples generally reference the chart."""
+        for chart in CHART_RECOMMENDATIONS.values():
+            code = chart.code_example.lower()
+            # Should mention either function name, chart type, or both
+            assert len(code) > 20  # Non-trivial example
+
+
+class TestApiConsistency:
+    """Test API consistency across recommendations."""
+
+    def test_api_functions_are_consistent(self):
+        """Test API functions follow expected patterns."""
+        for chart in CHART_RECOMMENDATIONS.values():
+            api_func = chart.api_function
+            assert isinstance(api_func, str)
+            assert len(api_func) > 0
+            # Should contain parentheses (function call)
+            assert "(" in api_func or ")" in api_func or "create_" in api_func

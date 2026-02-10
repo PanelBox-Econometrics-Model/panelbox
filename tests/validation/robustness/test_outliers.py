@@ -152,24 +152,20 @@ def test_outlier_results_summary():
 
 
 # Test Plotting
-@pytest.mark.skipif(
-    not pytest.importorskip("matplotlib", reason="matplotlib not installed"),
-    reason="matplotlib required for plotting tests",
-)
 def test_plot_diagnostics(mock_results):
     """Test plotting diagnostics."""
+    pytest.importorskip("matplotlib")
+
     detector = OutlierDetector(mock_results, verbose=False)
 
     with patch("matplotlib.pyplot.show"):
         detector.plot_diagnostics()
 
 
-@pytest.mark.skipif(
-    not pytest.importorskip("matplotlib", reason="matplotlib not installed"),
-    reason="matplotlib required for plotting tests",
-)
 def test_plot_diagnostics_save(mock_results, tmp_path):
     """Test saving diagnostic plots."""
+    pytest.importorskip("matplotlib")
+
     detector = OutlierDetector(mock_results, verbose=False)
 
     save_path = tmp_path / "diagnostics.png"
@@ -207,6 +203,257 @@ def test_full_workflow(mock_results):
     # Leverage
     leverage = detector.detect_leverage_points()
     assert len(leverage) > 0
+
+
+class TestUnivariateOnVariable:
+    """Test univariate detection on specific variables."""
+
+    def test_iqr_on_x1(self, mock_results):
+        """Test IQR on x1 variable."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(variable="x1", method="iqr")
+
+        assert "x1" in results.method
+        assert len(results.outliers) == len(mock_results.resid)
+
+    def test_zscore_on_x2(self, mock_results):
+        """Test Z-score on x2 variable."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(variable="x2", method="zscore", threshold=3.0)
+
+        assert "x2" in results.method
+        assert results.threshold == 3.0
+
+
+class TestThresholdBehavior:
+    """Test different threshold values."""
+
+    def test_iqr_strict_threshold(self, mock_results):
+        """Test that higher IQR threshold finds fewer outliers."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        results_1_5 = detector.detect_outliers_univariate(method="iqr", threshold=1.5)
+        results_3_0 = detector.detect_outliers_univariate(method="iqr", threshold=3.0)
+
+        assert results_3_0.n_outliers <= results_1_5.n_outliers
+
+    def test_zscore_strict_threshold(self, mock_results):
+        """Test that higher Z-score threshold finds fewer outliers."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        results_2 = detector.detect_outliers_univariate(method="zscore", threshold=2.0)
+        results_3 = detector.detect_outliers_univariate(method="zscore", threshold=3.0)
+
+        assert results_3.n_outliers <= results_2.n_outliers
+
+
+class TestSingularCovariance:
+    """Test handling of singular covariance matrices."""
+
+    def test_multivariate_with_singular_cov_warning(self, mock_results):
+        """Test that singular covariance triggers warning."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        # Force singular covariance by patching
+        with patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError):
+            with pytest.warns(UserWarning, match="singular"):
+                detector.detect_outliers_multivariate()
+
+    def test_leverage_with_singular_cov_warning(self, mock_results):
+        """Test that singular covariance in leverage triggers warning."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        with patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError):
+            with pytest.warns(UserWarning, match="pseudo-inverse"):
+                detector.detect_leverage_points()
+
+
+class TestSummaryFormats:
+    """Test summary output formats."""
+
+    def test_summary_with_many_outliers(self):
+        """Test summary with more than 10 outliers."""
+        outliers_df = pd.DataFrame(
+            {
+                "entity": list(range(20)),
+                "time": [0] * 20,
+                "value": [float(i) for i in range(20)],
+                "is_outlier": [True] * 20,
+                "distance": [float(i) for i in range(20)],
+            }
+        )
+
+        results = OutlierResults(outliers=outliers_df, method="Test", threshold=1.0, n_outliers=20)
+
+        summary = results.summary()
+        assert "Top 10 outliers" in summary
+        # Should only show 10 even though there are 20
+
+    def test_summary_percentage_calculation(self):
+        """Test that percentage is calculated correctly."""
+        outliers_df = pd.DataFrame(
+            {
+                "entity": [0, 1, 2, 3],
+                "time": [0, 0, 0, 0],
+                "value": [1.0, 2.0, 3.0, 4.0],
+                "is_outlier": [True, False, False, False],
+                "distance": [1.0, 0.5, 0.3, 0.2],
+            }
+        )
+
+        results = OutlierResults(outliers=outliers_df, method="Test", threshold=1.0, n_outliers=1)
+
+        summary = results.summary()
+        assert "25.00%" in summary  # 1 out of 4
+
+
+class TestResidualMethods:
+    """Test different residual-based methods."""
+
+    def test_invalid_residual_method(self, mock_results):
+        """Test that invalid residual method raises error."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        with pytest.raises(ValueError, match="Unknown method"):
+            detector.detect_outliers_residuals(method="invalid_method")
+
+    def test_standardized_vs_studentized(self, mock_results):
+        """Test that standardized and studentized give different results."""
+        detector = OutlierDetector(mock_results, verbose=False)
+
+        std_results = detector.detect_outliers_residuals(method="standardized")
+        stu_results = detector.detect_outliers_residuals(method="studentized")
+
+        # They should have different column names
+        assert "standardized_residual" in std_results.outliers.columns
+        assert "studentized_residual" in stu_results.outliers.columns
+
+
+class TestDataFrameColumns:
+    """Test that output DataFrames have correct columns."""
+
+    def test_iqr_columns(self, mock_results):
+        """Test IQR result columns."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="iqr")
+
+        expected_cols = {"entity", "time", "value", "is_outlier", "distance"}
+        assert expected_cols.issubset(set(results.outliers.columns))
+
+    def test_zscore_columns(self, mock_results):
+        """Test Z-score result columns."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="zscore")
+
+        expected_cols = {"entity", "time", "value", "is_outlier", "distance"}
+        assert expected_cols.issubset(set(results.outliers.columns))
+
+    def test_mahalanobis_columns(self, mock_results):
+        """Test Mahalanobis result columns."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_multivariate()
+
+        expected_cols = {"entity", "time", "mahalanobis_distance", "is_outlier", "distance"}
+        assert expected_cols.issubset(set(results.outliers.columns))
+
+
+class TestNonNegativeDistances:
+    """Test that distances are non-negative."""
+
+    def test_iqr_distance_non_negative(self, mock_results):
+        """Test IQR distance is non-negative."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="iqr")
+
+        assert (results.outliers["distance"] >= 0).all()
+
+    def test_zscore_distance_non_negative(self, mock_results):
+        """Test Z-score distance is non-negative."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="zscore")
+
+        assert (results.outliers["distance"] >= 0).all()
+
+    def test_mahalanobis_distance_non_negative(self, mock_results):
+        """Test Mahalanobis distance is non-negative."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_multivariate()
+
+        assert (results.outliers["mahalanobis_distance"] >= 0).all()
+
+
+class TestOutlierCountConsistency:
+    """Test that n_outliers matches actual count."""
+
+    def test_iqr_count_matches(self, mock_results):
+        """Test IQR outlier count."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="iqr")
+
+        assert results.n_outliers == results.outliers["is_outlier"].sum()
+
+    def test_zscore_count_matches(self, mock_results):
+        """Test Z-score outlier count."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="zscore")
+
+        assert results.n_outliers == results.outliers["is_outlier"].sum()
+
+    def test_mahalanobis_count_matches(self, mock_results):
+        """Test Mahalanobis outlier count."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_multivariate()
+
+        assert results.n_outliers == results.outliers["is_outlier"].sum()
+
+
+class TestVerboseMessages:
+    """Test verbose output messages."""
+
+    def test_verbose_iqr(self, mock_results, capsys):
+        """Test verbose output for IQR."""
+        detector = OutlierDetector(mock_results, verbose=True)
+        detector.detect_outliers_univariate(method="iqr")
+
+        captured = capsys.readouterr()
+        assert "Detected" in captured.out
+        assert "IQR" in captured.out
+
+    def test_verbose_mahalanobis(self, mock_results, capsys):
+        """Test verbose output for Mahalanobis."""
+        detector = OutlierDetector(mock_results, verbose=True)
+        detector.detect_outliers_multivariate()
+
+        captured = capsys.readouterr()
+        assert "Detected" in captured.out
+        assert "Mahalanobis" in captured.out
+
+    def test_verbose_leverage(self, mock_results, capsys):
+        """Test verbose output for leverage."""
+        detector = OutlierDetector(mock_results, verbose=True)
+        detector.detect_leverage_points()
+
+        captured = capsys.readouterr()
+        assert "Detected" in captured.out
+        assert "leverage" in captured.out
+
+
+class TestLeverageDefaultThreshold:
+    """Test default leverage threshold."""
+
+    def test_default_threshold_calculation(self, mock_results):
+        """Test that default threshold is 2*k/n."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        leverage_df = detector.detect_leverage_points()
+
+        n = len(mock_results.resid)
+        k = len(mock_results.params)
+        expected_threshold = 2 * k / n
+
+        # Verify by checking with explicit threshold
+        leverage_df2 = detector.detect_leverage_points(threshold=expected_threshold)
+
+        assert (leverage_df["is_high_leverage"] == leverage_df2["is_high_leverage"]).all()
 
 
 if __name__ == "__main__":
