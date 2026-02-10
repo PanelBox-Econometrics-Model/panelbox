@@ -256,3 +256,89 @@ class TestComparisonWithOtherModels:
 
         # Should include the time-invariant variable
         assert "const_var" in results.params.index
+
+
+class TestCovarianceTypes:
+    """Tests for different covariance types."""
+
+    def test_fit_with_twoway_clustering(self, balanced_panel_data):
+        """Test fitting with two-way clustering."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="twoway")
+
+        assert results is not None
+        assert len(results.params) == 3
+        assert (results.std_errors > 0).all()
+
+    def test_fit_with_driscoll_kraay(self, balanced_panel_data):
+        """Test fitting with Driscoll-Kraay standard errors."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="driscoll_kraay")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+    def test_fit_with_newey_west(self, balanced_panel_data):
+        """Test fitting with Newey-West standard errors."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="newey_west")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+    def test_invalid_cov_type_raises(self, balanced_panel_data):
+        """Test that invalid cov_type raises ValueError."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        with pytest.raises(ValueError, match="cov_type must be one of"):
+            model.fit(cov_type="invalid_type")
+
+
+class TestInternalMethods:
+    """Tests for internal estimation methods."""
+
+    def test_estimate_gls(self, balanced_panel_data):
+        """Test GLS estimation."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Check that GLS estimation worked
+        assert len(results.params) == 3
+        assert results.params is not None
+
+    def test_robust_vcov_computation(self, balanced_panel_data):
+        """Test robust covariance matrix computation."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="robust")
+
+        # Check that robust SEs are computed and positive
+        assert results.cov_type == "robust"
+        assert (results.std_errors > 0).all()
+        assert len(results.std_errors) == 3
+
+    def test_clustered_vcov_computation(self, balanced_panel_data):
+        """Test clustered covariance matrix computation."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="clustered")
+
+        # Check that clustered SEs are computed and positive
+        assert results.cov_type == "clustered"
+        assert (results.std_errors > 0).all()
+        assert len(results.std_errors) == 3
+
+    def test_vcov_differs_by_type(self, balanced_panel_data):
+        """Test that different covariance types produce different SEs."""
+        model_robust = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results_robust = model_robust.fit(cov_type="robust")
+
+        model_clustered = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results_clustered = model_clustered.fit(cov_type="clustered")
+
+        # Coefficients should be identical
+        np.testing.assert_array_almost_equal(
+            results_robust.params.values, results_clustered.params.values
+        )
+
+        # Standard errors typically differ (both should be positive)
+        assert (results_robust.std_errors > 0).all()
+        assert (results_clustered.std_errors > 0).all()

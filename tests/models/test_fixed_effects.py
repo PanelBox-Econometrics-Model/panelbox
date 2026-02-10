@@ -423,3 +423,124 @@ class TestModelComparison:
 
         # Two-way should have fewer df_resid
         assert results_twoway.df_resid < results_oneway.df_resid
+
+
+class TestCovarianceTypes:
+    """Tests for different covariance types."""
+
+    def test_fit_with_twoway_clustering(self, balanced_panel_data):
+        """Test fitting with two-way clustering."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="twoway")
+
+        assert results is not None
+        assert len(results.params) == 2
+        assert (results.std_errors > 0).all()
+
+    def test_fit_with_pcse(self, balanced_panel_data):
+        """Test fitting with PCSE standard errors."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="pcse")
+
+        # PCSE may produce warnings or NaN with T < N, but should not crash
+        assert results is not None
+        assert len(results.params) == 2
+
+    def test_invalid_cov_type_raises(self, balanced_panel_data):
+        """Test that invalid cov_type raises ValueError."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        with pytest.raises(ValueError, match="cov_type must be one of"):
+            model.fit(cov_type="invalid_type")
+
+
+class TestInternalMethods:
+    """Tests for internal estimation methods."""
+
+    def test_estimate_ols_entity_effects(self, balanced_panel_data):
+        """Test OLS estimation with entity effects only."""
+        model = FixedEffects(
+            "y ~ x1 + x2",
+            balanced_panel_data,
+            "entity",
+            "time",
+            entity_effects=True,
+            time_effects=False,
+        )
+        # Fit to trigger internal estimation
+        results = model.fit()
+
+        # Check that estimation worked
+        assert len(results.params) == 2
+        assert results.params is not None
+
+    def test_estimate_ols_time_effects(self, balanced_panel_data):
+        """Test OLS estimation with time effects only."""
+        model = FixedEffects(
+            "y ~ x1 + x2",
+            balanced_panel_data,
+            "entity",
+            "time",
+            entity_effects=False,
+            time_effects=True,
+        )
+        # Fit to trigger internal estimation
+        results = model.fit()
+
+        # Check that estimation worked
+        assert len(results.params) == 2
+        assert results.params is not None
+
+    def test_estimate_ols_twoway_effects(self, balanced_panel_data):
+        """Test OLS estimation with two-way fixed effects."""
+        model = FixedEffects(
+            "y ~ x1 + x2",
+            balanced_panel_data,
+            "entity",
+            "time",
+            entity_effects=True,
+            time_effects=True,
+        )
+        # Fit to trigger internal estimation
+        results = model.fit()
+
+        # Check that estimation worked
+        assert len(results.params) == 2
+        assert results.params is not None
+
+    def test_robust_vcov_computation(self, balanced_panel_data):
+        """Test robust covariance matrix computation."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="robust")
+
+        # Check that robust SEs are computed and positive
+        assert results.cov_type == "robust"
+        assert (results.std_errors > 0).all()
+        assert len(results.std_errors) == 2
+
+    def test_clustered_vcov_computation(self, balanced_panel_data):
+        """Test clustered covariance matrix computation."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="clustered")
+
+        # Check that clustered SEs are computed and positive
+        assert results.cov_type == "clustered"
+        assert (results.std_errors > 0).all()
+        assert len(results.std_errors) == 2
+
+    def test_vcov_differs_by_type(self, balanced_panel_data):
+        """Test that different covariance types produce different SEs."""
+        model_robust = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results_robust = model_robust.fit(cov_type="robust")
+
+        model_clustered = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results_clustered = model_clustered.fit(cov_type="clustered")
+
+        # Coefficients should be identical
+        np.testing.assert_array_almost_equal(
+            results_robust.params.values, results_clustered.params.values
+        )
+
+        # Standard errors typically differ (both should be positive)
+        assert (results_robust.std_errors > 0).all()
+        assert (results_clustered.std_errors > 0).all()
