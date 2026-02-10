@@ -222,6 +222,16 @@ class TestClusteredStandardErrors:
         with pytest.raises(ValueError, match="Cluster dimension mismatch"):
             ClusteredStandardErrors(X, resid, wrong_clusters)
 
+    def test_twoway_dimension_mismatch(self, setup_panel):
+        """Test that two-way clustering dimension mismatch raises error."""
+        X, resid, entity_ids, time_ids = setup_panel
+
+        # Wrong length for second cluster dimension
+        wrong_time_ids = time_ids[:-5]
+
+        with pytest.raises(ValueError, match="Cluster dimension mismatch"):
+            ClusteredStandardErrors(X, resid, (entity_ids, wrong_time_ids))
+
     def test_n_clusters_oneway(self, setup_panel):
         """Test n_clusters property for one-way."""
         X, resid, entity_ids, _ = setup_panel
