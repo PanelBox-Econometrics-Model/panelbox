@@ -69,8 +69,10 @@ class SensitivityAnalysis:
 
     Parameters
     ----------
-    results : PanelResults
-        Fitted panel model results object
+    results : PanelResults or PanelModel
+        Fitted panel model results object (preferred) or a fitted model object.
+        If a model object is passed, it will automatically use the results from
+        the last fit() call.
     show_progress : bool, default=False
         Whether to display progress bar during estimation
 
@@ -93,8 +95,11 @@ class SensitivityAnalysis:
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "entity", "time")
     >>> results = fe.fit()
     >>>
-    >>> # Sensitivity analysis
+    >>> # Sensitivity analysis - using results (preferred)
     >>> sensitivity = pb.SensitivityAnalysis(results)
+    >>>
+    >>> # Alternative - using model object (backward compatibility)
+    >>> sensitivity = pb.SensitivityAnalysis(fe)
     >>>
     >>> # Leave-one-out analysis
     >>> loo_entities = sensitivity.leave_one_out_entities()
@@ -108,20 +113,40 @@ class SensitivityAnalysis:
     >>> plt.show()
     """
 
-    def __init__(self, results: PanelResults, show_progress: bool = False):
+    def __init__(self, results, show_progress: bool = False):
         """Initialize sensitivity analysis."""
-        self.results = results
+        # Handle both PanelResults and PanelModel objects
+        if isinstance(results, PanelResults):
+            # Standard case: results object passed
+            self.results = results
 
-        # Get model from results
-        if results._model is None:
-            raise ValueError(
-                "Results object must contain a reference to the original model. "
-                "Ensure the model stores a reference to itself in results._model"
+            # Get model from results
+            if results._model is None:
+                raise ValueError(
+                    "Results object must contain a reference to the original model. "
+                    "Ensure the model stores a reference to itself in results._model"
+                )
+            self.model = results._model
+
+        elif hasattr(results, "_results") and hasattr(results, "_fitted"):
+            # Backward compatibility: model object passed
+            if not results._fitted:
+                raise ValueError(
+                    "Model has not been fitted yet. Call model.fit() first, "
+                    "or pass the results object directly to SensitivityAnalysis."
+                )
+            self.model = results
+            self.results = results._results
+
+        else:
+            raise TypeError(
+                f"Expected PanelResults or fitted PanelModel, got {type(results)}. "
+                "Pass either a results object from model.fit() or a fitted model object."
             )
 
-        self.model = results._model
-        self.params = results.params
-        self.std_errors = results.std_errors
+        # Store parameters and standard errors
+        self.params = self.results.params
+        self.std_errors = self.results.std_errors
         self.show_progress = show_progress
 
         # Store original data info

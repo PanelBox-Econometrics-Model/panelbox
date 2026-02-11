@@ -33,8 +33,10 @@ class PanelBootstrap:
 
     Parameters
     ----------
-    results : PanelResults
-        Fitted model results to bootstrap
+    results : PanelResults, optional
+        Fitted model results to bootstrap (preferred parameter name)
+    model : PanelResults, optional
+        Alias for 'results' (for backward compatibility). Cannot be used together with 'results'.
     n_bootstrap : int, default=1000
         Number of bootstrap replications
     method : {'pairs', 'wild', 'block', 'residual'}, default='pairs'
@@ -47,7 +49,9 @@ class PanelBootstrap:
     block_size : int, optional
         Block size for block bootstrap. If None, uses rule-of-thumb: T^(1/3)
     random_state : int, optional
-        Random seed for reproducibility
+        Random seed for reproducibility (preferred parameter name)
+    seed : int, optional
+        Alias for 'random_state' (for backward compatibility). Cannot be used together with 'random_state'.
     show_progress : bool, default=True
         Show progress bar during bootstrap
     parallel : bool, default=False
@@ -74,12 +78,21 @@ class PanelBootstrap:
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "id", "time")
     >>> results = fe.fit()
     >>>
-    >>> # Bootstrap with pairs method (recommended)
+    >>> # Bootstrap with pairs method (recommended) - using 'results' parameter
     >>> bootstrap = pb.PanelBootstrap(
-    ...     results,
+    ...     results=results,
     ...     n_bootstrap=1000,
     ...     method='pairs',
     ...     random_state=42
+    ... )
+    >>> bootstrap.run()
+    >>>
+    >>> # Alternative: using 'model' parameter (backward compatibility)
+    >>> bootstrap = pb.PanelBootstrap(
+    ...     model=results,
+    ...     n_bootstrap=1000,
+    ...     method='pairs',
+    ...     seed=42  # 'seed' is alias for 'random_state'
     ... )
     >>> bootstrap.run()
     >>>
@@ -147,14 +160,35 @@ class PanelBootstrap:
 
     def __init__(
         self,
-        results: PanelResults,
+        results: Optional[PanelResults] = None,
         n_bootstrap: int = 1000,
         method: Literal["pairs", "wild", "block", "residual"] = "pairs",
         block_size: Optional[int] = None,
         random_state: Optional[int] = None,
         show_progress: bool = True,
         parallel: bool = False,
+        model: Optional[PanelResults] = None,  # Alias for results (for backward compatibility)
+        seed: Optional[int] = None,  # Alias for random_state (for backward compatibility)
     ):
+        # Handle backward compatibility: 'model' as alias for 'results'
+        if model is not None and results is None:
+            results = model
+        elif model is not None and results is not None:
+            raise ValueError(
+                "Cannot specify both 'results' and 'model'. Use 'results' (preferred)."
+            )
+
+        if results is None:
+            raise TypeError("Missing required argument: 'results' (or 'model' as alias)")
+
+        # Handle backward compatibility: 'seed' as alias for 'random_state'
+        if seed is not None and random_state is None:
+            random_state = seed
+        elif seed is not None and random_state is not None:
+            raise ValueError(
+                "Cannot specify both 'random_state' and 'seed'. Use 'random_state' (preferred)."
+            )
+
         # Validation
         if not isinstance(results, PanelResults):
             raise TypeError(f"results must be PanelResults, got {type(results)}")
