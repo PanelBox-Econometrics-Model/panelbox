@@ -501,11 +501,114 @@ class FixedEffects(PanelModel):
             model=self,
         )
 
+        # Compute F-statistic for testing Fixed Effects vs Pooled OLS
+        # H0: α₁ = α₂ = ... = αₙ (all entity effects are equal, pooled OLS is adequate)
+        # H1: At least one αᵢ differs (need Fixed Effects)
+        if self.entity_effects:
+            f_stat, f_pval = self._compute_f_test_pooled_vs_fe(
+                y_orig, X_orig, resid, n_fe_entity, k, n
+            )
+            results.f_statistic = f_stat
+            results.f_pvalue = f_pval
+
         # Store results and update state
         self._results = results
         self._fitted = True
 
         return results
+
+    def _compute_f_test_pooled_vs_fe(
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+        resid_fe: np.ndarray,
+        n_fe_entity: int,
+        k: int,
+        n: int,
+    ) -> tuple[float, float]:
+        """
+        Compute F-statistic for testing Fixed Effects vs Pooled OLS.
+
+        Tests the null hypothesis that all entity fixed effects are equal
+        (i.e., pooled OLS is adequate) against the alternative that at least
+        one entity effect differs (i.e., Fixed Effects is needed).
+
+        H₀: α₁ = α₂ = ... = αₙ (all entity effects are equal)
+        H₁: At least one αᵢ differs
+
+        Parameters
+        ----------
+        y : np.ndarray
+            Dependent variable (original, not demeaned)
+        X : np.ndarray
+            Independent variables (original, not demeaned)
+        resid_fe : np.ndarray
+            Residuals from Fixed Effects model
+        n_fe_entity : int
+            Number of entity fixed effects
+        k : int
+            Number of slope parameters
+        n : int
+            Number of observations
+
+        Returns
+        -------
+        tuple[float, float]
+            F-statistic and p-value
+
+        Notes
+        -----
+        The F-statistic is computed as:
+
+        F = (SSR_pooled - SSR_fe) / (N - 1) / (SSR_fe / (NT - N - K))
+
+        where:
+        - SSR_pooled: Sum of squared residuals from Pooled OLS
+        - SSR_fe: Sum of squared residuals from Fixed Effects
+        - N: Number of entities
+        - T: Number of time periods
+        - K: Number of slope parameters
+
+        The test statistic follows an F-distribution with df1 = N-1 and
+        df2 = NT - N - K degrees of freedom under the null hypothesis.
+
+        References
+        ----------
+        Wooldridge (2010), Econometric Analysis of Cross Section and Panel Data,
+        Section 10.4.3
+        """
+        # Compute SSR for Fixed Effects model
+        ssr_fe = np.sum(resid_fe**2)
+
+        # Fit Pooled OLS to get SSR
+        # Add intercept if not present
+        if not np.allclose(X[:, 0], 1):
+            X_pooled = np.column_stack([np.ones(n), X])
+        else:
+            X_pooled = X
+
+        # OLS: β = (X'X)^(-1) X'y
+        beta_pooled = np.linalg.lstsq(X_pooled, y, rcond=None)[0]
+        fitted_pooled = X_pooled @ beta_pooled
+        resid_pooled = y - fitted_pooled
+        ssr_pooled = np.sum(resid_pooled**2)
+
+        # Degrees of freedom
+        df1 = n_fe_entity - 1  # Restrictions: N-1 (one entity effect is normalized)
+        df2 = n - n_fe_entity - k  # Residual df for FE model
+
+        # F-statistic
+        if df1 <= 0 or df2 <= 0:
+            return np.nan, np.nan
+
+        f_stat = ((ssr_pooled - ssr_fe) / df1) / (ssr_fe / df2)
+
+        # P-value from F-distribution
+        from scipy import stats
+
+        f_pval = 1 - stats.f.cdf(f_stat, df1, df2)
+
+        return float(f_stat), float(f_pval)
 
     def _demean_both(self, X: np.ndarray, entities: np.ndarray, times: np.ndarray) -> np.ndarray:
         """

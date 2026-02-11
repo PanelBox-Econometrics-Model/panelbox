@@ -80,6 +80,10 @@ class PanelResults:
         Between R-squared (for panel models)
     rsquared_overall : float
         Overall R-squared (for panel models)
+    f_statistic : float, optional
+        F-statistic for testing Fixed Effects vs Pooled OLS (Fixed Effects only)
+    f_pvalue : float, optional
+        P-value for F-test (Fixed Effects only)
     """
 
     def __init__(
@@ -149,6 +153,11 @@ class PanelResults:
             self.rsquared_within = np.nan
             self.rsquared_between = np.nan
             self.rsquared_overall = np.nan
+
+        # F-test statistics (for Fixed Effects vs Pooled OLS)
+        # These will be set externally by the FixedEffects model if applicable
+        self.f_statistic: Optional[float] = None
+        self.f_pvalue: Optional[float] = None
 
     def conf_int(self, alpha: float = 0.05) -> pd.DataFrame:
         """
@@ -336,6 +345,11 @@ class PanelResults:
 
         # Standard errors type
         lines.append(f"Standard Errors:           {self.cov_type:>10}")
+
+        # F-test for Fixed Effects vs Pooled OLS (if available)
+        if self.f_statistic is not None and self.f_pvalue is not None:
+            lines.append(f"F-statistic (FE vs OLS):   {self.f_statistic:>10.4f}")
+            lines.append(f"F-test p-value:            {self.f_pvalue:>10.4f}")
 
         lines.append("=" * 78)
 

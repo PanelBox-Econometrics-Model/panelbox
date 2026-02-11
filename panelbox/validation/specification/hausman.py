@@ -151,6 +151,23 @@ class HausmanTest:
         Results from Fixed Effects estimation
     re_results : PanelResults
         Results from Random Effects estimation
+    alpha : float, default=0.05
+        Significance level for test (automatically runs test on initialization)
+
+    Attributes
+    ----------
+    statistic : float
+        Chi-squared test statistic
+    pvalue : float
+        P-value for the test
+    df : int
+        Degrees of freedom
+    conclusion : str
+        Interpretation of test result
+    recommendation : str
+        Recommended estimator ("Fixed Effects" or "Random Effects")
+    reject_null : bool
+        Whether to reject the null hypothesis at the given significance level
 
     Notes
     -----
@@ -284,7 +301,7 @@ class HausmanTest:
     >>> print(result_lenient.conclusion)
     """
 
-    def __init__(self, fe_results: PanelResults, re_results: PanelResults):
+    def __init__(self, fe_results: PanelResults, re_results: PanelResults, alpha: float = 0.05):
         if fe_results.model_type not in [
             "Fixed Effects",
             "Fixed Effects (Two-Way)",
@@ -307,6 +324,39 @@ class HausmanTest:
 
         if len(self.common_vars) == 0:
             raise ValueError("No common variables found between FE and RE models")
+
+        # Run test automatically and expose attributes for convenience
+        self._result = self.run(alpha=alpha)
+
+        # Expose key attributes directly on the test object for convenience
+        self.statistic = self._result.statistic
+        self.pvalue = self._result.pvalue
+        self.df = self._result.df
+        self.conclusion = self._result.conclusion
+        self.recommendation = self._result.recommendation
+        self.reject_null = self._result.reject_null
+
+    def __str__(self) -> str:
+        """String representation - delegates to result's summary."""
+        return self._result.summary()
+
+    def __repr__(self) -> str:
+        """Repr - shows key test statistics."""
+        return (
+            f"HausmanTest(statistic={self.statistic:.3f}, "
+            f"pvalue={self.pvalue:.4f}, recommendation='{self.recommendation}')"
+        )
+
+    def summary(self) -> str:
+        """
+        Generate formatted summary of test results.
+
+        Returns
+        -------
+        str
+            Formatted test summary
+        """
+        return self._result.summary()
 
     def run(self, alpha: float = 0.05) -> HausmanTestResult:
         """
