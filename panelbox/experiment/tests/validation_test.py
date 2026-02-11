@@ -167,8 +167,14 @@ class ValidationTest:
         if hasattr(results, "loglik"):
             model_info["log_likelihood"] = results.loglik
 
-        if hasattr(results, "f_statistic"):
-            model_info["f_statistic"] = results.f_statistic.stat
+        if hasattr(results, "f_statistic") and results.f_statistic is not None:
+            # Handle both dict (old format) and float (new format)
+            if isinstance(results.f_statistic, dict):
+                model_info["f_statistic"] = results.f_statistic.get("stat", None)
+            elif hasattr(results.f_statistic, "stat"):
+                model_info["f_statistic"] = results.f_statistic.stat
+            else:
+                model_info["f_statistic"] = results.f_statistic
 
         return model_info
 

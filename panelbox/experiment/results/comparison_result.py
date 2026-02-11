@@ -111,11 +111,22 @@ class ComparisonResult(BaseResult):
         metrics = {}
 
         for name, results in self.models.items():
+            # Handle f_statistic - can be dict (old format) or float (new format)
+            f_stat_attr = getattr(results, "f_statistic", None)
+            if isinstance(f_stat_attr, dict):
+                # Old format: {"stat": ..., "pval": ...}
+                fvalue = f_stat_attr.get("stat", None)
+                f_pvalue = f_stat_attr.get("pval", None)
+            else:
+                # New format: direct float value
+                fvalue = f_stat_attr
+                f_pvalue = getattr(results, "f_pvalue", None)
+
             model_metrics = {
                 "rsquared": getattr(results, "rsquared", None),
                 "rsquared_adj": getattr(results, "rsquared_adj", None),
-                "fvalue": getattr(results, "f_statistic", {}).get("stat", None),
-                "f_pvalue": getattr(results, "f_statistic", {}).get("pval", None),
+                "fvalue": fvalue,
+                "f_pvalue": f_pvalue,
                 "nobs": getattr(results, "nobs", None),
                 "df_model": getattr(results, "df_model", None),
                 "df_resid": getattr(results, "df_resid", None),
