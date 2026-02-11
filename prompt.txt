@@ -1,20 +1,123 @@
-Você deve aumentar a cobertura de testes do projeto panelbox para 85%.
+---
+description: Execute a Jupyter notebook and fix all errors until it runs successfully from start to finish
+---
 
-INSTRUÇÕES DE AUTONOMIA:
-- NÃO pare para pedir confirmação entre tarefas
-- Execute o ciclo completo automaticamente: analisar cobertura → identificar gaps → escrever testes → rodar cobertura → repetir
-- Use 'pytest --cov=panelbox --cov-report=term-missing' para verificar cobertura
-- Continue iterando módulo por módulo até atingir 85%
-- Só apresente o resultado final quando a cobertura global atingir >= 85%
+# Instructions
 
-- Módulos com alta cobertura mas poucas linhas faltando (97-99%)
-- `visualization/plotly/residuals.py`: 98% (5 linhas)
-- `visualization/plotly/validation.py`: 97% (6 linhas)
-- `validation/serial_correlation/wooldridge_ar.py`: 98% (1 linha)
+You are tasked with executing a Jupyter notebook and fixing all errors that occur until the notebook runs successfully from start to finish.
 
-Para cada módulo:
-1. Rode cobertura atual
-2. Identifique funções/branches não cobertas
-3. Escreva testes
-4. Confirme que passam
-5. Passe ao próximo
+## Task Overview
+
+1. **Read the notebook**: First, read the specified notebook file to understand its structure and content
+2. **Execute cell by cell**: Run each cell in the notebook sequentially
+3. **Identify errors**: When errors occur, analyze them carefully
+4. **Fix errors**: Make necessary changes to fix the errors (can be in the notebook itself or in the source code)
+5. **Re-execute**: After fixing, re-execute the affected cells and continue
+6. **Repeat**: Continue this process until all cells execute successfully
+7. **Verify**: At the end, verify that the entire notebook runs from top to bottom without errors
+
+## Guidelines
+
+- **Use the TodoWrite tool** to track progress through the notebook cells and error fixes
+- **Read the notebook first** using the Read tool to see all cells
+- **Execute cells** using the mcp__ide__executeCode tool for Python code cells
+- **Fix errors systematically**:
+  - If the error is in the notebook code, use NotebookEdit to fix it
+  - If the error is in the source code (panelbox library), DO NOT fix the library code directly. Instead, create a detailed error report and save it in `/home/guhaase/projetos/panelbox/desenvolvimento/correcoes/` with a descriptive filename (e.g., `YYYY-MM-DD_issue_description.md`)
+  - If dependencies are missing, install them with pip
+- **Document fixes**: Explain what each error was and how you fixed it
+- **Test thoroughly**: After fixing, re-run the cell and any dependent cells
+- **Final validation**: At the end, confirm all cells have been executed successfully
+
+## Error Handling Strategy
+
+1. **Import errors**: Install missing packages or fix import paths
+2. **AttributeError/NameError**: Fix incorrect variable/function names or add missing definitions
+3. **ValueError/TypeError**: Fix incorrect arguments or data types
+4. **Logic errors**: Analyze the expected behavior and fix the implementation
+5. **API changes**: Update code to match current API if the library has changed
+
+## Library Error Reporting
+
+When you encounter errors in the panelbox library (not in the notebook itself):
+
+1. **DO NOT** fix the library code directly
+2. **CREATE** a detailed error report with the following structure:
+   - **Filename**: Use format `YYYY-MM-DD_brief_issue_description.md`
+   - **Location**: Save in `/home/guhaase/projetos/panelbox/desenvolvimento/correcoes/`
+   - **Content structure**:
+     ```markdown
+     # Issue: [Brief Title]
+
+     **Date**: YYYY-MM-DD
+     **Notebook**: [Path to notebook]
+     **Cell Number**: [Cell that triggered the error]
+
+     ## Error Description
+     [Detailed description of what went wrong]
+
+     ## Error Traceback
+     ```
+     [Full error traceback]
+     ```
+
+     ## Location in Library
+     - **File**: [Path to source file]
+     - **Function/Method**: [Name]
+     - **Line**: [Line number if available]
+
+     ## Expected Behavior
+     [What should happen]
+
+     ## Actual Behavior
+     [What actually happened]
+
+     ## Reproducible Example
+     ```python
+     [Minimal code to reproduce the error]
+     ```
+
+     ## Suggested Fix
+     [Your analysis and suggested solution]
+
+     ## Temporary Workaround
+     [If applicable, workaround used in the notebook]
+     ```
+3. **CONTINUE** with notebook execution using a workaround if possible
+4. **DOCUMENT** the workaround in the notebook with a comment explaining it's temporary
+
+## Output Format
+
+Provide clear updates on:
+- Current cell being executed
+- Errors encountered
+- Fixes applied (notebook fixes or library error reports created)
+- Verification that fixes worked
+- Final summary of all changes made
+- List of error reports created (if any)
+
+## Analyze all the Jupyter notebooks below:
+
+/home/guhaase/projetos/panelbox/examples/jupyter/00_getting_started.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/01_static_models_complete.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/02_dynamic_gmm_complete.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/03_validation_complete.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/04_robust_inference.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/05_report_generation.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/06_visualization_reports.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/07_real_world_case_study.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/08_html_reports_complete_guide.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/09_residual_diagnostics_v07.ipynb
+/home/guhaase/projetos/panelbox/examples/jupyter/10_complete_workflow_v08.ipynb
+
+You should:
+1. Read the notebook
+2. Create a todo list with all cells to execute
+3. Execute each cell
+4. For notebook errors: Fix them directly using NotebookEdit
+5. For library errors: Create error report in `/home/guhaase/projetos/panelbox/desenvolvimento/correcoes/`
+6. Continue execution with workarounds when possible
+7. Report success when the notebook runs completely, including:
+   - List of notebook fixes applied
+   - List of library error reports created
+   - Any temporary workarounds used
