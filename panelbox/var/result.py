@@ -4,7 +4,8 @@ Results containers for Panel VAR models.
 This module provides result classes for Panel VAR estimation and lag selection.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -968,6 +969,340 @@ class PanelVARResult:
         return _plot_stability(
             self.eigenvalues, title=title, backend=backend, figsize=figsize, show=show
         )
+
+    def irf(
+        self,
+        periods: int = 20,
+        method: str = "cholesky",
+        shock_size: Union[str, float] = "one_std",
+        cumulative: bool = False,
+        order: Optional[List[str]] = None,
+        ci_method: Optional[str] = None,
+        n_bootstrap: int = 500,
+        ci_level: float = 0.95,
+        bootstrap_ci_method: str = "percentile",
+        n_jobs: int = -1,
+        seed: Optional[int] = None,
+        verbose: bool = True,
+    ) -> "IRFResult":
+        """
+        Compute Impulse Response Functions (IRFs).
+
+        Parameters
+        ----------
+        periods : int, default=20
+            Number of periods (horizons) to compute
+        method : str, default='cholesky'
+            IRF method:
+            - 'cholesky': Orthogonalized IRF using Cholesky decomposition
+            - 'generalized': Generalized IRF (Pesaran-Shin), order-invariant
+        shock_size : str or float, default='one_std'
+            Size of shock:
+            - 'one_std': one standard deviation shock (default)
+            - float: shock of specified size
+        cumulative : bool, default=False
+            If True, compute cumulative IRFs
+        order : list of str, optional
+            Variable ordering for Cholesky decomposition.
+            If None, uses original order.
+            Only relevant for method='cholesky'.
+        ci_method : str, optional
+            Method for confidence intervals:
+            - None: No confidence intervals (default)
+            - 'bootstrap': Bootstrap confidence intervals
+        n_bootstrap : int, default=500
+            Number of bootstrap iterations (only if ci_method='bootstrap')
+        ci_level : float, default=0.95
+            Confidence level (only if ci_method='bootstrap')
+        bootstrap_ci_method : str, default='percentile'
+            Bootstrap CI method:
+            - 'percentile': Standard percentile method
+            - 'bias_corrected': Bias-corrected percentile (Hall)
+        n_jobs : int, default=-1
+            Number of parallel jobs for bootstrap (-1 = all cores)
+        seed : int, optional
+            Random seed for bootstrap reproducibility
+        verbose : bool, default=True
+            Show progress bar for bootstrap
+
+        Returns
+        -------
+        IRFResult
+            IRF results container
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> # Orthogonalized IRF (Cholesky)
+        >>> irf_chol = result.irf(periods=20, method='cholesky')
+        >>> print(irf_chol.summary())
+        >>>
+        >>> # Generalized IRF
+        >>> irf_gen = result.irf(periods=20, method='generalized')
+        >>>
+        >>> # Cumulative IRF
+        >>> irf_cum = result.irf(periods=20, cumulative=True)
+        >>>
+        >>> # Custom ordering
+        >>> irf_ord = result.irf(order=['inflation', 'gdp', 'interest_rate'])
+
+        Notes
+        -----
+        Cholesky IRFs depend on variable ordering. Variables earlier in the
+        order are treated as more "exogenous" (respond only to own shocks
+        contemporaneously).
+
+        Generalized IRFs are invariant to ordering but shocks are not
+        orthogonal (they reflect actual correlations).
+
+        References
+        ----------
+        .. [1] Lütkepohl, H. (2005). New Introduction to Multiple Time
+               Series Analysis. Springer-Verlag.
+        .. [2] Pesaran, H. H., & Shin, Y. (1998). Generalized impulse response
+               analysis in linear multivariate models. Economics letters, 58(1), 17-29.
+        """
+        from panelbox.var.irf import (
+            IRFResult,
+            bootstrap_irf,
+            compute_cumulative_irf,
+            compute_irf_cholesky,
+            compute_irf_generalized,
+            compute_phi_non_orthogonalized,
+        )
+
+        # Check stability
+        if not self.is_stable():
+            warnings.warn(
+                "VAR system is UNSTABLE (max eigenvalue modulus >= 1). "
+                "IRFs may diverge and not converge to zero.",
+                UserWarning,
+            )
+
+        # Handle ordering
+        if order is not None:
+            # Validate ordering
+            if set(order) != set(self.endog_names):
+                raise ValueError(
+                    f"order must contain exactly the endogenous variables: {self.endog_names}"
+                )
+
+            # Reorder variables
+            order_indices = [self.endog_names.index(var) for var in order]
+
+            # Reorder A matrices
+            A_matrices_reordered = []
+            for A in self.A_matrices:
+                # Reorder both rows and columns
+                A_reordered = A[np.ix_(order_indices, order_indices)]
+                A_matrices_reordered.append(A_reordered)
+
+            # Reorder Sigma
+            Sigma_reordered = self.Sigma[np.ix_(order_indices, order_indices)]
+
+            var_names = order
+            A_matrices = A_matrices_reordered
+            Sigma = Sigma_reordered
+
+            if method == "cholesky":
+                warnings.warn(
+                    f"Variable ordering for Cholesky decomposition: {order}. "
+                    "Earlier variables are treated as more exogenous.",
+                    UserWarning,
+                )
+        else:
+            var_names = self.endog_names
+            A_matrices = self.A_matrices
+            Sigma = self.Sigma
+            order = None
+
+        # Compute IRFs
+        if method == "cholesky":
+            irf_matrix = compute_irf_cholesky(A_matrices, Sigma, periods, shock_size)
+        elif method == "generalized":
+            # First compute non-orthogonalized Phi
+            Phi = compute_phi_non_orthogonalized(A_matrices, periods)
+            # Then compute GIRF
+            irf_matrix = compute_irf_generalized(Phi, Sigma, periods)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'cholesky' or 'generalized'.")
+
+        # Compute cumulative if requested
+        if cumulative:
+            irf_matrix = compute_cumulative_irf(irf_matrix)
+
+        # Create result object
+        irf_result = IRFResult(
+            irf_matrix=irf_matrix,
+            var_names=var_names,
+            periods=periods,
+            method=method,
+            shock_size=shock_size,
+            cumulative=cumulative,
+            ordering=order,
+        )
+
+        # Compute bootstrap confidence intervals if requested
+        if ci_method == "bootstrap":
+            # Get residuals
+            residuals = np.column_stack(self.resid_by_eq)  # (n_obs, K)
+
+            # Apply ordering to residuals if needed
+            if order is not None:
+                residuals = residuals[:, order_indices]
+
+            # Compute bootstrap CI
+            ci_lower, ci_upper, bootstrap_dist = bootstrap_irf(
+                A_matrices=A_matrices,
+                Sigma=Sigma,
+                residuals=residuals,
+                periods=periods,
+                method=method,
+                n_bootstrap=n_bootstrap,
+                ci_level=ci_level,
+                cumulative=cumulative,
+                ci_method=bootstrap_ci_method,
+                n_jobs=n_jobs,
+                seed=seed,
+                verbose=verbose,
+            )
+
+            # Attach to result object
+            irf_result.ci_lower = ci_lower
+            irf_result.ci_upper = ci_upper
+            irf_result.ci_level = ci_level
+            irf_result.bootstrap_dist = bootstrap_dist
+
+        return irf_result
+
+    def fevd(
+        self,
+        periods: int = 20,
+        method: str = "cholesky",
+        order: Optional[List[str]] = None,
+    ) -> "FEVDResult":
+        """
+        Compute Forecast Error Variance Decomposition (FEVD).
+
+        Parameters
+        ----------
+        periods : int, default=20
+            Number of periods (horizons) to compute
+        method : str, default='cholesky'
+            FEVD method:
+            - 'cholesky': FEVD based on Cholesky decomposition
+            - 'generalized': Generalized FEVD (Pesaran-Shin), order-invariant
+        order : list of str, optional
+            Variable ordering for Cholesky decomposition.
+            If None, uses original order.
+            Only relevant for method='cholesky'.
+
+        Returns
+        -------
+        FEVDResult
+            FEVD results container
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> # Cholesky FEVD
+        >>> fevd_chol = result.fevd(periods=20, method='cholesky')
+        >>> print(fevd_chol.summary())
+        >>>
+        >>> # Generalized FEVD
+        >>> fevd_gen = result.fevd(periods=20, method='generalized')
+        >>>
+        >>> # Custom ordering
+        >>> fevd_ord = result.fevd(order=['inflation', 'gdp', 'interest_rate'])
+
+        Notes
+        -----
+        FEVD decomposes the forecast error variance of each variable into
+        contributions from shocks to all variables in the system.
+
+        Cholesky FEVD depends on variable ordering. Variables earlier in the
+        order are treated as more "exogenous".
+
+        Generalized FEVD is invariant to ordering but values may not sum
+        exactly to 100% before normalization.
+
+        References
+        ----------
+        .. [1] Lütkepohl, H. (2005). New Introduction to Multiple Time
+               Series Analysis. Springer-Verlag. Chapter 2.
+        .. [2] Pesaran, H. H., & Shin, Y. (1998). Generalized impulse response
+               analysis in linear multivariate models. Economics letters, 58(1), 17-29.
+        """
+        from panelbox.var.fevd import FEVDResult, compute_fevd_cholesky, compute_fevd_generalized
+        from panelbox.var.irf import compute_irf_cholesky, compute_phi_non_orthogonalized
+
+        # Check stability
+        if not self.is_stable():
+            warnings.warn(
+                "VAR system is UNSTABLE (max eigenvalue modulus >= 1). "
+                "FEVD may not be well-defined.",
+                UserWarning,
+            )
+
+        # Handle ordering
+        if order is not None:
+            # Validate ordering
+            if set(order) != set(self.endog_names):
+                raise ValueError(
+                    f"order must contain exactly the endogenous variables: {self.endog_names}"
+                )
+
+            # Reorder variables
+            order_indices = [self.endog_names.index(var) for var in order]
+
+            # Reorder A matrices
+            A_matrices_reordered = []
+            for A in self.A_matrices:
+                A_reordered = A[np.ix_(order_indices, order_indices)]
+                A_matrices_reordered.append(A_reordered)
+
+            # Reorder Sigma
+            Sigma_reordered = self.Sigma[np.ix_(order_indices, order_indices)]
+
+            var_names = order
+            A_matrices = A_matrices_reordered
+            Sigma = Sigma_reordered
+
+            if method == "cholesky":
+                warnings.warn(
+                    f"Variable ordering for Cholesky decomposition: {order}. "
+                    "Earlier variables are treated as more exogenous.",
+                    UserWarning,
+                )
+        else:
+            var_names = self.endog_names
+            A_matrices = self.A_matrices
+            Sigma = self.Sigma
+            order = None
+
+        # Compute FEVD
+        if method == "cholesky":
+            # Compute Cholesky IRFs first
+            Phi = compute_irf_cholesky(A_matrices, Sigma, periods)
+            P = np.linalg.cholesky(Sigma)
+            fevd_matrix = compute_fevd_cholesky(Phi, P, Sigma, periods)
+        elif method == "generalized":
+            # Compute non-orthogonalized Phi
+            Phi = compute_phi_non_orthogonalized(A_matrices, periods)
+            fevd_matrix = compute_fevd_generalized(Phi, Sigma, periods)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'cholesky' or 'generalized'.")
+
+        # Create result object
+        fevd_result = FEVDResult(
+            decomposition=fevd_matrix,
+            var_names=var_names,
+            periods=periods,
+            method=method,
+            ordering=order,
+        )
+
+        return fevd_result
 
     def __repr__(self) -> str:
         """String representation."""
