@@ -4,7 +4,7 @@ Results containers for Panel VAR models.
 This module provides result classes for Panel VAR estimation and lag selection.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -552,6 +552,187 @@ class PanelVARResult:
         result.hypothesis = f"{causing_var} does not Granger-cause {caused_var}"
 
         return result
+
+    def granger_causality(self, cause: str, effect: str):
+        """
+        Test Granger causality with enhanced result formatting.
+
+        This is an enhanced version of test_granger_causality that returns
+        a more detailed GrangerCausalityResult object.
+
+        Parameters
+        ----------
+        cause : str
+            Name of the causing variable
+        effect : str
+            Name of the effect variable
+
+        Returns
+        -------
+        GrangerCausalityResult
+            Enhanced test result with formatted summary
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> gc = result.granger_causality('gdp', 'inflation')
+        >>> print(gc.summary())
+        """
+        from panelbox.var.causality import granger_causality_wald
+
+        # Get equation index
+        eq_idx = self.endog_names.index(effect)
+
+        # Perform Granger causality test
+        gc_result = granger_causality_wald(
+            params=self.params_by_eq[eq_idx],
+            cov_params=self.cov_by_eq[eq_idx],
+            exog_names=self.exog_names,
+            causing_var=cause,
+            caused_var=effect,
+            lags=self.p,
+            n_obs=self.n_obs,
+        )
+
+        return gc_result
+
+    def granger_causality_matrix(self, significance_level: float = 0.05) -> pd.DataFrame:
+        """
+        Compute Granger causality matrix for all variable pairs.
+
+        Parameters
+        ----------
+        significance_level : float, default=0.05
+            Significance level for marking (not currently used in output,
+            but reserved for future formatting)
+
+        Returns
+        -------
+        pd.DataFrame
+            Matrix of p-values (K × K) where element (i,j) is the p-value
+            for testing "variable i Granger-causes variable j"
+            Diagonal elements are NaN.
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> gc_matrix = result.granger_causality_matrix()
+        >>> print(gc_matrix)
+        """
+        from panelbox.var.causality import granger_causality_matrix
+
+        return granger_causality_matrix(self, significance_level)
+
+    def dumitrescu_hurlin(self, cause: str, effect: str, use_raw_data: bool = True):
+        """
+        Perform Dumitrescu-Hurlin (2012) Granger causality test for heterogeneous panels.
+
+        This test allows for heterogeneous coefficients across entities and is more
+        appropriate for panel data than the standard Wald test.
+
+        Parameters
+        ----------
+        cause : str
+            Name of the causing variable
+        effect : str
+            Name of the effect variable
+        use_raw_data : bool, default=True
+            If True, re-estimate individual regressions using raw data.
+            If False, use residuals from the pooled VAR (less accurate).
+
+        Returns
+        -------
+        DumitrescuHurlinResult
+            Test result with W_bar, Z_tilde, and Z_bar statistics
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> dh = result.dumitrescu_hurlin('gdp', 'inflation')
+        >>> print(dh.summary())
+
+        References
+        ----------
+        Dumitrescu, E. I., & Hurlin, C. (2012). Testing for Granger non-causality
+        in heterogeneous panels. Economic modelling, 29(4), 1450-1460.
+        """
+        from panelbox.var.causality import dumitrescu_hurlin_test
+
+        # Get raw data from data_info
+        if use_raw_data and "data" in self.data_info:
+            data = self.data_info["data"]
+            entity_col = self.data_info.get("entity_col", "entity")
+            time_col = self.data_info.get("time_col", "time")
+
+            return dumitrescu_hurlin_test(
+                data=data,
+                cause=cause,
+                effect=effect,
+                lags=self.p,
+                entity_col=entity_col,
+                time_col=time_col,
+            )
+        else:
+            raise NotImplementedError(
+                "Dumitrescu-Hurlin test from fitted VAR residuals not yet implemented. "
+                "Please ensure raw data is available in data_info."
+            )
+
+    def instantaneous_causality(self, var1: str, var2: str):
+        """
+        Test for instantaneous (contemporaneous) causality between two variables.
+
+        Parameters
+        ----------
+        var1 : str
+            First variable name
+        var2 : str
+            Second variable name
+
+        Returns
+        -------
+        InstantaneousCausalityResult
+            Test result with correlation and LR statistic
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> ic = result.instantaneous_causality('gdp', 'inflation')
+        >>> print(ic.summary())
+        """
+        from panelbox.var.causality import instantaneous_causality
+
+        # Get indices
+        idx1 = self.endog_names.index(var1)
+        idx2 = self.endog_names.index(var2)
+
+        # Get residuals
+        resid1 = self.resid_by_eq[idx1]
+        resid2 = self.resid_by_eq[idx2]
+
+        return instantaneous_causality(resid1, resid2, var1, var2)
+
+    def instantaneous_causality_matrix(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Compute instantaneous causality matrix for all variable pairs.
+
+        Returns
+        -------
+        corr_matrix : pd.DataFrame
+            Correlation matrix of residuals (K × K)
+        pvalue_matrix : pd.DataFrame
+            P-value matrix for LR tests (K × K)
+
+        Examples
+        --------
+        >>> result = model.fit()
+        >>> corr, pvals = result.instantaneous_causality_matrix()
+        >>> print(corr)
+        >>> print(pvals)
+        """
+        from panelbox.var.causality import instantaneous_causality_matrix
+
+        return instantaneous_causality_matrix(self)
 
     def to_latex(self, equation: Optional[int] = None) -> str:
         """

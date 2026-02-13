@@ -280,6 +280,9 @@ class PanelVAR:
             "n_entities": self.N,
             "n_obs": self.data.n_obs,
             "is_balanced": self.data.is_balanced,
+            "data": self.data.data,  # Store raw data for Dumitrescu-Hurlin test
+            "entity_col": self.data.entity_col,
+            "time_col": self.data.time_col,
         }
 
         # Create result object
