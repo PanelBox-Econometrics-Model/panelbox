@@ -538,7 +538,7 @@ def granger_causality_wald(
         wald_stat=wald_result.statistic,
         f_stat=f_stat,
         df=lags,
-        p_value=wald_result.p_value,
+        p_value=wald_result.pvalue,
         p_value_f=p_value_f,
         lags_tested=lags,
     )
@@ -876,9 +876,7 @@ def granger_causality_matrix(result, significance_level: float = 0.05) -> pd.Dat
 
             # Test: does variable i Granger-cause variable j?
             try:
-                gc_result = result.test_granger_causality(
-                    causing_var=endog_names[i], caused_var=endog_names[j]
-                )
+                gc_result = result.granger_causality(cause=endog_names[i], effect=endog_names[j])
                 pvalue_matrix[i, j] = gc_result.p_value
             except Exception:
                 pvalue_matrix[i, j] = np.nan
