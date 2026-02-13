@@ -100,6 +100,21 @@ from panelbox.validation.unit_root.ips import IPSTest, IPSTestResult
 # Unit Root Tests
 from panelbox.validation.unit_root.llc import LLCTest, LLCTestResult
 
+# Panel VAR models
+from panelbox.var import (
+    CointegrationRankTest,
+    ForecastResult,
+    LagOrderResult,
+    PanelVAR,
+    PanelVARData,
+    PanelVARResult,
+    PanelVECM,
+    PanelVECMResult,
+    RankSelectionResult,
+    RankTestResult,
+    plot_causality_network,
+)
+
 __all__ = [
     # Version
     "__version__",
@@ -123,6 +138,18 @@ __all__ = [
     "DifferenceGMM",
     "SystemGMM",
     "GMMResults",
+    # Panel VAR Models
+    "PanelVAR",
+    "PanelVARData",
+    "PanelVARResult",
+    "ForecastResult",
+    "LagOrderResult",
+    "PanelVECM",
+    "PanelVECMResult",
+    "CointegrationRankTest",
+    "RankSelectionResult",
+    "RankTestResult",
+    "plot_causality_network",
     # Specification Tests
     "HausmanTest",
     "HausmanTestResult",

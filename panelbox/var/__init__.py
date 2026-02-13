@@ -50,7 +50,9 @@ References
        autoregression in Stata. The Stata Journal, 16(3), 778-804.
 """
 
+from panelbox.var.causality_network import plot_causality_network
 from panelbox.var.data import PanelVARData
+from panelbox.var.forecast import ForecastResult
 from panelbox.var.model import PanelVAR
 from panelbox.var.result import LagOrderResult, PanelVARResult
 from panelbox.var.vecm import (
@@ -65,7 +67,9 @@ __all__ = [
     "PanelVARData",
     "PanelVAR",
     "PanelVARResult",
+    "ForecastResult",
     "LagOrderResult",
+    "plot_causality_network",
     "CointegrationRankTest",
     "PanelVECM",
     "PanelVECMResult",

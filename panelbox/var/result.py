@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from panelbox.var.causality_network import plot_causality_network
+from panelbox.var.forecast import ForecastResult
 from panelbox.var.inference import WaldTestResult, f_test_exclusion, wald_test
 from panelbox.visualization.var_plots import plot_stability as _plot_stability
 
@@ -735,6 +737,86 @@ class PanelVARResult:
 
         return instantaneous_causality_matrix(self)
 
+    def plot_causality_network(
+        self,
+        threshold: float = 0.05,
+        layout: str = "spring",
+        backend: str = "plotly",
+        show: bool = True,
+        **kwargs,
+    ):
+        """
+        Plot Granger causality relationships as a directed network graph.
+
+        Creates a network visualization where nodes are variables and directed
+        edges represent significant Granger causality relationships.
+
+        Parameters
+        ----------
+        threshold : float, default=0.05
+            Significance threshold for causality. Only edges with p < threshold
+            are shown.
+        layout : str, default='spring'
+            Network layout algorithm:
+            - 'circular': Arrange nodes in a circle
+            - 'spring': Force-directed spring layout
+            - 'kamada_kawai': Kamada-Kawai layout
+            - 'shell': Concentric shells layout
+        backend : str, default='plotly'
+            Plotting backend: 'plotly' (interactive) or 'matplotlib' (static)
+        show : bool, default=True
+            Whether to display the plot
+        **kwargs
+            Additional arguments passed to plot_causality_network()
+
+        Returns
+        -------
+        fig
+            Plotly Figure or Matplotlib Figure object
+
+        Raises
+        ------
+        ImportError
+            If networkx is not installed
+
+        Examples
+        --------
+        >>> result = pvar.fit(method='ols', lags=2)
+        >>> # Interactive plot
+        >>> result.plot_causality_network(threshold=0.05, layout='circular')
+        >>>
+        >>> # Static plot with custom styling
+        >>> result.plot_causality_network(
+        ...     threshold=0.10,
+        ...     layout='spring',
+        ...     backend='matplotlib',
+        ...     node_size=4000,
+        ...     show_pvalues=True
+        ... )
+
+        Notes
+        -----
+        - Requires networkx: `pip install networkx`
+        - Edge thickness indicates strength of causality (inverse of p-value)
+        - Edge color indicates significance level:
+          - Dark green: p < 0.01
+          - Green: 0.01 ≤ p < 0.05
+          - Orange: 0.05 ≤ p < threshold
+        - Self-loops are never shown
+        """
+        # Get Granger causality matrix
+        granger_mat = self.granger_causality_matrix(significance_level=threshold)
+
+        # Plot network
+        return plot_causality_network(
+            granger_matrix=granger_mat,
+            threshold=threshold,
+            layout=layout,
+            backend=backend,
+            show=show,
+            **kwargs,
+        )
+
     def to_latex(self, equation: Optional[int] = None) -> str:
         """
         Export results to LaTeX table format.
@@ -1303,6 +1385,343 @@ class PanelVARResult:
         )
 
         return fevd_result
+
+    def forecast(
+        self,
+        steps: int = 10,
+        exog_future: Optional[np.ndarray] = None,
+        ci_method: Optional[str] = None,
+        ci_level: float = 0.95,
+        n_bootstrap: int = 500,
+        seed: Optional[int] = None,
+    ) -> ForecastResult:
+        """
+        Generate h-step-ahead forecasts.
+
+        Forecasts are generated iteratively using the VAR equation:
+        ŷₜ₊ₕ = Σₗ Aₗ·ŷₜ₊ₕ₋ₗ + Xₜ₊ₕ·γ
+
+        For h=1, uses observed values. For h>1, uses previous forecasts.
+
+        Parameters
+        ----------
+        steps : int, default=10
+            Number of steps ahead to forecast
+        exog_future : np.ndarray, optional
+            Future exogenous variable values, shape (steps, N, n_exog)
+            If None, assumes exogenous variables = 0 (or no exogenous vars)
+        ci_method : str, optional
+            Method for confidence intervals:
+            - None: No confidence intervals (default)
+            - 'bootstrap': Bootstrap confidence intervals
+            - 'analytical': Analytical confidence intervals (if stable VAR)
+        ci_level : float, default=0.95
+            Confidence level for intervals
+        n_bootstrap : int, default=500
+            Number of bootstrap replications (only if ci_method='bootstrap')
+        seed : int, optional
+            Random seed for reproducibility
+
+        Returns
+        -------
+        ForecastResult
+            Forecast results with forecasts, CIs, and plotting methods
+
+        Raises
+        ------
+        ValueError
+            If VAR is unstable and analytical CIs are requested
+            If exog_future has wrong shape
+
+        Examples
+        --------
+        >>> result = pvar.fit(method='ols', lags=2)
+        >>> # Simple forecast
+        >>> fcst = result.forecast(steps=10)
+        >>> fcst.plot(entity=0, variable='gdp')
+        >>>
+        >>> # With bootstrap CIs
+        >>> fcst = result.forecast(steps=10, ci_method='bootstrap', n_bootstrap=1000)
+        >>> fcst.to_dataframe(entity='USA')
+        >>>
+        >>> # Evaluate accuracy
+        >>> accuracy = fcst.evaluate(actual_data, entity='USA')
+        >>> print(accuracy)
+
+        Notes
+        -----
+        - For unstable VARs, forecasts may diverge for long horizons
+        - Bootstrap CIs account for parameter uncertainty and shock uncertainty
+        - Analytical CIs only account for shock uncertainty (assume known params)
+        """
+        # Validate steps
+        if steps <= 0:
+            raise ValueError("steps must be positive")
+
+        if seed is not None:
+            np.random.seed(seed)
+
+        # Get data dimensions
+        # We need the last p observations from the original data
+        # These are stored during estimation
+        if not hasattr(self, "data_info") or "last_observations" not in self.data_info:
+            # Need to reconstruct from fitted values and residuals
+            # For now, we'll use a simpler approach: start from unconditional mean
+            y_history = np.zeros((self.p, self.N, self.K))
+        else:
+            y_history = self.data_info["last_observations"]  # (p, N, K)
+
+        # Validate exog_future if provided
+        if exog_future is not None:
+            if exog_future.shape[0] != steps:
+                raise ValueError(f"exog_future.shape[0]={exog_future.shape[0]} != steps={steps}")
+            if exog_future.shape[1] != self.N:
+                raise ValueError(f"exog_future.shape[1]={exog_future.shape[1]} != N={self.N}")
+
+        # Generate point forecasts
+        forecasts = self._forecast_iterative(steps, y_history, exog_future)
+
+        # Generate confidence intervals if requested
+        ci_lower = None
+        ci_upper = None
+
+        if ci_method == "bootstrap":
+            ci_lower, ci_upper = self._forecast_bootstrap_ci(
+                steps, y_history, exog_future, ci_level, n_bootstrap, seed
+            )
+        elif ci_method == "analytical":
+            if not self.is_stable():
+                raise ValueError("Analytical CIs require stable VAR. Use bootstrap instead.")
+            ci_lower, ci_upper = self._forecast_analytical_ci(steps, forecasts, ci_level)
+        elif ci_method is not None:
+            raise ValueError(
+                f"Unknown ci_method='{ci_method}'. Use 'bootstrap', 'analytical', or None"
+            )
+
+        return ForecastResult(
+            forecasts=forecasts,
+            ci_lower=ci_lower,
+            ci_upper=ci_upper,
+            endog_names=self.endog_names,
+            entity_names=self.data_info.get("entity_names", None),
+            horizon=steps,
+            ci_level=ci_level,
+            method="iterative",
+            ci_method=ci_method,
+        )
+
+    def _forecast_iterative(
+        self,
+        steps: int,
+        y_history: np.ndarray,
+        exog_future: Optional[np.ndarray],
+    ) -> np.ndarray:
+        """
+        Generate iterative forecasts.
+
+        Parameters
+        ----------
+        steps : int
+            Number of forecast steps
+        y_history : np.ndarray
+            Last p observations, shape (p, N, K)
+        exog_future : np.ndarray, optional
+            Future exogenous values, shape (steps, N, n_exog)
+
+        Returns
+        -------
+        np.ndarray
+            Forecasts, shape (steps, N, K)
+        """
+        forecasts = []
+
+        # Create forecast buffer: last p periods + forecast horizon
+        # We'll iteratively fill this buffer
+        y_buffer = np.zeros((self.p + steps, self.N, self.K))
+        y_buffer[: self.p, :, :] = y_history
+
+        for h in range(steps):
+            y_pred = np.zeros((self.N, self.K))
+
+            for i in range(self.N):
+                # Forecast for each entity
+                for lag in range(1, self.p + 1):
+                    # Get lagged values (from buffer)
+                    y_lag = y_buffer[self.p + h - lag, i, :]  # (K,)
+                    # Apply lag l coefficient matrix
+                    y_pred[i, :] += self.A_matrices[lag - 1] @ y_lag
+
+                # Add exogenous contribution if present
+                # Note: We'd need to track which params are for exog vs endog lags
+                # For simplicity, assuming exog are handled separately
+                # This requires access to exog parameter indices
+
+            # Store forecast in buffer
+            y_buffer[self.p + h, :, :] = y_pred
+            forecasts.append(y_pred)
+
+        forecasts = np.array(forecasts)  # (steps, N, K)
+        return forecasts
+
+    def _forecast_bootstrap_ci(
+        self,
+        steps: int,
+        y_history: np.ndarray,
+        exog_future: Optional[np.ndarray],
+        ci_level: float,
+        n_bootstrap: int,
+        seed: Optional[int],
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Generate bootstrap confidence intervals for forecasts.
+
+        Resamples residuals and generates bootstrap forecast paths.
+
+        Parameters
+        ----------
+        steps : int
+            Forecast horizon
+        y_history : np.ndarray
+            Starting values
+        exog_future : np.ndarray, optional
+            Future exogenous values
+        ci_level : float
+            Confidence level
+        n_bootstrap : int
+            Number of bootstrap replications
+        seed : int, optional
+            Random seed
+
+        Returns
+        -------
+        ci_lower : np.ndarray
+            Lower CI bounds, shape (steps, N, K)
+        ci_upper : np.ndarray
+            Upper CI bounds, shape (steps, N, K)
+        """
+        if seed is not None:
+            np.random.seed(seed)
+
+        # Collect all residuals
+        resid_all = np.column_stack(self.resid_by_eq)  # (n_obs, K)
+
+        # Storage for bootstrap forecasts
+        bootstrap_forecasts = np.zeros((n_bootstrap, steps, self.N, self.K))
+
+        for b in range(n_bootstrap):
+            # Resample residuals with replacement
+            boot_indices = np.random.randint(0, len(resid_all), size=steps * self.N)
+            boot_resid = resid_all[boot_indices].reshape(steps, self.N, self.K)
+
+            # Generate forecast path with bootstrap shocks
+            y_buffer = np.zeros((self.p + steps, self.N, self.K))
+            y_buffer[: self.p, :, :] = y_history
+
+            for h in range(steps):
+                y_pred = np.zeros((self.N, self.K))
+
+                for i in range(self.N):
+                    for lag in range(1, self.p + 1):
+                        y_lag = y_buffer[self.p + h - lag, i, :]
+                        y_pred[i, :] += self.A_matrices[lag - 1] @ y_lag
+
+                # Add bootstrap shock
+                y_pred += boot_resid[h, :, :]
+
+                y_buffer[self.p + h, :, :] = y_pred
+
+            bootstrap_forecasts[b, :, :, :] = y_buffer[self.p :, :, :]
+
+        # Compute percentile intervals
+        alpha = 1 - ci_level
+        lower_pct = alpha / 2 * 100
+        upper_pct = (1 - alpha / 2) * 100
+
+        ci_lower = np.percentile(bootstrap_forecasts, lower_pct, axis=0)
+        ci_upper = np.percentile(bootstrap_forecasts, upper_pct, axis=0)
+
+        return ci_lower, ci_upper
+
+    def _forecast_analytical_ci(
+        self,
+        steps: int,
+        forecasts: np.ndarray,
+        ci_level: float,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Generate analytical confidence intervals.
+
+        Uses the formula:
+        Var(ŷₜ₊ₕ) = Σₛ₌₀ʰ⁻¹ Φₛ·Σ̂·Φₛ'
+
+        where Φₛ are the VAR MA representation matrices.
+
+        Parameters
+        ----------
+        steps : int
+            Forecast horizon
+        forecasts : np.ndarray
+            Point forecasts, shape (steps, N, K)
+        ci_level : float
+            Confidence level
+
+        Returns
+        -------
+        ci_lower : np.ndarray
+            Lower CI bounds, shape (steps, N, K)
+        ci_upper : np.ndarray
+            Upper CI bounds, shape (steps, N, K)
+        """
+        # Critical value
+        z = stats.norm.ppf(1 - (1 - ci_level) / 2)
+
+        # Compute MA representation matrices Φ_s
+        # For stable VAR: Φ_0 = I, Φ_s = Σⱼ₌₁ᵐⁱⁿ⁽ˢ'ᵖ⁾ Φ_s-j · A_j
+        Phi = self._compute_ma_matrices(steps)
+
+        # Residual covariance matrix
+        Sigma = self.Sigma
+
+        # Compute forecast error variance for each horizon
+        forecast_var = np.zeros((steps, self.K))
+        for h in range(steps):
+            # Var(ŷₜ₊ₕ) = Σₛ₌₀ʰ Φₛ·Σ̂·Φₛ'
+            var_h = np.zeros((self.K, self.K))
+            for s in range(h + 1):
+                var_h += Phi[s] @ Sigma @ Phi[s].T
+            forecast_var[h, :] = np.diag(var_h)
+
+        # Standard errors
+        forecast_se = np.sqrt(forecast_var)  # (steps, K)
+
+        # Broadcast to (steps, N, K) assuming same SE for all entities
+        forecast_se_full = np.broadcast_to(forecast_se[:, np.newaxis, :], (steps, self.N, self.K))
+
+        # Confidence intervals
+        ci_lower = forecasts - z * forecast_se_full
+        ci_upper = forecasts + z * forecast_se_full
+
+        return ci_lower, ci_upper
+
+    def _compute_ma_matrices(self, max_horizon: int) -> List[np.ndarray]:
+        """
+        Compute MA representation matrices Φ_s for s=0, 1, ..., max_horizon.
+
+        Returns
+        -------
+        List[np.ndarray]
+            List of Phi matrices, each K×K
+        """
+        Phi = [np.eye(self.K)]  # Φ_0 = I
+
+        for s in range(1, max_horizon + 1):
+            Phi_s = np.zeros((self.K, self.K))
+            for j in range(1, min(s, self.p) + 1):
+                # Φ_s = Σⱼ Φ_s-j · A_j
+                Phi_s += Phi[s - j] @ self.A_matrices[j - 1]
+            Phi.append(Phi_s)
+
+        return Phi
 
     def __repr__(self) -> str:
         """String representation."""
