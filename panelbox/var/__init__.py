@@ -53,10 +53,22 @@ References
 from panelbox.var.data import PanelVARData
 from panelbox.var.model import PanelVAR
 from panelbox.var.result import LagOrderResult, PanelVARResult
+from panelbox.var.vecm import (
+    CointegrationRankTest,
+    PanelVECM,
+    PanelVECMResult,
+    RankSelectionResult,
+    RankTestResult,
+)
 
 __all__ = [
     "PanelVARData",
     "PanelVAR",
     "PanelVARResult",
     "LagOrderResult",
+    "CointegrationRankTest",
+    "PanelVECM",
+    "PanelVECMResult",
+    "RankSelectionResult",
+    "RankTestResult",
 ]
