@@ -590,6 +590,138 @@ def bootstrap_granger_test(
     )
 
 
+def _single_bootstrap_dh_iteration(
+    data: pd.DataFrame,
+    cause: str,
+    effect: str,
+    lags: int,
+    entity_col: str,
+    time_col: str,
+    bootstrap_type: str,
+    seed: int,
+) -> Optional[Dict]:
+    """
+    Single bootstrap iteration for Dumitrescu-Hurlin test.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Original panel data
+    cause : str
+        Causing variable
+    effect : str
+        Effect variable
+    lags : int
+        Number of lags
+    entity_col : str
+        Entity column name
+    time_col : str
+        Time column name
+    bootstrap_type : str
+        'entity', 'wild', or 'residual'
+    seed : int
+        Random seed
+
+    Returns
+    -------
+    dict or None
+        DH test results for this bootstrap iteration, or None if failed
+    """
+    np.random.seed(seed)
+
+    try:
+        if bootstrap_type == "entity":
+            # Entity bootstrap: resample entire entities
+            entities = data[entity_col].unique()
+            boot_entities = np.random.choice(entities, size=len(entities), replace=True)
+
+            # Build bootstrap data
+            boot_data_list = []
+            for new_id, orig_id in enumerate(boot_entities):
+                entity_data = data[data[entity_col] == orig_id].copy()
+                entity_data[entity_col] = new_id
+                boot_data_list.append(entity_data)
+
+            boot_data = pd.concat(boot_data_list, ignore_index=True)
+
+        elif bootstrap_type in ["wild", "residual"]:
+            # For wild/residual bootstrap, we need to:
+            # 1. Estimate restricted model for each entity (H0: no causality)
+            # 2. Get residuals
+            # 3. Generate bootstrap residuals
+            # 4. Reconstruct dependent variable
+
+            boot_data = data.copy()
+            entities = boot_data[entity_col].unique()
+
+            for entity in entities:
+                entity_mask = boot_data[entity_col] == entity
+                entity_data = boot_data[entity_mask].copy()
+                entity_data = entity_data.sort_values(time_col).reset_index(drop=True)
+
+                # Check if enough observations
+                if len(entity_data) <= lags:
+                    continue
+
+                # Build lagged variables for restricted model (only effect, not cause)
+                y = entity_data[effect].values[lags:]
+                n_obs = len(y)
+
+                # Design matrix: intercept + lags of effect only
+                X_restricted = np.ones((n_obs, 1 + lags))
+                for lag in range(1, lags + 1):
+                    X_restricted[:, lag] = entity_data[effect].values[lags - lag : -lag]
+
+                # Estimate restricted model
+                try:
+                    beta_restricted = np.linalg.lstsq(X_restricted, y, rcond=None)[0]
+                    fitted = X_restricted @ beta_restricted
+                    residuals = y - fitted
+
+                    # Generate bootstrap residuals
+                    if bootstrap_type == "wild":
+                        wild_weights = np.random.choice([-1, 1], size=n_obs)
+                        resid_boot = residuals * wild_weights
+                    else:  # residual
+                        resid_boot = np.random.choice(residuals, size=n_obs, replace=True)
+
+                    # Reconstruct y
+                    y_boot = fitted + resid_boot
+
+                    # Update in boot_data
+                    entity_indices = np.where(entity_mask)[0]
+                    if len(entity_indices) > lags:
+                        boot_data.loc[entity_indices[lags:], effect] = y_boot
+
+                except np.linalg.LinAlgError:
+                    # Singular matrix, skip this entity
+                    continue
+
+        else:
+            raise ValueError(f"Unknown bootstrap_type: {bootstrap_type}")
+
+        # Compute DH test on bootstrap data
+        dh_result = dumitrescu_hurlin_test(
+            data=boot_data,
+            cause=cause,
+            effect=effect,
+            lags=lags,
+            entity_col=entity_col,
+            time_col=time_col,
+        )
+
+        # Convert to dict for easier handling
+        return {
+            "W_bar": dh_result.W_bar,
+            "Z_tilde_stat": dh_result.Z_tilde_stat,
+            "Z_bar_stat": dh_result.Z_bar_stat,
+        }
+
+    except Exception:
+        # If anything fails, return None
+        return None
+
+
 def bootstrap_dumitrescu_hurlin(
     data: pd.DataFrame,
     cause: str,
@@ -623,7 +755,7 @@ def bootstrap_dumitrescu_hurlin(
     n_bootstrap : int, default=999
         Number of bootstrap iterations
     bootstrap_type : str, default='wild'
-        Bootstrap type ('residual' or 'wild')
+        Bootstrap type ('residual', 'wild', or 'entity')
     n_jobs : int, default=-1
         Number of parallel jobs
     random_state : int, optional
@@ -635,22 +767,119 @@ def bootstrap_dumitrescu_hurlin(
     -------
     dict
         Bootstrap results with keys:
+        - 'observed_W_bar': observed W̄ statistic
         - 'observed_Z_tilde': observed Z̃ statistic
         - 'observed_Z_bar': observed Z̄ statistic
+        - 'p_value_asymptotic_Z_tilde': asymptotic p-value for Z̃
+        - 'p_value_asymptotic_Z_bar': asymptotic p-value for Z̄
+        - 'p_value_bootstrap_W_bar': bootstrap p-value for W̄
         - 'p_value_bootstrap_Z_tilde': bootstrap p-value for Z̃
         - 'p_value_bootstrap_Z_bar': bootstrap p-value for Z̄
+        - 'bootstrap_dist_W_bar': bootstrap distribution of W̄
         - 'bootstrap_dist_Z_tilde': bootstrap distribution of Z̃
         - 'bootstrap_dist_Z_bar': bootstrap distribution of Z̄
+        - 'n_bootstrap': actual number of successful bootstrap iterations
+        - 'bootstrap_type': type of bootstrap used
 
     Notes
     -----
     Bootstrap for panel data is more complex because we need to preserve
-    the panel structure. This implementation uses entity-level bootstrap.
+    the panel structure. This implementation supports:
+
+    1. 'entity' bootstrap: Resample entire entities (preserves all dependence)
+    2. 'wild' bootstrap: Wild bootstrap on individual entity residuals
+    3. 'residual' bootstrap: Resample residuals within each entity
+
+    The procedure follows:
+    1. Compute observed DH statistics (W̄, Z̃, Z̄)
+    2. For each bootstrap iteration:
+       a. Generate bootstrap panel data
+       b. Re-compute DH statistics
+    3. Bootstrap p-value = proportion of bootstrap stats ≥ observed stat
     """
-    raise NotImplementedError(
-        "Dumitrescu-Hurlin bootstrap requires careful handling of panel structure. "
-        "This will be completed in the next phase."
+    # Get observed test result
+    observed_result = dumitrescu_hurlin_test(
+        data=data,
+        cause=cause,
+        effect=effect,
+        lags=lags,
+        entity_col=entity_col,
+        time_col=time_col,
     )
+
+    observed_W_bar = observed_result.W_bar
+    observed_Z_tilde = observed_result.Z_tilde_stat
+    observed_Z_bar = observed_result.Z_bar_stat
+    p_value_Z_tilde = observed_result.Z_tilde_pvalue
+    p_value_Z_bar = observed_result.Z_bar_pvalue
+
+    # Set random state
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    # Generate seeds for parallel execution
+    seeds = (
+        np.random.randint(0, 2**31, size=n_bootstrap)
+        if random_state is None
+        else np.arange(random_state, random_state + n_bootstrap)
+    )
+
+    # Helper function for single bootstrap iteration
+    def _single_dh_bootstrap_iteration(seed):
+        return _single_bootstrap_dh_iteration(
+            data=data,
+            cause=cause,
+            effect=effect,
+            lags=lags,
+            entity_col=entity_col,
+            time_col=time_col,
+            bootstrap_type=bootstrap_type,
+            seed=seed,
+        )
+
+    # Run bootstrap in parallel
+    if show_progress:
+        print(
+            f"Running {n_bootstrap} bootstrap iterations for DH test ({bootstrap_type} bootstrap)..."
+        )
+
+    bootstrap_results = Parallel(n_jobs=n_jobs)(
+        delayed(_single_dh_bootstrap_iteration)(seed)
+        for seed in (tqdm(seeds) if show_progress else seeds)
+    )
+
+    # Filter out None values (failed iterations)
+    valid_results = [r for r in bootstrap_results if r is not None]
+
+    n_failed = n_bootstrap - len(valid_results)
+    if n_failed > 0:
+        print(f"Warning: {n_failed}/{n_bootstrap} bootstrap iterations failed")
+
+    # Extract statistics
+    bootstrap_W_bar = np.array([r["W_bar"] for r in valid_results])
+    bootstrap_Z_tilde = np.array([r["Z_tilde_stat"] for r in valid_results])
+    bootstrap_Z_bar = np.array([r["Z_bar_stat"] for r in valid_results])
+
+    # Compute bootstrap p-values
+    p_value_bootstrap_W_bar = np.mean(bootstrap_W_bar >= observed_W_bar)
+    p_value_bootstrap_Z_tilde = np.mean(np.abs(bootstrap_Z_tilde) >= np.abs(observed_Z_tilde))
+    p_value_bootstrap_Z_bar = np.mean(np.abs(bootstrap_Z_bar) >= np.abs(observed_Z_bar))
+
+    return {
+        "observed_W_bar": observed_W_bar,
+        "observed_Z_tilde": observed_Z_tilde,
+        "observed_Z_bar": observed_Z_bar,
+        "p_value_asymptotic_Z_tilde": p_value_Z_tilde,
+        "p_value_asymptotic_Z_bar": p_value_Z_bar,
+        "p_value_bootstrap_W_bar": p_value_bootstrap_W_bar,
+        "p_value_bootstrap_Z_tilde": p_value_bootstrap_Z_tilde,
+        "p_value_bootstrap_Z_bar": p_value_bootstrap_Z_bar,
+        "bootstrap_dist_W_bar": bootstrap_W_bar,
+        "bootstrap_dist_Z_tilde": bootstrap_Z_tilde,
+        "bootstrap_dist_Z_bar": bootstrap_Z_bar,
+        "n_bootstrap": len(valid_results),
+        "bootstrap_type": bootstrap_type,
+    }
 
 
 # Placeholder for future implementation

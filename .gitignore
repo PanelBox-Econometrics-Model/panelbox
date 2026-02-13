@@ -225,3 +225,4 @@ validation/
 
 # Claude AI working directory
 .claude/
+prompt.txt
