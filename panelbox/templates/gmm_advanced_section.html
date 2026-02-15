@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced GMM Report</title>
+    <style>
+        /* Professional Theme */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+            --border-color: #bdc3c7;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-text);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .gmm-model {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-left: 4px solid var(--secondary-color);
+            padding-left: 10px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        thead {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .gmm-diagnostics {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--light-bg);
+            border-radius: 6px;
+        }
+
+        .gmm-specification {
+            margin-top: 20px;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .stat-badge.good {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .stat-badge.warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .stat-badge.bad {
+            background-color: var(--danger-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <section class="gmm-model">
+        <h2>GMM Estimation: {{ estimator_type }}</h2>
+
+        <div class="gmm-specification">
+            <h3>Model Specification</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td><strong>Estimator:</strong></td>
+                        <td>{{ estimator_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Number of observations:</strong></td>
+                        <td>{{ n_obs }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Number of moment conditions:</strong></td>
+                        <td>{{ n_moments }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Number of parameters:</strong></td>
+                        <td>{{ n_params }}</td>
+                    </tr>
+                    {% if weighting_matrix %}
+                    <tr>
+                        <td><strong>Weighting matrix:</strong></td>
+                        <td>{{ weighting_matrix }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if iterations %}
+                    <tr>
+                        <td><strong>Iterations:</strong></td>
+                        <td>{{ iterations }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="gmm-coefficients">
+            <h3>Parameter Estimates</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std. Error</th>
+                        <th>t-stat</th>
+                        <th>p-value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for param in parameters %}
+                    <tr>
+                        <td>{{ param.name }}</td>
+                        <td>{{ param.estimate|number_format }}</td>
+                        <td>{{ param.std_error|number_format }}</td>
+                        <td>{{ param.t_stat|number_format }}</td>
+                        <td>{{ param.p_value|pvalue_format }}{{ param.p_value|significance_stars }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="gmm-diagnostics">
+            <h3>Specification Tests</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test</th>
+                        <th>Statistic</th>
+                        <th>p-value</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if j_test %}
+                    <tr>
+                        <td>J-test (Overidentification)</td>
+                        <td>{{ j_test.statistic|number_format }}</td>
+                        <td>{{ j_test.p_value|pvalue_format }}</td>
+                        <td>
+                            {% if j_test.p_value > 0.05 %}
+                            <span class="stat-badge good">Valid</span>
+                            {% else %}
+                            <span class="stat-badge bad">Rejected</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% for test in additional_tests %}
+                    <tr>
+                        <td>{{ test.name }}</td>
+                        <td>{{ test.statistic|number_format }}</td>
+                        <td>{{ test.p_value|pvalue_format }}</td>
+                        <td>
+                            {% if test.reject %}
+                            <span class="stat-badge bad">Rejected</span>
+                            {% else %}
+                            <span class="stat-badge good">Valid</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if objective_value %}
+        <div class="gmm-optimization">
+            <h3>Optimization</h3>
+            <p><strong>Objective function value:</strong> {{ objective_value|number_format(6) }}</p>
+            {% if convergence_message %}
+            <p><strong>Convergence:</strong> {{ convergence_message }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </section>
+</body>
+</html>

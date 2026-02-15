@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from panelbox.utils.data import PanelData
+from panelbox.core.panel_data import PanelData
 
 from .base import QuantilePanelModel
 from .pooled import PooledQuantile

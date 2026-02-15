@@ -1,271 +1,460 @@
-# Guia de Contribuição
+# Contributing to PanelBox
 
-Obrigado por considerar contribuir para o PanelBox! Este documento fornece diretrizes para contribuir com o projeto.
+Thank you for your interest in contributing to PanelBox! This document provides guidelines for contributing to the project.
 
-## Código de Conduta
+## Code of Conduct
 
-Este projeto adere ao [Código de Conduta](CODE_OF_CONDUCT.md). Ao participar, você deve seguir este código.
+By participating in this project, you agree to abide by our Code of Conduct. Be respectful, inclusive, and professional in all interactions.
 
-## Como Contribuir
+## Getting Started
 
-### Reportando Bugs
+### Development Environment
 
-Se você encontrar um bug, por favor abra uma issue com:
-
-- Descrição clara do problema
-- Passos para reproduzir
-- Comportamento esperado vs atual
-- Versão do Python e do PanelBox
-- Sistema operacional
-- Código mínimo para reproduzir o erro
-
-**Template de Bug Report:**
-
-```markdown
-**Descrição do Bug**
-Descrição clara e concisa do bug.
-
-**Para Reproduzir**
-Passos para reproduzir:
-1. Importar panelbox
-2. Executar código X
-3. Observar erro Y
-
-**Comportamento Esperado**
-O que deveria acontecer.
-
-**Código para Reproduzir**
-```python
-import panelbox as pb
-# código mínimo aqui
+1. **Fork and clone the repository:**
+```bash
+git clone https://github.com/yourusername/panelbox.git
+cd panelbox
 ```
 
-**Ambiente**
-- Python version: 3.10
-- PanelBox version: 0.1.0
-- OS: Ubuntu 22.04
-
-**Informações Adicionais**
-Qualquer contexto adicional.
+2. **Create a virtual environment:**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-### Sugerindo Melhorias
+3. **Install in development mode:**
+```bash
+pip install -e ".[dev,test,quantile]"
+```
 
-Para sugerir melhorias ou novas funcionalidades:
+4. **Install pre-commit hooks:**
+```bash
+pre-commit install
+```
 
-1. Verifique se já não existe uma issue similar
-2. Abra uma issue descrevendo:
-   - Motivação para a melhoria
-   - Descrição detalhada
-   - Exemplos de uso propostos
-   - Alternativas consideradas
+### Development Dependencies
 
-### Pull Requests
+```bash
+pip install -r requirements-dev.txt
+```
 
-#### Processo
+Required for development:
+- pytest >= 7.0
+- pytest-cov >= 3.0
+- black >= 22.0 (code formatting)
+- flake8 >= 4.0 (linting)
+- mypy >= 0.950 (type checking)
+- sphinx >= 4.0 (documentation)
 
-1. **Fork** o repositório
-2. **Clone** seu fork: `git clone https://github.com/seu-usuario/panelbox.git`
-3. **Crie uma branch** para sua feature: `git checkout -b feature/MinhaFeature`
-4. **Configure o ambiente de desenvolvimento**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   # ou
-   venv\Scripts\activate  # Windows
-   pip install -e ".[dev]"
-   ```
-5. **Faça suas alterações** seguindo as diretrizes de código
-6. **Adicione testes** para novas funcionalidades
-7. **Execute os testes**:
-   ```bash
-   pytest
-   pytest --cov=panelbox tests/
-   ```
-8. **Execute os linters**:
-   ```bash
-   black panelbox/ tests/
-   isort panelbox/ tests/
-   flake8 panelbox/ tests/
-   mypy panelbox/
-   ```
-9. **Commit suas mudanças**:
-   ```bash
-   git commit -m "feat: Adiciona funcionalidade X"
-   ```
-10. **Push para sua branch**: `git push origin feature/MinhaFeature`
-11. **Abra um Pull Request** no repositório principal
+## Contributing to Quantile Regression
 
-#### Diretrizes de Código
+### Understanding the Module Structure
 
-**Estilo de Código**
+```
+panelbox/models/quantile/
+├── __init__.py
+├── pooled.py           # Pooled QR
+├── fixed_effects.py    # FE QR (Koenker 2004)
+├── canay.py           # Canay two-step
+├── location_scale.py  # Location-scale models
+├── treatment.py       # QTE estimation
+└── utils/
+    ├── optimization.py
+    └── inference.py
+```
 
-- Siga [PEP 8](https://peps.python.org/pep-0008/)
-- Use [Black](https://black.readthedocs.io/) para formatação (line-length=100)
-- Use [isort](https://pycqa.github.io/isort/) para ordenar imports
-- Use type hints em todas as funções públicas
-- Docstrings no estilo Google
+### Adding a New Estimator
 
-**Exemplo de Docstring:**
+1. **Create a new file** in `panelbox/models/quantile/`
+2. **Inherit from base class:**
 
 ```python
-def estimate_model(
-    data: pd.DataFrame,
-    formula: str,
-    entity_col: str,
-    time_col: str
-) -> PanelResults:
+from panelbox.models.quantile.base import QuantileModel
+
+class MyNewEstimator(QuantileModel):
     """
-    Estima um modelo de painel.
+    Brief description.
 
-    Args:
-        data: DataFrame com dados em formato long
-        formula: Fórmula no estilo R (e.g., "y ~ x1 + x2")
-        entity_col: Nome da coluna de entidade
-        time_col: Nome da coluna de tempo
+    Parameters
+    ----------
+    data : PanelData
+        Panel dataset
+    formula : str
+        Model formula (Wilkinson notation)
+    tau : float or list
+        Quantile(s) to estimate
 
-    Returns:
-        Objeto PanelResults com resultados da estimação
-
-    Raises:
-        ValueError: Se a fórmula for inválida
-        KeyError: Se colunas não existirem no DataFrame
-
-    Examples:
-        >>> data = load_grunfeld()
-        >>> results = estimate_model(data, "invest ~ value", "firm", "year")
-        >>> print(results.summary())
+    References
+    ----------
+    .. [1] Author (Year). Title. Journal.
     """
-    pass
+
+    def __init__(self, data, formula, tau, **kwargs):
+        super().__init__(data, formula, tau)
+        # Your initialization
+
+    def fit(self, **kwargs):
+        """Estimate the model."""
+        # Your implementation
+        return QuantileResults(...)
 ```
 
-**Commits**
+3. **Write comprehensive docstrings** (NumPy style)
+4. **Add unit tests** in `tests/quantile/test_mynew.py`
+5. **Validate against R** if comparable implementation exists
+6. **Update documentation** in `docs/source/quantile/`
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
+### Code Style
 
-- `feat:` Nova funcionalidade
-- `fix:` Correção de bug
-- `docs:` Mudanças na documentação
-- `style:` Formatação (sem mudança de código)
-- `refactor:` Refatoração de código
-- `test:` Adição ou correção de testes
-- `chore:` Manutenção (build, CI, etc.)
+We follow PEP 8 with some modifications:
 
-Exemplos:
+- **Line length**: 88 characters (Black default)
+- **Quotes**: Double quotes for strings
+- **Imports**: Organized with isort
+- **Type hints**: Use for all public APIs
+
+**Format your code:**
+```bash
+black panelbox/
+isort panelbox/
 ```
-feat: adiciona suporte para System GMM
-fix: corrige cálculo de estatística de Hansen
-docs: atualiza tutorial de modelos dinâmicos
-test: adiciona testes para validação de fórmulas
+
+**Check linting:**
+```bash
+flake8 panelbox/
+mypy panelbox/
 ```
 
-**Testes**
+### Testing
 
-- Toda nova funcionalidade deve ter testes
-- Manter cobertura de testes ≥ 90%
-- Usar pytest como framework
-- Organizar testes em `tests/` espelhando `panelbox/`
-- Testes unitários para funções individuais
-- Testes de integração para workflows completos
-- Testes de benchmark contra Stata/R quando aplicável
+#### Writing Tests
 
-**Exemplo de Teste:**
+All new code requires tests. Place tests in `tests/quantile/`:
 
 ```python
 import pytest
-import pandas as pd
-import panelbox as pb
-from panelbox.datasets import load_grunfeld
+import numpy as np
+from panelbox.models.quantile import MyNewEstimator
 
-class TestFixedEffects:
-    """Testes para o modelo Fixed Effects."""
+class TestMyNewEstimator:
+    """Tests for MyNewEstimator."""
 
     @pytest.fixture
-    def data(self):
-        """Fixture com dados de exemplo."""
-        return load_grunfeld()
+    def sample_data(self):
+        """Create sample dataset."""
+        # Return test data
 
-    def test_basic_estimation(self, data):
-        """Testa estimação básica de FE."""
-        model = pb.FixedEffects("invest ~ value", data, "firm", "year")
-        results = model.fit()
+    def test_basic_functionality(self, sample_data):
+        """Test basic estimation works."""
+        model = MyNewEstimator(sample_data, 'y ~ x1 + x2', tau=0.5)
+        result = model.fit()
 
-        assert results.params is not None
-        assert len(results.params) > 0
-        assert results.nobs == len(data)
+        assert result.params is not None
+        assert len(result.params) == 3
 
-    def test_coefficients_match_stata(self, data):
-        """Testa se coeficientes coincidem com Stata."""
-        model = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
-        results = model.fit()
+    def test_coefficients_reasonable(self, sample_data):
+        """Test coefficient values are reasonable."""
+        # Test against known DGP
 
-        # Valores obtidos de Stata xtreg, fe
-        expected_value = 0.1101
-        expected_capital = 0.3100
-
-        assert pytest.approx(results.params['value'], rel=1e-3) == expected_value
-        assert pytest.approx(results.params['capital'], rel=1e-3) == expected_capital
+    def test_standard_errors(self, sample_data):
+        """Test standard error computation."""
+        # Test SE calculation
 ```
 
-#### Documentação
+#### Running Tests
 
-- Toda função/classe pública deve ter docstring
-- Atualizar README.md se necessário
-- Adicionar exemplos em `examples/` para funcionalidades complexas
-- Atualizar documentação técnica em `docs/`
-- Adicionar entrada no CHANGELOG.md
+```bash
+# Run all tests
+pytest
 
-#### Code Review
+# Run specific test file
+pytest tests/quantile/test_mynew.py
 
-Seu PR será revisado considerando:
+# Run with coverage
+pytest --cov=panelbox --cov-report=html
 
-- Qualidade do código
-- Cobertura de testes
-- Documentação
-- Compatibilidade com versões Python suportadas
-- Performance (se aplicável)
-- Consistência com arquitetura do projeto
+# Run only quantile tests
+pytest tests/quantile/
+```
 
-## Áreas para Contribuição
+#### Validation Against R
 
-### Prioridade Alta
-- [ ] Implementação de modelos core (Pooled OLS, FE, RE)
-- [ ] Parser de fórmulas
-- [ ] Testes de validação básicos
-- [ ] Sistema de reports
+For estimators with R equivalents, add validation tests:
 
-### Prioridade Média
-- [ ] Modelos dinâmicos (GMM)
-- [ ] Testes de validação avançados
-- [ ] Erros padrão robustos
-- [ ] CLI
+```python
+def test_against_r(self):
+    """Validate against R quantreg package."""
+    # Load R reference output
+    with open('tests/validation/quantile/reference_outputs/mynew.json') as f:
+        r_result = json.load(f)
 
-### Prioridade Baixa
-- [ ] Testes de raiz unitária
-- [ ] Testes de cointegração
-- [ ] Otimizações de performance
-- [ ] Integrações com outras bibliotecas
+    # Run PanelBox
+    model = MyNewEstimator(...)
+    result = model.fit()
 
-### Documentação
-- [ ] Tutoriais em português e inglês
-- [ ] Exemplos de uso
-- [ ] Comparações com Stata/R
-- [ ] Papers técnicos
+    # Compare
+    np.testing.assert_allclose(
+        result.params,
+        r_result['coefficients'],
+        rtol=1e-4,
+        atol=1e-5,
+        err_msg="Coefficients don't match R"
+    )
+```
 
-## Comunicação
+### Documentation
 
-- **Issues**: Para bugs, melhorias e discussões
-- **Pull Requests**: Para contribuições de código
-- **Email**: gustavo.haase@gmail.com para questões privadas
+#### Docstring Format
 
-## Reconhecimento
+Use NumPy docstring style:
 
-Todos os contribuidores serão reconhecidos no README.md e na documentação.
+```python
+def my_function(x, y, method='default'):
+    """
+    Brief one-line description.
 
-## Dúvidas?
+    More detailed description with multiple paragraphs if needed.
+    Explain what the function does, its purpose, and any important
+    algorithmic details.
 
-Se tiver dúvidas sobre como contribuir, abra uma issue com a tag `question` ou entre em contato.
+    Parameters
+    ----------
+    x : array_like
+        Description of x
+    y : array_like
+        Description of y
+    method : {'default', 'alternative'}, optional
+        Description of method, by default 'default'
 
----
+    Returns
+    -------
+    result : ndarray
+        Description of result
 
-Obrigado por contribuir para o PanelBox! 🎉
+    Raises
+    ------
+    ValueError
+        If x and y have different lengths
+
+    See Also
+    --------
+    related_function : Related functionality
+
+    Notes
+    -----
+    Any important notes about usage, limitations, or algorithmic details.
+
+    Mathematical notation can be included using LaTeX:
+
+    .. math:: Q_Y(\tau|X) = X'\beta(\tau)
+
+    References
+    ----------
+    .. [1] Koenker, R. (2004). Quantile regression for longitudinal data.
+           Journal of Multivariate Analysis, 91(1), 74-89.
+
+    Examples
+    --------
+    >>> from panelbox import PanelData
+    >>> data = PanelData(...)
+    >>> result = my_function(data.y, data.X)
+    >>> print(result)
+    """
+    # Implementation
+```
+
+#### Building Documentation
+
+```bash
+cd docs/
+make html
+# Open build/html/index.html
+```
+
+### Pull Request Process
+
+1. **Create a feature branch:**
+```bash
+git checkout -b feature/my-new-feature
+```
+
+2. **Make your changes:**
+- Write code
+- Add tests
+- Update documentation
+- Run tests locally
+
+3. **Commit with clear messages:**
+```bash
+git add .
+git commit -m "Add MyNewEstimator for panel QR
+
+- Implements estimator from Author (Year)
+- Adds validation against R
+- Includes comprehensive tests
+- Updates documentation
+
+Closes #123"
+```
+
+4. **Push and create PR:**
+```bash
+git push origin feature/my-new-feature
+```
+
+5. **Fill out PR template completely**
+
+6. **Address review comments**
+
+### Commit Message Guidelines
+
+Format:
+```
+<type>: <subject>
+
+<body>
+
+<footer>
+```
+
+Types:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring
+- `perf`: Performance improvement
+- `style`: Code style changes (formatting)
+- `chore`: Maintenance tasks
+
+Example:
+```
+feat: Add Canay two-step estimator
+
+Implements the Canay (2011) two-step estimator for panel
+quantile regression with fixed effects. The estimator:
+1. Estimates fixed effects via within-transformation OLS
+2. Removes fixed effects from dependent variable
+3. Runs pooled QR on transformed data
+
+Performance: O(NT) for Step 1, O(NT) for Step 2
+
+Closes #45
+```
+
+## Specific Contribution Areas
+
+### 1. New Estimators
+
+We welcome implementations of new panel QR estimators from recent literature.
+
+**Priority methods:**
+- Instrumental variables QR (IVQR)
+- Quantile regression with censored data
+- Composite quantile regression
+- Smoothed QR methods
+
+**Requirements:**
+- Published in peer-reviewed journal
+- Validation against existing implementation (if available)
+- Comprehensive tests
+- Clear documentation with references
+
+### 2. Performance Improvements
+
+Optimizations are always welcome:
+
+- Algorithmic improvements
+- Parallelization
+- Cython/Numba acceleration
+- Memory optimization
+
+**Requirements:**
+- Benchmark showing improvement
+- No accuracy loss
+- Tests pass
+
+### 3. Bug Fixes
+
+Found a bug? Great!
+
+1. Search existing issues
+2. Create issue with reproducible example
+3. Fix and submit PR
+4. Link PR to issue
+
+### 4. Documentation
+
+Documentation improvements highly valued:
+
+- Fix typos
+- Clarify explanations
+- Add examples
+- Improve tutorials
+
+### 5. Examples and Tutorials
+
+Real-world examples are valuable:
+
+- Applied economics examples
+- Finance applications
+- Policy evaluation
+- Climate science
+
+**Requirements:**
+- Complete, runnable code
+- Real or realistic data
+- Clear interpretation
+- References to relevant literature
+
+## R Package Comparison
+
+When adding features, check if R quantreg/rqpd has equivalent:
+
+1. **Run R implementation** on test data
+2. **Save output** to `tests/validation/quantile/reference_outputs/`
+3. **Add validation test** comparing PanelBox to R
+4. **Document differences** if any (and justify)
+
+R script template:
+```r
+library(quantreg)
+library(jsonlite)
+
+# Generate data
+set.seed(42)
+data <- data.frame(...)
+
+# Run estimator
+result <- rq(y ~ x1 + x2, data=data, tau=0.5)
+
+# Save output
+output <- list(
+  coefficients = coef(result),
+  std_errors = summary(result, se="boot")$coefficients[,2]
+)
+
+write_json(output, "reference_output.json", digits=10)
+```
+
+## Questions?
+
+- **General questions**: Open a Discussion on GitHub
+- **Bug reports**: Open an Issue
+- **Feature requests**: Open an Issue with [Feature] tag
+- **Security issues**: Email security@panelbox.org
+
+## Recognition
+
+Contributors are recognized in:
+- AUTHORS file
+- Release notes
+- Documentation contributors page
+
+Significant contributions may result in co-authorship on methodological papers.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+Thank you for contributing to PanelBox!

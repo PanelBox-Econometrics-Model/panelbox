@@ -30,6 +30,7 @@ References:
 
 from .negbin import FixedEffectsNegativeBinomial, NegativeBinomial
 from .poisson import PoissonFixedEffects, PoissonQML, PooledPoisson, RandomEffectsPoisson
+from .ppml import PPML, PPMLResult
 from .zero_inflated import (
     ZeroInflatedNegativeBinomial,
     ZeroInflatedNegativeBinomialResult,
@@ -43,6 +44,9 @@ __all__ = [
     "PoissonFixedEffects",
     "RandomEffectsPoisson",
     "PoissonQML",
+    # PPML (Gravity models)
+    "PPML",
+    "PPMLResult",
     # Negative Binomial models
     "NegativeBinomial",
     "FixedEffectsNegativeBinomial",

@@ -1,8 +1,8 @@
 ---
 name: Feature Request
-about: Suggest an idea for PanelBox
-title: '[FEATURE] '
-labels: enhancement
+about: Suggest a new feature for PanelBox quantile regression
+title: '[Feature] '
+labels: 'enhancement, quantile'
 assignees: ''
 ---
 
@@ -12,57 +12,48 @@ A clear and concise description of the feature you'd like to see.
 
 ## Motivation
 
-Why do you need this feature? What problem does it solve?
-
-**Example use case:**
-```python
-# Example of how you would like to use this feature
-```
+Why is this feature needed? What problem does it solve?
 
 ## Proposed Solution
 
-Describe your preferred solution. How should this feature work?
+Describe how you envision this feature working:
 
 ```python
-# Pseudocode or example API
-import panelbox as pb
+# Example usage of proposed feature
+from panelbox.models.quantile import NewFeature
 
-# Your proposed usage
-model = pb.NewFeature(...)
-results = model.fit()
+model = NewFeature(data, ...)
+result = model.fit()
 ```
 
 ## Alternatives Considered
 
-Have you considered any alternative solutions or features? What are the pros and cons?
+Describe any alternative solutions or features you've considered.
 
-## Related Research
+## Implementation Details (optional)
 
-Is this feature based on a specific paper or method? Please provide references:
+If you have ideas about how to implement this:
 
-- **Paper:** Author (Year). Title. Journal.
-- **Method:** Brief description
-- **Implementation:** Links to R/Stata implementations if available
+- [ ] Estimator implementation
+- [ ] Inference methods needed
+- [ ] Visualization support
+- [ ] Documentation requirements
 
-## Implementation Notes (Optional)
+## References
 
-If you have ideas about how this could be implemented technically, share them here.
+If this feature is based on published research, please provide references:
 
-## Priority
-
-How important is this feature to you?
-- [ ] Critical - blocking my research
-- [ ] High - would significantly improve my workflow
-- [ ] Medium - nice to have
-- [ ] Low - would be cool but not essential
+- Paper citation
+- Links to implementations in other software (R, Stata, etc.)
+- Relevant textbook chapters
 
 ## Additional Context
 
-Add any other context, screenshots, or examples about the feature request here.
+Add any other context, examples, or screenshots about the feature request.
 
-## Willing to Contribute?
+## Checklist
 
-- [ ] I would like to implement this feature myself (with guidance)
-- [ ] I can help with testing
-- [ ] I can provide example data
-- [ ] I can help with documentation
+- [ ] I have searched existing issues to ensure this isn't a duplicate
+- [ ] I have provided a clear use case for this feature
+- [ ] I am willing to help test this feature when implemented
+- [ ] (Optional) I am willing to contribute to the implementation

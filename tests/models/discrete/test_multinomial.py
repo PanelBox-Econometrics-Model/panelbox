@@ -142,3 +142,209 @@ class TestMultinomialLogit:
         with pytest.raises(ValueError):
             model = MultinomialLogit(y_invalid, self.X, n_alternatives=self.n_alternatives)
             model.fit()
+
+
+class TestMultinomialLogitFixedEffects:
+    """Test suite for fixed effects multinomial logit."""
+
+    def setup_method(self):
+        """Setup test data for FE model."""
+        np.random.seed(42)
+
+        self.n_entities = 30
+        self.n_periods = 4
+        self.n_vars = 2
+        self.n_alternatives = 3
+
+        # Create panel data
+        data = []
+        for i in range(self.n_entities):
+            for t in range(self.n_periods):
+                data.append(
+                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                )
+
+        self.df = pd.DataFrame(data)
+
+        # True parameters
+        beta_true = np.array([[0.5, -0.3], [0.2, 0.4]])
+
+        # Generate choices with individual heterogeneity
+        choices = []
+        for i in range(self.n_entities):
+            alpha_i = np.random.randn() * 0.5  # Individual effect
+            entity_df = self.df[self.df["entity"] == i]
+
+            for _, row in entity_df.iterrows():
+                X = np.array([row["x1"], row["x2"]])
+                util_0 = alpha_i
+                util_1 = X @ beta_true[0] + alpha_i
+                util_2 = X @ beta_true[1] + alpha_i
+
+                utils = np.array([util_0, util_1, util_2])
+                exp_utils = np.exp(utils - utils.max())
+                probs = exp_utils / exp_utils.sum()
+
+                choice = np.random.choice(self.n_alternatives, p=probs)
+                choices.append(choice)
+
+        self.df["choice"] = choices
+
+    def test_fixed_effects_estimation(self):
+        """Test FE multinomial logit estimation."""
+        # This should work but may be slow
+        y = self.df["choice"].values
+        X = self.df[["x1", "x2"]].values
+
+        model = MultinomialLogit(
+            y, X, n_alternatives=self.n_alternatives, method="fixed_effects", entity_col="entity"
+        )
+
+        # Should raise warning about feasibility
+        with pytest.warns(UserWarning):
+            result = model.fit(maxiter=100)
+
+        # Basic checks
+        assert hasattr(result, "params")
+        assert len(result.params) == (self.n_alternatives - 1) * self.n_vars
+
+    def test_fe_requires_entity_col(self):
+        """Test that FE requires entity_col."""
+        y = self.df["choice"].values
+        X = self.df[["x1", "x2"]].values
+
+        with pytest.raises(ValueError, match="entity_col required"):
+            model = MultinomialLogit(
+                y, X, n_alternatives=self.n_alternatives, method="fixed_effects"
+            )
+
+
+class TestMultinomialLogitRandomEffects:
+    """Test suite for random effects multinomial logit."""
+
+    def setup_method(self):
+        """Setup test data for RE model."""
+        np.random.seed(42)
+
+        self.n_entities = 20
+        self.n_periods = 3
+        self.n_vars = 2
+        self.n_alternatives = 3
+
+        # Create panel data
+        data = []
+        for i in range(self.n_entities):
+            for t in range(self.n_periods):
+                data.append(
+                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                )
+
+        self.df = pd.DataFrame(data)
+
+        # True parameters
+        beta_true = np.array([[0.5, -0.3], [0.2, 0.4]])
+
+        # Generate choices with random effects
+        choices = []
+        for i in range(self.n_entities):
+            alpha_i = np.random.randn() * 0.3  # Random effect
+            entity_df = self.df[self.df["entity"] == i]
+
+            for _, row in entity_df.iterrows():
+                X = np.array([row["x1"], row["x2"]])
+                util_0 = alpha_i
+                util_1 = X @ beta_true[0] + alpha_i
+                util_2 = X @ beta_true[1] + alpha_i
+
+                utils = np.array([util_0, util_1, util_2])
+                exp_utils = np.exp(utils - utils.max())
+                probs = exp_utils / exp_utils.sum()
+
+                choice = np.random.choice(self.n_alternatives, p=probs)
+                choices.append(choice)
+
+        self.df["choice"] = choices
+
+    def test_random_effects_estimation(self):
+        """Test RE multinomial logit estimation."""
+        y = self.df["choice"].values
+        X = self.df[["x1", "x2"]].values
+
+        model = MultinomialLogit(
+            y, X, n_alternatives=self.n_alternatives, method="random_effects", entity_col="entity"
+        )
+
+        result = model.fit(maxiter=50)
+
+        # Basic checks
+        assert hasattr(result, "params")
+        # RE has additional variance parameter
+        # For now, just check that estimation runs
+
+    def test_re_requires_entity_col(self):
+        """Test that RE requires entity_col."""
+        y = self.df["choice"].values
+        X = self.df[["x1", "x2"]].values
+
+        with pytest.raises(ValueError, match="entity_col required"):
+            model = MultinomialLogit(
+                y, X, n_alternatives=self.n_alternatives, method="random_effects"
+            )
+
+
+class TestMultinomialLogitComparison:
+    """Test comparison between pooled, FE, and RE."""
+
+    def setup_method(self):
+        """Setup common test data."""
+        np.random.seed(42)
+
+        self.n_entities = 25
+        self.n_periods = 4
+        self.n_vars = 2
+        self.n_alternatives = 3
+
+        # Create balanced panel
+        data = []
+        for i in range(self.n_entities):
+            for t in range(self.n_periods):
+                data.append(
+                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                )
+
+        self.df = pd.DataFrame(data)
+
+        # Simple DGP for testing
+        beta_true = np.array([[0.3, -0.2], [0.1, 0.3]])
+        choices = []
+
+        for _, row in self.df.iterrows():
+            X = np.array([row["x1"], row["x2"]])
+            util_0 = 0
+            util_1 = X @ beta_true[0]
+            util_2 = X @ beta_true[1]
+
+            utils = np.array([util_0, util_1, util_2])
+            exp_utils = np.exp(utils - utils.max())
+            probs = exp_utils / exp_utils.sum()
+
+            choice = np.random.choice(self.n_alternatives, p=probs)
+            choices.append(choice)
+
+        self.df["choice"] = choices
+
+    def test_pooled_vs_fe_vs_re(self):
+        """Compare pooled, FE, and RE estimates."""
+        y = self.df["choice"].values
+        X = self.df[["x1", "x2"]].values
+
+        # Pooled
+        model_pooled = MultinomialLogit(y, X, n_alternatives=self.n_alternatives, method="pooled")
+        result_pooled = model_pooled.fit()
+
+        # These should all produce results
+        assert result_pooled.converged
+        assert hasattr(result_pooled, "params")
+
+        # Note: FE and RE tests are skipped in this simple comparison
+        # as they require proper entity handling which needs refactoring

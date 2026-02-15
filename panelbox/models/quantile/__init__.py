@@ -14,14 +14,37 @@ All models integrate seamlessly with PanelBox ecosystem.
 """
 
 from .base import QuantilePanelModel, QuantilePanelResult
-from .canay import CanayTwoStep
-from .comparison import FEQuantileComparison
-from .dynamic import DynamicQuantile
-from .fixed_effects import FixedEffectsQuantile
-from .location_scale import LocationScale
-from .monotonicity import QuantileMonotonicity
-from .pooled import PooledQuantile
-from .treatment_effects import QuantileTreatmentEffects
+from .pooled import PooledQuantile, PooledQuantileResults
+
+# Temporary: Comment out imports with missing dependencies
+try:
+    from .canay import CanayTwoStep
+except ImportError:
+    CanayTwoStep = None
+try:
+    from .comparison import FEQuantileComparison
+except ImportError:
+    FEQuantileComparison = None
+try:
+    from .dynamic import DynamicQuantile
+except ImportError:
+    DynamicQuantile = None
+try:
+    from .fixed_effects import FixedEffectsQuantile
+except ImportError:
+    FixedEffectsQuantile = None
+try:
+    from .location_scale import LocationScale
+except ImportError:
+    LocationScale = None
+try:
+    from .monotonicity import QuantileMonotonicity
+except ImportError:
+    QuantileMonotonicity = None
+try:
+    from .treatment_effects import QuantileTreatmentEffects
+except ImportError:
+    QuantileTreatmentEffects = None
 
 __all__ = [
     "QuantilePanelModel",

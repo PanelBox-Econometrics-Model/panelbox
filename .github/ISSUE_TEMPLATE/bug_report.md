@@ -1,8 +1,8 @@
 ---
 name: Bug Report
-about: Create a report to help us improve
-title: '[BUG] '
-labels: bug
+about: Report a bug in PanelBox quantile regression module
+title: '[QR] '
+labels: 'bug, quantile'
 assignees: ''
 ---
 
@@ -12,55 +12,51 @@ A clear and concise description of what the bug is.
 
 ## To Reproduce
 
-Steps to reproduce the behavior:
+Minimal code example to reproduce the issue:
 
 ```python
-# Minimal code example that reproduces the bug
-import panelbox as pb
+from panelbox.models.quantile import PooledQuantile
+import pandas as pd
 
 # Your code here
 ```
 
 ## Expected Behavior
 
-A clear and concise description of what you expected to happen.
+What you expected to happen.
 
 ## Actual Behavior
 
-What actually happened. Include full error message if applicable:
+What actually happened. Include any error messages:
 
 ```
-Paste error message here
+Paste error traceback here
 ```
 
 ## Environment
 
-- PanelBox version: [e.g., 0.2.0]
-- Python version: [e.g., 3.9.1]
-- Operating System: [e.g., Ubuntu 22.04, Windows 11, macOS 13]
-- Installation method: [pip, git clone, conda]
-
-Get versions with:
-```bash
-python --version
-python -c "import panelbox; print(panelbox.__version__)"
-```
-
-## Data Information
-
-- Panel structure: [balanced/unbalanced]
-- Number of observations: [e.g., 1000]
-- Number of groups: [e.g., 100]
-- Number of time periods: [e.g., 10]
-- Missing data: [yes/no, percentage]
+- **PanelBox version**: [e.g., 0.3.0]
+- **Python version**: [e.g., 3.11.5]
+- **Operating System**: [e.g., Ubuntu 22.04, Windows 11, macOS 13]
+- **NumPy version**: [e.g., 1.24.3]
+- **SciPy version**: [e.g., 1.11.1]
 
 ## Additional Context
 
-Add any other context about the problem here. For example:
-- Does it work with different data?
-- Did this work in a previous version?
-- Any warnings or messages before the error?
+Add any other context about the problem here, such as:
+- Data characteristics (size, missingness, etc.)
+- Whether the issue is reproducible
+- Any workarounds you've found
 
-## Possible Solution (Optional)
+## Validation Against R (if applicable)
 
-If you have any ideas about what might be causing the issue or how to fix it, please share them here.
+If you've compared with R quantreg/rqpd and found discrepancies:
+
+- **R version**: [e.g., 4.3.1]
+- **quantreg version**: [e.g., 5.94]
+- **Difference magnitude**: [e.g., coefficients differ by 0.01]
+
+Please attach:
+- [ ] Minimal reproducible example
+- [ ] Sample data (if not too large)
+- [ ] R comparison code (if applicable)
