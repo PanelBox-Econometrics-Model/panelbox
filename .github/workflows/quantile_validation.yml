@@ -1,0 +1,163 @@
+name: Quantile Regression Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'panelbox/models/quantile/**'
+      - 'tests/validation/quantile/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'panelbox/models/quantile/**'
+      - 'tests/validation/quantile/**'
+  schedule:
+    # Run weekly on Sundays at midnight
+    - cron: '0 0 * * 0'
+
+jobs:
+  validate-against-r:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10', 3.11]
+        r-version: ['4.3.2']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up R ${{ matrix.r-version }}
+      uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: ${{ matrix.r-version }}
+
+    - name: Install R packages
+      run: |
+        install.packages(c('quantreg', 'rqpd', 'jsonlite'),
+                        repos='https://cloud.r-project.org/')
+      shell: Rscript {0}
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test,quantile]
+        pip install pytest-cov
+
+    - name: Generate R reference outputs
+      run: |
+        cd tests/validation/quantile/r_scripts
+        Rscript reference_quantreg.R
+        # Move outputs to reference directory
+        mv *.json ../reference_outputs/
+        mv *.csv ../reference_outputs/
+
+    - name: Run validation tests
+      run: |
+        pytest tests/validation/quantile/test_against_r.py -v \
+               --cov=panelbox.models.quantile \
+               --cov-report=xml \
+               --cov-report=html
+
+    - name: Generate validation report
+      if: always()
+      run: |
+        python tests/validation/quantile/validation_report.py
+
+    - name: Upload validation report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: validation-report
+        path: |
+          validation_report.html
+          htmlcov/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: quantile-validation
+        name: codecov-quantile-${{ matrix.python-version }}
+
+    - name: Check validation thresholds
+      run: |
+        python -c "
+        import json
+        import sys
+
+        # Load validation results
+        with open('validation_results.json', 'r') as f:
+            results = json.load(f)
+
+        # Check thresholds
+        failures = []
+        for test, data in results.items():
+            if data['max_difference'] > data['tolerance']:
+                failures.append(f\"{test}: {data['max_difference']} > {data['tolerance']}\")
+
+        if failures:
+            print('Validation failed:')
+            for f in failures:
+                print(f'  - {f}')
+            sys.exit(1)
+        else:
+            print('All validation tests passed!')
+        "
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('validation_results.json', 'utf8'));
+
+          let comment = '## Quantile Regression Validation Results\n\n';
+          comment += '| Test | Status | Max Diff | Tolerance |\n';
+          comment += '|------|--------|----------|-----------||\n';
+
+          for (const [test, data] of Object.entries(results)) {
+            const passed = data.max_difference <= data.tolerance;
+            const status = passed ? '✅' : '❌';
+            comment += `| ${test} | ${status} | ${data.max_difference.toExponential(2)} | ${data.tolerance.toExponential(2)} |\n`;
+          }
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          })
+
+  performance-benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[test,quantile]
+        pip install memory_profiler line_profiler
+
+    - name: Run performance benchmarks
+      run: |
+        python tests/validation/quantile/run_benchmarks.py
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: benchmark_results/

@@ -5,6 +5,7 @@ This module provides results classes for storing, computing, and displaying
 results from Maximum Likelihood Estimation of nonlinear panel models.
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
@@ -16,6 +17,7 @@ from panelbox.core.results import PanelResults
 from panelbox.standard_errors.mle import (
     bootstrap_mle,
     cluster_robust_mle,
+    compute_mle_standard_errors,
     delta_method,
     sandwich_estimator,
 )
@@ -103,6 +105,66 @@ class NonlinearPanelResults(PanelResults):
         """
         return compute_mle_standard_errors(
             model=model, params=params, se_type=se_type, entity_id=model.entity_id
+        )
+
+    def bootstrap_se(self, n_bootstrap: int = 999, seed: int = 42):
+        """
+        Compute bootstrap standard errors.
+
+        Parameters
+        ----------
+        n_bootstrap : int, default=999
+            Number of bootstrap replications.
+        seed : int, default=42
+            Random seed for reproducibility.
+
+        Returns
+        -------
+        NonlinearPanelResults
+            New results object with bootstrap standard errors.
+
+        Examples
+        --------
+        >>> # Original estimation
+        >>> model = FixedEffectsLogit.from_formula('y ~ x1 + x2', data=data)
+        >>> result = model.fit()
+        >>>
+        >>> # Compute bootstrap SEs
+        >>> boot_result = result.bootstrap_se(n_bootstrap=999)
+        >>> print(boot_result.summary())
+        """
+
+        # Define estimation function for bootstrap
+        def estimate_func(y, X):
+            # Create a temporary model with bootstrap data
+            temp_model = self.model.__class__(
+                endog=y,
+                exog=X,
+                entity=self.model.entity,
+                time=self.model.time,
+            )
+            temp_result = temp_model.fit(disp=False)
+            return temp_result.params.values
+
+        # Get bootstrap covariance
+        boot_result = bootstrap_mle(
+            estimate_func=estimate_func,
+            y=self.model.endog,
+            X=self.model.exog,
+            n_bootstrap=n_bootstrap,
+            cluster_ids=self.model.entity_id,
+            seed=seed,
+        )
+
+        # Create new results object with bootstrap SEs
+        return self.__class__(
+            model=self.model,
+            params=self.params.values,
+            llf=self.llf,
+            converged=self.converged,
+            n_iter=self.n_iter,
+            se_type="bootstrap",
+            opt_result=self.opt_result,
         )
 
     @property
@@ -406,6 +468,145 @@ class NonlinearPanelResults(PanelResults):
     def _repr_html_(self) -> str:
         """HTML representation for Jupyter notebooks."""
         return self.summary().to_html()
+
+    def to_html(self, filepath: Optional[Union[str, Path]] = None, **kwargs) -> str:
+        """
+        Generate HTML report using PanelBox report system.
+
+        Parameters
+        ----------
+        filepath : str or Path, optional
+            If provided, save HTML to file.
+        **kwargs
+            Additional options for HTML generation.
+
+        Returns
+        -------
+        str
+            HTML string.
+        """
+        from panelbox.report.report_manager import ReportManager
+
+        report_mgr = ReportManager()
+
+        # Prepare context for template
+        context = {
+            "title": f"{self.model.__class__.__name__} Results",
+            "model_type": self.model.__class__.__name__,
+            "observations": self.nobs,
+            "entities": self.model.n_entities if hasattr(self.model, "n_entities") else None,
+            "log_likelihood": self.llf,
+            "aic": self.aic,
+            "bic": self.bic,
+            "pseudo_r2": self.pseudo_r2("mcfadden"),
+            "converged": self.converged,
+            "iterations": self.n_iter,
+            "se_type": self._se_type,
+            "parameters": self.params.to_dict(),
+            "std_errors": self.std_errors.to_dict(),
+            "tvalues": self.tvalues.to_dict(),
+            "pvalues": self.pvalues.to_dict(),
+            "conf_int_lower": self.conf_int()[:, 0],
+            "conf_int_upper": self.conf_int()[:, 1],
+        }
+
+        # Add classification metrics if binary model
+        if hasattr(self.model, "model_type") and self.model.model_type == "binary":
+            metrics = self.classification_metrics()
+            context["classification_metrics"] = metrics
+
+        # Generate HTML
+        html = report_mgr.generate_report(
+            report_type="discrete", template="discrete/results.html", context=context, **kwargs
+        )
+
+        # Save if filepath provided
+        if filepath:
+            filepath = Path(filepath)
+            filepath.write_text(html)
+
+        return html
+
+    def to_latex(
+        self,
+        filepath: Optional[Union[str, Path]] = None,
+        caption: str = "Model Results",
+        label: str = "tab:results",
+    ) -> str:
+        """
+        Generate LaTeX table of results.
+
+        Parameters
+        ----------
+        filepath : str or Path, optional
+            If provided, save LaTeX to file.
+        caption : str
+            Table caption.
+        label : str
+            LaTeX label for referencing.
+
+        Returns
+        -------
+        str
+            LaTeX string.
+        """
+        # Build LaTeX table
+        latex_lines = []
+        latex_lines.append(r"\begin{table}[htbp]")
+        latex_lines.append(r"\centering")
+        latex_lines.append(f"\\caption{{{caption}}}")
+        latex_lines.append(f"\\label{{{label}}}")
+        latex_lines.append(r"\begin{tabular}{lcccc}")
+        latex_lines.append(r"\hline\hline")
+
+        # Header
+        latex_lines.append(r"Variable & Coefficient & Std. Error & z-stat & P-value \\")
+        latex_lines.append(r"\hline")
+
+        # Parameters
+        for i, name in enumerate(self.model.exog_names):
+            coef = f"{self.params[i]:.4f}"
+            se = f"{self.std_errors[i]:.4f}"
+            z = f"{self.tvalues[i]:.2f}"
+            p = f"{self.pvalues[i]:.3f}"
+
+            # Add significance stars
+            if self.pvalues[i] < 0.01:
+                coef += "***"
+            elif self.pvalues[i] < 0.05:
+                coef += "**"
+            elif self.pvalues[i] < 0.10:
+                coef += "*"
+
+            latex_lines.append(f"{name} & {coef} & {se} & {z} & {p} \\\\")
+
+        latex_lines.append(r"\hline")
+
+        # Model statistics
+        latex_lines.append(f"Observations & \\multicolumn{{4}}{{c}}{{{self.nobs}}} \\\\")
+        if hasattr(self.model, "n_entities"):
+            latex_lines.append(
+                f"Entities & \\multicolumn{{4}}{{c}}{{{self.model.n_entities}}} \\\\"
+            )
+        latex_lines.append(f"Log-Likelihood & \\multicolumn{{4}}{{c}}{{{self.llf:.2f}}} \\\\")
+        latex_lines.append(f"AIC & \\multicolumn{{4}}{{c}}{{{self.aic:.2f}}} \\\\")
+        latex_lines.append(f"BIC & \\multicolumn{{4}}{{c}}{{{self.bic:.2f}}} \\\\")
+        latex_lines.append(
+            f"Pseudo-R$^2$ & \\multicolumn{{4}}{{c}}{{{self.pseudo_r2('mcfadden'):.4f}}} \\\\"
+        )
+
+        latex_lines.append(r"\hline\hline")
+        latex_lines.append(r"\end{tabular}")
+        latex_lines.append(r"\end{table}")
+
+        latex = "\n".join(latex_lines)
+
+        # Save if filepath provided
+        if filepath:
+            filepath = Path(filepath)
+            filepath.write_text(latex)
+
+        return latex
 
     def summary(self) -> pd.DataFrame:
         """

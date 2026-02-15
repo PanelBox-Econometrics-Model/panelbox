@@ -24,11 +24,29 @@ Examples
 """
 
 from panelbox.models.discrete.base import NonlinearPanelModel
-from panelbox.models.discrete.binary import FixedEffectsLogit, PooledLogit, PooledProbit
+from panelbox.models.discrete.binary import (
+    FixedEffectsLogit,
+    PooledLogit,
+    PooledProbit,
+    RandomEffectsProbit,
+)
+from panelbox.models.discrete.multinomial import (
+    ConditionalLogit,
+    MultinomialLogit,
+    MultinomialLogitResult,
+)
+from panelbox.models.discrete.ordered import OrderedLogit, OrderedProbit, RandomEffectsOrderedLogit
 
 __all__ = [
     "NonlinearPanelModel",
     "PooledLogit",
     "PooledProbit",
     "FixedEffectsLogit",
+    "RandomEffectsProbit",
+    "OrderedLogit",
+    "OrderedProbit",
+    "RandomEffectsOrderedLogit",
+    "MultinomialLogit",
+    "MultinomialLogitResult",
+    "ConditionalLogit",
 ]

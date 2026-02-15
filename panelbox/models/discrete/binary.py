@@ -1680,3 +1680,572 @@ class FixedEffectsLogit(NonlinearPanelModel):
         results.n_dropped_entities = self.n_dropped_entities
 
         return results
+
+
+class RandomEffectsProbit(NonlinearPanelModel):
+    """
+    Random Effects Probit model with Gaussian Quadrature.
+
+    This model accounts for unobserved heterogeneity using random effects
+    that are assumed to be normally distributed. The model integrates out
+    the random effects using Gauss-Hermite quadrature.
+
+    The model is:
+
+        P(y_it = 1 | X_it, α_i) = Φ(X_it'β + α_i)
+        α_i ~ N(0, σ²_α)
+
+    where Φ is the standard normal CDF and α_i are random effects.
+
+    Parameters
+    ----------
+    formula : str
+        Model formula in R-style syntax (e.g., "y ~ x1 + x2")
+    data : pd.DataFrame
+        Panel data in long format
+    entity_col : str
+        Name of the column identifying entities
+    time_col : str
+        Name of the column identifying time periods
+    quadrature_points : int, default=12
+        Number of Gauss-Hermite quadrature points for integration
+    weights : np.ndarray, optional
+        Observation weights
+
+    Attributes
+    ----------
+    quadrature_points : int
+        Number of quadrature points used
+    rho : float
+        Intra-class correlation: ρ = σ²_α / (1 + σ²_α)
+    sigma_alpha : float
+        Standard deviation of random effects
+
+    Examples
+    --------
+    >>> import panelbox as pb
+    >>> data = pb.load_panel_data()
+    >>>
+    >>> # Random Effects Probit with 12 quadrature points
+    >>> re_probit = pb.RandomEffectsProbit("y ~ x1 + x2", data, "entity", "time")
+    >>> results = re_probit.fit()
+    >>> print(results.summary())
+    >>>
+    >>> # Check intra-class correlation
+    >>> print(f"Rho: {re_probit.rho:.3f}")
+    >>> print(f"Sigma_alpha: {re_probit.sigma_alpha:.3f}")
+    >>>
+    >>> # Use more quadrature points for higher precision
+    >>> re_probit_20 = pb.RandomEffectsProbit(
+    ...     "y ~ x1 + x2", data, "entity", "time",
+    ...     quadrature_points=20
+    ... )
+    >>> results_20 = re_probit_20.fit()
+
+    Notes
+    -----
+    **Quadrature Points:**
+
+    - 8-12 points: Usually sufficient for most applications
+    - 16-20 points: Higher precision for research publications
+    - More points = slower but more accurate
+
+    **Identification:**
+
+    Both time-varying and time-invariant variables are identified
+    (unlike Fixed Effects models).
+
+    **Assumptions:**
+
+    - Random effects α_i are independent of X_it
+    - α_i ~ N(0, σ²_α) (normality assumption)
+    - No serial correlation in errors (after accounting for α_i)
+
+    References
+    ----------
+    .. [1] Butler, J. S., & Moffitt, R. (1982). "A Computationally Efficient
+           Quadrature Procedure for the One-Factor Multinomial Probit Model."
+           Econometrica, 50(3), 761-764.
+    .. [2] Wooldridge, J. M. (2010). Econometric Analysis of Cross Section
+           and Panel Data (2nd ed.). MIT Press. Section 15.9.
+
+    See Also
+    --------
+    PooledProbit : Pooled Probit model
+    FixedEffectsLogit : Fixed Effects Logit model
+    """
+
+    def __init__(
+        self,
+        formula: str,
+        data: pd.DataFrame,
+        entity_col: str,
+        time_col: str,
+        quadrature_points: int = 12,
+        weights: Optional[np.ndarray] = None,
+    ):
+        super().__init__(formula, data, entity_col, time_col, weights)
+        self.quadrature_points = quadrature_points
+        self.family = "probit"  # Set family for marginal effects
+
+        # Import quadrature module
+        from panelbox.optimization.quadrature import gauss_hermite_quadrature
+
+        # Compute quadrature nodes and weights once
+        self._quad_nodes, self._quad_weights = gauss_hermite_quadrature(quadrature_points)
+
+        # Model parameters (set after fitting)
+        self._sigma_alpha = None
+        self._beta = None
+
+    def _log_likelihood(self, params: np.ndarray) -> float:
+        """
+        Marginal log-likelihood via Gauss-Hermite quadrature.
+
+        Integrates out random effects α_i:
+        ℓ_i(β, σ_α) = log ∫ [Π_t Φ(q_it(X_it'β + α_i))] φ(α_i/σ_α) dα_i
+
+        where q_it = 2*y_it - 1 ∈ {-1, +1}
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter vector [β; log(σ_α)]
+
+        Returns
+        -------
+        float
+            Marginal log-likelihood
+        """
+        # Extract parameters
+        beta = params[:-1]
+        log_sigma_alpha = params[-1]
+        sigma_alpha = np.exp(log_sigma_alpha)  # Ensure positivity
+
+        # Get data
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        y = y.ravel()
+        entities = self.data.data[self.data.entity_col].values
+
+        llf = 0.0
+
+        # Loop over entities
+        for entity in np.unique(entities):
+            mask = entities == entity
+            y_i = y[mask]
+            X_i = X[mask]
+
+            # Quadrature sum for entity i
+            entity_contributions = []
+
+            for node, weight in zip(self._quad_nodes, self._quad_weights):
+                # Transform node: α_i = √2 * σ_α * ξ
+                alpha_i = np.sqrt(2) * sigma_alpha * node
+
+                # Product over time: Π_t Φ(q_it * (X_it'β + α_i))
+                prob_product = 1.0
+                for t in range(len(y_i)):
+                    q_it = 2 * y_i[t] - 1  # Transform to {-1, +1}
+                    index = q_it * (X_i[t] @ beta + alpha_i)
+                    prob_product *= stats.norm.cdf(index)
+
+                entity_contributions.append(weight * prob_product)
+
+            # Take log of sum
+            entity_llf = np.sum(entity_contributions)
+            if entity_llf > 0:
+                llf += np.log(entity_llf)
+            else:
+                # Handle numerical issues
+                llf += -1e10  # Large negative value
+
+        return float(llf)
+
+    def _score(self, params: np.ndarray) -> np.ndarray:
+        """
+        Numerical gradient of the marginal log-likelihood.
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter vector [β; log(σ_α)]
+
+        Returns
+        -------
+        np.ndarray
+            Score vector (gradient)
+        """
+        # Use numerical gradient for robustness
+        eps = 1e-6
+        k = len(params)
+        gradient = np.zeros(k)
+
+        for i in range(k):
+            params_plus = params.copy()
+            params_plus[i] += eps
+            params_minus = params.copy()
+            params_minus[i] -= eps
+
+            gradient[i] = (
+                self._log_likelihood(params_plus) - self._log_likelihood(params_minus)
+            ) / (2 * eps)
+
+        return gradient
+
+    def _starting_values(self) -> np.ndarray:
+        """
+        Get starting values from Pooled Probit.
+
+        Returns
+        -------
+        np.ndarray
+            Starting parameter vector [β_start; log(σ_α_start)]
+        """
+        # Estimate Pooled Probit for starting values
+        pooled = PooledProbit(
+            self.formula, self.data.data, self.data.entity_col, self.data.time_col, self.weights
+        )
+        pooled_result = pooled.fit(cov_type="nonrobust")
+
+        # Starting values for β from Pooled Probit
+        beta_start = pooled_result.params.values
+
+        # Starting value for log(σ_α): assume σ_α = 1
+        log_sigma_alpha_start = 0.0
+
+        return np.concatenate([beta_start, [log_sigma_alpha_start]])
+
+    @property
+    def rho(self) -> float:
+        """
+        Intra-class correlation coefficient.
+
+        ρ = σ²_α / (1 + σ²_α)
+
+        Measures the proportion of total variance due to random effects.
+        """
+        if self._sigma_alpha is None:
+            if not self._fitted:
+                raise ValueError("Model must be fitted first. Call fit().")
+            self._sigma_alpha = np.exp(self._results.params.values[-1])
+
+        return self._sigma_alpha**2 / (1 + self._sigma_alpha**2)
+
+    @property
+    def sigma_alpha(self) -> float:
+        """
+        Standard deviation of random effects.
+        """
+        if self._sigma_alpha is None:
+            if not self._fitted:
+                raise ValueError("Model must be fitted first. Call fit().")
+            self._sigma_alpha = np.exp(self._results.params.values[-1])
+
+        return self._sigma_alpha
+
+    def fit(
+        self, method: str = "bfgs", maxiter: int = 500, tol: float = 1e-8, **kwargs
+    ) -> PanelResults:
+        """
+        Fit Random Effects Probit via maximum likelihood with quadrature.
+
+        Parameters
+        ----------
+        method : str, default='bfgs'
+            Optimization method ('bfgs', 'l-bfgs-b', or 'newton')
+        maxiter : int, default=500
+            Maximum iterations
+        tol : float, default=1e-8
+            Convergence tolerance
+        **kwargs
+            Additional optimization arguments
+
+        Returns
+        -------
+        PanelResults
+            Fitted model results
+        """
+        from scipy.optimize import minimize
+
+        # Get starting values
+        start_params = self._starting_values()
+
+        # Optimize
+        if method.lower() == "bfgs":
+            result = minimize(
+                lambda p: -self._log_likelihood(p),
+                start_params,
+                method="BFGS",
+                jac=lambda p: -self._score(p),
+                options={"maxiter": maxiter, "gtol": tol},
+            )
+        elif method.lower() == "l-bfgs-b":
+            # Use bounds to ensure σ_α > 0
+            k = len(start_params) - 1
+            bounds = [(None, None)] * k + [(-10, 5)]  # log(σ_α) bounds
+            result = minimize(
+                lambda p: -self._log_likelihood(p),
+                start_params,
+                method="L-BFGS-B",
+                jac=lambda p: -self._score(p),
+                bounds=bounds,
+                options={"maxiter": maxiter, "gtol": tol},
+            )
+        else:
+            raise ValueError(f"Unknown optimization method: {method}")
+
+        # Extract results
+        params = result.x
+        self._beta = params[:-1]
+        self._sigma_alpha = np.exp(params[-1])
+
+        # Build design matrices
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        var_names = self.formula_parser.get_variable_names(self.data.data)
+
+        # Add sigma_alpha to variable names
+        var_names_full = var_names + ["log_sigma_alpha"]
+
+        # Create results object
+        results = self._create_results(params, var_names_full, y.ravel(), X)
+
+        # Store convergence info
+        results.converged = result.success
+        results.n_iter = result.nit
+
+        # Store model-specific attributes
+        results.rho = self.rho
+        results.sigma_alpha = self.sigma_alpha
+        results.quadrature_points = self.quadrature_points
+
+        self._results = results
+        self._fitted = True
+
+        return results
+
+    def _create_results(
+        self, params: np.ndarray, var_names: list, y: np.ndarray, X: np.ndarray
+    ) -> PanelResults:
+        """
+        Create results object for Random Effects Probit.
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Estimated parameters [β; log(σ_α)]
+        var_names : list
+            Variable names (including log_sigma_alpha)
+        y : np.ndarray
+            Dependent variable
+        X : np.ndarray
+            Design matrix
+
+        Returns
+        -------
+        PanelResults
+            Results object
+        """
+        # Compute fitted values (marginal probabilities)
+        beta = params[:-1]
+        sigma_alpha = np.exp(params[-1])
+
+        # For fitted values, use marginal probability: P(y_it=1|X_it)
+        # This requires integrating over α_i
+        linear_pred = X @ beta
+
+        # Approximate marginal probability using quadrature
+        fitted_probs = np.zeros(len(y))
+        for i in range(len(y)):
+            prob_sum = 0.0
+            for node, weight in zip(self._quad_nodes, self._quad_weights):
+                alpha = np.sqrt(2) * sigma_alpha * node
+                prob_sum += weight * stats.norm.cdf(linear_pred[i] + alpha)
+            fitted_probs[i] = prob_sum
+
+        # Residuals
+        resid = y - fitted_probs
+
+        # Compute covariance matrix (use numerical Hessian)
+        from scipy.optimize import approx_fprime
+
+        # Hessian via finite differences
+        k = len(params)
+        hessian = np.zeros((k, k))
+        eps = 1e-5
+
+        for i in range(k):
+
+            def grad_i(p):
+                return self._score(p)[i]
+
+            hessian[i, :] = approx_fprime(params, grad_i, eps)
+
+        # Covariance matrix: -H^{-1}
+        try:
+            vcov = -np.linalg.inv(hessian)
+        except np.linalg.LinAlgError:
+            # If singular, use pseudo-inverse
+            vcov = -np.linalg.pinv(hessian)
+            warnings.warn("Hessian is singular. Using pseudo-inverse for covariance matrix.")
+
+        # Standard errors
+        std_errors = np.sqrt(np.diag(vcov))
+
+        # Create pandas objects
+        params_series = pd.Series(params, index=var_names)
+        std_errors_series = pd.Series(std_errors, index=var_names)
+        cov_params_df = pd.DataFrame(vcov, index=var_names, columns=var_names)
+
+        # Degrees of freedom
+        n = len(y)
+        k_beta = len(beta)
+        df_model = k_beta  # Not counting sigma_alpha as it's a variance parameter
+        df_resid = n - k_beta - 1
+
+        # Log-likelihood
+        llf = self._log_likelihood(params)
+
+        # Null log-likelihood (no covariates, only intercept and RE)
+        y_mean = y.mean()
+        ll_null = n * (y_mean * np.log(y_mean) + (1 - y_mean) * np.log(1 - y_mean))
+
+        # Pseudo R-squared
+        pseudo_r2 = 1 - llf / ll_null if ll_null != 0 else 0.0
+
+        # Model information
+        model_info = {
+            "model_type": "Random Effects Probit",
+            "formula": self.formula,
+            "cov_type": "nonrobust",
+            "cov_kwds": {},
+            "llf": llf,
+            "ll_null": ll_null,
+            "quadrature_points": self.quadrature_points,
+        }
+
+        # Data information
+        entities = self.data.data[self.data.entity_col].values
+        data_info = {
+            "nobs": n,
+            "n_entities": self.data.n_entities,
+            "n_periods": self.data.n_periods,
+            "df_model": df_model,
+            "df_resid": df_resid,
+            "entity_index": entities.ravel(),
+            "time_index": self.data.data[self.data.time_col].values.ravel(),
+        }
+
+        # R-squared dictionary
+        rsquared_dict = {
+            "rsquared": pseudo_r2,
+            "rsquared_adj": np.nan,
+            "rsquared_within": np.nan,
+            "rsquared_between": np.nan,
+            "rsquared_overall": pseudo_r2,
+        }
+
+        # Create results
+        results = PanelResults(
+            params=params_series,
+            std_errors=std_errors_series,
+            cov_params=cov_params_df,
+            resid=resid,
+            fittedvalues=fitted_probs,
+            model_info=model_info,
+            data_info=data_info,
+            rsquared_dict=rsquared_dict,
+            model=self,
+        )
+
+        # Store additional attributes
+        results.llf = llf
+        results.ll_null = ll_null
+        results.pseudo_r2_mcfadden = pseudo_r2
+
+        # Information criteria
+        results.aic = -2 * llf + 2 * (k_beta + 1)
+        results.bic = -2 * llf + (k_beta + 1) * np.log(n)
+
+        # Add predict method
+        def predict_method(X_new=None, type="prob", include_re=False):
+            """
+            Predict probabilities for Random Effects Probit.
+
+            Parameters
+            ----------
+            X_new : np.ndarray, optional
+                New data for prediction
+            type : str
+                'prob' for probabilities, 'linear' for linear predictor
+            include_re : bool
+                If True, include random effect (requires entity info)
+            """
+            if X_new is None:
+                X_pred = X
+            else:
+                X_pred = X_new
+
+            linear_pred = X_pred @ beta
+
+            if type == "linear":
+                return linear_pred
+            elif type == "prob":
+                if include_re:
+                    raise NotImplementedError(
+                        "Prediction with random effects not yet implemented. "
+                        "Use include_re=False for marginal predictions."
+                    )
+                else:
+                    # Marginal probability via quadrature
+                    probs = np.zeros(len(X_pred))
+                    for i in range(len(X_pred)):
+                        prob_sum = 0.0
+                        for node, weight in zip(self._quad_nodes, self._quad_weights):
+                            alpha = np.sqrt(2) * sigma_alpha * node
+                            prob_sum += weight * stats.norm.cdf(linear_pred[i] + alpha)
+                        probs[i] = prob_sum
+                    return probs
+            else:
+                raise ValueError(f"Unknown prediction type: {type}")
+
+        results.predict = predict_method
+
+        return results
+
+    def marginal_effects(self, at: str = "mean", method: str = "dydx") -> "MarginalEffectsResult":
+        """
+        Compute marginal effects for Random Effects Probit.
+
+        For RE Probit, marginal effects must account for the random effect.
+        The average marginal effect is:
+        AME = ∫ β * φ(X'β + α) * φ(α/σ_α) dα
+
+        Parameters
+        ----------
+        at : str, default='mean'
+            Where to evaluate marginal effects:
+            - 'mean': At mean values of covariates (MEM)
+            - 'overall': Average marginal effects (AME)
+        method : str, default='dydx'
+            Type of marginal effect (only 'dydx' supported)
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Marginal effects with standard errors
+
+        Notes
+        -----
+        This integrates the marginal effects module with RE Probit.
+        """
+        if not self._fitted:
+            raise ValueError("Model must be fitted first. Call fit().")
+
+        from panelbox.marginal_effects.discrete_me import compute_ame, compute_mem
+
+        if at == "overall":
+            return compute_ame(self._results)
+        elif at == "mean":
+            return compute_mem(self._results)
+        else:
+            raise ValueError(f"Unknown 'at' value: {at}. Use 'overall' or 'mean'.")

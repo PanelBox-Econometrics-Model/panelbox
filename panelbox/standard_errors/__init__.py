@@ -46,6 +46,9 @@ from .pcse import PanelCorrectedStandardErrors, PCSEResult, pcse
 # Robust (HC) standard errors
 from .robust import RobustCovarianceResult, RobustStandardErrors, robust_covariance
 
+# Spatial HAC standard errors
+from .spatial_hac import DriscollKraayComparison, SpatialHAC
+
 # Utilities
 from .utils import (
     clustered_covariance,
@@ -80,6 +83,9 @@ __all__ = [
     "PanelCorrectedStandardErrors",
     "PCSEResult",
     "pcse",
+    # Spatial HAC SE
+    "SpatialHAC",
+    "DriscollKraayComparison",
     # Comparison
     "StandardErrorComparison",
     "ComparisonResult",

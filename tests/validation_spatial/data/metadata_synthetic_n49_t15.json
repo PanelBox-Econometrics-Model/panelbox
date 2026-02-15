@@ -1,0 +1,19 @@
+{
+  "name": "synthetic_n49_t15",
+  "n": 49,
+  "t": 15,
+  "w_type": "queen",
+  "true_params": {
+    "rho": 0.3,
+    "lambda": 0.3,
+    "beta": [
+      1.5,
+      -0.8
+    ]
+  },
+  "files": {
+    "sar_data": "sar_synthetic_n49_t15.csv",
+    "sem_data": "sem_synthetic_n49_t15.csv",
+    "W_matrix": "W_synthetic_n49_t15.npz"
+  }
+}
