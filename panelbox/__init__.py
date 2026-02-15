@@ -37,6 +37,9 @@ from panelbox.core.results import PanelResults
 # Datasets
 from panelbox.datasets import get_dataset_info, list_datasets, load_abdata, load_grunfeld
 
+# Quantile Regression Diagnostics
+from panelbox.diagnostics.quantile import QuantileRegressionDiagnostics
+
 # Experiment Pattern (Sprints 3-5)
 from panelbox.experiment import PanelExperiment
 from panelbox.experiment.results import (
@@ -51,8 +54,14 @@ from panelbox.gmm.difference_gmm import DifferenceGMM
 from panelbox.gmm.results import GMMResults
 from panelbox.gmm.system_gmm import SystemGMM
 
+# Quantile Regression Inference
+from panelbox.inference.quantile import BootstrapInference
+
 # IV models
 from panelbox.models.iv.panel_iv import PanelIV
+
+# Quantile Regression Models
+from panelbox.models.quantile import PooledQuantile, PooledQuantileResults
 from panelbox.models.static.between import BetweenEstimator
 from panelbox.models.static.first_difference import FirstDifferenceEstimator
 from panelbox.models.static.fixed_effects import FixedEffects
@@ -114,6 +123,9 @@ from panelbox.var import (
     RankTestResult,
     plot_causality_network,
 )
+
+# Quantile Regression Visualization
+from panelbox.visualization.quantile import qq_plot, quantile_process_plot, residual_plot
 
 __all__ = [
     # Version
@@ -204,4 +216,15 @@ __all__ = [
     "ValidationResult",
     "ComparisonResult",
     "ResidualResult",
+    # Quantile Regression Models
+    "PooledQuantile",
+    "PooledQuantileResults",
+    # Quantile Regression Inference
+    "BootstrapInference",
+    # Quantile Regression Diagnostics
+    "QuantileRegressionDiagnostics",
+    # Quantile Regression Visualization
+    "quantile_process_plot",
+    "residual_plot",
+    "qq_plot",
 ]

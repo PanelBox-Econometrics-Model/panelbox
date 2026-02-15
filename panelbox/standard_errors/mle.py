@@ -407,6 +407,68 @@ def delta_method(
     return vcov_transformed
 
 
+def compute_mle_standard_errors(
+    model,
+    params: np.ndarray,
+    se_type: str = "cluster",
+    entity_id: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """
+    Compute standard errors for MLE models.
+
+    Parameters
+    ----------
+    model : object
+        Model object with methods to compute Hessian and scores.
+    params : np.ndarray
+        Parameter estimates.
+    se_type : str, default='cluster'
+        Type of standard errors:
+        - 'nonrobust': Classical MLE standard errors
+        - 'robust': Huber-White sandwich estimator
+        - 'cluster': Cluster-robust standard errors
+    entity_id : np.ndarray, optional
+        Entity IDs for clustering (required if se_type='cluster').
+
+    Returns
+    -------
+    np.ndarray
+        Covariance matrix of parameters.
+    """
+    # Compute Hessian at MLE
+    hessian = model._hessian(params)
+
+    if se_type == "nonrobust":
+        # Classical MLE: Var(β) = -H^{-1}
+        try:
+            cov_matrix = -np.linalg.inv(hessian)
+        except np.linalg.LinAlgError:
+            # If Hessian is singular, use pseudo-inverse
+            cov_matrix = -np.linalg.pinv(hessian)
+
+    elif se_type in ["robust", "cluster"]:
+        # Compute scores for each observation
+        scores = model._score_obs(params)
+
+        if se_type == "robust":
+            # Sandwich estimator
+            result = sandwich_estimator(hessian, scores, method="robust")
+            cov_matrix = result.cov_matrix
+
+        else:  # se_type == "cluster"
+            if entity_id is None:
+                raise ValueError("entity_id required for cluster-robust SEs")
+
+            # Cluster-robust sandwich estimator
+            result = cluster_robust_mle(hessian, scores, entity_id)
+            cov_matrix = result.cov_matrix
+
+    else:
+        raise ValueError(f"Unknown se_type: {se_type}")
+
+    return cov_matrix
+
+
 def bootstrap_mle(
     estimate_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
     y: np.ndarray,

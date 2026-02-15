@@ -1,0 +1,50 @@
+{
+  "description": "Validation datasets for spatial panel models",
+  "scenarios": [
+    {
+      "name": "synthetic_n25_t10",
+      "n": 25,
+      "t": 10,
+      "w_type": "rook",
+      "rho": 0.4,
+      "lambda": 0.4,
+      "beta": [
+        1.0,
+        -0.5
+      ],
+      "seed": 42
+    },
+    {
+      "name": "synthetic_n49_t15",
+      "n": 49,
+      "t": 15,
+      "w_type": "queen",
+      "rho": 0.3,
+      "lambda": 0.3,
+      "beta": [
+        1.5,
+        -0.8
+      ],
+      "seed": 456
+    },
+    {
+      "name": "synthetic_n100_t20",
+      "n": 100,
+      "t": 20,
+      "w_type": "queen",
+      "rho": 0.5,
+      "lambda": 0.5,
+      "beta": [
+        2.0,
+        -1.0,
+        0.5
+      ],
+      "seed": 123
+    }
+  ],
+  "notes": [
+    "All datasets include fixed effects",
+    "W matrices are row-normalized",
+    "Data generated with known true parameters for validation"
+  ]
+}

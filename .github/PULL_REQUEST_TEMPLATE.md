@@ -36,6 +36,13 @@ Describe the tests you ran to verify your changes:
 - Python version(s):
 - Operating System:
 
+## Validation (for quantile regression changes)
+
+- [ ] Validated against R implementation (quantreg/rqpd)
+- [ ] Numerical differences within tolerance (< 1e-5 for coefficients)
+- [ ] Bootstrap tests included if applicable
+- [ ] Performance benchmarks completed
+
 ## Code Quality
 
 - [ ] My code follows the style guidelines (PEP 8, black formatting)

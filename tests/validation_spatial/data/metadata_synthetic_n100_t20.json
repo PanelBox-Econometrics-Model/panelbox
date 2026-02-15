@@ -1,0 +1,20 @@
+{
+  "name": "synthetic_n100_t20",
+  "n": 100,
+  "t": 20,
+  "w_type": "queen",
+  "true_params": {
+    "rho": 0.5,
+    "lambda": 0.5,
+    "beta": [
+      2.0,
+      -1.0,
+      0.5
+    ]
+  },
+  "files": {
+    "sar_data": "sar_synthetic_n100_t20.csv",
+    "sem_data": "sem_synthetic_n100_t20.csv",
+    "W_matrix": "W_synthetic_n100_t20.npz"
+  }
+}
