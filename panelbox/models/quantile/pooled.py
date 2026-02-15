@@ -13,19 +13,22 @@ from typing import TYPE_CHECKING, Optional, Union
 import numpy as np
 import pandas as pd
 
-from panelbox.models.quantile.base import (
-    ConvergenceWarning,
-    QuantileRegressionModel,
-    QuantileRegressionResults,
-)
-from panelbox.optimization.quantile import interior_point_qr
+from panelbox.models.quantile.base import QuantilePanelModel, QuantilePanelResult
+from panelbox.optimization.quantile import interior_point as interior_point_qr
 from panelbox.standard_errors import cluster_by_entity
 
 if TYPE_CHECKING:
     pass
 
 
-class PooledQuantile(QuantileRegressionModel):
+# Define ConvergenceWarning
+class ConvergenceWarning(UserWarning):
+    """Warning raised when optimization does not converge."""
+
+    pass
+
+
+class PooledQuantile(QuantilePanelModel):
     """
     Pooled Quantile Regression model for panel data.
 
@@ -469,11 +472,11 @@ class PooledQuantile(QuantileRegressionModel):
         return pred
 
 
-class PooledQuantileResults(QuantileRegressionResults):
+class PooledQuantileResults(QuantilePanelResult):
     """
     Results object for pooled quantile regression.
 
-    Extends base QuantileRegressionResults with additional methods
+    Extends base QuantilePanelResult with additional methods
     specific to pooled quantile models.
 
     Parameters

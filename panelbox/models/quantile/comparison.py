@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from panelbox.utils.data import PanelData
+from panelbox.core.panel_data import PanelData
 
 from .canay import CanayTwoStep
 from .fixed_effects import FixedEffectsQuantile
