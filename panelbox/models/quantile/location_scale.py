@@ -70,7 +70,10 @@ class LocationScale(QuantilePanelModel):
         fixed_effects: bool = False,
         df_t: float = 5,
     ):
-        super().__init__(data, formula, tau)
+        # Store data and parameters
+        self.data = data
+        self.formula = formula
+        self.tau = np.atleast_1d(tau)
         self.distribution = distribution
         self.fixed_effects = fixed_effects
         self.df_t = df_t
@@ -82,6 +85,18 @@ class LocationScale(QuantilePanelModel):
         self.scale_result_ = None
         self.location_residuals_ = None
         self.location_fitted_ = None
+
+    def _objective(self, params: np.ndarray, tau: float) -> float:
+        """
+        Compute objective function (not used for location-scale, but required by abstract base class).
+
+        The location-scale model doesn't directly optimize the check loss; instead, it uses
+        method of moments (OLS for location, log-OLS for scale). This method is provided
+        for interface compatibility.
+        """
+        # This model uses method of moments, not direct quantile optimization
+        # Return 0.0 as placeholder
+        return 0.0
 
     def fit(
         self, robust_scale: bool = True, verbose: bool = False, **kwargs

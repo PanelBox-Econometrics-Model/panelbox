@@ -55,7 +55,11 @@ class CanayTwoStep(QuantilePanelModel):
     def __init__(
         self, data: PanelData, formula: Optional[str] = None, tau: Union[float, List[float]] = 0.5
     ):
-        super().__init__(data, formula, tau)
+        # Store data and parameters
+        self.data = data
+        self.formula = formula
+        self.tau = np.atleast_1d(tau)
+
         self._setup_data()
         self._step1_complete = False
         self.fixed_effects_ = None
@@ -63,26 +67,58 @@ class CanayTwoStep(QuantilePanelModel):
         self.y_transformed_ = None
         self.n_entities = len(np.unique(self.entity_ids))
 
+    def _objective(self, params: np.ndarray, tau: float) -> float:
+        """
+        Compute check loss objective function for transformed data.
+
+        Parameters
+        ----------
+        params : ndarray
+            Parameter vector
+        tau : float
+            Quantile level
+
+        Returns
+        -------
+        float
+            Check loss value
+        """
+        if self.y_transformed_ is None:
+            residuals = self.y - self.X @ params
+        else:
+            residuals = self.y_transformed_ - self.X @ params
+        check = residuals * (tau - (residuals < 0).astype(float))
+        return np.sum(check)
+
     def _setup_data(self):
         """Setup data matrices from panel data."""
         # Get dependent and independent variables
         if self.formula:
             # Parse formula to get variables
             self._parse_formula()
-            self.y = self.data.df[self.dependent_var].values
-            self.X = self.data.df[self.independent_vars].values
+            self.y = self.data.data[self.dependent_var].values
+            self.X = self.data.data[self.independent_vars].values
         else:
             # Use all variables except the first as X
-            self.y = self.data.df.iloc[:, 0].values
-            self.X = self.data.df.iloc[:, 1:].values
+            self.y = self.data.data.iloc[:, 0].values
+            self.X = self.data.data.iloc[:, 1:].values
 
         # Add constant if not present
         if not np.any(np.all(self.X == self.X[0], axis=0)):
             self.X = np.column_stack([np.ones(len(self.y)), self.X])
 
         self.nobs, self.k_exog = self.X.shape
-        self.entity_ids = self.data.entity_ids.values
-        self.time_ids = self.data.time_ids.values
+        self.entity_ids = self.data.data[self.data.entity_col].values
+        self.time_ids = self.data.data[self.data.time_col].values
+
+    def _parse_formula(self):
+        """Parse formula to extract variables."""
+        if "~" in self.formula:
+            lhs, rhs = self.formula.split("~")
+            self.dependent_var = lhs.strip()
+            self.independent_vars = [v.strip() for v in rhs.split("+")]
+        else:
+            raise ValueError("Invalid formula format")
 
     def fit(
         self, se_adjustment: str = "two-step", verbose: bool = False, **kwargs
@@ -236,37 +272,25 @@ class CanayTwoStep(QuantilePanelModel):
         Step 2: Pooled QR on transformed data.
         """
         # Create temporary pooled QR model with transformed y
-        temp_model = PooledQuantile(data=self.data, formula=None, tau=tau)  # Use matrices directly
-        temp_model.y = self.y_transformed_
-        temp_model.X = self.X
-        temp_model.nobs = self.nobs
-        temp_model.k_exog = self.k_exog
+        temp_model = PooledQuantile(
+            endog=self.y_transformed_,
+            exog=self.X,
+            entity_id=self.entity_ids,
+            time_id=self.time_ids,
+            quantiles=tau,
+        )
 
         # Estimate using base class method
         pooled_result = temp_model.fit(**kwargs)
 
-        # Extract result for this tau
-        if hasattr(pooled_result, "results"):
-            result_tau = pooled_result.results[tau]
-            params = (
-                result_tau.params if hasattr(result_tau, "params") else result_tau.get("params")
-            )
-            cov_matrix = (
-                result_tau.cov_matrix
-                if hasattr(result_tau, "cov_matrix")
-                else result_tau.get("cov_matrix")
-            )
-        else:
-            params = (
-                pooled_result.params
-                if hasattr(pooled_result, "params")
-                else pooled_result.get("params")
-            )
-            cov_matrix = (
-                pooled_result.cov_matrix
-                if hasattr(pooled_result, "cov_matrix")
-                else pooled_result.get("cov_matrix")
-            )
+        # Extract result - PooledQuantileResults stores params directly
+        params = pooled_result.params
+        if params.ndim > 1:
+            params = params.flatten()  # If 2D with single quantile, flatten
+
+        cov_matrix = pooled_result.vcov
+        if cov_matrix.ndim == 3:
+            cov_matrix = cov_matrix[:, :, 0]  # If 3D with single quantile, get first slice
 
         # Adjust standard errors if requested
         if se_adjustment == "two-step":

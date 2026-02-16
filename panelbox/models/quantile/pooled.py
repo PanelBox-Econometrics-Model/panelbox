@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from panelbox.models.quantile.base import QuantilePanelModel, QuantilePanelResult
-from panelbox.optimization.quantile import interior_point as interior_point_qr
+from panelbox.optimization.quantile.interior_point import frisch_newton_qr
 from panelbox.standard_errors import cluster_by_entity
 
 if TYPE_CHECKING:
@@ -124,13 +124,48 @@ class PooledQuantile(QuantilePanelModel):
         weights: Optional[Union[np.ndarray, pd.Series]] = None,
     ):
         """Initialize pooled quantile regression model."""
-        super().__init__(endog, exog, entity_id, time_id, quantiles, weights)
+        # Convert to numpy arrays
+        self.endog = np.asarray(endog)
+        self.exog = np.asarray(exog)
+        self.entity_id = np.asarray(entity_id) if entity_id is not None else None
+        self.time_id = np.asarray(time_id) if time_id is not None else None
+        self.weights = np.asarray(weights) if weights is not None else None
+
+        # Handle quantiles
+        self.quantiles = np.atleast_1d(quantiles)
+        self.converged = False
+
+        # Validate quantiles
+        if np.any(self.quantiles <= 0) or np.any(self.quantiles >= 1):
+            raise ValueError("Quantile levels must be in (0, 1)")
 
         # Store parameter names if available
         if isinstance(exog, pd.DataFrame):
             self.param_names = exog.columns.tolist()
         else:
             self.param_names = None
+
+    def _objective(self, params: np.ndarray, tau: float) -> float:
+        """
+        Compute check loss objective function.
+
+        Parameters
+        ----------
+        params : ndarray
+            Parameter vector
+        tau : float
+            Quantile level
+
+        Returns
+        -------
+        float
+            Check loss value
+        """
+        residuals = self.endog - self.exog @ params
+        check = residuals * (tau - (residuals < 0).astype(float))
+        if self.weights is not None:
+            return np.sum(self.weights * check)
+        return np.sum(check)
 
     def fit(
         self,
@@ -189,11 +224,9 @@ class PooledQuantile(QuantilePanelModel):
                 params_init = np.zeros(n_vars)
 
             # Fit using interior point method
-            params, success = interior_point_qr(
-                y, X, tau=tau, params_init=params_init, maxiter=maxiter, tol=tol, **kwargs
-            )
+            params, info = frisch_newton_qr(X, y, tau=tau, max_iter=maxiter, tol=tol, **kwargs)
 
-            if not success:
+            if not info.get("converged", False):
                 warnings.warn(f"Optimization did not converge for τ={tau}", ConvergenceWarning)
                 self.converged = False
             else:
@@ -495,8 +528,22 @@ class PooledQuantileResults(QuantilePanelResult):
         self, model: PooledQuantile, params: np.ndarray, vcov: np.ndarray, quantiles: np.ndarray
     ):
         """Initialize results object."""
-        super().__init__(model, params, vcov, quantiles)
+        # Store directly as attributes instead of calling super().__init__
+        self.model = model
+        self.params = params
+        self.vcov = vcov
+        self.quantiles = quantiles
         self.converged = model.converged
+
+        # Compute standard errors and inference
+        if vcov.ndim == 2:
+            # Single quantile
+            self.std_errors = np.sqrt(np.diag(vcov))
+        else:
+            # Multiple quantiles
+            self.std_errors = np.array(
+                [np.sqrt(np.diag(vcov[:, :, i])) for i in range(vcov.shape[2])]
+            ).T
 
     def predict(self, exog: Optional[np.ndarray] = None, quantile_idx: int = 0) -> np.ndarray:
         """
