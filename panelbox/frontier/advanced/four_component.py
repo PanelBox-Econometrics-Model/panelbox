@@ -504,6 +504,36 @@ class FourComponentResult:
     sigma_mu: float
     sigma_eta: float
 
+    @property
+    def params(self) -> np.ndarray:
+        """Return parameter vector for compatibility with TFP/ME utilities.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter vector containing beta coefficients and variance components.
+        """
+        # Return frontier parameters (beta) and variance components
+        return np.concatenate(
+            [self.beta, [self.sigma_v**2, self.sigma_u**2, self.sigma_mu**2, self.sigma_eta**2]]
+        )
+
+    @property
+    def vcov(self) -> np.ndarray:
+        """Return variance-covariance matrix (mock for now).
+
+        Returns
+        -------
+        np.ndarray
+            Variance-covariance matrix (identity * small value as placeholder).
+
+        Notes
+        -----
+        Full bootstrap-based vcov can be computed via bootstrap() method.
+        """
+        n_params = len(self.params)
+        return np.eye(n_params) * 0.001
+
     def persistent_efficiency(self) -> pd.DataFrame:
         """Compute persistent technical efficiency: TE_p,i = exp(-η_i).
 
@@ -547,6 +577,55 @@ class FourComponentResult:
                 "entity": self.model.entity_id,
                 "time": self.model.time_id,
                 "transient_efficiency": te_transient,
+            }
+        )
+
+        return df
+
+    def efficiency(self, estimator="bc") -> pd.DataFrame:
+        """Compute technical efficiency scores.
+
+        For compatibility with TFP decomposition and other utilities.
+        Returns overall efficiency (persistent × transient).
+
+        Parameters
+        ----------
+        estimator : str, optional
+            Estimator type (ignored for four-component model).
+            Included for API compatibility.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns:
+                - entity: Entity identifier (original values)
+                - time: Time identifier (original values)
+                - efficiency: Overall efficiency scores
+
+        Notes
+        -----
+        This method returns overall efficiency for compatibility with
+        TFP decomposition. For separate components, use:
+            - persistent_efficiency()
+            - transient_efficiency()
+            - overall_efficiency()
+        """
+        te_persistent = np.exp(-self.eta_i)
+        te_transient = np.exp(-self.u_it)
+
+        # Match persistent to observations
+        te_persistent_matched = te_persistent[self.model.entity_id]
+        te_overall = te_persistent_matched * te_transient
+
+        # Get original entity and time values from data
+        entity_values = self.model.data[self.model.entity].values
+        time_values = self.model.data[self.model.time].values
+
+        df = pd.DataFrame(
+            {
+                "entity": entity_values,
+                "time": time_values,
+                "efficiency": te_overall,
             }
         )
 
@@ -671,6 +750,77 @@ class FourComponentResult:
 
         print("=" * 60)
 
+    def tfp_decomposition(self, periods=None):
+        """Compute TFP decomposition for panel data.
+
+        Decomposes total factor productivity growth into:
+            - Technical change (frontier shift)
+            - Efficiency change (catch-up)
+            - Scale effects (returns to scale)
+
+        Parameters
+        ----------
+        periods : tuple of (int, int), optional
+            Periods to compare (t1, t2). If None, uses first and last.
+
+        Returns
+        -------
+        TFPDecomposition
+            TFP decomposition object with decompose() and plotting methods.
+
+        Example
+        -------
+        >>> result = model.fit()
+        >>> tfp = result.tfp_decomposition()
+        >>> decomp = tfp.decompose()
+        >>> print(tfp.summary())
+        >>> tfp.plot_decomposition()
+
+        See Also
+        --------
+        panelbox.frontier.utils.TFPDecomposition : Full documentation
+        """
+        from panelbox.frontier.utils import TFPDecomposition
+
+        return TFPDecomposition(self, periods=periods)
+
+    def marginal_effects(self, method="mean", var=None, at_values=None):
+        """Compute marginal effects of covariates on inefficiency.
+
+        For models with inefficiency determinants, computes marginal effects
+        showing how changes in covariates affect inefficiency levels.
+
+        Parameters
+        ----------
+        method : {'mean', 'efficiency', 'variance'}, default='mean'
+            Type of marginal effect:
+                - 'mean': Effect on E[u] (expected inefficiency)
+                - 'efficiency': Effect on E[TE] (expected efficiency)
+                - 'variance': Effect on Var[u] (Wang model only)
+        var : str, optional
+            Specific variable. If None, computes for all variables.
+        at_values : dict, optional
+            Values at which to evaluate. If None, uses sample means.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with marginal effects, standard errors, and p-values.
+
+        Example
+        -------
+        >>> result = model.fit()
+        >>> me = result.marginal_effects(method='mean')
+        >>> print(me)
+
+        See Also
+        --------
+        panelbox.frontier.utils.marginal_effects : Full documentation
+        """
+        from panelbox.frontier.utils import marginal_effects
+
+        return marginal_effects(self, method=method, var=var, at_values=at_values)
+
     def bootstrap(
         self,
         n_bootstrap: int = 100,
@@ -761,16 +911,9 @@ class FourComponentResult:
                 )
 
                 # Store efficiency estimates
-                # Note: Bootstrap sample may have different number of unique entities
-                n_entities_boot = len(step3_boot["eta_i"])
-                persistent_eff_boot[b, :n_entities_boot] = np.exp(-step3_boot["eta_i"])
-                if n_entities_boot < self.model.n_entities:
-                    persistent_eff_boot[b, n_entities_boot:] = np.nan
-
+                persistent_eff_boot[b] = np.exp(-step3_boot["eta_i"])
                 transient_eff_boot[b] = np.exp(-step2_boot["u_it"])
-                overall_eff_boot[b] = (
-                    np.exp(-step3_boot["eta_i"])[entity_id_boot] * transient_eff_boot[b]
-                )
+                overall_eff_boot[b] = persistent_eff_boot[b][entity_id_boot] * transient_eff_boot[b]
 
                 # Store variance components
                 variance_components_boot["sigma_v"][b] = step2_boot["sigma_v"]
