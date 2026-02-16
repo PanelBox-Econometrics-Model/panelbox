@@ -240,34 +240,53 @@ def loglik_truncated_normal(
     return loglik
 
 
-def loglik_gamma(theta: np.ndarray, y: np.ndarray, X: np.ndarray, sign: int = 1) -> float:
-    """Log-likelihood for normal-gamma model.
+def loglik_gamma(
+    theta: np.ndarray,
+    y: np.ndarray,
+    X: np.ndarray,
+    sign: int = 1,
+    n_simulations: int = 100,
+    use_halton: bool = True,
+) -> float:
+    """Log-likelihood for normal-gamma model using Simulated Maximum Likelihood.
 
-    Model: ε = v - sign*u where v ~ N(0, σ²_v) and u ~ Gamma(P, λ)
+    Model: ε = v ± u where v ~ N(0, σ²_v) and u ~ Gamma(P, θ)
 
-    The gamma distribution has shape P and scale 1/λ, so:
-        E[u] = P/λ
-        Var[u] = P/λ²
+    The gamma distribution has shape P and rate θ (scale 1/θ), so:
+        E[u] = P/θ
+        Var[u] = P/θ²
 
-    This is a more flexible model but computationally intensive.
+    This is a flexible model that generalizes the exponential (P=1).
 
     Parameters:
-        theta: Parameter vector [β, ln(σ²_v), ln(P), ln(λ)]
+        theta: Parameter vector [β, ln(σ²_v), ln(P), ln(θ)]
+            β: frontier parameters (k,)
+            ln(σ²_v): log variance of noise
+            ln(P): log shape parameter of gamma
+            ln(θ): log rate parameter of gamma
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
         sign: Sign convention (+1 for production, -1 for cost)
+        n_simulations: Number of draws for SML (default 100)
+        use_halton: Use Halton sequences for stability (default True)
 
     Returns:
         Log-likelihood value (scalar)
 
     References:
         Greene, W. H. (1990).
-        Ritter, C., & Simar, L. (1997).
+            A gamma-distributed stochastic frontier model.
+            Journal of Econometrics, 46(1-2), 141-163.
 
-    Note:
-        This implementation uses numerical approximation. For production
-        use, consider using specialized numerical integration or the
-        implementation from frontier package in R.
+        Greene, W. H. (2003).
+            Simulated likelihood estimation of the normal-gamma
+            stochastic frontier function.
+            Journal of Productivity Analysis, 19(2-3), 179-190.
+
+    Notes:
+        - Uses Simulated Maximum Likelihood (SML)
+        - Halton sequences reduce simulation variance
+        - For P=1, reduces to exponential (can use closed form)
     """
     n, k = X.shape
 
@@ -275,70 +294,68 @@ def loglik_gamma(theta: np.ndarray, y: np.ndarray, X: np.ndarray, sign: int = 1)
     beta = theta[:k]
     ln_sigma_v_sq = theta[k]
     ln_P = theta[k + 1]
-    ln_lambda = theta[k + 2]
+    ln_theta_gamma = theta[k + 2]
 
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_v = np.sqrt(sigma_v_sq)
     P = np.exp(ln_P)
-    lambda_param = np.exp(ln_lambda)
+    theta_gamma = np.exp(ln_theta_gamma)
+
+    # Check for exponential special case (P ≈ 1)
+    if abs(P - 1.0) < 1e-6:
+        # Use closed-form exponential likelihood
+        theta_exp = np.array([*beta, ln_sigma_v_sq, np.log(sigma_v_sq / theta_gamma)])
+        return loglik_exponential(theta_exp, y, X, sign)
 
     # Residuals
     epsilon = y - X @ beta
 
-    # For gamma model, we need to integrate over u
-    # f(ε) = ∫ φ((ε+sign*u)/σ_v) · gamma(u; P, λ) du
+    # Generate draws from Gamma(P, theta_gamma)
+    # Note: scipy uses scale = 1/rate, so scale = 1/theta_gamma
+    if use_halton:
+        from scipy.stats.qmc import Halton
 
-    # Use Gauss-Hermite quadrature approximation
-    # This is computationally expensive - for production, use better methods
+        # Use Halton sequence for low-discrepancy sampling
+        halton = Halton(d=1, scramble=False, seed=42)
+        uniform_draws = halton.random(n_simulations)
 
-    from scipy.special import roots_hermite
+        # Transform to Gamma via inverse CDF
+        from scipy.stats import gamma as gamma_dist
 
-    # Number of quadrature points
-    n_points = 20
+        u_draws = gamma_dist.ppf(uniform_draws.flatten(), a=P, scale=1 / theta_gamma)
+    else:
+        # Standard random sampling
+        u_draws = np.random.gamma(P, 1 / theta_gamma, size=n_simulations)
 
-    # Get Gauss-Hermite nodes and weights
-    nodes, weights = roots_hermite(n_points)
-
+    # SML: For each observation, integrate over u
     loglik = 0.0
 
     for i in range(n):
         eps_i = epsilon[i]
 
-        # Integrate using quadrature
-        # Transform: u = a + b*x where x ~ N(0,1)
-        # Use E[u] = P/λ as center and √(P/λ²) as scale for transformation
-        u_mean = P / lambda_param
-        u_std = np.sqrt(P) / lambda_param
+        # Conditional likelihoods f(ε_i | u_r)
+        likelihoods = np.zeros(n_simulations)
 
-        # Evaluate integral
-        integral = 0.0
+        for r in range(n_simulations):
+            u_r = u_draws[r]
 
-        for j in range(n_points):
-            # Transform node to u space
-            u_j = u_mean + u_std * np.sqrt(2) * nodes[j]
+            if u_r <= 0:
+                # Skip invalid draws (shouldn't happen with proper gamma)
+                continue
 
-            if u_j <= 0:
-                continue  # Gamma is only defined for u > 0
+            # f(ε | u) = φ((ε - sign*u) / σ_v) / σ_v
+            eps_conditional = eps_i - sign * u_r
+            likelihoods[r] = stats.norm.pdf(eps_conditional, loc=0, scale=sigma_v)
 
-            # Evaluate components
-            # Normal part: φ((ε + sign*u)/σ_v)
-            z = (eps_i + sign * u_j) / sigma_v
-            log_normal = -0.5 * np.log(2 * np.pi) - np.log(sigma_v) - 0.5 * z**2
+        # Average over simulations
+        avg_lik = np.mean(likelihoods)
 
-            # Gamma part: gamma(u; P, λ)
-            log_gamma = (
-                P * np.log(lambda_param) - gammaln(P) + (P - 1) * np.log(u_j) - lambda_param * u_j
-            )
-
-            # Add to integral (in log space, convert back)
-            integral += weights[j] * np.exp(log_normal + log_gamma)
-
-        # Convert to log
-        if integral > 0:
-            loglik += np.log(integral / np.sqrt(np.pi))  # Normalize for Hermite weights
-        else:
+        # Log-likelihood contribution
+        if avg_lik <= 0:
             return -np.inf
+
+        loglik += np.log(avg_lik)
 
     if not np.isfinite(loglik):
         return -np.inf

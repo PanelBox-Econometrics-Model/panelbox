@@ -229,7 +229,7 @@ def grid_search_starting_values(
             if dist == "truncated_normal":
                 theta = np.concatenate([theta, [0.0]])  # μ = 0
             elif dist == "gamma":
-                theta = np.concatenate([theta, [np.log(2.0)]])  # P = 2
+                theta = np.concatenate([theta, [np.log(2.0)], [np.log(1.0)]])  # P = 2, θ = 1
 
             # Evaluate likelihood
             try:
@@ -297,9 +297,11 @@ def get_starting_values(
             theta = np.concatenate([theta, [0.0]])
 
     elif dist == "gamma":
-        # Add P (shape) parameter
-        # Start with P=2 (close to exponential)
-        theta = np.concatenate([theta, [np.log(2.0)]])
+        # Add P (shape) and θ (rate) parameters
+        # Start with P=2 (moderate shape)
+        # Start with θ=1 (moderate rate)
+        # E[u] = P/θ = 2/1 = 2
+        theta = np.concatenate([theta, [np.log(2.0)], [np.log(1.0)]])
 
     return theta
 

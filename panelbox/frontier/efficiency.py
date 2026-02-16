@@ -78,11 +78,17 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
 
     # Dispatch to appropriate estimator
     if estimator.lower() == "jlms":
-        u_hat = _jlms_estimator(epsilon, sigma_v, sigma_u, sigma, dist, sign)
+        if dist == "gamma":
+            # Gamma JLMS needs P and theta parameters
+            P = result.gamma_P
+            theta_gamma = result.gamma_theta
+            u_hat = _jlms_gamma(epsilon, sigma_v, P, theta_gamma, sign)
+        else:
+            u_hat = _jlms_estimator(epsilon, sigma_v, sigma_u, sigma, dist, sign)
     elif estimator.lower() == "bc":
         # BC estimator returns efficiency directly
         return _bc_estimator(
-            epsilon, sigma_v, sigma_u, sigma, sigma_sq, dist, sign, frontier_type, ci_level
+            epsilon, sigma_v, sigma_u, sigma, sigma_sq, dist, sign, frontier_type, ci_level, result
         )
     elif estimator.lower() == "mode":
         u_hat = _mode_estimator(epsilon, sigma_v, sigma_u, sigma, dist, sign)
@@ -147,9 +153,13 @@ def _jlms_estimator(
         return _jlms_half_normal(epsilon, sigma_v, sigma_u, sigma, sign)
     elif dist == "gamma":
         # Gamma JLMS requires numerical integration
+        # For now, get gamma parameters from result
+        from .result import SFResult
+
+        # This will be handled when we pass the result object
         raise NotImplementedError(
-            "JLMS estimator for gamma distribution not yet implemented. "
-            "Use 'bc' estimator instead."
+            "JLMS estimator for gamma distribution requires result object. "
+            "Use estimate_efficiency() with result instead, or use 'bc' estimator."
         )
     else:
         raise ValueError(f"Unknown distribution: {dist}")
@@ -225,6 +235,7 @@ def _bc_estimator(
     sign: int,
     frontier_type: FrontierType,
     ci_level: float,
+    result=None,
 ) -> pd.DataFrame:
     """Battese-Coelli estimator: E[exp(-u)|ε].
 
@@ -254,9 +265,15 @@ def _bc_estimator(
         efficiency = _bc_half_normal(epsilon, sigma_v, sigma_u, sigma, sigma_sq, sign)
     elif dist == "exponential":
         efficiency = _bc_exponential(epsilon, sigma_v, sigma_u, sign)
-    elif dist in ["truncated_normal", "gamma"]:
-        # Use general formula (may need numerical integration)
-        # For now, use half-normal approximation
+    elif dist == "gamma":
+        # Use gamma-specific BC estimator with numerical integration
+        if result is None or result.gamma_P is None or result.gamma_theta is None:
+            raise ValueError("Gamma BC estimator requires result with gamma_P and gamma_theta")
+        P = result.gamma_P
+        theta_gamma = result.gamma_theta
+        efficiency = _bc_gamma(epsilon, sigma_v, P, theta_gamma, sign)
+    elif dist == "truncated_normal":
+        # Use half-normal approximation for truncated normal
         efficiency = _bc_half_normal(epsilon, sigma_v, sigma_u, sigma, sigma_sq, sign)
     else:
         raise ValueError(f"Unknown distribution: {dist}")
@@ -397,6 +414,128 @@ def _mode_exponential(epsilon: np.ndarray, sigma_v: float, sigma_u: float, sign:
     mode = np.maximum(mu_star, 0)
 
     return mode
+
+
+def _jlms_gamma(
+    epsilon: np.ndarray,
+    sigma_v: float,
+    P: float,
+    theta_gamma: float,
+    sign: int,
+) -> np.ndarray:
+    """JLMS estimator for gamma distribution using numerical integration.
+
+    E[u | ε] = ∫ u · f(u | ε) du
+
+    Uses numerical integration (quad) for each observation.
+
+    Parameters:
+        epsilon: Composed error
+        sigma_v: Noise std dev
+        P: Gamma shape parameter
+        theta_gamma: Gamma rate parameter
+        sign: Sign convention
+
+    Returns:
+        Conditional mean of u
+    """
+    from scipy.integrate import quad
+    from scipy.stats import gamma as gamma_dist
+
+    u_hat = np.zeros(len(epsilon))
+
+    for i in range(len(epsilon)):
+        eps_i = epsilon[i]
+
+        # Posterior f(u | ε) ∝ f(ε | u) · f(u)
+        def posterior_numerator(u):
+            if u < 0:
+                return 0.0
+            # f(ε | u) = φ((ε - sign*u) / σ_v) / σ_v
+            lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
+            # f(u) = Gamma(u; P, θ)
+            prior = gamma_dist.pdf(u, a=P, scale=1 / theta_gamma)
+            return u * lik * prior
+
+        # Normalizing constant
+        def posterior_denominator(u):
+            if u < 0:
+                return 0.0
+            lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
+            prior = gamma_dist.pdf(u, a=P, scale=1 / theta_gamma)
+            return lik * prior
+
+        # Integrate
+        # Upper limit: use 3*E[u] + 6*sqrt(Var[u]) for numerical stability
+        u_mean = P / theta_gamma
+        u_std = np.sqrt(P) / theta_gamma
+        u_upper = max(u_mean + 6 * u_std, 10)
+
+        numerator, _ = quad(posterior_numerator, 0, u_upper, limit=50)
+        denominator, _ = quad(posterior_denominator, 0, u_upper, limit=50)
+
+        u_hat[i] = numerator / (denominator + 1e-10)
+
+    return u_hat
+
+
+def _bc_gamma(
+    epsilon: np.ndarray,
+    sigma_v: float,
+    P: float,
+    theta_gamma: float,
+    sign: int,
+) -> np.ndarray:
+    """BC estimator for gamma: E[exp(-u) | ε].
+
+    Uses numerical integration.
+
+    Parameters:
+        epsilon: Composed error
+        sigma_v: Noise std dev
+        P: Gamma shape parameter
+        theta_gamma: Gamma rate parameter
+        sign: Sign convention
+
+    Returns:
+        Efficiency scores
+    """
+    from scipy.integrate import quad
+    from scipy.stats import gamma as gamma_dist
+
+    efficiency = np.zeros(len(epsilon))
+
+    for i in range(len(epsilon)):
+        eps_i = epsilon[i]
+
+        def integrand_numerator(u):
+            if u < 0:
+                return 0.0
+            lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
+            prior = gamma_dist.pdf(u, a=P, scale=1 / theta_gamma)
+            return np.exp(-u) * lik * prior
+
+        def integrand_denominator(u):
+            if u < 0:
+                return 0.0
+            lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
+            prior = gamma_dist.pdf(u, a=P, scale=1 / theta_gamma)
+            return lik * prior
+
+        # Upper limit for integration
+        u_mean = P / theta_gamma
+        u_std = np.sqrt(P) / theta_gamma
+        u_upper = max(u_mean + 6 * u_std, 10)
+
+        numerator, _ = quad(integrand_numerator, 0, u_upper, limit=50)
+        denominator, _ = quad(integrand_denominator, 0, u_upper, limit=50)
+
+        efficiency[i] = numerator / (denominator + 1e-10)
+
+    # Ensure efficiency in valid range
+    efficiency = np.clip(efficiency, 1e-10, 1.0)
+
+    return efficiency
 
 
 def _horrace_schmidt_ci(
@@ -549,8 +688,34 @@ def estimate_panel_efficiency(
     sign = 1 if frontier_type == FrontierType.PRODUCTION else -1
 
     # Entity and time IDs
-    entity_id = model.entity_id
-    time_id = model.time_id
+    # Try to get from result first (for BC92), otherwise from model
+    entity_id = getattr(result, "_entity_id", None)
+    time_id = getattr(result, "_time_id", None)
+
+    # If not in result, get from model (for other panel models)
+    if entity_id is None:
+        entity_id = getattr(model, "entity_id", None)
+    if time_id is None:
+        time_id = getattr(model, "time_id", None)
+
+    # Last resort: reconstruct from data
+    if entity_id is None or time_id is None:
+        reset_data = model.data.reset_index()
+        entity_vals = (
+            reset_data[model.entity].values
+            if model.entity in reset_data.columns
+            else reset_data.index.get_level_values(0).values
+        )
+        time_vals = (
+            reset_data[model.time].values
+            if model.time in reset_data.columns
+            else reset_data.index.get_level_values(1).values
+        )
+        entity_unique = {e: i for i, e in enumerate(sorted(set(entity_vals)))}
+        time_unique = {t: i for i, t in enumerate(sorted(set(time_vals)))}
+        entity_id = np.array([entity_unique[e] for e in entity_vals])
+        time_id = np.array([time_unique[t] for t in time_vals])
+
     n_entities = model.n_entities
     n_periods = model.n_periods
 
