@@ -14,8 +14,8 @@ import pandas as pd
 from scipy.sparse import csc_matrix, issparse
 from scipy.sparse.linalg import eigs, splu
 
-from panelbox.core.base_model import PanelModel
 from panelbox.core.spatial_weights import SpatialWeights
+from panelbox.models.base import PanelModel
 
 
 class SpatialPanelModel(PanelModel):
@@ -65,33 +65,10 @@ class SpatialPanelModel(PanelModel):
         """Initialize spatial panel model."""
         super().__init__(formula, data, entity_col, time_col, weights)
 
-        # Add compatibility properties
-        if hasattr(self, "data"):
-            # Store column names
-            self.entity_col = entity_col
-            self.time_col = time_col
-            # New PanelModel interface
-            self.entity_ids = self.data.data[entity_col].values
-            self.entities = self.data.entities
-            self.time_ids = self.data.data[time_col].values
-            self.T = self.data.n_periods
-            self.n_periods = self.data.n_periods
-            self.n_obs = self.data.n_obs
-
-            # Build design matrices for compatibility
-            y, X = self.formula_parser.build_design_matrices(
-                self.data.data, return_type="dataframe"
-            )
-            self.endog = y
-            self.exog = X
-
         # Validate and store W
         self.W = self._validate_weight_matrix(W)
         self.W_normalized = self._normalize_weights(self.W)
-        if hasattr(self, "entities"):
-            self.n_entities = len(self.entities)
-        else:
-            self.n_entities = self.data.n_entities
+        self.n_entities = len(self.entities)
 
         # Cache eigenvalues for log-det computation
         self._W_eigenvalues = None
@@ -184,22 +161,17 @@ class SpatialPanelModel(PanelModel):
 
         if isinstance(X, np.ndarray):
             # Convert to DataFrame for grouped operations
-            df = pd.DataFrame(X)
-            df[self.entity_col] = self.entity_ids
+            if X.ndim == 1:
+                X = pd.Series(X, index=self.data.index)
+            else:
+                X = pd.DataFrame(X, index=self.data.index)
 
-            # Demean by entity
-            cols = [c for c in df.columns if c != self.entity_col]
-            X_demeaned = df.groupby(self.entity_col)[cols].transform(lambda x: x - x.mean())
+        # Demean by entity
+        X_demeaned = X.groupby(level=self.entity_col).transform(lambda x: x - x.mean())
 
+        if isinstance(X_demeaned, pd.Series):
             return X_demeaned.values
         else:
-            # Already a DataFrame
-            X_df = X.copy()
-            X_df[self.entity_col] = self.entity_ids
-
-            cols = [c for c in X_df.columns if c != self.entity_col]
-            X_demeaned = X_df.groupby(self.entity_col)[cols].transform(lambda x: x - x.mean())
-
             return X_demeaned.values
 
     def _spatial_lag(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
