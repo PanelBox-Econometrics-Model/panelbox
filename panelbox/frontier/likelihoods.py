@@ -328,34 +328,24 @@ def loglik_gamma(
         # Standard random sampling
         u_draws = np.random.gamma(P, 1 / theta_gamma, size=n_simulations)
 
-    # SML: For each observation, integrate over u
-    loglik = 0.0
+    # SML: Vectorized computation for all observations
+    # epsilon: (n,), u_draws: (n_simulations,)
+    # Create matrix of eps - sign*u: (n, n_simulations)
+    eps_matrix = epsilon[:, np.newaxis] - sign * u_draws[np.newaxis, :]
 
-    for i in range(n):
-        eps_i = epsilon[i]
+    # Compute all conditional likelihoods at once
+    # f(ε | u) = φ((ε - sign*u) / σ_v) / σ_v
+    likelihoods_matrix = stats.norm.pdf(eps_matrix, loc=0, scale=sigma_v)
 
-        # Conditional likelihoods f(ε_i | u_r)
-        likelihoods = np.zeros(n_simulations)
+    # Average over simulations (axis=1) for each observation
+    avg_liks = np.mean(likelihoods_matrix, axis=1)  # (n,)
 
-        for r in range(n_simulations):
-            u_r = u_draws[r]
+    # Check for numerical issues
+    if np.any(avg_liks <= 0):
+        return -np.inf
 
-            if u_r <= 0:
-                # Skip invalid draws (shouldn't happen with proper gamma)
-                continue
-
-            # f(ε | u) = φ((ε - sign*u) / σ_v) / σ_v
-            eps_conditional = eps_i - sign * u_r
-            likelihoods[r] = stats.norm.pdf(eps_conditional, loc=0, scale=sigma_v)
-
-        # Average over simulations
-        avg_lik = np.mean(likelihoods)
-
-        # Log-likelihood contribution
-        if avg_lik <= 0:
-            return -np.inf
-
-        loglik += np.log(avg_lik)
+    # Log-likelihood: sum of log average likelihoods
+    loglik = np.sum(np.log(avg_liks))
 
     if not np.isfinite(loglik):
         return -np.inf

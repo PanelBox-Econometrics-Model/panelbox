@@ -782,3 +782,112 @@ def loglik_lee_schmidt_1993(
         loglik += loglik_i
 
     return loglik
+
+
+def loglik_bc92(
+    theta: np.ndarray,
+    y: np.ndarray,
+    X: np.ndarray,
+    entity_id: np.ndarray,
+    time_id: np.ndarray,
+    sign: int = 1,
+) -> float:
+    """Log-likelihood for Battese & Coelli (1992) time-decay model.
+
+    Model: y_it = x_it'β + v_it - sign*u_it
+           u_it = exp[-η(t - T_i)] · u_i
+           u_i ~ N⁺(0, σ²_u)
+           v_it ~ N(0, σ²_v)
+
+    where T_i is the last period observed for entity i.
+
+    Parameters:
+        theta: [β, ln(σ²_v), ln(σ²_u), η]
+        y: Dependent variable (n,)
+        X: Exogenous variables (n, k)
+        entity_id: Entity identifiers (n,) - coded 0, 1, ..., N-1
+        time_id: Time identifiers (n,) - coded 0, 1, ..., T-1
+        sign: +1 for production, -1 for cost
+
+    Returns:
+        Log-likelihood value
+
+    References:
+        Battese, G. E., & Coelli, T. J. (1992).
+            Frontier production functions, technical efficiency and panel data:
+            with application to paddy farmers in India.
+            Journal of Productivity Analysis, 3(1-2), 153-169.
+    """
+    n, k = X.shape
+
+    # Extract parameters
+    beta = theta[:k]
+    ln_sigma_v_sq = theta[k]
+    ln_sigma_u_sq = theta[k + 1]
+    eta = theta[k + 2]  # Time-decay parameter
+
+    # Transform to natural scale
+    sigma_v_sq = np.exp(ln_sigma_v_sq)
+    sigma_u_sq = np.exp(ln_sigma_u_sq)
+    sigma_v = np.sqrt(sigma_v_sq)
+    sigma_u = np.sqrt(sigma_u_sq)
+
+    # Residuals
+    epsilon = y - X @ beta
+
+    # Get unique entities
+    unique_entities = np.unique(entity_id)
+
+    loglik = 0.0
+
+    # For each entity
+    for i in unique_entities:
+        # Get observations for entity i
+        mask_i = entity_id == i
+        epsilon_i = epsilon[mask_i]
+        time_i = time_id[mask_i]
+        T_i = len(epsilon_i)
+
+        # Last period for entity i
+        T_i_max = time_i.max()
+
+        # Time-varying inefficiency scale
+        # u_it = exp[-η(t - T_i)] · u_i
+        decay_factors = np.exp(-eta * (time_i - T_i_max))
+
+        # For each time period, compute contribution to likelihood
+        for t_idx in range(T_i):
+            t = time_i[t_idx]
+            decay_t = decay_factors[t_idx]
+            eps_it = epsilon_i[t_idx]
+
+            # Adjusted variance for this observation
+            sigma_u_it_sq = (decay_t**2) * sigma_u_sq
+            sigma_it_sq = sigma_v_sq + sigma_u_it_sq
+            sigma_it = np.sqrt(sigma_it_sq)
+
+            # Check for numerical issues
+            if sigma_it < 1e-10:
+                return -np.inf
+
+            # Conditional moments
+            sigma_star_sq = (sigma_v_sq * sigma_u_it_sq) / sigma_it_sq
+            sigma_star = np.sqrt(sigma_star_sq)
+            mu_star = -sign * eps_it * sigma_u_it_sq / sigma_it_sq
+
+            # Log-likelihood contribution
+            # ln f(ε_it) = ln(2) - ln(σ_it) - ln(√(2π)) - 0.5*(ε_it/σ_it)² + ln Φ(μ*/σ*)
+            ll_it = (
+                np.log(2)
+                - np.log(sigma_it)
+                - LOG_SQRT_2PI
+                - 0.5 * (eps_it**2) / sigma_it_sq
+                + log_ndtr(mu_star / sigma_star)
+            )
+
+            if not np.isfinite(ll_it):
+                return -np.inf
+
+            loglik += ll_it
+
+    return loglik
