@@ -9,6 +9,10 @@ Main Classes:
     StochasticFrontier: Main model class for SFA estimation
     SFResult: Results container with efficiency estimates
 
+Advanced Models:
+    FourComponentSFA: Revolutionary model separating persistent and transient inefficiency
+    FourComponentResult: Results with persistent/transient efficiency decomposition
+
 Enumerations:
     FrontierType: Production or cost frontier
     DistributionType: Distribution for inefficiency (half-normal, exponential, etc.)
@@ -40,8 +44,22 @@ Example:
     >>> result = sf.fit()
     >>> print(result.summary())
     >>> eff = result.efficiency(estimator='bc')
+    >>>
+    >>> # Advanced: Four-component model
+    >>> from panelbox.frontier import FourComponentSFA
+    >>> fc_model = FourComponentSFA(
+    ...     data=panel_df,
+    ...     depvar='log_output',
+    ...     exog=['log_labor', 'log_capital'],
+    ...     entity='firm_id',
+    ...     time='year'
+    ... )
+    >>> fc_result = fc_model.fit()
+    >>> persistent_te = fc_result.persistent_efficiency()
+    >>> transient_te = fc_result.transient_efficiency()
 """
 
+from .advanced import FourComponentResult, FourComponentSFA
 from .data import (
     DistributionType,
     FrontierType,
@@ -74,8 +92,13 @@ from .true_models import (
 )
 
 __all__ = [
+    # Main classes
     "StochasticFrontier",
     "SFResult",
+    # Advanced models
+    "FourComponentSFA",
+    "FourComponentResult",
+    # Enums and data
     "FrontierType",
     "DistributionType",
     "ModelType",
