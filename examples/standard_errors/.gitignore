@@ -1,0 +1,89 @@
+# Standard Errors Tutorial Series - Git Ignore File
+
+# Output figures (reproducible from notebooks)
+outputs/figures/**/*.png
+outputs/figures/**/*.svg
+outputs/figures/**/*.pdf
+outputs/figures/**/*.jpg
+outputs/figures/**/*.jpeg
+
+# HTML reports (reproducible from notebooks)
+outputs/reports/**/*.html
+outputs/reports/**/*.pdf
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled Python files
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.backup
+
+# Data files (OPTIONAL - uncomment if datasets should not be versioned)
+# data/**/*.csv
+# data/**/*.parquet
+# data/**/*.feather
+
+# Notebook execution outputs (use nbstripout to clean notebooks before committing)
+# Alternatively, clear outputs manually before committing
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation builds
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# OS-specific files
+Thumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+
+# Large model files or serialized objects (if any)
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+
+# Experimental notebooks or drafts (prefix with underscore)
+_*.ipynb
+
+# Local configuration
+.env
+.env.local
+config.local.py
