@@ -107,6 +107,21 @@ class StochasticFrontier:
         >>> # Check time-decay parameter eta
         >>> eta = result_bc92.params.iloc[-1]  # Positive: learning, Negative: degradation
         >>> print(f"Time-decay parameter eta: {eta:.4f}")
+        >>>
+        >>> # Wang (2002) Model - Heteroscedastic inefficiency
+        >>> sf_wang = StochasticFrontier(
+        ...     data=df,
+        ...     depvar='log_output',
+        ...     exog=['log_labor', 'log_capital'],
+        ...     frontier='production',
+        ...     dist='truncated_normal',
+        ...     inefficiency_vars=['firm_age'],      # Affects mean inefficiency
+        ...     het_vars=['firm_size']                # Affects variance of inefficiency
+        ... )
+        >>> result_wang = sf_wang.fit()
+        >>> # Interpret inefficiency determinants
+        >>> print(result_wang.params['delta_firm_age'])   # Effect on mean
+        >>> print(result_wang.params['gamma_firm_size'])  # Effect on variance
 
     References:
         Aigner, D., Lovell, C. K., & Schmidt, P. (1977).
@@ -120,6 +135,11 @@ class StochasticFrontier:
         Battese, G. E., & Coelli, T. J. (1995).
             A model for technical inefficiency effects in a stochastic frontier
             production function for panel data. Empirical Economics, 20(2), 325-332.
+
+        Wang, H. J. (2002).
+            Heteroscedasticity and non-monotonic efficiency effects
+            of a stochastic frontier model.
+            Journal of Productivity Analysis, 18, 241-253.
     """
 
     def __init__(
@@ -255,14 +275,24 @@ class StochasticFrontier:
             self.Z = None
             self.ineff_var_names = []
 
-        # Heteroskedasticity variables (for future use)
+        # Heteroskedasticity variables (for Wang 2002)
         if self.het_vars:
-            H = self.data[self.het_vars].values.astype(float)
-            self.H = H
-            self.het_var_names = self.het_vars
+            W = self.data[self.het_vars].values.astype(float)
+
+            # Check for constant
+            W_std = W.std(axis=0)
+            has_constant_w = np.any(W_std < 1e-10)
+
+            if not has_constant_w:
+                W = np.column_stack([np.ones(len(W)), W])
+                self.hetero_var_names = ["const"] + self.het_vars
+            else:
+                self.hetero_var_names = self.het_vars
+
+            self.W = W
         else:
-            self.H = None
-            self.het_var_names = []
+            self.W = None
+            self.hetero_var_names = []
 
     @property
     def n_obs(self) -> int:

@@ -477,5 +477,128 @@ def gradient_exponential(
     return grad
 
 
+def loglik_wang_2002(
+    theta: np.ndarray,
+    y: np.ndarray,
+    X: np.ndarray,
+    Z: np.ndarray,
+    W: np.ndarray,
+    sign: int = 1,
+) -> float:
+    """Log-likelihood for Wang (2002) heteroscedastic model.
+
+    Model: y_i = x_i'β + v_i - sign*u_i
+           v_i ~ N(0, σ²_v)
+           u_i ~ N⁺(μ_i, σ²_u,i)
+
+           μ_i = z_i'δ              (location)
+           ln(σ²_u,i) = w_i'γ       (scale/variance)
+
+    This model allows BOTH the location and scale of the inefficiency
+    distribution to depend on covariates, providing a flexible framework
+    for modeling inefficiency determinants in a single step.
+
+    Parameters:
+        theta: Parameter vector [β, ln(σ²_v), δ, γ]
+            β: frontier parameters (k,)
+            ln(σ²_v): log variance of noise
+            δ: parameters for inefficiency location (m,)
+            γ: parameters for inefficiency variance (p,)
+        y: Dependent variable (n,)
+        X: Frontier variables (n, k)
+        Z: Location determinants (n, m) - includes constant
+        W: Scale determinants (n, p) - includes constant
+        sign: +1 for production, -1 for cost
+
+    Returns:
+        Log-likelihood value (scalar)
+
+    References:
+        Wang, H. J. (2002).
+            Heteroscedasticity and non-monotonic efficiency effects
+            of a stochastic frontier model.
+            Journal of Productivity Analysis, 18, 241-253.
+
+    Notes:
+        - Single-step estimation avoids inconsistency of two-stage approaches
+        - Z and W can overlap (same variables in both)
+        - Typically include constant in both Z and W
+        - When γ = 0, reduces to Battese-Coelli (1995) without panel structure
+        - When δ = 0 and γ = 0, reduces to standard half-normal model
+
+    Example:
+        >>> # Production frontier with age affecting inefficiency location
+        >>> # and firm size affecting inefficiency variance
+        >>> theta = [beta, ln_sigma_v_sq, delta, gamma]
+        >>> ll = loglik_wang_2002(theta, y, X, Z, W, sign=1)
+    """
+    n, k = X.shape
+    m = Z.shape[1]  # Number of location parameters
+    p = W.shape[1]  # Number of scale parameters
+
+    # Extract parameters
+    beta = theta[:k]
+    ln_sigma_v_sq = theta[k]
+    delta = theta[k + 1 : k + 1 + m]
+    gamma = theta[k + 1 + m : k + 1 + m + p]
+
+    # Transform to natural scale
+    sigma_v_sq = np.exp(ln_sigma_v_sq)
+    sigma_v = np.sqrt(sigma_v_sq)
+
+    # Residuals
+    epsilon = y - X @ beta
+
+    # Observation-specific parameters
+    mu_i = Z @ delta  # Location: (n,)
+    ln_sigma_u_sq_i = W @ gamma  # Log scale: (n,)
+    sigma_u_sq_i = np.exp(ln_sigma_u_sq_i)  # Scale: (n,)
+    sigma_u_i = np.sqrt(sigma_u_sq_i)
+
+    # Log-likelihood computation (vectorized over observations)
+    loglik = 0.0
+
+    for i in range(n):
+        eps_i = epsilon[i]
+        mu_i_val = mu_i[i]
+        sigma_u_sq_i_val = sigma_u_sq_i[i]
+        sigma_u_i_val = sigma_u_i[i]
+
+        # Composite variance
+        sigma_i_sq = sigma_v_sq + sigma_u_sq_i_val
+        sigma_i = np.sqrt(sigma_i_sq)
+
+        # Conditional moments (from posterior of u given epsilon)
+        sigma_star_sq = (sigma_v_sq * sigma_u_sq_i_val) / sigma_i_sq
+        sigma_star = np.sqrt(sigma_star_sq)
+
+        # μ*_i = (σ²_u,i · (-sign*ε_i) + σ²_v · μ_i) / σ²_i
+        mu_star = (sigma_u_sq_i_val * (-sign * eps_i) + sigma_v_sq * mu_i_val) / sigma_i_sq
+
+        # Log-likelihood contribution
+        # Based on composed error density:
+        # f(ε_i) = (2/σ_i) · φ((ε_i + sign*μ_i)/σ_i) · Φ(μ*_i/σ*_i) / Φ(μ_i/σ_u,i)
+        #
+        # ln f(ε_i) = ln(2) - ln(σ_i) - 0.5·ln(2π) - 0.5·((ε_i + sign·μ_i)/σ_i)²
+        #             + ln Φ(μ*_i/σ*_i) - ln Φ(μ_i/σ_u,i)
+
+        ll_i = (
+            np.log(2)
+            - np.log(sigma_i)
+            - 0.5 * np.log(2 * np.pi)
+            - 0.5 * ((eps_i + sign * mu_i_val) ** 2) / sigma_i_sq
+            + log_ndtr(mu_star / sigma_star)
+            - log_ndtr(mu_i_val / sigma_u_i_val)
+        )
+
+        # Check for numerical issues
+        if not np.isfinite(ll_i):
+            return -np.inf
+
+        loglik += ll_i
+
+    return loglik
+
+
 # Note: Gradients for truncated normal and gamma are complex and typically
 # handled via numerical differentiation in practice

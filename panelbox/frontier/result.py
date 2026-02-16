@@ -86,6 +86,11 @@ class SFResult:
         # Storage for efficiency estimates
         self._efficiency_cache = {}
 
+    @property
+    def vcov(self) -> Optional[np.ndarray]:
+        """Variance-covariance matrix (alias for cov)."""
+        return self.cov
+
     def _compute_inference(
         self, hessian: Optional[np.ndarray], params: np.ndarray, param_names: list
     ) -> None:
@@ -93,7 +98,22 @@ class SFResult:
         if hessian is not None:
             try:
                 # Variance-covariance matrix = inverse of negative Hessian
-                self.cov = np.linalg.inv(-hessian)
+                cov_matrix = np.linalg.inv(-hessian)
+
+                # Check if we have fixed parameters (e.g., normalized delta_tT in Lee-Schmidt)
+                if cov_matrix.shape[0] < len(params):
+                    # Expand covariance matrix with NaNs for fixed parameters
+                    n_fixed = len(params) - cov_matrix.shape[0]
+                    n_params = len(params)
+
+                    # Create expanded matrix with NaNs in the extra rows/columns
+                    cov_expanded = np.full((n_params, n_params), np.nan)
+                    cov_expanded[: cov_matrix.shape[0], : cov_matrix.shape[1]] = cov_matrix
+
+                    self.cov = cov_expanded
+                else:
+                    self.cov = cov_matrix
+
                 se = np.sqrt(np.diag(self.cov))
 
                 # Handle delta method for variance parameters
@@ -127,16 +147,30 @@ class SFResult:
 
         For θ = ln(σ²): Var(σ²) = σ⁴ * Var(θ)
                         SE(σ²) = σ² * SE(θ)
+
+        Also handles normalized parameters (e.g., delta_tT = 1 in Lee-Schmidt)
+        by adding NaN for their standard errors.
         """
-        se_adjusted = se.copy()
+        # Check if se is shorter than params (due to normalized/fixed parameters)
+        if len(se) < len(params):
+            # Identify fixed parameters (usually the last ones in temporal models)
+            # For Lee-Schmidt: delta_tT is normalized to 1.0
+            n_fixed = len(params) - len(se)
+
+            # Add NaN for fixed parameters
+            se_extended = np.concatenate([se, np.full(n_fixed, np.nan)])
+            se_adjusted = se_extended.copy()
+        else:
+            se_adjusted = se.copy()
 
         # Find variance parameter indices
         for i, name in enumerate(param_names):
-            if "ln_sigma" in name or "log_sigma" in name:
-                # This is ln(σ²), delta method gives SE for σ²
-                # SE(σ²) = exp(ln(σ²)) * SE(ln(σ²)) = σ² * SE(θ)
-                sigma_sq = np.exp(params[i])
-                se_adjusted[i] = sigma_sq * se[i]
+            if i < len(se):  # Only process if we have SE for this parameter
+                if "ln_sigma" in name or "log_sigma" in name:
+                    # This is ln(σ²), delta method gives SE for σ²
+                    # SE(σ²) = exp(ln(σ²)) * SE(ln(σ²)) = σ² * SE(θ)
+                    sigma_sq = np.exp(params[i])
+                    se_adjusted[i] = sigma_sq * se_adjusted[i]
 
         return se_adjusted
 
@@ -356,11 +390,17 @@ class SFResult:
     @property
     def residuals(self) -> np.ndarray:
         """Residuals from frontier equation (ε = y - X'β)."""
-        # Extract beta parameters
+        # Extract beta parameters (frontier coefficients only)
+        # Exclude: variance params, delta (location), gamma (scale), mu, eta, etc.
         beta_names = [
             name
             for name in self.params.index
-            if "sigma" not in name.lower() and "ln_" not in name.lower() and name.lower() != "eta"
+            if "sigma" not in name.lower()
+            and "ln_" not in name.lower()
+            and name.lower() != "eta"
+            and not name.startswith("delta_")
+            and not name.startswith("gamma_")
+            and name.lower() not in ["mu", "gamma_p", "gamma_theta", "b", "c"]
         ]
         beta = self.params[beta_names].values
 
@@ -1282,6 +1322,109 @@ class SFResult:
         from .visualization.reports import efficiency_table as _efficiency_table
 
         return _efficiency_table(self, sort_by, ascending, top_n, estimator)
+
+    def marginal_effects(self, method: str = "location", **kwargs) -> pd.DataFrame:
+        """Compute marginal effects on inefficiency.
+
+        Only available for models with inefficiency determinants:
+        - Wang (2002): Both location (Z) and scale (W) determinants
+        - Battese & Coelli (1995): Only location (Z) determinants
+
+        Parameters:
+            method: Type of marginal effect
+                'location' - ∂E[u_i] / ∂z_k (effect on mean inefficiency)
+                'scale' - ∂σ_u,i / ∂w_k (effect on std dev of inefficiency)
+                           Only available for Wang (2002)
+                'efficiency' - ∂E[TE_i] / ∂z_k (not yet implemented)
+            **kwargs: Additional arguments passed to ME function
+                at_means: bool - Evaluate at sample means (True) or
+                         compute average ME (False). Default: True
+
+        Returns:
+            DataFrame with marginal effects and standard errors, containing:
+                - variable: Name of covariate
+                - marginal_effect: Point estimate of marginal effect
+                - std_error: Standard error (via delta method)
+                - t_stat: t-statistic
+                - p_value: Two-sided p-value
+                - ci_lower: Lower bound of 95% confidence interval
+                - ci_upper: Upper bound of 95% confidence interval
+
+        Raises:
+            ValueError: If model has no inefficiency determinants
+            NotImplementedError: If method='efficiency' is requested
+
+        Example:
+            >>> # Wang (2002) model
+            >>> model = StochasticFrontier(
+            ...     data=df,
+            ...     depvar='log_output',
+            ...     exog=['log_labor', 'log_capital'],
+            ...     frontier='production',
+            ...     dist='truncated_normal',
+            ...     inefficiency_vars=['firm_age'],  # Z: affects location
+            ...     het_vars=['firm_size']            # W: affects scale
+            ... )
+            >>> result = model.fit()
+            >>>
+            >>> # Effect on mean inefficiency
+            >>> me_location = result.marginal_effects(method='location')
+            >>> print(me_location)
+            >>>
+            >>> # Effect on variance of inefficiency
+            >>> me_scale = result.marginal_effects(method='scale')
+            >>> print(me_scale)
+            >>>
+            >>> # BC95 model (only location)
+            >>> model_bc95 = StochasticFrontier(
+            ...     data=panel_df,
+            ...     depvar='log_output',
+            ...     exog=['log_labor', 'log_capital'],
+            ...     inefficiency_vars=['firm_age'],
+            ...     frontier='production',
+            ...     dist='truncated_normal'
+            ... )
+            >>> result_bc95 = model_bc95.fit()
+            >>> me_bc95 = result_bc95.marginal_effects(method='location')
+
+        References:
+            Wang, H. J. (2002). "Heteroscedasticity and non-monotonic efficiency
+                effects of a stochastic frontier model."
+                Journal of Productivity Analysis, 18, 241-253.
+
+            Battese, G. E., & Coelli, T. J. (1995).
+                "A model for technical inefficiency effects in a stochastic frontier
+                production function for panel data."
+                Empirical Economics, 20(2), 325-332.
+        """
+        from .utils.marginal_effects import marginal_effects_bc95, marginal_effects_wang_2002
+
+        # Check if model has inefficiency determinants
+        has_location = self.model.inefficiency_vars and len(self.model.inefficiency_vars) > 0
+        has_scale = self.model.het_vars and len(self.model.het_vars) > 0
+
+        if not has_location and not has_scale:
+            raise ValueError(
+                "Model has no inefficiency determinants (Z or W). "
+                "Cannot compute marginal effects. "
+                "Specify 'inefficiency_vars' and/or 'het_vars' when creating the model."
+            )
+
+        # Determine model type
+        if has_location and has_scale:
+            # Wang (2002) model
+            return marginal_effects_wang_2002(self, method=method, **kwargs)
+        elif has_location and not has_scale:
+            # BC95 or similar model (only location determinants)
+            if method == "scale":
+                raise ValueError(
+                    "Method 'scale' is only available for Wang (2002) models "
+                    "with heteroscedasticity variables (het_vars). "
+                    "This model only has location determinants (inefficiency_vars)."
+                )
+            return marginal_effects_bc95(self, method=method, **kwargs)
+        else:
+            raise ValueError("Unexpected model configuration.")
 
     def bootstrap(
         self,
