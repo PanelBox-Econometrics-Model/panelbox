@@ -421,3 +421,444 @@ def summary_model_comparison(
         lines.append(f"  Conclusion: {hausman_result['conclusion']}")
 
     return "\n".join(lines)
+
+
+def inefficiency_presence_test(
+    loglik_sfa: float,
+    loglik_ols: float,
+    residuals_ols: np.ndarray,
+    frontier_type: str = "production",
+    distribution: str = "half_normal",
+) -> Dict[str, any]:
+    """Test for the presence of inefficiency (σ²_u > 0).
+
+    Tests H0: σ²_u = 0 (OLS is sufficient) vs H1: σ²_u > 0 (SFA is needed)
+
+    Since σ²_u is constrained to be non-negative (boundary parameter),
+    the standard LR test distribution doesn't apply. Under H0, the LR
+    statistic follows a mixed chi-square distribution (Kodde & Palm 1986):
+
+    For half-normal or exponential:
+        LR ~ ½χ²(0) + ½χ²(1)
+
+    For truncated-normal (with μ parameter):
+        LR ~ ½χ²(1) + ½χ²(2)
+
+    Also performs a skewness test as diagnostic:
+    - Production frontier: OLS residuals should have negative skewness
+    - Cost frontier: OLS residuals should have positive skewness
+
+    Parameters:
+        loglik_sfa: Log-likelihood from SFA model
+        loglik_ols: Log-likelihood from OLS model (H0)
+        residuals_ols: OLS residuals for skewness test
+        frontier_type: 'production' or 'cost'
+        distribution: 'half_normal', 'exponential', or 'truncated_normal'
+
+    Returns:
+        Dict with test results:
+            - lr_statistic: LR test statistic
+            - df: Degrees of freedom
+            - pvalue: P-value (corrected for mixed chi-square)
+            - critical_values: Critical values at 10%, 5%, 1% levels
+            - conclusion: 'SFA needed' or 'OLS sufficient'
+            - skewness: Skewness of OLS residuals
+            - skewness_warning: Warning if skewness has wrong sign
+
+    References:
+        Kodde, D. A., & Palm, F. C. (1986). Wald criteria for jointly testing
+            equality and inequality restrictions. Econometrica, 1243-1248.
+        Coelli, T. J. (1995). Estimators and hypothesis tests for a
+            stochastic frontier function: A Monte Carlo analysis.
+            Journal of Productivity Analysis, 6(4), 247-268.
+    """
+    # Compute LR statistic
+    lr_stat = 2 * (loglik_sfa - loglik_ols)
+
+    # Ensure non-negative (numerical precision)
+    if lr_stat < -1e-6:
+        warnings.warn(
+            f"LR statistic is negative ({lr_stat:.6f}). "
+            "SFA model may have failed to converge properly.",
+            UserWarning,
+        )
+        lr_stat = 0
+
+    # Determine distribution and compute p-value
+    if distribution in ["half_normal", "exponential"]:
+        # Mixed chi-square: ½χ²(0) + ½χ²(1)
+        # P-value: P(½χ²(0) + ½χ²(1) > LR) = 0.5 * P(χ²(1) > LR)
+        df = 1
+        if lr_stat > 0:
+            pvalue = 0.5 * (1 - stats.chi2.cdf(lr_stat, df=1))
+        else:
+            pvalue = 0.5  # LR = 0 implies p-value = 0.5
+
+        # Kodde-Palm critical values for mixed ½χ²(0) + ½χ²(1)
+        # From Table 1 of Kodde & Palm (1986)
+        critical_values = {
+            "10%": 2.706,
+            "5%": 3.841,
+            "1%": 6.635,
+        }
+
+    elif distribution == "truncated_normal":
+        # Mixed chi-square: ½χ²(1) + ½χ²(2)
+        # P-value: 0.5*P(χ²(1) > LR) + 0.5*P(χ²(2) > LR)
+        df = 2  # For reporting purposes
+        if lr_stat > 0:
+            p1 = 1 - stats.chi2.cdf(lr_stat, df=1)
+            p2 = 1 - stats.chi2.cdf(lr_stat, df=2)
+            pvalue = 0.5 * p1 + 0.5 * p2
+        else:
+            pvalue = 0.5
+
+        # Kodde-Palm critical values for mixed ½χ²(1) + ½χ²(2)
+        critical_values = {
+            "10%": 4.605,
+            "5%": 5.991,
+            "1%": 9.210,
+        }
+
+    else:
+        warnings.warn(
+            f"Unknown distribution '{distribution}'. "
+            "Using standard chi-square test with df=1.",
+            UserWarning,
+        )
+        df = 1
+        pvalue = 1 - stats.chi2.cdf(lr_stat, df=1)
+        critical_values = {
+            "10%": stats.chi2.ppf(0.90, df=1),
+            "5%": stats.chi2.ppf(0.95, df=1),
+            "1%": stats.chi2.ppf(0.99, df=1),
+        }
+
+    # Decision
+    if pvalue < 0.05:
+        conclusion = "SFA needed"
+        interpretation = (
+            f"Reject H0 at 5% level (p-value = {pvalue:.4f}). "
+            "Inefficiency term is statistically significant. "
+            "SFA model is preferred over OLS."
+        )
+    else:
+        conclusion = "OLS sufficient"
+        interpretation = (
+            f"Do not reject H0 (p-value = {pvalue:.4f}). "
+            "No evidence of inefficiency. "
+            "OLS regression may be adequate."
+        )
+
+    # Skewness test
+    skewness = stats.skew(residuals_ols)
+    skewness_warning = None
+
+    if frontier_type.lower() == "production":
+        # Production: inefficiency reduces output, residuals should be negatively skewed
+        if skewness > 0:
+            skewness_warning = (
+                "WARNING: OLS residuals have positive skewness, "
+                "but production frontier should have negative skewness. "
+                "This suggests potential misspecification (wrong frontier type, "
+                "outliers, or distributional assumption)."
+            )
+    elif frontier_type.lower() == "cost":
+        # Cost: inefficiency increases cost, residuals should be positively skewed
+        if skewness < 0:
+            skewness_warning = (
+                "WARNING: OLS residuals have negative skewness, "
+                "but cost frontier should have positive skewness. "
+                "This suggests potential misspecification (wrong frontier type, "
+                "outliers, or distributional assumption)."
+            )
+
+    return {
+        "lr_statistic": lr_stat,
+        "df": df,
+        "pvalue": pvalue,
+        "critical_values": critical_values,
+        "conclusion": conclusion,
+        "interpretation": interpretation,
+        "skewness": skewness,
+        "skewness_warning": skewness_warning,
+        "distribution": distribution,
+        "test_type": "mixed_chi_square" if distribution in ["half_normal", "exponential", "truncated_normal"] else "standard_chi_square",
+    }
+
+
+def skewness_test(
+    residuals: np.ndarray,
+    frontier_type: str = "production"
+) -> Dict[str, any]:
+    """Preliminary skewness test for frontier model specification.
+
+    This is a diagnostic test, not a formal hypothesis test. It checks whether
+    OLS residuals have the expected sign of skewness for the specified frontier type.
+
+    For production frontier: u reduces y, so ε = y - Xβ should be negatively skewed
+    For cost frontier: u increases y, so ε = y - Xβ should be positively skewed
+
+    Parameters:
+        residuals: OLS residuals (y - Xβ)
+        frontier_type: 'production' or 'cost'
+
+    Returns:
+        Dict with diagnostic results:
+            - skewness: Sample skewness
+            - expected_sign: Expected sign for frontier type
+            - correct_sign: Boolean indicating if sign matches expectation
+            - warning: Warning message if sign is incorrect
+
+    References:
+        Coelli, T. J. (1995). Journal of Productivity Analysis, 6(4), 247-268.
+    """
+    skew_value = stats.skew(residuals)
+
+    if frontier_type.lower() == "production":
+        expected_sign = "negative"
+        correct_sign = skew_value < 0
+        if not correct_sign:
+            warning = (
+                f"Skewness is {skew_value:.4f} (positive), but production "
+                "frontier should have negative skewness. "
+                "Consider: (1) wrong frontier type, (2) outliers, "
+                "(3) incorrect distributional assumption."
+            )
+        else:
+            warning = None
+
+    elif frontier_type.lower() == "cost":
+        expected_sign = "positive"
+        correct_sign = skew_value > 0
+        if not correct_sign:
+            warning = (
+                f"Skewness is {skew_value:.4f} (negative), but cost "
+                "frontier should have positive skewness. "
+                "Consider: (1) wrong frontier type, (2) outliers, "
+                "(3) incorrect distributional assumption."
+            )
+        else:
+            warning = None
+
+    else:
+        raise ValueError(f"Invalid frontier_type: {frontier_type}. Must be 'production' or 'cost'.")
+
+    return {
+        "skewness": skew_value,
+        "expected_sign": expected_sign,
+        "correct_sign": correct_sign,
+        "warning": warning,
+        "frontier_type": frontier_type,
+    }
+
+
+def vuong_test(
+    loglik1: np.ndarray,
+    loglik2: np.ndarray,
+    model1_name: str = "Model 1",
+    model2_name: str = "Model 2",
+) -> Dict[str, any]:
+    """Vuong (1989) test for non-nested model selection.
+
+    Tests whether two non-nested models have significantly different
+    predictive performance. Unlike LR test, Vuong test doesn't require
+    models to be nested.
+
+    H0: Both models are equally close to the true model
+    H1: One model is closer to the true model
+
+    Test statistic:
+        V = (1/√N) × Σᵢ ln(L1_i/L2_i) / sd[ln(L1_i/L2_i)]
+
+    Under H0: V ~ N(0, 1)
+
+    Parameters:
+        loglik1: Array of observation-level log-likelihoods for model 1
+        loglik2: Array of observation-level log-likelihoods for model 2
+        model1_name: Name of first model
+        model2_name: Name of second model
+
+    Returns:
+        Dict with test results:
+            - statistic: Vuong test statistic
+            - pvalue_two_sided: Two-sided p-value
+            - pvalue_model1: One-sided p-value for model 1 > model 2
+            - pvalue_model2: One-sided p-value for model 2 > model 1
+            - conclusion: Which model is preferred (or 'equivalent')
+            - interpretation: Detailed interpretation
+
+    References:
+        Vuong, Q. H. (1989). Likelihood ratio tests for model selection and
+            non-nested hypotheses. Econometrica, 307-333.
+
+    Notes:
+        - Requires observation-level log-likelihoods, not just total log-likelihood
+        - Both models must be estimated on the same sample
+        - Test assumes large N (asymptotic normality)
+    """
+    # Check inputs
+    if len(loglik1) != len(loglik2):
+        raise ValueError(
+            f"Log-likelihood arrays must have same length. "
+            f"Got {len(loglik1)} and {len(loglik2)}"
+        )
+
+    n = len(loglik1)
+
+    if n < 30:
+        warnings.warn(
+            f"Vuong test requires large sample (N >> 30). N = {n} may be too small. "
+            "Results may not be reliable.",
+            UserWarning,
+        )
+
+    # Compute log-likelihood ratios at observation level
+    llr_i = loglik1 - loglik2
+
+    # Vuong statistic
+    mean_llr = np.mean(llr_i)
+    sd_llr = np.std(llr_i, ddof=1)
+
+    if sd_llr < 1e-12:
+        # Models are essentially identical
+        vuong_stat = 0
+    else:
+        vuong_stat = np.sqrt(n) * mean_llr / sd_llr
+
+    # P-values
+    pvalue_two_sided = 2 * (1 - stats.norm.cdf(np.abs(vuong_stat)))
+    pvalue_model1 = 1 - stats.norm.cdf(vuong_stat)  # P(V < v)
+    pvalue_model2 = stats.norm.cdf(vuong_stat)      # P(V > v)
+
+    # Decision (using 5% significance level)
+    if pvalue_two_sided < 0.05:
+        if vuong_stat > 0:
+            conclusion = model1_name
+            interpretation = (
+                f"Reject H0 at 5% level (p = {pvalue_two_sided:.4f}). "
+                f"{model1_name} is significantly preferred over {model2_name}."
+            )
+        else:
+            conclusion = model2_name
+            interpretation = (
+                f"Reject H0 at 5% level (p = {pvalue_two_sided:.4f}). "
+                f"{model2_name} is significantly preferred over {model1_name}."
+            )
+    else:
+        conclusion = "equivalent"
+        interpretation = (
+            f"Do not reject H0 (p = {pvalue_two_sided:.4f}). "
+            f"Models have equivalent fit. Use information criteria or other considerations."
+        )
+
+    return {
+        "statistic": vuong_stat,
+        "pvalue_two_sided": pvalue_two_sided,
+        "pvalue_model1": pvalue_model1,
+        "pvalue_model2": pvalue_model2,
+        "conclusion": conclusion,
+        "interpretation": interpretation,
+        "n_obs": n,
+        "mean_llr": mean_llr,
+        "sd_llr": sd_llr,
+    }
+
+
+def compare_nested_distributions(
+    loglik_restricted: float,
+    loglik_unrestricted: float,
+    dist_restricted: str,
+    dist_unrestricted: str,
+) -> Dict[str, any]:
+    """Compare nested distributional specifications using LR test.
+
+    For nested distributions (e.g., half-normal is nested in truncated-normal
+    when μ = 0), performs likelihood ratio test.
+
+    Common nested pairs:
+        - half_normal ⊂ truncated_normal (H0: μ = 0)
+        - exponential ⊂ gamma (H0: P = 1)
+
+    Parameters:
+        loglik_restricted: Log-likelihood of restricted model
+        loglik_unrestricted: Log-likelihood of unrestricted model
+        dist_restricted: Name of restricted distribution
+        dist_unrestricted: Name of unrestricted distribution
+
+    Returns:
+        Dict with test results:
+            - lr_statistic: LR test statistic
+            - df: Degrees of freedom
+            - pvalue: P-value
+            - conclusion: Which distribution is preferred
+            - interpretation: Detailed interpretation
+
+    Notes:
+        - Half-normal vs truncated-normal: df=1, tests μ=0, uses mixed chi-square
+        - Other nested pairs: standard chi-square distribution
+    """
+    # Determine df and test type
+    if (dist_restricted == "half_normal" and dist_unrestricted == "truncated_normal"):
+        # H0: μ = 0 (boundary parameter)
+        # Use mixed chi-square: ½χ²(0) + ½χ²(1)
+        df = 1
+        use_mixed = True
+    elif (dist_restricted == "exponential" and dist_unrestricted == "gamma"):
+        # H0: P = 1
+        df = 1
+        use_mixed = False
+    else:
+        warnings.warn(
+            f"Nested relationship between '{dist_restricted}' and "
+            f"'{dist_unrestricted}' may not be standard. "
+            "Using df=1 and standard chi-square.",
+            UserWarning,
+        )
+        df = 1
+        use_mixed = False
+
+    # Compute LR statistic
+    lr_stat = 2 * (loglik_unrestricted - loglik_restricted)
+
+    # Ensure non-negative
+    if lr_stat < -1e-6:
+        warnings.warn(
+            f"LR statistic is negative ({lr_stat:.6f}). "
+            "Unrestricted model should have higher log-likelihood.",
+            UserWarning,
+        )
+        lr_stat = 0
+
+    # Compute p-value
+    if use_mixed and lr_stat > 0:
+        # Mixed chi-square ½χ²(0) + ½χ²(1)
+        pvalue = 0.5 * (1 - stats.chi2.cdf(lr_stat, df=1))
+    elif lr_stat > 0:
+        # Standard chi-square
+        pvalue = 1 - stats.chi2.cdf(lr_stat, df=df)
+    else:
+        pvalue = 0.5 if use_mixed else 1.0
+
+    # Decision
+    if pvalue < 0.05:
+        conclusion = dist_unrestricted
+        interpretation = (
+            f"Reject H0 at 5% level (p = {pvalue:.4f}). "
+            f"{dist_unrestricted} provides significantly better fit than {dist_restricted}."
+        )
+    else:
+        conclusion = dist_restricted
+        interpretation = (
+            f"Do not reject H0 (p = {pvalue:.4f}). "
+            f"{dist_restricted} is adequate. Simpler model preferred."
+        )
+
+    return {
+        "lr_statistic": lr_stat,
+        "df": df,
+        "pvalue": pvalue,
+        "conclusion": conclusion,
+        "interpretation": interpretation,
+        "test_type": "mixed_chi_square" if use_mixed else "chi_square",
+    }

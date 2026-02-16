@@ -6,7 +6,7 @@ estimation results from SFA models.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -42,9 +42,9 @@ class SFResult:
         params: np.ndarray,
         param_names: list,
         hessian: Optional[np.ndarray],
-        loglik: float,
         converged: bool,
         model: Any,
+        loglik: Optional[float] = None,
         optimization_result: Any = None,
     ):
         """Initialize SFResult.
@@ -75,8 +75,13 @@ class SFResult:
         # Compute information criteria
         self.nobs = model.n_obs
         self.nparams = len(params)
-        self.aic = -2 * loglik + 2 * self.nparams
-        self.bic = -2 * loglik + np.log(self.nobs) * self.nparams
+        if loglik is not None:
+            self.aic = -2 * loglik + 2 * self.nparams
+            self.bic = -2 * loglik + np.log(self.nobs) * self.nparams
+        else:
+            # For non-MLE models (e.g., CSS), AIC/BIC are not defined
+            self.aic = None
+            self.bic = None
 
         # Storage for efficiency estimates
         self._efficiency_cache = {}
@@ -1087,6 +1092,257 @@ class SFResult:
             "alpha": alpha,
         }
 
+    def plot_frontier(
+        self,
+        input_var: Optional[str] = None,
+        input_vars: Optional[List[str]] = None,
+        kind: str = "2d",
+        backend: str = "plotly",
+        **kwargs,
+    ) -> Any:
+        """Plot estimated frontier.
+
+        Parameters:
+            input_var: Single input variable name (for 2D or partial plots)
+            input_vars: List of input variable names (for 3D or contour plots)
+            kind: Type of plot ('2d', '3d', 'contour', 'partial')
+            backend: 'plotly' for interactive or 'matplotlib' for static
+            **kwargs: Additional arguments passed to specific plot function
+                For '2d': show_distance, n_observations, title
+                For '3d': n_grid, title
+                For 'contour': n_grid, levels, title
+                For 'partial': fix_others_at, title
+
+        Returns:
+            Plotly Figure or Matplotlib Figure object
+
+        Example:
+            >>> result = sf.fit()
+            >>> # 2D plot
+            >>> fig = result.plot_frontier(
+            ...     input_var='log_labor',
+            ...     kind='2d',
+            ...     show_distance=True
+            ... )
+            >>> # 3D plot
+            >>> fig = result.plot_frontier(
+            ...     input_vars=['log_labor', 'log_capital'],
+            ...     kind='3d'
+            ... )
+            >>> fig.show()
+        """
+        from .visualization.frontier_plots import (
+            plot_frontier_2d,
+            plot_frontier_3d,
+            plot_frontier_contour,
+            plot_frontier_partial,
+        )
+
+        if kind == "2d":
+            if input_var is None:
+                raise ValueError("For 2D plot, must provide 'input_var' argument")
+            return plot_frontier_2d(result=self, input_var=input_var, backend=backend, **kwargs)
+        elif kind == "3d":
+            if input_vars is None or len(input_vars) != 2:
+                raise ValueError("For 3D plot, must provide 'input_vars' with 2 variables")
+            return plot_frontier_3d(result=self, input_vars=input_vars, backend=backend, **kwargs)
+        elif kind == "contour":
+            if input_vars is None or len(input_vars) != 2:
+                raise ValueError("For contour plot, must provide 'input_vars' with 2 variables")
+            return plot_frontier_contour(
+                result=self, input_vars=input_vars, backend=backend, **kwargs
+            )
+        elif kind == "partial":
+            if input_var is None:
+                raise ValueError("For partial plot, must provide 'input_var' argument")
+            return plot_frontier_partial(
+                result=self, input_var=input_var, backend=backend, **kwargs
+            )
+        else:
+            raise ValueError(f"Unknown kind: {kind}. Use '2d', '3d', 'contour', or 'partial'.")
+
+    def plot_efficiency(
+        self, kind: str = "histogram", backend: str = "plotly", estimator: str = "bc", **kwargs
+    ) -> Any:
+        """Plot efficiency distribution, ranking, or box plot.
+
+        Parameters:
+            kind: Type of plot ('histogram', 'ranking', 'boxplot')
+            backend: 'plotly' for interactive or 'matplotlib' for static
+            estimator: Efficiency estimator ('jlms', 'bc', 'mode')
+            **kwargs: Additional arguments passed to specific plot function
+                For 'histogram': bins, show_kde, show_stats, title
+                For 'ranking': top_n, bottom_n, entity_col, title, colorscale
+                For 'boxplot': group_var (required), test, title
+
+        Returns:
+            Plotly Figure or Matplotlib Figure object
+
+        Example:
+            >>> result = sf.fit()
+            >>> # Histogram
+            >>> fig = result.plot_efficiency(kind='histogram', bins=30)
+            >>> fig.show()
+            >>> # Ranking
+            >>> fig = result.plot_efficiency(kind='ranking', top_n=15, bottom_n=15)
+            >>> fig.show()
+            >>> # Box plot by group
+            >>> fig = result.plot_efficiency(kind='boxplot', group_var='region', test='kruskal')
+            >>> fig.show()
+        """
+        from .visualization.efficiency_plots import (
+            plot_efficiency_boxplot,
+            plot_efficiency_distribution,
+            plot_efficiency_ranking,
+        )
+
+        # Get efficiency estimates
+        eff_df = self.efficiency(estimator=estimator)
+
+        if kind == "histogram":
+            return plot_efficiency_distribution(efficiency_df=eff_df, backend=backend, **kwargs)
+        elif kind == "ranking":
+            return plot_efficiency_ranking(efficiency_df=eff_df, backend=backend, **kwargs)
+        elif kind == "boxplot":
+            if "group_var" not in kwargs:
+                raise ValueError("For boxplot, must provide 'group_var' argument")
+            return plot_efficiency_boxplot(efficiency_df=eff_df, backend=backend, **kwargs)
+        else:
+            raise ValueError(f"Unknown kind: {kind}. Use 'histogram', 'ranking', or 'boxplot'.")
+
+    def to_latex(
+        self,
+        include_stats: Optional[list] = None,
+        caption: Optional[str] = None,
+        label: Optional[str] = None,
+        float_format: str = "%.4f",
+    ) -> str:
+        """Generate LaTeX table of results.
+
+        See panelbox.frontier.visualization.reports.to_latex for details.
+        """
+        from .visualization.reports import to_latex as _to_latex
+
+        return _to_latex(self, include_stats, caption, label, float_format)
+
+    def to_html(
+        self,
+        filename: Optional[str] = None,
+        include_plots: bool = True,
+        theme: str = "academic",
+        **kwargs,
+    ) -> str:
+        """Generate HTML report with interactive plots.
+
+        See panelbox.frontier.visualization.reports.to_html for details.
+        """
+        from .visualization.reports import to_html as _to_html
+
+        return _to_html(self, filename, include_plots, theme, **kwargs)
+
+    def to_markdown(self) -> str:
+        """Generate Markdown report.
+
+        See panelbox.frontier.visualization.reports.to_markdown for details.
+        """
+        from .visualization.reports import to_markdown as _to_markdown
+
+        return _to_markdown(self)
+
+    def efficiency_table(
+        self,
+        sort_by: str = "te",
+        ascending: bool = False,
+        top_n: Optional[int] = None,
+        estimator: str = "bc",
+    ) -> pd.DataFrame:
+        """Create formatted efficiency rankings table.
+
+        See panelbox.frontier.visualization.reports.efficiency_table for details.
+        """
+        from .visualization.reports import efficiency_table as _efficiency_table
+
+        return _efficiency_table(self, sort_by, ascending, top_n, estimator)
+
+    def bootstrap(
+        self,
+        n_boot: int = 999,
+        method: str = "parametric",
+        ci_level: float = 0.95,
+        seed: Optional[int] = None,
+        n_jobs: int = -1,
+    ) -> pd.DataFrame:
+        """Bootstrap confidence intervals for model parameters.
+
+        Parameters:
+            n_boot: Number of bootstrap replications (default: 999)
+            method: Bootstrap method - 'parametric' or 'pairs'
+            ci_level: Confidence level (default: 0.95)
+            seed: Random seed for reproducibility
+            n_jobs: Number of parallel jobs (-1 for all cores)
+
+        Returns:
+            DataFrame with columns: parameter, estimate, boot_mean, boot_std,
+            bias, ci_lower, ci_upper
+
+        Example:
+            >>> result = sf.fit()
+            >>> boot_ci = result.bootstrap(n_boot=999, seed=42)
+            >>> print(boot_ci[['parameter', 'estimate', 'ci_lower', 'ci_upper']])
+        """
+        from .bootstrap import SFABootstrap
+
+        bootstrap = SFABootstrap(
+            result=self,
+            method=method,
+            n_boot=n_boot,
+            ci_level=ci_level,
+            seed=seed,
+            n_jobs=n_jobs,
+        )
+
+        boot_results = bootstrap.bootstrap_parameters()
+        return boot_results["results_df"]
+
+    def bootstrap_efficiency(
+        self,
+        estimator: str = "bc",
+        n_boot: int = 999,
+        method: str = "parametric",
+        ci_level: float = 0.95,
+        seed: Optional[int] = None,
+        n_jobs: int = -1,
+    ) -> pd.DataFrame:
+        """Bootstrap confidence intervals for efficiency scores.
+
+        Parameters:
+            estimator: Efficiency estimator - 'bc' or 'jlms'
+            n_boot: Number of bootstrap replications
+            method: Bootstrap method - 'parametric' or 'pairs'
+            ci_level: Confidence level
+            seed: Random seed
+            n_jobs: Number of parallel jobs
+
+        Returns:
+            DataFrame with efficiency point estimates and bootstrap CIs
+
+        Example:
+            >>> eff_ci = result.bootstrap_efficiency(n_boot=999, seed=42)
+            >>> print(eff_ci[['te', 'ci_lower', 'ci_upper']])
+        """
+        from .bootstrap import SFABootstrap
+
+        bootstrap = SFABootstrap(
+            result=self,
+            method=method,
+            n_boot=n_boot,
+            ci_level=ci_level,
+            seed=seed,
+            n_jobs=n_jobs,
+        )
+
+        return bootstrap.bootstrap_efficiency(estimator=estimator)
+
     def __repr__(self) -> str:
         """String representation."""
         return (
@@ -1115,9 +1371,9 @@ class PanelSFResult(SFResult):
         params: np.ndarray,
         param_names: list,
         hessian: Optional[np.ndarray],
-        loglik: float,
         converged: bool,
         model: Any,
+        loglik: Optional[float] = None,
         panel_type: str = "pitt_lee",
         temporal_params: Optional[Dict[str, float]] = None,
         optimization_result: Any = None,
@@ -1495,6 +1751,65 @@ class PanelSFResult(SFResult):
             "method": method,
             "is_three_component": True,
         }
+
+    def plot_efficiency_evolution(
+        self, kind: str = "timeseries", backend: str = "plotly", estimator: str = "bc", **kwargs
+    ) -> Any:
+        """Plot evolution of efficiency over time for panel data.
+
+        Parameters:
+            kind: Type of plot ('timeseries', 'spaghetti', 'heatmap', 'fanchart')
+            backend: 'plotly' for interactive or 'matplotlib' for static
+            estimator: Efficiency estimator ('jlms', 'bc', 'mode')
+            **kwargs: Additional arguments passed to specific plot function
+                For 'timeseries': show_ci, show_range, show_median, events, title
+                For 'spaghetti': highlight, alpha, show_mean, entity_col, title
+                For 'heatmap': order_by, entity_col, colorscale, title
+                For 'fanchart': percentiles, title
+
+        Returns:
+            Plotly Figure or Matplotlib Figure object
+
+        Example:
+            >>> result = panel_sf.fit()
+            >>> # Time series
+            >>> fig = result.plot_efficiency_evolution(
+            ...     kind='timeseries',
+            ...     show_ci=True,
+            ...     events={2008: 'Crisis'}
+            ... )
+            >>> fig.show()
+            >>> # Spaghetti plot
+            >>> fig = result.plot_efficiency_evolution(
+            ...     kind='spaghetti',
+            ...     highlight=['firm_A', 'firm_B'],
+            ...     alpha=0.3
+            ... )
+            >>> fig.show()
+        """
+        from .visualization.evolution_plots import (
+            plot_efficiency_fanchart,
+            plot_efficiency_heatmap,
+            plot_efficiency_spaghetti,
+            plot_efficiency_timeseries,
+        )
+
+        # Get efficiency estimates by period
+        eff_df = self.efficiency(estimator=estimator, by_period=True)
+
+        if kind == "timeseries":
+            return plot_efficiency_timeseries(efficiency_df=eff_df, backend=backend, **kwargs)
+        elif kind == "spaghetti":
+            return plot_efficiency_spaghetti(efficiency_df=eff_df, backend=backend, **kwargs)
+        elif kind == "heatmap":
+            return plot_efficiency_heatmap(efficiency_df=eff_df, backend=backend, **kwargs)
+        elif kind == "fanchart":
+            return plot_efficiency_fanchart(efficiency_df=eff_df, backend=backend, **kwargs)
+        else:
+            raise ValueError(
+                f"Unknown kind: {kind}. "
+                f"Use 'timeseries', 'spaghetti', 'heatmap', or 'fanchart'."
+            )
 
     def __repr__(self) -> str:
         """String representation."""
