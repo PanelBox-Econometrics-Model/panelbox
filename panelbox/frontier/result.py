@@ -179,6 +179,15 @@ class SFResult:
             self.lambda_param = np.nan
             self.gamma = np.nan
 
+        # Extract gamma distribution parameters (if present)
+        self.gamma_P = None
+        self.gamma_theta = None
+        for name in param_names:
+            if name == "gamma_P":
+                self.gamma_P = self.params[name]
+            elif name == "gamma_theta":
+                self.gamma_theta = self.params[name]
+
     def summary(
         self, alpha: float = 0.05, title: Optional[str] = None, include_diagnostics: bool = True
     ) -> str:
@@ -251,6 +260,16 @@ class SFResult:
         lines.append(f"  σ (composite):        {self.sigma:.6f}")
         lines.append(f"  λ = σ_u/σ_v:          {self.lambda_param:.6f}")
         lines.append(f"  γ = σ²_u/σ²:          {self.gamma:.6f}")
+
+        # Add gamma distribution parameters if present
+        if self.gamma_P is not None and self.gamma_theta is not None:
+            lines.append("")
+            lines.append("Gamma Distribution Parameters:")
+            lines.append(f"  P (shape):            {self.gamma_P:.6f}")
+            lines.append(f"  θ (rate):             {self.gamma_theta:.6f}")
+            lines.append(f"  E[u] = P/θ:           {self.gamma_P/self.gamma_theta:.6f}")
+            lines.append(f"  Var[u] = P/θ²:        {self.gamma_P/(self.gamma_theta**2):.6f}")
+
         lines.append("-" * 78)
 
         # Variance decomposition with confidence intervals
@@ -341,7 +360,7 @@ class SFResult:
         beta_names = [
             name
             for name in self.params.index
-            if "sigma" not in name.lower() and "ln_" not in name.lower()
+            if "sigma" not in name.lower() and "ln_" not in name.lower() and name.lower() != "eta"
         ]
         beta = self.params[beta_names].values
 

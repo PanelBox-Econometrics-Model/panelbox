@@ -59,6 +59,19 @@ def estimate_mle(
     if model.model_type == ModelType.CSS:
         return _estimate_css_model(model, verbose=verbose)
 
+    # Special handling for BC92 model (time-decay)
+    if model.model_type == ModelType.BATTESE_COELLI_92:
+        return _estimate_bc92_model(
+            model,
+            start_params=start_params,
+            optimizer=optimizer,
+            maxiter=maxiter,
+            tol=tol,
+            grid_search=grid_search,
+            verbose=verbose,
+            **kwargs,
+        )
+
     # Extract data
     y = model.y
     X = model.X
@@ -148,6 +161,7 @@ def estimate_mle(
 
         elif dist == "gamma":
             bounds.append((-2.3, 5.3))  # ln(P): P ∈ [0.1, 200]
+            bounds.append((-2.3, 5.3))  # ln(θ): θ ∈ [0.1, 200]
 
         result = minimize(
             neg_loglik,
@@ -321,9 +335,11 @@ def _transform_parameters(
 
     elif dist == "gamma":
         ln_P = theta[idx]
+        ln_theta = theta[idx + 1]
         P = np.exp(ln_P)
-        params = np.concatenate([params, [P]])
-        names.append("P")
+        theta_param = np.exp(ln_theta)
+        params = np.concatenate([params, [P], [theta_param]])
+        names.extend(["gamma_P", "gamma_theta"])
 
     return params, names
 
@@ -478,3 +494,224 @@ def _estimate_css_model(model, verbose: bool = False):
     result._r_squared = css_result.r_squared
 
     return result
+
+
+def _estimate_bc92_model(
+    model,
+    start_params: Optional[np.ndarray] = None,
+    optimizer: str = "L-BFGS-B",
+    maxiter: int = 1000,
+    tol: float = 1e-8,
+    grid_search: bool = False,
+    verbose: bool = False,
+    **kwargs,
+) -> SFResult:
+    """Estimate BC92 model with time-decay inefficiency.
+
+    Parameters:
+        model: StochasticFrontier model instance with model_type=BC92
+        start_params: Initial parameter values
+        optimizer: Optimization algorithm
+        maxiter: Maximum iterations
+        tol: Convergence tolerance
+        grid_search: Use grid search for starting values
+        verbose: Print estimation progress
+        **kwargs: Additional optimizer arguments
+
+    Returns:
+        SFResult with BC92 estimation results
+    """
+    from .panel_likelihoods import loglik_bc92
+
+    # Prepare panel data - convert entity and time to integer codes
+    reset_data = model.data.reset_index()
+
+    if "entity" in reset_data.columns:
+        entity_vals = reset_data["entity"].values
+    else:
+        entity_vals = (
+            reset_data.index.get_level_values(0).values
+            if hasattr(reset_data.index, "levels")
+            else model.data.index.get_level_values(0).values
+        )
+
+    if "time" in reset_data.columns:
+        time_vals = reset_data["time"].values
+    else:
+        time_vals = (
+            reset_data.index.get_level_values(1).values
+            if hasattr(reset_data.index, "levels")
+            else model.data.index.get_level_values(1).values
+        )
+
+    # Convert to integer codes
+    entity_unique = {e: i for i, e in enumerate(sorted(set(entity_vals)))}
+    time_unique = {t: i for i, t in enumerate(sorted(set(time_vals)))}
+
+    entity_id = np.array([entity_unique[e] for e in entity_vals])
+    time_id = np.array([time_unique[t] for t in time_vals])
+
+    # Sign convention
+    sign = 1 if model.frontier_type == FrontierType.PRODUCTION else -1
+
+    # Get starting values
+    if start_params is None:
+        # Start with OLS estimates for β
+        X = model.X
+        y = model.y
+        ols_beta = np.linalg.lstsq(X, y, rcond=None)[0]
+        residuals = y - X @ ols_beta
+        ols_sigma_sq = np.var(residuals)
+
+        # Starting values: [β, ln(σ²_v), ln(σ²_u), η]
+        start_params = np.concatenate(
+            [
+                ols_beta,
+                [np.log(ols_sigma_sq / 2)],  # ln(σ²_v)
+                [np.log(ols_sigma_sq / 2)],  # ln(σ²_u)
+                [0.0],  # η (start at 0 = time-invariant, like Pitt-Lee)
+            ]
+        )
+
+        if verbose:
+            print("Starting values for BC92:")
+            print(f"  β: {ols_beta}")
+            print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+            print(f"  ln(σ²_u): {start_params[X.shape[1]+1]:.4f}")
+            print(f"  η: {start_params[X.shape[1]+2]:.4f}")
+
+    # Negative log-likelihood for minimization
+    def neg_loglik(theta):
+        try:
+            ll = loglik_bc92(
+                theta,
+                model.y,
+                model.X,
+                entity_id,
+                time_id,
+                sign,
+            )
+            return -ll
+        except (ValueError, RuntimeError, FloatingPointError):
+            return np.inf
+
+    # Set up optimizer options
+    options = {"maxiter": maxiter, "disp": verbose}
+    options.update(kwargs)
+
+    # Set bounds
+    k = model.X.shape[1]
+    bounds = [(None, None)] * k  # No bounds on β
+
+    # Bounds on log-variances: ln(1e-6) to ln(1e6)
+    bounds.append((-13.8, 13.8))  # ln(σ²_v)
+    bounds.append((-13.8, 13.8))  # ln(σ²_u)
+
+    # Bounds on η: allow both positive and negative (learning vs degradation)
+    bounds.append((-5.0, 5.0))  # η
+
+    # Optimize
+    if optimizer.upper() in ["L-BFGS-B", "LBFGSB"]:
+        options["ftol"] = tol
+        options["gtol"] = tol
+
+        result = minimize(
+            neg_loglik,
+            start_params,
+            method="L-BFGS-B",
+            bounds=bounds,
+            options=options,
+        )
+    else:
+        result = minimize(
+            neg_loglik,
+            start_params,
+            method=optimizer,
+            options=options,
+        )
+
+    # Check convergence
+    converged = result.success
+    loglik_value = -result.fun
+
+    if not result.success:
+        warnings.warn(
+            f"BC92 optimization did not converge: {result.message}. "
+            f"Try different starting values or optimizer.",
+            UserWarning,
+        )
+
+    if verbose:
+        print(f"\nBC92 Optimization complete:")
+        print(f"  Converged: {converged}")
+        print(f"  Iterations: {result.nit}")
+        print(f"  Log-likelihood: {loglik_value:.4f}")
+
+    # Transform parameters
+    params_transformed, param_names = _transform_bc92_parameters(
+        result.x,
+        model.X.shape[1],
+        model.exog_names,
+    )
+
+    # Compute Hessian
+    hessian = _compute_hessian(result.x, neg_loglik, method="numerical")
+
+    # Extract eta parameter
+    eta = result.x[k + 2]
+
+    # Create result object with panel-specific attributes
+    from .result import PanelSFResult
+
+    sf_result = PanelSFResult(
+        params=params_transformed,
+        param_names=param_names,
+        hessian=hessian,
+        converged=converged,
+        model=model,
+        loglik=loglik_value,
+        panel_type="bc92",
+        temporal_params={"eta": eta},
+        optimization_result=result,
+    )
+
+    # Store BC92-specific info
+    sf_result._bc92_eta = eta  # Time-decay parameter
+
+    # Store entity and time IDs for efficiency calculation
+    sf_result._entity_id = entity_id
+    sf_result._time_id = time_id
+
+    return sf_result
+
+
+def _transform_bc92_parameters(
+    theta: np.ndarray,
+    n_exog: int,
+    exog_names: list,
+) -> tuple:
+    """Transform BC92 parameters from estimation space to natural scale.
+
+    Parameters:
+        theta: [β, ln(σ²_v), ln(σ²_u), η]
+        n_exog: Number of exogenous variables
+        exog_names: Names of exogenous variables
+
+    Returns:
+        Tuple of (transformed_params, param_names)
+    """
+    # Extract components
+    beta = theta[:n_exog]
+    ln_sigma_v_sq = theta[n_exog]
+    ln_sigma_u_sq = theta[n_exog + 1]
+    eta = theta[n_exog + 2]
+
+    # Transform variances
+    sigma_v_sq = np.exp(ln_sigma_v_sq)
+    sigma_u_sq = np.exp(ln_sigma_u_sq)
+
+    # Build parameter vector
+    params = np.concatenate([beta, [sigma_v_sq], [sigma_u_sq], [eta]])
+    names = exog_names + ["sigma_v_sq", "sigma_u_sq", "eta"]
+
+    return params, names
