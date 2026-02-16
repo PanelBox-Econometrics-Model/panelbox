@@ -52,6 +52,8 @@ class ModelType(str, Enum):
         BATTESE_COELLI_92: Battese & Coelli (1992) time-varying model
         BATTESE_COELLI_95: Battese & Coelli (1995) with heterogeneity
         CSS: Cornwell, Schmidt & Sickles (1990) flexible time pattern
+        KUMBHAKAR_1990: Kumbhakar (1990) time-varying with logistic function
+        LEE_SCHMIDT_1993: Lee & Schmidt (1993) time-varying with time dummies
         TRUE_FIXED_EFFECTS: Greene (2005) true fixed effects model
         TRUE_RANDOM_EFFECTS: Greene (2005) true random effects model
     """
@@ -62,6 +64,8 @@ class ModelType(str, Enum):
     BATTESE_COELLI_92 = "bc92"
     BATTESE_COELLI_95 = "bc95"
     CSS = "css"
+    KUMBHAKAR_1990 = "kumbhakar_1990"
+    LEE_SCHMIDT_1993 = "lee_schmidt_1993"
     TRUE_FIXED_EFFECTS = "tfe"
     TRUE_RANDOM_EFFECTS = "tre"
 
