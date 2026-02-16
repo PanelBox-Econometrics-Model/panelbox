@@ -53,6 +53,12 @@ def estimate_mle(
     Raises:
         RuntimeError: If optimization fails critically
     """
+    # Special handling for CSS model (distribution-free)
+    from .data import ModelType
+
+    if model.model_type == ModelType.CSS:
+        return _estimate_css_model(model, verbose=verbose)
+
     # Extract data
     y = model.y
     X = model.X
@@ -222,9 +228,9 @@ def estimate_mle(
         params=params_transformed,
         param_names=param_names,
         hessian=hessian,
-        loglik=loglik_value,
         converged=converged,
         model=model,
+        loglik=loglik_value,
         optimization_result=result,
     )
 
@@ -392,3 +398,83 @@ def _compute_hessian(
         return None
 
     return hessian
+
+
+def _estimate_css_model(model, verbose: bool = False):
+    """Estimate CSS model using distribution-free approach.
+
+    Parameters:
+        model: StochasticFrontier model instance with model_type=CSS
+        verbose: Print estimation progress
+
+    Returns:
+        SFResult with CSS estimation results
+    """
+    from .css import estimate_css_model
+    from .data import ModelType
+    from .result import SFResult
+
+    # Extract entity and time indices (need integer coding 0, 1, ..., N-1)
+    # model.data is indexed by (entity, time) after prepare_panel_index
+    reset_data = model.data.reset_index()
+    entity_id = (
+        reset_data["entity"].values
+        if "entity" in reset_data.columns
+        else reset_data.index.get_level_values(0).values
+    )
+    time_id = (
+        reset_data["time"].values
+        if "time" in reset_data.columns
+        else reset_data.index.get_level_values(1).values
+    )
+
+    # Convert to integer codes if not already
+    entity_unique = {e: i for i, e in enumerate(sorted(set(entity_id)))}
+    time_unique = {t: i for i, t in enumerate(sorted(set(time_id)))}
+
+    entity_id_coded = np.array([entity_unique[e] for e in entity_id])
+    time_id_coded = np.array([time_unique[t] for t in time_id])
+
+    # Remove constant from X if present (CSS adds its own intercepts)
+    X_no_const = model.X[:, 1:] if model.X.shape[1] > len(model.exog) else model.X
+
+    if verbose:
+        print(f"Estimating CSS model with time_trend='{model.css_time_trend}'")
+        print(f"  N = {len(entity_unique)} entities")
+        print(f"  T = {len(time_unique)} periods")
+        print(f"  n = {len(model.y)} observations")
+
+    # Estimate CSS model
+    css_result = estimate_css_model(
+        y=model.y,
+        X=X_no_const,
+        entity_id=entity_id_coded,
+        time_id=time_id_coded,
+        time_trend=model.css_time_trend,
+        frontier_type=model.frontier_type.value,
+    )
+
+    if verbose:
+        print(f"  R² = {css_result.r_squared:.4f}")
+        print(f"  σ_v = {css_result.sigma_v:.4f}")
+        print(f"  Mean efficiency = {np.mean(css_result.efficiency_it):.4f}")
+
+    # Create SFResult wrapper
+    # CSS does not use MLE, so loglik=None
+    result = SFResult(
+        params=css_result.params,
+        param_names=css_result.param_names,
+        hessian=None,  # CSS uses OLS, no Hessian
+        converged=True,
+        model=model,
+        loglik=None,  # CSS is not MLE
+        optimization_result=None,
+    )
+
+    # Attach CSS-specific results
+    result._css_result = css_result
+    result._alpha_it = css_result.alpha_it
+    result._efficiency_it = css_result.efficiency_it
+    result._r_squared = css_result.r_squared
+
+    return result

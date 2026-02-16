@@ -94,8 +94,9 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
         # Technical efficiency: TE = exp(-u)
         efficiency = np.exp(-u_hat)
     else:
-        # Cost efficiency: CE = exp(u)
-        efficiency = np.exp(u_hat)
+        # Cost efficiency: CE = exp(-u) ∈ (0, 1]
+        # (Same scale as TE for comparability)
+        efficiency = np.exp(-u_hat)
 
     # Compute confidence intervals (Horrace-Schmidt method)
     ci_lower, ci_upper = _horrace_schmidt_ci(
@@ -230,7 +231,10 @@ def _bc_estimator(
     Returns efficiency directly rather than inefficiency.
 
     For production frontier: TE = E[exp(-u)|ε]
-    For cost frontier:       CE = E[exp(u)|ε]
+    For cost frontier:       CE = E[exp(-u)|ε] (same scale as TE)
+
+    Note: We use CE = exp(-u) ∈ (0,1] for cost frontier
+    (not CE = exp(u) ∈ [1,∞)) for consistency with TE scale.
 
     Parameters:
         epsilon: Composed error
@@ -257,16 +261,13 @@ def _bc_estimator(
     else:
         raise ValueError(f"Unknown distribution: {dist}")
 
-    # Adjust for frontier type
-    if frontier_type == FrontierType.COST:
-        # For cost, CE = 1/TE
-        efficiency = 1 / efficiency
+    # NOTE: We don't adjust for frontier type
+    # Both production and cost use exp(-u) scale
+    # The sign convention is already handled in the estimator functions
 
     # Compute inefficiency from efficiency
-    if frontier_type == FrontierType.PRODUCTION:
-        inefficiency = -np.log(efficiency)
-    else:
-        inefficiency = np.log(efficiency)
+    # For both production and cost: efficiency = exp(-u), so u = -log(efficiency)
+    inefficiency = -np.log(efficiency)
 
     # Confidence intervals
     ci_lower, ci_upper = _horrace_schmidt_ci(

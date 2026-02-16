@@ -46,16 +46,21 @@ from .data import (
     DistributionType,
     FrontierType,
     ModelType,
+    add_translog,
     prepare_panel_index,
     validate_frontier_data,
 )
 from .model import StochasticFrontier
 from .result import SFResult
 from .tests import (
+    compare_nested_distributions,
     hausman_test_tfe_tre,
     heterogeneity_significance_test,
+    inefficiency_presence_test,
     lr_test,
+    skewness_test,
     summary_model_comparison,
+    vuong_test,
     wald_test,
 )
 from .true_models import (
@@ -76,6 +81,7 @@ __all__ = [
     "ModelType",
     "validate_frontier_data",
     "prepare_panel_index",
+    "add_translog",
     # True models
     "loglik_true_fixed_effects",
     "loglik_true_random_effects",
@@ -90,4 +96,8 @@ __all__ = [
     "wald_test",
     "heterogeneity_significance_test",
     "summary_model_comparison",
+    "inefficiency_presence_test",
+    "skewness_test",
+    "vuong_test",
+    "compare_nested_distributions",
 ]

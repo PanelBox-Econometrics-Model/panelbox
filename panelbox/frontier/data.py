@@ -264,3 +264,82 @@ def check_distribution_compatibility(
                 "computationally intensive. Consider half_normal or exponential "
                 "for faster estimation."
             )
+
+
+def add_translog(
+    data: pd.DataFrame,
+    variables: List[str],
+    include_time: bool = False,
+    time_var: Optional[str] = None,
+    prefix: str = "",
+) -> pd.DataFrame:
+    """Generate Translog terms for flexible functional form.
+
+    Creates quadratic and interaction terms needed for Translog specification:
+        - Squared terms: x²
+        - Cross-product terms: x_j × x_k for j < k
+        - Time interactions (optional): t × x_j, t²
+
+    Parameters:
+        data: Input DataFrame
+        variables: List of variable names to expand (should already be in logs)
+        include_time: Whether to include time trend interactions
+        time_var: Name of time variable (required if include_time=True)
+        prefix: Prefix for generated variable names (default: "")
+
+    Returns:
+        DataFrame with original data plus Translog terms
+
+    Example:
+        >>> # For Cobb-Douglas: ln(y) = β₀ + β₁·ln(K) + β₂·ln(L)
+        >>> # Generate Translog terms:
+        >>> data_translog = add_translog(data, ['ln_K', 'ln_L'])
+        >>> # Now can estimate: ln(y) = β₀ + β₁·ln(K) + β₂·ln(L)
+        >>>                           + β₁₁·ln(K)² + β₂₂·ln(L)² + β₁₂·ln(K)·ln(L)
+
+    Notes:
+        - Variables should already be in log form (e.g., ln_K, ln_L)
+        - For K inputs, generates K quadratic + K(K-1)/2 interaction terms
+        - Total terms: K + K + K(K-1)/2 = K(K+3)/2
+    """
+    data_out = data.copy()
+
+    # Check all variables exist
+    missing_vars = set(variables) - set(data.columns)
+    if missing_vars:
+        raise ValueError(f"Variables not found in DataFrame: {missing_vars}")
+
+    # Generate squared terms: x²
+    for var in variables:
+        new_name = f"{prefix}{var}_sq" if prefix else f"{var}_sq"
+        data_out[new_name] = data[var] ** 2
+
+    # Generate cross-product terms: x_j × x_k for j < k
+    for j, var_j in enumerate(variables):
+        for var_k in variables[j + 1 :]:
+            # Create interaction name (e.g., ln_K_ln_L)
+            if prefix:
+                new_name = f"{prefix}{var_j}_{var_k}"
+            else:
+                new_name = f"{var_j}_{var_k}"
+
+            data_out[new_name] = data[var_j] * data[var_k]
+
+    # Generate time interactions if requested
+    if include_time:
+        if time_var is None:
+            raise ValueError("time_var must be specified when include_time=True")
+
+        if time_var not in data.columns:
+            raise ValueError(f"Time variable '{time_var}' not found in DataFrame")
+
+        # Time squared
+        new_name = f"{prefix}{time_var}_sq" if prefix else f"{time_var}_sq"
+        data_out[new_name] = data[time_var] ** 2
+
+        # Time × input interactions
+        for var in variables:
+            new_name = f"{prefix}{time_var}_{var}" if prefix else f"{time_var}_{var}"
+            data_out[new_name] = data[time_var] * data[var]
+
+    return data_out

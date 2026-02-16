@@ -100,6 +100,7 @@ class StochasticFrontier:
         inefficiency_vars: Optional[List[str]] = None,
         het_vars: Optional[List[str]] = None,
         model_type: Optional[Union[str, ModelType]] = None,
+        css_time_trend: Optional[str] = None,
     ):
         """Initialize StochasticFrontier model."""
         # Store basic configuration
@@ -107,6 +108,7 @@ class StochasticFrontier:
         self.exog = exog
         self.entity = entity
         self.time = time
+        self.css_time_trend = css_time_trend
 
         # Convert string enums to proper types
         if isinstance(frontier, str):
@@ -126,14 +128,29 @@ class StochasticFrontier:
             elif entity and not time:
                 model_type = ModelType.POOLED
             elif entity and time:
+                # Check if CSS was requested via css_time_trend parameter
+                if css_time_trend is not None:
+                    model_type = ModelType.CSS
                 # Default to Pitt-Lee for simple panel
-                model_type = (
-                    ModelType.PITT_LEE if not inefficiency_vars else ModelType.BATTESE_COELLI_95
-                )
+                elif not inefficiency_vars:
+                    model_type = ModelType.PITT_LEE
+                else:
+                    model_type = ModelType.BATTESE_COELLI_95
         elif isinstance(model_type, str):
             model_type = ModelType(model_type.lower())
 
         self.model_type = model_type
+
+        # Validate CSS-specific requirements
+        if self.model_type == ModelType.CSS:
+            if entity is None or time is None:
+                raise ValueError("CSS model requires both entity and time identifiers")
+            if css_time_trend is None:
+                self.css_time_trend = "quadratic"  # Default to quadratic
+            elif css_time_trend not in ["none", "linear", "quadratic"]:
+                raise ValueError(
+                    f"css_time_trend must be 'none', 'linear', or 'quadratic', got '{css_time_trend}'"
+                )
 
         # Check distribution compatibility
         check_distribution_compatibility(self.dist, self.model_type, self.inefficiency_vars)
