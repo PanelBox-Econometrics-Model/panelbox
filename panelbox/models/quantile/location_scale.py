@@ -176,19 +176,34 @@ class LocationScale(QuantilePanelModel):
         Uses OLS or Fixed Effects OLS depending on specification.
         """
         if self.fixed_effects:
-            from ..linear.fixed_effects import FixedEffectsOLS
+            from ..static.fixed_effects import FixedEffectsOLS
 
-            location_model = FixedEffectsOLS(self.data, self.formula)
+            location_model = FixedEffectsOLS(
+                formula=self.formula,
+                data=self.data.data,
+                entity_col=self.data.entity_col,
+                time_col=self.data.time_col,
+            )
         else:
-            from ..linear.pooled import PooledOLS
+            from ..static.pooled_ols import PooledOLS
 
-            location_model = PooledOLS(self.data, self.formula)
+            location_model = PooledOLS(
+                formula=self.formula,
+                data=self.data.data,
+                entity_col=self.data.entity_col,
+                time_col=self.data.time_col,
+            )
 
         self.location_result_ = location_model.fit()
         self.location_params_ = self.location_result_.params
-        self.location_residuals_ = self.location_result_.resids
+        self.location_residuals_ = self.location_result_.resid
 
         # Store fitted values for later
+        # Extract y and X from the data using formula
+        y_var = self.formula.split("~")[0].strip()
+        x_vars = [v.strip() for v in self.formula.split("~")[1].split("+")]
+        self.y = self.data.data[y_var].values
+        self.X = self.data.data[x_vars].values
         self.location_fitted_ = self.y - self.location_residuals_
 
     def _estimate_scale(self, robust: bool = True):
@@ -224,34 +239,26 @@ class LocationScale(QuantilePanelModel):
         # Create temporary data for scale regression
         import pandas as pd
 
-        from ...utils.data import PanelData
-
-        # Create a temporary PanelData object for scale regression
+        # Create a temporary DataFrame for scale regression
         scale_data = pd.DataFrame(self.X, columns=[f"X{i}" for i in range(self.X.shape[1])])
         scale_data["y_scale"] = y_scale
-        scale_data["entity"] = self.data.entity_id
-        scale_data["time"] = self.data.time_id
-
-        scale_panel_data = PanelData(scale_data, entity="entity", time="time")
+        scale_data["entity"] = self.data.data[self.data.entity_col].values
+        scale_data["time"] = self.data.data[self.data.time_col].values
 
         # Estimate scale model
+        scale_formula = "y_scale ~ " + " + ".join([f"X{i}" for i in range(self.X.shape[1])])
+
         if self.fixed_effects:
-            from ..linear.fixed_effects import FixedEffectsOLS
+            from ..static.fixed_effects import FixedEffectsOLS
 
             scale_model = FixedEffectsOLS(
-                data=scale_panel_data,
-                formula="y_scale ~ "
-                + " + ".join([f"X{i}" for i in range(self.X.shape[1])])
-                + " - 1",
+                formula=scale_formula, data=scale_data, entity_col="entity", time_col="time"
             )
         else:
-            from ..linear.pooled import PooledOLS
+            from ..static.pooled_ols import PooledOLS
 
             scale_model = PooledOLS(
-                data=scale_panel_data,
-                formula="y_scale ~ "
-                + " + ".join([f"X{i}" for i in range(self.X.shape[1])])
-                + " - 1",
+                formula=scale_formula, data=scale_data, entity_col="entity", time_col="time"
             )
 
         self.scale_result_ = scale_model.fit()
@@ -349,8 +356,8 @@ class LocationScale(QuantilePanelModel):
         q_tau = self._get_quantile_function(tau)
 
         # Get covariance matrices from two-step estimation
-        var_alpha = self.location_result_.cov_matrix
-        var_gamma = self.scale_result_.cov_matrix * 4  # Adjust for γ = 2×(scale params)
+        var_alpha = self.location_result_.cov_params
+        var_gamma = self.scale_result_.cov_params * 4  # Adjust for γ = 2×(scale params)
 
         # For simplicity, assume independence between steps
         # (More complex: account for correlation)
@@ -419,8 +426,8 @@ class LocationScale(QuantilePanelModel):
             if ci:
                 # Approximate CI via delta method
                 # This is simplified - full version would be more complex
-                se_location = np.sqrt(np.diag(X @ self.location_result_.cov_matrix @ X.T))
-                se_scale = np.sqrt(np.diag(X @ self.scale_result_.cov_matrix @ X.T))
+                se_location = np.sqrt(np.diag(X @ self.location_result_.cov_params @ X.T))
+                se_scale = np.sqrt(np.diag(X @ self.scale_result_.cov_params @ X.T))
 
                 # Approximate combined SE
                 se_combined = np.sqrt(se_location**2 + (q_t * scale * se_scale) ** 2)
@@ -578,6 +585,16 @@ class LocationScaleResult(QuantilePanelResult):
         self.location_result = location_result
         self.scale_result = scale_result
 
+    @property
+    def location_params_(self):
+        """Location (mean) parameters."""
+        return self.model.location_params_
+
+    @property
+    def scale_params_(self):
+        """Scale (variance) parameters."""
+        return self.model.scale_params_
+
     def summary(self, tau: Optional[float] = None):
         """Extended summary for location-scale model."""
         print("\n" + "=" * 60)
@@ -591,14 +608,14 @@ class LocationScaleResult(QuantilePanelResult):
         print("-" * 40)
         print(f"R²: {self.location_result.r_squared:.4f}")
         for i, param in enumerate(self.location_result.params):
-            se = np.sqrt(self.location_result.cov_matrix[i, i])
+            se = np.sqrt(self.location_result.cov_params[i, i])
             print(f"  α{i+1}: {param:8.4f} ({se:.4f})")
 
         print("\nScale Model (Log Conditional Variance):")
         print("-" * 40)
         print(f"R²: {self.scale_result.r_squared:.4f}")
         for i, param in enumerate(self.model.scale_params_):
-            se = np.sqrt(self.scale_result.cov_matrix[i, i] * 4)
+            se = np.sqrt(self.scale_result.cov_params[i, i] * 4)
             print(f"  γ{i+1}: {param:8.4f} ({se:.4f})")
 
         print("\nImplied Quantile Coefficients:")
@@ -632,7 +649,7 @@ class LocationScaleResult(QuantilePanelResult):
 
         # Location effects
         params = self.location_result.params
-        se = np.sqrt(np.diag(self.location_result.cov_matrix))
+        se = np.sqrt(np.diag(self.location_result.cov_params))
 
         x = range(len(params))
         ax1.bar(x, params, yerr=1.96 * se, capsize=5, alpha=0.7)
@@ -646,7 +663,7 @@ class LocationScaleResult(QuantilePanelResult):
 
         # Scale effects
         params = self.model.scale_params_
-        se = np.sqrt(np.diag(self.scale_result.cov_matrix * 4))
+        se = np.sqrt(np.diag(self.scale_result.cov_params * 4))
 
         ax2.bar(x, params, yerr=1.96 * se, capsize=5, alpha=0.7, color="orange")
         ax2.set_xlabel("Variable")
