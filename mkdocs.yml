@@ -138,6 +138,7 @@ nav:
     - tutorials/01_getting_started.md
     - tutorials/02_static_models.md
     - tutorials/03_gmm_intro.md
+    - Standard Errors Series: tutorials/standard_errors_series.md
 
   - How-To Guides:
     - how-to/install.md
