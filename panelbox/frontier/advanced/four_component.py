@@ -761,9 +761,16 @@ class FourComponentResult:
                 )
 
                 # Store efficiency estimates
-                persistent_eff_boot[b] = np.exp(-step3_boot["eta_i"])
+                # Note: Bootstrap sample may have different number of unique entities
+                n_entities_boot = len(step3_boot["eta_i"])
+                persistent_eff_boot[b, :n_entities_boot] = np.exp(-step3_boot["eta_i"])
+                if n_entities_boot < self.model.n_entities:
+                    persistent_eff_boot[b, n_entities_boot:] = np.nan
+
                 transient_eff_boot[b] = np.exp(-step2_boot["u_it"])
-                overall_eff_boot[b] = persistent_eff_boot[b][entity_id_boot] * transient_eff_boot[b]
+                overall_eff_boot[b] = (
+                    np.exp(-step3_boot["eta_i"])[entity_id_boot] * transient_eff_boot[b]
+                )
 
                 # Store variance components
                 variance_components_boot["sigma_v"][b] = step2_boot["sigma_v"]
