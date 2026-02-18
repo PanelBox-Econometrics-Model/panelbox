@@ -273,7 +273,7 @@ def _plot_network_matplotlib(
     figsize: Tuple[int, int],
     show: bool,
     **kwargs,
-) -> plt.Figure:
+) -> "plt.Figure":
     """Plot network using Matplotlib."""
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -371,7 +371,7 @@ def _plot_network_plotly(
     title: Optional[str],
     show: bool,
     **kwargs,
-) -> go.Figure:
+) -> "go.Figure":
     """Plot network using Plotly (interactive)."""
     # Create edge traces
     edge_traces = []
