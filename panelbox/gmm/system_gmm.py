@@ -317,16 +317,30 @@ class SystemGMM(DifferenceGMM):
         Z_diff, Z_level = self._generate_instruments_system()
 
         # Step 4: Stack equations
+        n_diff = len(y_diff)
         y_stacked = np.vstack([y_diff, y_level])
+
+        # Bug 6 fix: Add constant column (0 for diff, 1 for level)
+        const_col = np.vstack(
+            [
+                np.zeros((n_diff, 1)),
+                np.ones((len(y_level), 1)),
+            ]
+        )
         X_stacked = np.vstack([X_diff, X_level])
+        X_stacked = np.hstack([X_stacked, const_col])
+
         Z_stacked_raw = self._stack_instruments(Z_diff, Z_level)
 
+        # Build stacked ids for per-individual computation
+        ids_stacked = np.concatenate([ids, ids])
+
         # Clean instrument matrix before estimation
-        # Remove observations and columns with NaNs
         valid_mask = self._get_valid_mask_system(y_stacked, X_stacked, Z_stacked_raw)
         y_stacked_clean = y_stacked[valid_mask]
         X_stacked_clean = X_stacked[valid_mask]
         Z_stacked_clean = Z_stacked_raw[valid_mask]
+        ids_stacked_clean = ids_stacked[valid_mask]
 
         # Remove instrument columns with remaining NaNs
         valid_instrument_cols = ~np.isnan(Z_stacked_clean).any(axis=0)
@@ -334,36 +348,60 @@ class SystemGMM(DifferenceGMM):
             raise ValueError("No valid instrument columns in System GMM. Check data quality.")
         Z_stacked_clean = Z_stacked_clean[:, valid_instrument_cols]
 
-        # For tests later, keep track of the full stacked residuals
-        residuals_full = np.full_like(y_stacked, np.nan)
+        # Build H blocks for the stacked system (per individual)
+        # For system GMM: H = [H_diff (tridiagonal), 0; 0, I_level (identity)]
+        unique_ids = np.unique(ids_stacked_clean)
+        H_blocks = {}
+        for uid in unique_ids:
+            mask = ids_stacked_clean == uid
+            T_total = int(np.sum(mask))
+            # Each individual has T_diff rows in diff block + T_level rows in level block
+            # After trimming (Bug 7 fix), T_diff == T_level, so T_total = 2 * T_diff
+            T_half = T_total // 2
+            if T_half > 0:
+                H_diff = self.estimator.build_H_matrix(T_half, "fd")
+                H_level = np.eye(T_total - T_half)
+                H_i = np.zeros((T_total, T_total))
+                H_i[:T_half, :T_half] = H_diff
+                H_i[T_half:, T_half:] = H_level
+            else:
+                H_i = np.eye(T_total)
+            H_blocks[uid] = H_i
 
-        # Repeat ids and times for stacked system
-        ids_stacked = np.concatenate([ids, ids])
-        np.concatenate([times, times])
-
-        # Step 5: Estimate GMM on stacked system (using cleaned data)
+        # Step 5: Estimate GMM on stacked system (pass ids for per-individual weights)
         if self.gmm_type == "one_step":
             beta, W, residuals_clean = self.estimator.one_step(
-                y_stacked_clean, X_stacked_clean, Z_stacked_clean
+                y_stacked_clean,
+                X_stacked_clean,
+                Z_stacked_clean,
+                ids=ids_stacked_clean,
+                H_blocks=H_blocks,
             )
-            vcov = self._compute_one_step_vcov(X_stacked_clean, Z_stacked_clean, residuals_clean, W)
+            vcov = self.estimator.compute_one_step_robust_vcov(
+                Z_stacked_clean,
+                residuals_clean,
+                ids_stacked_clean,
+            )
             converged = True
         elif self.gmm_type == "two_step":
             beta, vcov, W, residuals_clean = self.estimator.two_step(
-                y_stacked_clean, X_stacked_clean, Z_stacked_clean, robust=self.robust
+                y_stacked_clean,
+                X_stacked_clean,
+                Z_stacked_clean,
+                ids=ids_stacked_clean,
+                H_blocks=H_blocks,
+                robust=self.robust,
             )
             converged = True
         else:  # iterative
             beta, vcov, W, converged = self.estimator.iterative(
-                y_stacked_clean, X_stacked_clean, Z_stacked_clean
+                y_stacked_clean,
+                X_stacked_clean,
+                Z_stacked_clean,
+                ids=ids_stacked_clean,
+                H_blocks=H_blocks,
             )
             residuals_clean = y_stacked_clean - X_stacked_clean @ beta
-
-        # Fill residuals in full array
-        if residuals_full.ndim > 1:
-            residuals_full[valid_mask] = residuals_clean.reshape(-1, 1)
-        else:
-            residuals_full[valid_mask] = residuals_clean.flatten()
 
         # Ensure beta is 1D for pandas Series
         beta = beta.flatten()
@@ -375,47 +413,64 @@ class SystemGMM(DifferenceGMM):
 
         pvalues = 2 * (1 - scipy_stats.norm.cdf(np.abs(tvalues)))
 
-        # Step 7: Get variable names
+        # Step 7: Get variable names (add _cons for the constant)
         var_names = self._get_variable_names()
+        var_names.append("_cons")
 
         # Step 8: Compute specification tests
         n_params = len(beta)
 
-        # Hansen J-test on full system (use cleaned data)
-        hansen = self.tester.hansen_j_test(residuals_clean, Z_stacked_clean, W, n_params)
+        # Hansen J-test using per-individual moments (correct formula)
+        hansen = self.tester.hansen_j_test(
+            residuals_clean,
+            Z_stacked_clean,
+            W,
+            n_params,
+            zs=self.estimator.zs,
+            W2_inv=self.estimator.W2_inv,
+            N=self.estimator.N,
+            n_instruments=Z_stacked_clean.shape[1],
+        )
 
         # Sargan test
         sargan = self.tester.sargan_test(residuals_clean, Z_stacked_clean, n_params)
 
-        # AR tests (on difference residuals only)
-        n_diff = len(y_diff)
-        residuals_diff_only = residuals_full[:n_diff]
-        ids_diff_only = ids_stacked[:n_diff]  # Use stacked ids, first half
+        # AR tests (on difference residuals only - first half of stacked system)
+        # Find which clean rows correspond to the diff block
+        diff_mask_in_clean = valid_mask[: 2 * n_diff][:n_diff]  # valid mask for diff part
+        residuals_full_diff = np.full(n_diff, np.nan)
+        # Map clean residuals back to diff block
+        clean_idx = 0
+        for i in range(len(valid_mask)):
+            if valid_mask[i]:
+                if i < n_diff:
+                    residuals_full_diff[i] = residuals_clean.flatten()[clean_idx]
+                clean_idx += 1
 
-        valid_mask_diff = ~np.isnan(residuals_diff_only.flatten())
-        resid_diff_clean = residuals_diff_only.flatten()[valid_mask_diff]
-        ids_diff_clean = ids_diff_only[valid_mask_diff]
-
-        ar1 = self.tester.arellano_bond_ar_test(resid_diff_clean, ids_diff_clean, order=1)
-        ar2 = self.tester.arellano_bond_ar_test(resid_diff_clean, ids_diff_clean, order=2)
+        valid_diff_resid = ~np.isnan(residuals_full_diff)
+        ar1 = self.tester.arellano_bond_ar_test(
+            residuals_full_diff[valid_diff_resid], ids[valid_diff_resid], order=1
+        )
+        ar2 = self.tester.arellano_bond_ar_test(
+            residuals_full_diff[valid_diff_resid], ids[valid_diff_resid], order=2
+        )
 
         # Difference-in-Hansen test for level instruments
-        # Note: Disabled when instrument columns are filtered due to dimension mismatches
-        # This is a known limitation when dealing with sparse instrument coverage
         try:
-            diff_hansen = self._compute_diff_hansen(residuals_full, Z_diff, Z_level, W, n_params)
+            diff_hansen = self._compute_diff_hansen(residuals_clean, Z_diff, Z_level, W, n_params)
         except (ValueError, np.linalg.LinAlgError):
-            # If dimensions don't match (due to column filtering), skip test
             diff_hansen = None
 
+        # Bug 3 fix: nobs counts only diff equation observations (not stacked total)
+        nobs = n_diff
+
         # Step 9: Create results object
-        ~np.isnan(residuals_full.flatten())
         self.results = GMMResults(
             params=pd.Series(beta, index=var_names),
             std_errors=pd.Series(std_errors, index=var_names),
             tvalues=pd.Series(tvalues, index=var_names),
             pvalues=pd.Series(pvalues, index=var_names),
-            nobs=int(np.sum(valid_mask)),
+            nobs=nobs,
             n_groups=self.instrument_builder.n_groups,
             n_instruments=Z_stacked_clean.shape[1],
             n_params=n_params,
@@ -431,7 +486,7 @@ class SystemGMM(DifferenceGMM):
             windmeijer_corrected=self.robust and self.two_step,
             model_type="system",
             transformation="fd",
-            residuals=residuals_full,
+            residuals=residuals_clean,
         )
 
         self.params = self.results.params
@@ -503,9 +558,23 @@ class SystemGMM(DifferenceGMM):
                 if col not in regressors:
                     regressors.append(col)
 
-        # Extract level data
-        y_level = df[self.dep_var].values.reshape(-1, 1)
-        X_level = np.column_stack([df[var].values for var in regressors])
+        # Extract level data (ALL rows initially)
+        y_level_all = df[self.dep_var].values.reshape(-1, 1)
+        X_level_all = np.column_stack([df[var].values for var in regressors])
+
+        # Bug 7 fix: Trim level data to match diff equation valid rows
+        # The diff equation drops first period (from .diff()) and possibly more
+        # (from lagged variable NaN). Level equation must use the same (i,t) pairs.
+        valid_diff = ~np.isnan(y_diff.flatten())
+        if X_diff.ndim > 1:
+            valid_diff &= ~np.isnan(X_diff).any(axis=1)
+
+        y_diff = y_diff[valid_diff]
+        X_diff = X_diff[valid_diff]
+        y_level = y_level_all[valid_diff]
+        X_level = X_level_all[valid_diff]
+        ids = ids[valid_diff]
+        times = times[valid_diff]
 
         return y_diff, X_diff, y_level, X_level, ids, times
 
@@ -546,14 +615,15 @@ class SystemGMM(DifferenceGMM):
         instrument_sets_level = []
 
         # For lagged dependent variable in levels, use differences as instruments
+        # Pass the LEVEL variable; create_gmm_style_instruments with equation="level"
+        # will compute first differences internally (Δy_{t-1} = y_{t-1} - y_{t-2})
         for lag in self.lags:
             lag_name = f"{self.dep_var}_L{lag}"
 
-            # Use lagged differences as instruments for levels
             max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_lag = self.instrument_builder.create_gmm_style_instruments(
-                var=f"{lag_name}_diff",
-                min_lag=0,  # Can use contemporaneous difference
+                var=lag_name,
+                min_lag=0,
                 max_lag=max_lags_level,
                 equation="level",
                 collapse=self.collapse,
@@ -568,11 +638,11 @@ class SystemGMM(DifferenceGMM):
             instrument_sets_level.append(Z_level_exog)
 
         # For predetermined/endogenous in levels, use lagged differences
+        # Pass the LEVEL variable; equation="level" handles differencing
         for var in self.predetermined_vars + self.endogenous_vars:
-            # Variable differences already created above
             max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_var = self.instrument_builder.create_gmm_style_instruments(
-                var=f"{var}_diff",
+                var=var,
                 min_lag=1,
                 max_lag=max_lags_level,
                 equation="level",

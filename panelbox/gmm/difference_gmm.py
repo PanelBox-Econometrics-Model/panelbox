@@ -483,18 +483,29 @@ class DifferenceGMM:
         # Collapsed instruments avoid this issue by combining lags
         Z_matrix = np.nan_to_num(Z_matrix_filtered, nan=0.0)
 
-        # Step 3: Estimate GMM
+        # Filter remaining NaN rows from y and X (first periods from .diff())
+        valid_yx = ~np.isnan(y_diff.flatten())
+        if X_diff.ndim > 1:
+            valid_yx &= ~np.isnan(X_diff).any(axis=1)
+        if not valid_yx.all():
+            y_diff = y_diff[valid_yx]
+            X_diff = X_diff[valid_yx]
+            Z_matrix = Z_matrix[valid_yx]
+            ids = ids[valid_yx]
+            times = times[valid_yx]
+
+        # Step 3: Estimate GMM (pass ids for per-individual weight computation)
         if self.gmm_type == "one_step":
-            beta, W, residuals = self.estimator.one_step(y_diff, X_diff, Z_matrix)
-            vcov = self._compute_one_step_vcov(X_diff, Z_matrix, residuals, W)
+            beta, W, residuals = self.estimator.one_step(y_diff, X_diff, Z_matrix, ids=ids)
+            vcov = self.estimator.compute_one_step_robust_vcov(Z_matrix, residuals, ids)
             converged = True
         elif self.gmm_type == "two_step":
             beta, vcov, W, residuals = self.estimator.two_step(
-                y_diff, X_diff, Z_matrix, robust=self.robust
+                y_diff, X_diff, Z_matrix, ids=ids, robust=self.robust
             )
             converged = True
         else:  # iterative
-            beta, vcov, W, converged = self.estimator.iterative(y_diff, X_diff, Z_matrix)
+            beta, vcov, W, converged = self.estimator.iterative(y_diff, X_diff, Z_matrix, ids=ids)
             residuals = y_diff - X_diff @ beta
 
         # Step 4: Compute standard errors and t-statistics
@@ -509,18 +520,26 @@ class DifferenceGMM:
         var_names = self._get_variable_names()
 
         # Step 6: Compute specification tests
-        hansen = self.tester.hansen_j_test(residuals, Z_matrix, W, len(beta))
+        # Use per-individual Hansen J (correct formula)
+        hansen = self.tester.hansen_j_test(
+            residuals,
+            Z_matrix,
+            W,
+            len(beta),
+            zs=self.estimator.zs,
+            W2_inv=self.estimator.W2_inv,
+            N=self.estimator.N,
+            n_instruments=Z_matrix.shape[1],
+        )
         sargan = self.tester.sargan_test(residuals, Z_matrix, len(beta))
 
-        # For AR tests, we need clean data without NaN
+        # AR tests
         residuals_flat = residuals.flatten() if residuals.ndim > 1 else residuals
-        valid_mask = ~np.isnan(residuals_flat)
-        ar1 = self.tester.arellano_bond_ar_test(
-            residuals_flat[valid_mask], ids[valid_mask], order=1
-        )
-        ar2 = self.tester.arellano_bond_ar_test(
-            residuals_flat[valid_mask], ids[valid_mask], order=2
-        )
+        ar1 = self.tester.arellano_bond_ar_test(residuals_flat, ids, order=1)
+        ar2 = self.tester.arellano_bond_ar_test(residuals_flat, ids, order=2)
+
+        # Actual number of observations used in estimation
+        nobs = len(y_diff)
 
         # Step 7: Create results object
         self.results = GMMResults(
@@ -528,9 +547,9 @@ class DifferenceGMM:
             std_errors=pd.Series(std_errors, index=var_names),
             tvalues=pd.Series(tvalues, index=var_names),
             pvalues=pd.Series(pvalues, index=var_names),
-            nobs=int(np.sum(valid_mask)),
+            nobs=nobs,
             n_groups=self.instrument_builder.n_groups,
-            n_instruments=Z_matrix.shape[1],  # Use actual number of instruments after cleaning
+            n_instruments=Z_matrix.shape[1],
             n_params=len(beta),
             hansen_j=hansen,
             sargan=sargan,
@@ -687,62 +706,6 @@ class DifferenceGMM:
         Z_combined = self.instrument_builder.combine_instruments(*instrument_sets)
 
         return Z_combined
-
-    def _compute_one_step_vcov(
-        self, X: np.ndarray, Z: np.ndarray, residuals: np.ndarray, W: np.ndarray
-    ) -> np.ndarray:
-        """
-        Compute variance-covariance matrix for one-step GMM.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Regressors
-        Z : np.ndarray
-            Instruments
-        residuals : np.ndarray
-            Residuals
-        W : np.ndarray
-            Weight matrix
-
-        Returns
-        -------
-        np.ndarray
-            Variance-covariance matrix
-        """
-        # Ensure arrays are float64
-        X = np.asarray(X, dtype=np.float64)
-        Z = np.asarray(Z, dtype=np.float64)
-        residuals = np.asarray(residuals, dtype=np.float64)
-        W = np.asarray(W, dtype=np.float64)
-
-        # Remove missing values
-        valid_mask = ~np.isnan(residuals.flatten())
-        X_clean = X[valid_mask]
-        Z_clean = Z[valid_mask]
-        resid_clean = residuals[valid_mask]
-
-        # Robust variance: (X'Z W Z'X)^{-1} (X'Z W Ω W Z'X) (X'Z W Z'X)^{-1}
-        # where Ω = Z' diag(ε²) Z
-
-        XtZ = X_clean.T @ Z_clean
-        ZtX = Z_clean.T @ X_clean
-
-        A = XtZ @ W @ ZtX
-        try:
-            A_inv = np.linalg.inv(A)
-        except np.linalg.LinAlgError:
-            A_inv = np.linalg.pinv(A)
-
-        # Compute Omega
-        Omega = np.diag(resid_clean.flatten() ** 2)
-        ZtOmegaZ = Z_clean.T @ Omega @ Z_clean
-
-        # Robust variance
-        B = XtZ @ W @ ZtOmegaZ @ W @ ZtX
-        vcov = A_inv @ B @ A_inv
-
-        return np.asarray(vcov)
 
     def _get_variable_names(self) -> List[str]:
         """
