@@ -266,6 +266,7 @@ class SystemGMM(DifferenceGMM):
         gmm_type: str = "two_step",
         level_instruments: Optional[Dict] = None,
         gmm_max_lag: Optional[int] = None,
+        iv_max_lag: int = 0,
     ):
         """Initialize System GMM model."""
         # Initialize parent Difference GMM
@@ -284,6 +285,7 @@ class SystemGMM(DifferenceGMM):
             robust=robust,
             gmm_type=gmm_type,
             gmm_max_lag=gmm_max_lag,
+            iv_max_lag=iv_max_lag,
         )
 
         # Level instruments configuration
