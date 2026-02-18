@@ -201,8 +201,11 @@ from panelbox.var import (
     plot_causality_network,
 )
 
-# Quantile Regression Visualization
-from panelbox.visualization.quantile import qq_plot, quantile_process_plot, residual_plot
+# Quantile Regression Visualization (optional - requires matplotlib)
+try:
+    from panelbox.visualization.quantile import qq_plot, quantile_process_plot, residual_plot
+except ImportError:
+    pass
 
 __all__ = [
     # Version

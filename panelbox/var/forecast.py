@@ -9,9 +9,21 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
-from matplotlib import pyplot as plt
 from scipy import stats
+
+try:
+    import plotly.graph_objects as go
+
+    HAS_PLOTLY = True
+except ImportError:
+    HAS_PLOTLY = False
+
+try:
+    from matplotlib import pyplot as plt
+
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
 
 
 class ForecastResult:
@@ -236,10 +248,18 @@ class ForecastResult:
         fcst = self.forecasts[:, entity_idx, var_idx]
 
         if backend == "plotly":
+            if not HAS_PLOTLY:
+                raise ImportError(
+                    "plotly is required for plotly backend. Install with: pip install plotly"
+                )
             return self._plot_plotly(
                 fcst, entity_name, variable, var_idx, entity_idx, actual, show, **kwargs
             )
         else:
+            if not HAS_MATPLOTLIB:
+                raise ImportError(
+                    "matplotlib is required for matplotlib backend. Install with: pip install matplotlib"
+                )
             return self._plot_matplotlib(
                 fcst, entity_name, variable, var_idx, entity_idx, actual, show, **kwargs
             )
