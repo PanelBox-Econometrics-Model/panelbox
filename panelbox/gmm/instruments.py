@@ -186,8 +186,9 @@ class InstrumentBuilder:
 
         Notes
         -----
-        For equation='diff', instruments levels: x_{i,t-k}
-        For equation='level', instruments differences: Δx_{i,t-k}
+        Following Roodman (2009, p. 101) xtabond2 convention:
+        For equation='diff': instruments enter as first-differences Δx_{i,t-k}
+        For equation='level': instruments enter as levels x_{i,t-k}
         """
         n_lags = max_lag - min_lag + 1
         n_obs = len(self.data)
@@ -204,26 +205,27 @@ class InstrumentBuilder:
         instrument_names = []
         for lag in range(min_lag, max_lag + 1):
             if equation == "diff":
-                instrument_names.append(f"{var}_L{lag}")
-            else:
                 instrument_names.append(f"D.{var}_L{lag}")
+            else:
+                instrument_names.append(f"{var}_L{lag}")
 
         # Fill instrument matrix
         for i, (current_id, current_time) in enumerate(zip(ids, times)):
             for lag_idx, lag in enumerate(range(min_lag, max_lag + 1)):
-                # Find lagged value
+                # Find value at t-lag
                 mask = (ids == current_id) & (times == current_time - lag)
                 if np.any(mask):
                     lag_idx_data = np.where(mask)[0][0]
                     if equation == "diff":
-                        Z[i, lag_idx] = var_data[lag_idx_data]
+                        # Roodman (2009): IV-style instruments enter as first-differences
+                        # in the transformed (differenced) equation: Δx_{i,t-k}
+                        mask_prev = (ids == current_id) & (times == current_time - lag - 1)
+                        if np.any(mask_prev):
+                            prev_idx_data = np.where(mask_prev)[0][0]
+                            Z[i, lag_idx] = var_data[lag_idx_data] - var_data[prev_idx_data]
                     else:
-                        # For level equation, use differences as instruments
-                        # Find t-lag-1 for differencing
-                        mask_lag1 = (ids == current_id) & (times == current_time - lag - 1)
-                        if np.any(mask_lag1):
-                            lag1_idx_data = np.where(mask_lag1)[0][0]
-                            Z[i, lag_idx] = var_data[lag_idx_data] - var_data[lag1_idx_data]
+                        # For level equation, instruments enter as levels
+                        Z[i, lag_idx] = var_data[lag_idx_data]
 
         return InstrumentSet(
             Z=Z,
