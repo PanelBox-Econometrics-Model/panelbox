@@ -48,7 +48,15 @@ class GMMTests:
     """
 
     def hansen_j_test(
-        self, residuals: np.ndarray, Z: np.ndarray, W: np.ndarray, n_params: int
+        self,
+        residuals: np.ndarray,
+        Z: np.ndarray,
+        W: np.ndarray,
+        n_params: int,
+        zs: np.ndarray = None,
+        W2_inv: np.ndarray = None,
+        N: int = None,
+        n_instruments: int = None,
     ) -> TestResult:
         """
         Hansen (1982) J-test of overidentifying restrictions.
@@ -60,13 +68,22 @@ class GMMTests:
         Parameters
         ----------
         residuals : np.ndarray
-            Model residuals (n x 1)
+            Model residuals (n x 1) - used only in legacy mode
         Z : np.ndarray
-            Instrument matrix (n x n_instruments)
+            Instrument matrix (n x n_instruments) - used only in legacy mode
         W : np.ndarray
-            GMM weight matrix (n_instruments x n_instruments)
+            GMM weight matrix (n_instruments x n_instruments) - used only in legacy mode
         n_params : int
             Number of parameters estimated
+        zs : np.ndarray, optional
+            Sum of per-individual moment conditions: Σᵢ Zᵢ'ûᵢ (L x 1).
+            When provided, uses the correct per-individual formula.
+        W2_inv : np.ndarray, optional
+            Pseudo-inverse of the clustered weight matrix W₂.
+        N : int, optional
+            Number of individuals (cross-sectional units).
+        n_instruments : int, optional
+            Number of instruments (overrides Z.shape[1] if provided).
 
         Returns
         -------
@@ -75,38 +92,23 @@ class GMMTests:
 
         Notes
         -----
-        H0: All instruments are valid (E[Z'ε] = 0)
-        Test statistic: J = n * (Z'ε)' W (Z'ε) ~ χ²(n_instruments - n_params)
+        Correct formula: J = (1/N) × zs' × W₂⁻¹ × zs
+        where zs = Σᵢ Zᵢ'ûᵢ and W₂⁻¹ = pinv((1/N) Σᵢ (Zᵢ'ûᵢ)(Zᵢ'ûᵢ)')
 
-        Interpretation:
-        - p-value < 0.10: Reject H0 (instruments invalid)
-        - p-value > 0.25: Suspicious (may indicate weak instruments)
-        - 0.10 < p-value < 0.25: Good (instruments valid)
+        H0: All instruments are valid (E[Z'ε] = 0)
+        Test statistic: J ~ χ²(n_instruments - n_params)
 
         References
         ----------
         Hansen, L. P. (1982). Econometrica, 50(4), 1029-1054.
         """
-        # Remove missing values
-        residuals = residuals.flatten() if residuals.ndim > 1 else residuals
-        valid_mask = ~np.isnan(residuals)
-        resid_clean = residuals[valid_mask]
-        Z_clean = Z[valid_mask, :]
-
-        n = len(resid_clean)
-        n_instruments = Z_clean.shape[1]
-
-        # Compute moment conditions: g_n = (1/n) Z'ε
-        g_n = (Z_clean.T @ resid_clean) / n
-
-        # Compute J statistic: J = n * g_n' W g_n
-        J_stat = n * (g_n.T @ W @ g_n)
+        if n_instruments is None:
+            n_instruments = Z.shape[1] if Z is not None else 0
 
         # Degrees of freedom
         df = n_instruments - n_params
 
         if df <= 0:
-            # Exactly identified or under-identified
             return TestResult(
                 name="Hansen J-test",
                 statistic=np.nan,
@@ -118,8 +120,24 @@ class GMMTests:
                 details={"message": "Test not applicable: model is exactly or under-identified"},
             )
 
+        if zs is not None and W2_inv is not None and N is not None:
+            # Correct per-individual formula (matching pydynpd/Stata)
+            # J = (1/N) × zs' × W₂⁻¹ × zs
+            zs_flat = zs.flatten() if zs.ndim > 1 else zs
+            J_stat = float(np.linalg.multi_dot([zs_flat.T, W2_inv, zs_flat]) / N)
+        else:
+            # Legacy formula (observation-level, kept for backward compatibility)
+            residuals = residuals.flatten() if residuals.ndim > 1 else residuals
+            valid_mask = ~np.isnan(residuals)
+            resid_clean = residuals[valid_mask]
+            Z_clean = Z[valid_mask, :]
+
+            n = len(resid_clean)
+            g_n = (Z_clean.T @ resid_clean) / n
+            J_stat = float(n * (g_n.T @ W @ g_n))
+
         # P-value from chi-square distribution
-        pvalue = 1 - stats.chi2.cdf(J_stat, df)
+        pvalue = float(1 - stats.chi2.cdf(J_stat, df))
 
         return TestResult(
             name="Hansen J-test",
