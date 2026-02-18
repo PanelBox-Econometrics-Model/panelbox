@@ -130,6 +130,21 @@ class InstrumentBuilder:
         self.id_var = id_var
         self.time_var = time_var
 
+        # Convert datetime/period time variable to numeric index for lag arithmetic
+        # This ensures that lag operations (t - k) work correctly regardless
+        # of the original time format (datetime, Period, string dates, etc.)
+        self._time_mapping = None
+        time_dtype = self.data[time_var].dtype
+        needs_conversion = (
+            pd.api.types.is_datetime64_any_dtype(time_dtype)
+            or hasattr(time_dtype, "freq")  # PeriodDtype
+            or isinstance(time_dtype, pd.PeriodDtype)
+        )
+        if needs_conversion:
+            sorted_times = np.sort(self.data[time_var].unique())
+            self._time_mapping = {t: i for i, t in enumerate(sorted_times)}
+            self.data[time_var] = self.data[time_var].map(self._time_mapping)
+
         # Ensure data is sorted
         self.data = self.data.sort_values([id_var, time_var])
 

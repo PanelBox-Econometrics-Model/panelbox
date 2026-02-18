@@ -15,7 +15,7 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -239,8 +239,17 @@ class DifferenceGMM:
         two_step: bool = True,
         robust: bool = True,
         gmm_type: str = "two_step",
+        gmm_max_lag: Optional[int] = None,
     ):
-        """Initialize Difference GMM model."""
+        """Initialize Difference GMM model.
+
+        Parameters
+        ----------
+        gmm_max_lag : int, optional
+            Maximum lag for GMM-style instruments. If None, uses all available
+            lags. For example, gmm_max_lag=3 with lags=1 replicates
+            pydynpd's gmm(depvar, 2:3). Controls instrument proliferation.
+        """
         self.data = data.copy()
         self.dep_var = dep_var
         self.lags = [lags] if isinstance(lags, int) else lags
@@ -254,9 +263,24 @@ class DifferenceGMM:
         self.two_step = two_step
         self.robust = robust
         self.gmm_type = gmm_type
+        self.gmm_max_lag = gmm_max_lag
+
+        # Convert datetime/period time variable to numeric index
+        # This ensures lag arithmetic works correctly with any time format
+        self._time_mapping = None
+        time_dtype = self.data[time_var].dtype
+        needs_conversion = (
+            pd.api.types.is_datetime64_any_dtype(time_dtype)
+            or hasattr(time_dtype, "freq")  # PeriodDtype
+            or isinstance(time_dtype, pd.PeriodDtype)
+        )
+        if needs_conversion:
+            sorted_times = np.sort(self.data[time_var].unique())
+            self._time_mapping = {t: i for i, t in enumerate(sorted_times)}
+            self.data[time_var] = self.data[time_var].map(self._time_mapping)
 
         # Initialize components
-        self.instrument_builder = InstrumentBuilder(data, id_var, time_var)
+        self.instrument_builder = InstrumentBuilder(self.data, id_var, time_var)
         self.estimator = GMMEstimator()
         self.tester = GMMTests()
 
@@ -598,10 +622,12 @@ class DifferenceGMM:
         # For Δy_{i,t-lag}, use levels y_{i,t-lag-1}, y_{i,t-lag-2}, ... as instruments
         for lag in self.lags:
             # min_lag for instruments should be lag+1 (e.g., for L1.y use y_{t-2}, y_{t-3}, ...)
+            # gmm_max_lag controls the upper bound (e.g., gmm_max_lag=3 → gmm(depvar, 2:3))
+            max_lag = self.gmm_max_lag if self.gmm_max_lag is not None else 99
             Z_lag = self.instrument_builder.create_gmm_style_instruments(
                 var=self.dep_var,
                 min_lag=lag + 1,  # For L1.y, use y_{t-2} and earlier
-                max_lag=99,  # All available lags
+                max_lag=max_lag,
                 equation="diff",
                 collapse=self.collapse,
             )

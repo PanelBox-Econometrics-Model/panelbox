@@ -10,11 +10,26 @@ try:
 except ImportError:
     pass
 
-# New advanced visualization components
-from .advanced_plots import QuantileVisualizer
-from .interactive import InteractivePlotter
-from .surface_plots import SurfacePlotter
-from .themes import PublicationTheme
+# New advanced visualization components - optional dependencies (matplotlib/plotly)
+try:
+    from .advanced_plots import QuantileVisualizer
+except ImportError:
+    pass
+
+try:
+    from .interactive import InteractivePlotter
+except ImportError:
+    pass
+
+try:
+    from .surface_plots import SurfacePlotter
+except ImportError:
+    pass
+
+try:
+    from .themes import PublicationTheme
+except ImportError:
+    pass
 
 __all__ = [
     "QuantileVisualizer",
