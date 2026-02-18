@@ -240,6 +240,7 @@ class DifferenceGMM:
         robust: bool = True,
         gmm_type: str = "two_step",
         gmm_max_lag: Optional[int] = None,
+        iv_max_lag: int = 0,
     ):
         """Initialize Difference GMM model.
 
@@ -249,6 +250,10 @@ class DifferenceGMM:
             Maximum lag for GMM-style instruments. If None, uses all available
             lags. For example, gmm_max_lag=3 with lags=1 replicates
             pydynpd's gmm(depvar, 2:3). Controls instrument proliferation.
+        iv_max_lag : int, default=0
+            Maximum lag for IV-style instruments of exogenous variables.
+            Default 0 matches pydynpd's iv() behavior (current value only).
+            Set to 6 for Stata xtabond2 behavior (lags 0-6).
         """
         self.data = data.copy()
         self.dep_var = dep_var
@@ -264,6 +269,7 @@ class DifferenceGMM:
         self.robust = robust
         self.gmm_type = gmm_type
         self.gmm_max_lag = gmm_max_lag
+        self.iv_max_lag = iv_max_lag
 
         # Convert datetime/period time variable to numeric index
         # This ensures lag arithmetic works correctly with any time format
@@ -633,15 +639,14 @@ class DifferenceGMM:
             )
             instrument_sets.append(Z_lag)
 
-        # Instruments for strictly exogenous variables (IV-style, all lags)
-        # For balanced panels: use lags 0 to T-2 where T = number of periods
-        # For Arellano-Bond data: T=9 years, use lags 0-6 or 0-7
-        # After testing: max_lag=6 gives 42 instruments to match Stata
+        # Instruments for strictly exogenous variables (IV-style)
+        # iv_max_lag=0 (default): matches pydynpd iv() behavior (current value only)
+        # iv_max_lag=6: matches Stata xtabond2 behavior (lags 0-6)
         for var in self.exog_vars:
             Z_exog = self.instrument_builder.create_iv_style_instruments(
                 var=var,
-                min_lag=0,  # Current and all lags
-                max_lag=6,  # Empirically calibrated to match Stata xtabond2
+                min_lag=0,
+                max_lag=self.iv_max_lag,
                 equation="diff",
             )
             instrument_sets.append(Z_exog)
