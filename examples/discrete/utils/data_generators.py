@@ -12,6 +12,9 @@ Functions:
     generate_dynamic_binary_data     : Dynamic binary choice with state dependence
     generate_transportation_choice_data : Transportation mode choice panel data (long format)
     generate_career_choice_data      : Career choice panel data (manual/technical/managerial)
+    generate_credit_rating_data      : Credit rating panel data (ordered categories)
+    generate_labor_dynamics_data     : Dynamic labor participation with state dependence (probit)
+    generate_work_mode_data          : Work mode choice panel (on-site/hybrid/remote)
 
 Author: PanelBox Contributors
 Date: 2026-02-16
@@ -710,6 +713,476 @@ def generate_career_choice_data(
                     "urban": urban,
                 }
             )
+
+    return pd.DataFrame(rows)
+
+
+def generate_credit_rating_data(
+    n_firms: int = 600,
+    n_periods: int = 5,
+    n_categories: int = 4,
+    seed: Optional[int] = 42,
+) -> pd.DataFrame:
+    """
+    Generate synthetic credit rating panel data.
+
+    Creates a balanced panel of firms with ordered credit ratings
+    (poor, fair, good, excellent) using an ordered logit latent
+    variable structure with firm-level random effects.
+
+    Parameters
+    ----------
+    n_firms : int, default=600
+        Number of firms in the panel.
+    n_periods : int, default=5
+        Number of time periods per firm.
+    n_categories : int, default=4
+        Number of ordered rating categories (minimum 3).
+    seed : int, optional
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    pd.DataFrame
+        Panel data with columns:
+        - id            : Firm identifier (int)
+        - year          : Time period (int)
+        - rating        : Credit rating 0=poor, 1=fair, 2=good, 3=excellent (int)
+        - income        : Log firm income (float)
+        - debt_ratio    : Debt-to-assets ratio (float)
+        - age           : Firm age in years (float)
+        - size          : Log total assets (float)
+        - profitability : Return on assets (float)
+        - sector        : Industry sector 1-5 (int)
+
+    Examples
+    --------
+    >>> df = generate_credit_rating_data(n_firms=600, n_periods=5, seed=42)
+    >>> df['rating'].value_counts().sort_index()
+    0    ...
+    1    ...
+    2    ...
+    3    ...
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    if n_categories < 3:
+        raise ValueError("n_categories must be at least 3")
+
+    # True cutpoints for latent variable model (centered to balance categories)
+    cutpoints = np.array([-0.8, 0.4, 1.6])[: n_categories - 1]
+
+    # Firm-level random effects (persistent quality / reputation)
+    alpha_i = np.random.normal(0, 0.6, n_firms)
+
+    # Sector assignment (time-invariant)
+    sectors = np.random.choice([1, 2, 3, 4, 5], size=n_firms)
+
+    rows = []
+
+    for i in range(n_firms):
+        # Firm-specific baseline characteristics
+        income_base = np.random.normal(10.5, 1.0)
+        size_base = np.random.normal(8.0, 1.5)
+        age_start = np.random.uniform(3, 50)
+        debt_base = np.random.beta(3, 5)  # Right-skewed, mean ~0.375
+
+        for t in range(n_periods):
+            # Time-varying covariates with persistence
+            income = income_base + 0.02 * t + np.random.normal(0, 0.15)
+            size = size_base + 0.01 * t + np.random.normal(0, 0.1)
+            age = age_start + t
+            debt_ratio = np.clip(debt_base + 0.01 * t + np.random.normal(0, 0.05), 0.05, 0.95)
+            profitability = np.clip(
+                0.08 + 0.01 * (income - 10) - 0.05 * debt_ratio + np.random.normal(0, 0.03),
+                -0.10,
+                0.30,
+            )
+
+            # Latent credit quality (ordered logit DGP)
+            # Coefficients chosen so Xβ is centered near middle cutpoints
+            y_star = (
+                -2.8  # intercept to center latent variable
+                + 0.30 * income  # β_income
+                - 1.8 * debt_ratio  # β_debt (negative: more debt → worse)
+                + 0.01 * age  # β_age
+                + 0.10 * size  # β_size
+                + 2.0 * profitability  # β_profitability
+                + alpha_i[i]
+                + np.random.logistic(0, 1)  # Logistic error for ordered logit
+            )
+
+            # Map latent variable to ordered categories via cutpoints
+            rating = 0
+            for j, kappa in enumerate(cutpoints):
+                if y_star > kappa:
+                    rating = j + 1
+
+            rows.append(
+                {
+                    "id": i + 1,
+                    "year": 2015 + t,
+                    "rating": rating,
+                    "income": round(income, 4),
+                    "debt_ratio": round(debt_ratio, 4),
+                    "age": round(age, 1),
+                    "size": round(size, 4),
+                    "profitability": round(profitability, 4),
+                    "sector": int(sectors[i]),
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def generate_labor_dynamics_data(
+    n_individuals: int = 1500,
+    n_periods: int = 10,
+    true_gamma: float = 0.4,
+    seed: Optional[int] = 42,
+) -> pd.DataFrame:
+    """
+    Generate dynamic labor force participation panel data with state dependence.
+
+    Creates a balanced panel of women tracked over multiple years where
+    employment status depends on lagged employment (state dependence) and
+    persistent unobserved heterogeneity. Designed for dynamic discrete
+    choice tutorials (Wooldridge 2005 approach).
+
+    The data generating process uses a probit structure:
+        y*_it = X_it'β + γ * y_{i,t-1} + α_i + ε_it,  ε ~ N(0,1)
+        y_it = 1[y*_it > 0]
+
+    Parameters
+    ----------
+    n_individuals : int, default=1500
+        Number of women in the panel.
+    n_periods : int, default=10
+        Number of time periods per individual.
+    true_gamma : float, default=0.4
+        True state dependence parameter (coefficient on lagged employment).
+        Higher values mean stronger persistence from past employment.
+    seed : int, optional
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    pd.DataFrame
+        Panel data with columns:
+        - id       : Individual identifier (int)
+        - year     : Time period (int)
+        - employed : Employment status 1=employed, 0=not (int)
+        - age      : Age in years (float)
+        - educ     : Years of education (float)
+        - kids     : Number of young children (int)
+        - married  : Marital status 1=married, 0=not (int)
+        - exper    : Years of labor experience (float)
+        - husbinc  : Husband's income in thousands (float)
+
+    Notes
+    -----
+    The DGP ensures:
+    - Substantial state dependence (γ ≈ 0.4 by default)
+    - Meaningful unobserved heterogeneity (σ_α ≈ 0.8)
+    - Both sources contribute to observed persistence
+    - Initial conditions are correlated with α_i (Heckman problem)
+
+    Examples
+    --------
+    >>> data = generate_labor_dynamics_data(n_individuals=500, n_periods=8, seed=42)
+    >>> data.shape
+    (4000, 9)
+    >>> data.groupby('id').size().unique()
+    array([8])
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    # Unobserved heterogeneity (persistent individual effect)
+    sigma_alpha = 0.8
+    alpha_i = np.random.normal(0, sigma_alpha, n_individuals)
+
+    # True coefficients (probit scale)
+    beta_age = 0.02
+    beta_age_sq = -0.0003
+    beta_educ = 0.06
+    beta_kids = -0.25
+    beta_married = 0.10
+    beta_exper = 0.015
+    beta_husbinc = -0.015
+    intercept = -1.5
+
+    rows = []
+
+    for i in range(n_individuals):
+        # Time-invariant characteristics
+        educ = np.clip(np.random.normal(12.5, 2.5), 8, 20)
+        age_start = np.random.randint(22, 42)
+        exper_start = max(0, age_start - educ - 6 + np.random.randint(-2, 4))
+        married_base = np.random.random() < 0.65
+        husbinc_base = np.random.lognormal(2.8, 0.6) if married_base else 0.0
+
+        y_prev = None  # No lag for first period
+
+        for t in range(n_periods):
+            year = 2000 + t
+            age = age_start + t
+            exper = exper_start + t * 0.8  # Experience grows slower than time
+            kids = max(0, np.random.poisson(max(0, 1.5 - 0.03 * age + 0.1 * t)))
+            married = int(married_base if np.random.random() < 0.9 else not married_base)
+            husbinc = (
+                max(0, husbinc_base * (1 + 0.02 * t) + np.random.normal(0, 1.5)) if married else 0.0
+            )
+
+            # Latent utility (probit)
+            xb = (
+                intercept
+                + beta_age * age
+                + beta_age_sq * age**2
+                + beta_educ * educ
+                + beta_kids * kids
+                + beta_married * married
+                + beta_exper * exper
+                + beta_husbinc * husbinc
+                + alpha_i[i]
+            )
+
+            if t == 0:
+                # Initial condition: correlated with alpha_i
+                # Use a reduced-form for the initial period (no lag)
+                xb_init = xb + 0.3 * alpha_i[i]  # Extra correlation
+            else:
+                # Dynamic model: include state dependence
+                xb = xb + true_gamma * y_prev
+                xb_init = xb
+
+            # Probit: Phi(xb) is the probability
+            epsilon = np.random.normal(0, 1)
+            employed = int(xb_init + epsilon > 0)
+
+            rows.append(
+                {
+                    "id": i + 1,
+                    "year": year,
+                    "employed": employed,
+                    "age": round(float(age), 1),
+                    "educ": round(educ, 1),
+                    "kids": int(kids),
+                    "married": married,
+                    "exper": round(exper, 1),
+                    "husbinc": round(husbinc, 2),
+                }
+            )
+
+            y_prev = employed
+
+    return pd.DataFrame(rows)
+
+
+def generate_work_mode_data(
+    n_workers: int = 2000,
+    n_years: int = 5,
+    seed: Optional[int] = 42,
+) -> pd.DataFrame:
+    """
+    Generate synthetic work mode choice panel data (post-pandemic context).
+
+    Creates a balanced panel of workers choosing among three work modes
+    (on-site, hybrid, remote) over 2019-2023. The DGP incorporates a
+    pandemic shift (2020-2021), state dependence (past remote experience
+    affects future choices), and unobserved heterogeneity in remote
+    work preferences.
+
+    Parameters
+    ----------
+    n_workers : int, default=2000
+        Number of workers in the panel.
+    n_years : int, default=5
+        Number of years (2019 through 2019+n_years-1).
+    seed : int, optional
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    pd.DataFrame
+        Panel data with columns:
+        - worker_id  : Worker identifier (int)
+        - year       : Year 2019-2023 (int)
+        - mode       : Work mode: 0=on-site, 1=hybrid, 2=remote (int)
+        - prod_remote: Remote productivity score 1-10 (float)
+        - commute    : Commute time in minutes (float)
+        - kids       : Number of young children (int)
+        - age        : Age in years (float)
+        - educ       : Years of education (float)
+        - income     : Monthly income (float)
+        - sector     : Industry sector 1-5 (int)
+        - firm_size  : Firm size: 1=small, 2=medium, 3=large (int)
+        - tech_job   : 1=technology sector, 0=other (int)
+
+    Notes
+    -----
+    The DGP uses a multinomial logit structure with:
+    - Mode 0 (on-site) as the base category
+    - Pandemic effect (2020-2021) shifting utilities toward remote/hybrid
+    - State dependence: being remote in t-1 increases P(remote) in t
+    - Unobserved heterogeneity: individual-specific remote preference
+
+    Examples
+    --------
+    >>> data = generate_work_mode_data(n_workers=500, n_years=5, seed=42)
+    >>> data.shape
+    (2500, 12)
+    >>> data['mode'].value_counts().sort_index()
+    0    ...
+    1    ...
+    2    ...
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    # Unobserved heterogeneity: individual preference for remote work
+    alpha_remote = np.random.normal(0, 0.7, n_workers)
+    alpha_hybrid = np.random.normal(0, 0.5, n_workers)
+
+    # True parameters for DGP (relative to mode=0, on-site)
+    # Utility for hybrid (mode=1) vs on-site
+    beta_hybrid = {
+        "const": -1.0,
+        "prod_remote": 0.10,
+        "commute": 0.008,
+        "kids": 0.15,
+        "age": -0.01,
+        "educ": 0.03,
+        "tech_job": 0.30,
+    }
+    # Utility for remote (mode=2) vs on-site
+    beta_remote = {
+        "const": -2.5,
+        "prod_remote": 0.25,
+        "commute": 0.015,
+        "kids": -0.05,
+        "age": -0.02,
+        "educ": 0.05,
+        "tech_job": 0.50,
+    }
+
+    # State dependence (experience with remote/hybrid)
+    gamma_remote = 0.80  # Being remote in t-1 -> higher P(remote in t)
+    gamma_hybrid = 0.50  # Being hybrid in t-1 -> higher P(hybrid in t)
+
+    # Pandemic effect (shifts for 2020-2021)
+    pandemic_shift_remote = {2019: 0.0, 2020: 1.8, 2021: 1.2, 2022: 0.6, 2023: 0.3}
+    pandemic_shift_hybrid = {2019: 0.0, 2020: 1.0, 2021: 0.8, 2022: 0.5, 2023: 0.3}
+
+    rows = []
+
+    for i in range(n_workers):
+        # Time-invariant characteristics
+        age_start = np.random.randint(25, 55)
+        educ = np.clip(np.random.normal(14, 3), 8, 22)
+        sector = np.random.choice([1, 2, 3, 4, 5])
+        tech_job = 1 if sector == 1 or (sector == 2 and np.random.random() < 0.3) else 0
+        firm_size = np.random.choice([1, 2, 3], p=[0.3, 0.4, 0.3])
+        base_commute = np.random.lognormal(3.2, 0.5)  # ~25 min median
+        base_income = np.exp(
+            7.5 + 0.08 * educ + 0.02 * age_start + 0.3 * tech_job + np.random.normal(0, 0.3)
+        )
+
+        # Remote productivity (partially driven by tech_job, educ, individual ability)
+        prod_remote_base = np.clip(
+            4.0 + 1.5 * tech_job + 0.15 * educ + alpha_remote[i] * 0.5 + np.random.normal(0, 1.0),
+            1,
+            10,
+        )
+
+        y_prev = 0  # Start on-site in pre-pandemic
+        kids_val = max(0, np.random.poisson(0.8))
+
+        for t in range(n_years):
+            year = 2019 + t
+            age = age_start + t
+            income = base_income * (1.03**t) * np.exp(np.random.normal(0, 0.05))
+            commute = max(5, base_commute + np.random.normal(0, 5))
+
+            # Kids can change slightly over time
+            if t > 0 and np.random.random() < 0.08:
+                kids_val = max(0, kids_val + np.random.choice([-1, 1], p=[0.3, 0.7]))
+
+            # Productivity evolves (learning effect if was remote before)
+            prod_remote = np.clip(
+                prod_remote_base + 0.3 * (y_prev == 2) + np.random.normal(0, 0.3), 1, 10
+            )
+
+            # Pandemic shift
+            p_shift_r = pandemic_shift_remote.get(year, 0.0)
+            p_shift_h = pandemic_shift_hybrid.get(year, 0.0)
+
+            # State dependence
+            sd_remote = gamma_remote * (1 if y_prev == 2 else 0)
+            sd_hybrid = gamma_hybrid * (1 if y_prev == 1 else 0)
+            # Cross-effects: hybrid experience also slightly increases P(remote)
+            sd_remote += 0.2 * (1 if y_prev == 1 else 0)
+
+            # Firm size effect: large firms adopted hybrid/remote faster
+            firm_effect_h = 0.2 * (firm_size - 1)
+            firm_effect_r = 0.15 * (firm_size - 1)
+
+            # Compute utilities
+            u_onsite = 0.0  # base
+
+            u_hybrid = (
+                beta_hybrid["const"]
+                + beta_hybrid["prod_remote"] * prod_remote
+                + beta_hybrid["commute"] * commute
+                + beta_hybrid["kids"] * kids_val
+                + beta_hybrid["age"] * age
+                + beta_hybrid["educ"] * educ
+                + beta_hybrid["tech_job"] * tech_job
+                + p_shift_h
+                + sd_hybrid
+                + firm_effect_h
+                + alpha_hybrid[i]
+            )
+
+            u_remote = (
+                beta_remote["const"]
+                + beta_remote["prod_remote"] * prod_remote
+                + beta_remote["commute"] * commute
+                + beta_remote["kids"] * kids_val
+                + beta_remote["age"] * age
+                + beta_remote["educ"] * educ
+                + beta_remote["tech_job"] * tech_job
+                + p_shift_r
+                + sd_remote
+                + firm_effect_r
+                + alpha_remote[i]
+            )
+
+            # Add Gumbel errors (Type I extreme value)
+            utilities = np.array([u_onsite, u_hybrid, u_remote])
+            utilities += np.random.gumbel(0, 1, 3)
+
+            mode = int(np.argmax(utilities))
+
+            rows.append(
+                {
+                    "worker_id": i + 1,
+                    "year": year,
+                    "mode": mode,
+                    "prod_remote": round(prod_remote, 2),
+                    "commute": round(commute, 1),
+                    "kids": int(kids_val),
+                    "age": round(float(age), 1),
+                    "educ": round(educ, 1),
+                    "income": round(income, 2),
+                    "sector": int(sector),
+                    "firm_size": int(firm_size),
+                    "tech_job": int(tech_job),
+                }
+            )
+
+            y_prev = mode
 
     return pd.DataFrame(rows)
 

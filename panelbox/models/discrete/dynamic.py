@@ -121,14 +121,14 @@ class DynamicBinaryPanel(NonlinearPanelModel):
         self.n_periods = len(self.periods)
 
         # Create lagged dependent variable
-        self.endog_lagged = np.zeros_like(self.endog, dtype=float)
-        self.endog_lagged[:] = np.nan
+        self.endog_lagged = np.full_like(self.endog, np.nan, dtype=float)
 
         for i in self.entities:
             mask = self.entity == i
-            entity_y = self.endog[mask]
+            idx = np.where(mask)[0]
+            entity_y = self.endog[idx]
             if len(entity_y) > 1:
-                self.endog_lagged[mask][1:] = entity_y[:-1]
+                self.endog_lagged[idx[1:]] = entity_y[:-1]
 
         # Handle initial conditions
         if self.initial_conditions == "wooldridge":
