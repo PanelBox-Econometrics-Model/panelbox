@@ -1,0 +1,120 @@
+/**
+ * PanelBox Reports - Comparison Report Styles
+ * =============================================
+ *
+ * Styles specific to model comparison reports (ComparisonResult).
+ * Extends base_styles.css and report_components.css.
+ *
+ * Version: 1.0.0
+ */
+
+/* ─── Comparison table ─────────────────────────────────────── */
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
+}
+
+.comparison-table th {
+    background: var(--color-primary, #2c5282);
+    color: #fff;
+    padding: 0.55rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.comparison-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+    text-align: right;
+    vertical-align: middle;
+}
+
+.comparison-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-secondary, #4a5568);
+}
+
+.comparison-table tbody tr:nth-child(even) {
+    background: var(--color-bg-alt, #f7fafc);
+}
+
+.comparison-table tbody tr:hover {
+    background: var(--color-hover, #ebf4ff);
+}
+
+/* ─── Significance stars ───────────────────────────────────── */
+
+.sig-stars {
+    color: var(--color-primary, #2c5282);
+    font-weight: bold;
+    letter-spacing: 0;
+}
+
+/* ─── Best-model badge ─────────────────────────────────────── */
+
+.best-model-badge {
+    display: inline-block;
+    background: var(--color-success, #276749);
+    color: #fff;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 9999px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+/* ─── Metric cards (summary row) ───────────────────────────── */
+
+.comparison-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.comparison-metric-card {
+    background: var(--color-bg-alt, #f7fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+}
+
+.comparison-metric-card .metric-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #718096);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.25rem;
+}
+
+.comparison-metric-card .metric-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-primary, #2c5282);
+}
+
+/* ─── Chart area ───────────────────────────────────────────── */
+
+.comparison-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.comparison-chart-wrapper {
+    background: #fff;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}

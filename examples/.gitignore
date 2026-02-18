@@ -1,0 +1,28 @@
+# === Outputs gerados (regeneraveis) ===
+**/outputs/**/*.png
+**/outputs/**/*.svg
+**/outputs/**/*.pdf
+**/outputs/**/*.html
+**/outputs/**/*.tex
+**/outputs/**/*.csv
+**/outputs/**/*.json
+**/outputs/**/*.pkl
+# Preservar .gitkeep
+!**/outputs/**/.gitkeep
+
+# === Jupyter ===
+**/.ipynb_checkpoints/
+
+# === Python cache ===
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# === Coverage ===
+**/.coverage
+
+# === Arquivos temporarios ===
+**/*.tmp
+**/*.log
+**/*.bak
+**/*.backup

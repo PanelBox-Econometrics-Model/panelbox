@@ -6,7 +6,7 @@ including pooled, fixed effects, and random effects specifications.
 The NB2 parameterization is used where Var(y) = mu + alpha * mu^2.
 """
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -239,10 +239,8 @@ class NegativeBinomial(NonlinearPanelModel):
         """
         # Get starting values
         if start_params is None:
-            # Start with Poisson estimates
-            poisson = PooledPoisson(
-                self.endog, self.exog, self.entity_id, self.time_id, self.weights
-            )
+            # Start with Poisson estimates (without weights)
+            poisson = PooledPoisson(self.endog, self.exog, self.entity_id, self.time_id)
             poisson_result = poisson.fit()
 
             # Start alpha at 0.1
@@ -265,9 +263,14 @@ class NegativeBinomial(NonlinearPanelModel):
         vcov = -np.linalg.inv(hessian)
 
         # Create results object
-        return NegativeBinomialResults(
+        result_obj = NegativeBinomialResults(
             self, result.x, vcov, llf=-result.fun, converged=result.success
         )
+
+        # Store result for marginal_effects method
+        self._results = result_obj
+
+        return result_obj
 
     def predict(
         self,
@@ -309,6 +312,68 @@ class NegativeBinomial(NonlinearPanelModel):
         else:  # 'mean'
             return np.exp(eta)
 
+    def marginal_effects(
+        self,
+        result: Optional["NegativeBinomialResults"] = None,
+        at: str = "overall",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Negative Binomial model.
+
+        For NB models, marginal effects measure the change in expected
+        count E[y|X] = exp(X'β) for a one-unit change in a covariate.
+        The conditional mean is the same as Poisson, but the variance
+        structure differs (accounting for overdispersion).
+
+        Parameters
+        ----------
+        result : NegativeBinomialResults, optional
+            Fitted model result. If None, uses self._results
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall' or 'mean': AME (Average Marginal Effects)
+            - 'means' or 'mem': MEM (Marginal Effects at Means)
+        varlist : list of str, optional
+            Variables to compute ME for. If None, compute for all.
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and inference
+
+        Examples
+        --------
+        >>> model = NegativeBinomial(y, X, entity_id=firms)
+        >>> result = model.fit()
+        >>> ame = model.marginal_effects(result, at='overall')
+        >>> mem = model.marginal_effects(result, at='means')
+        >>> print(ame.summary())
+
+        See Also
+        --------
+        panelbox.marginal_effects.count_me.compute_negbin_ame
+        panelbox.marginal_effects.count_me.compute_negbin_mem
+        """
+        from ...marginal_effects.count_me import compute_negbin_ame, compute_negbin_mem
+
+        # Get result object
+        if result is None:
+            if not hasattr(self, "_results"):
+                raise RuntimeError("Model must be fitted first or result must be provided")
+            result = self._results
+
+        # Compute marginal effects based on 'at' parameter
+        if at in ["overall", "mean"]:
+            return compute_negbin_ame(result, varlist=varlist)
+        elif at in ["means", "mem"]:
+            return compute_negbin_mem(result, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. "
+                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+            )
+
 
 class NegativeBinomialResults(PanelModelResults):
     """Results class for Negative Binomial models."""
@@ -343,14 +408,14 @@ class NegativeBinomialResults(PanelModelResults):
             self.model.exog,
             self.model.entity_id,
             self.model.time_id,
-            self.model.weights,
         )
         poisson_result = poisson.fit()
 
+        # Get Poisson log-likelihood (stored on model, not result)
+        poisson_llf = getattr(poisson_result, "llf", None) or getattr(poisson, "llf", None)
+
         # LR test
-        return likelihood_ratio_test(
-            llf_unrestricted=self.llf, llf_restricted=poisson_result.llf, df=1
-        )
+        return likelihood_ratio_test(llf_unrestricted=self.llf, llf_restricted=poisson_llf, df=1)
 
     def summary(self):
         """Generate summary of results."""

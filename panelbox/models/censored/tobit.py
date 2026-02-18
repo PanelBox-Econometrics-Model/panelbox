@@ -9,7 +9,7 @@ License: MIT
 """
 
 import warnings
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 from scipy import optimize, stats
@@ -415,6 +415,78 @@ class RandomEffectsTobit(NonlinearPanelModel):
         else:
             raise ValueError(f"Unknown prediction type: {pred_type}")
 
+    def marginal_effects(
+        self,
+        at: str = "overall",
+        which: str = "conditional",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Tobit model.
+
+        Parameters
+        ----------
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall': AME (Average Marginal Effects) - average across sample
+            - 'mean': MEM (Marginal Effects at Means) - evaluate at mean of X
+        which : str, default='conditional'
+            Type of prediction for marginal effects:
+            - 'conditional': E[y|y>c, X] - conditional on non-censoring
+            - 'unconditional': E[y|X] - unconditional expectation
+            - 'probability': P(y>c|X) - probability of non-censoring
+        varlist : list of str, optional
+            Variables to compute marginal effects for. If None, compute for all.
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and summary methods
+
+        Examples
+        --------
+        >>> # Fit model
+        >>> model = PooledTobit(y, X, censoring_point=0)
+        >>> result = model.fit()
+        >>>
+        >>> # Average marginal effects on conditional mean
+        >>> ame = result.marginal_effects(at='overall', which='conditional')
+        >>> print(ame.summary())
+        >>>
+        >>> # Marginal effects at means on probability of non-censoring
+        >>> mem = result.marginal_effects(at='mean', which='probability')
+        >>> print(mem.summary())
+
+        Notes
+        -----
+        The three types of marginal effects have different interpretations:
+
+        1. **Conditional** (which='conditional'):
+           Effect on E[y|y>c, X] - "Among non-censored observations,
+           how does a change in x affect y?"
+
+        2. **Unconditional** (which='unconditional'):
+           Effect on E[y|X] - "How does a change in x affect y,
+           accounting for the possibility of censoring?"
+
+        3. **Probability** (which='probability'):
+           Effect on P(y>c|X) - "How does a change in x affect
+           the probability of being non-censored?"
+
+        See Also
+        --------
+        panelbox.marginal_effects.censored_me.compute_tobit_ame
+        panelbox.marginal_effects.censored_me.compute_tobit_mem
+        """
+        from panelbox.marginal_effects.censored_me import compute_tobit_ame, compute_tobit_mem
+
+        if at == "overall":
+            return compute_tobit_ame(self, which=which, varlist=varlist)
+        elif at == "mean":
+            return compute_tobit_mem(self, which=which, varlist=varlist)
+        else:
+            raise ValueError(f"Unknown 'at' value: {at}. Must be 'overall' or 'mean'")
+
     def summary(self) -> str:
         """Generate model summary."""
         if not hasattr(self, "params"):
@@ -771,6 +843,78 @@ class PooledTobit(NonlinearPanelModel):
 
         else:
             raise ValueError(f"Unknown pred_type: {pred_type}")
+
+    def marginal_effects(
+        self,
+        at: str = "overall",
+        which: str = "conditional",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Tobit model.
+
+        Parameters
+        ----------
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall': AME (Average Marginal Effects) - average across sample
+            - 'mean': MEM (Marginal Effects at Means) - evaluate at mean of X
+        which : str, default='conditional'
+            Type of prediction for marginal effects:
+            - 'conditional': E[y|y>c, X] - conditional on non-censoring
+            - 'unconditional': E[y|X] - unconditional expectation
+            - 'probability': P(y>c|X) - probability of non-censoring
+        varlist : list of str, optional
+            Variables to compute marginal effects for. If None, compute for all.
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and summary methods
+
+        Examples
+        --------
+        >>> # Fit model
+        >>> model = PooledTobit(y, X, censoring_point=0)
+        >>> result = model.fit()
+        >>>
+        >>> # Average marginal effects on conditional mean
+        >>> ame = result.marginal_effects(at='overall', which='conditional')
+        >>> print(ame.summary())
+        >>>
+        >>> # Marginal effects at means on probability of non-censoring
+        >>> mem = result.marginal_effects(at='mean', which='probability')
+        >>> print(mem.summary())
+
+        Notes
+        -----
+        The three types of marginal effects have different interpretations:
+
+        1. **Conditional** (which='conditional'):
+           Effect on E[y|y>c, X] - "Among non-censored observations,
+           how does a change in x affect y?"
+
+        2. **Unconditional** (which='unconditional'):
+           Effect on E[y|X] - "How does a change in x affect y,
+           accounting for the possibility of censoring?"
+
+        3. **Probability** (which='probability'):
+           Effect on P(y>c|X) - "How does a change in x affect
+           the probability of being non-censored?"
+
+        See Also
+        --------
+        panelbox.marginal_effects.censored_me.compute_tobit_ame
+        panelbox.marginal_effects.censored_me.compute_tobit_mem
+        """
+        from panelbox.marginal_effects.censored_me import compute_tobit_ame, compute_tobit_mem
+
+        if at == "overall":
+            return compute_tobit_ame(self, which=which, varlist=varlist)
+        elif at == "mean":
+            return compute_tobit_mem(self, which=which, varlist=varlist)
+        else:
+            raise ValueError(f"Unknown 'at' value: {at}. Must be 'overall' or 'mean'")
 
     def summary(self) -> str:
         """Generate model summary."""

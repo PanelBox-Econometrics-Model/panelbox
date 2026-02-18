@@ -382,10 +382,11 @@ class SpatialLag(SpatialPanelModel):
             print("Estimating pooled SAR using Quasi-ML")
 
         y = self.endog.values.flatten()
-        X = self.exog
+        X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
-        # Add constant if not present
-        if not np.any(np.all(X == X[0, :], axis=0)):
+        # Add constant if not present; track whether we added one
+        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        if _const_added:
             X = np.column_stack([np.ones(len(y)), X])
 
         # Get bounds
@@ -444,10 +445,19 @@ class SpatialLag(SpatialPanelModel):
         # Parameters
         params = np.concatenate([[rho_hat], beta_hat])
 
-        if hasattr(self.exog, "columns"):
-            param_names = ["rho", "const"] + list(self.exog.columns)
+        # Build param_names to match [rho, beta...] where beta has X.shape[1] entries
+        if _const_added:
+            # We prepended a constant column to X; get original column names if available
+            if hasattr(self.exog, "columns"):
+                param_names = ["rho", "const"] + list(self.exog.columns)
+            else:
+                param_names = ["rho", "const"] + [f"x{i}" for i in range(self.exog.shape[1])]
         else:
-            param_names = ["rho", "const"] + [f"x{i}" for i in range(self.exog.shape[1])]
+            # No constant added; X.shape[1] == self.exog.shape[1]
+            if hasattr(self.exog, "columns"):
+                param_names = ["rho"] + list(self.exog.columns)
+            else:
+                param_names = ["rho"] + [f"x{i}" for i in range(self.exog.shape[1])]
 
         results = SpatialPanelResults(
             model=self,
@@ -865,7 +875,7 @@ class SpatialPanelResults(PanelResults):
     ):
         """Initialize spatial panel results."""
         # Store basic attributes
-        self.model = model
+        self._model = model  # use _model because PanelResults.model is a read-only property
         self.params = params
         self.cov_params = cov_params
         self.llf = llf

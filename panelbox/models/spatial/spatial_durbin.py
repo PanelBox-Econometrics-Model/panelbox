@@ -98,9 +98,18 @@ class SpatialDurbin(SpatialPanelModel):
         self.sigma_alpha = None
         self.sigma_epsilon = None
 
+    def _estimate_coefficients(self) -> np.ndarray:
+        """
+        Placeholder required by abstract base class.
+
+        Actual estimation is performed in ``fit()`` which returns full results.
+        """
+        return np.array([])
+
     def fit(
         self,
         method: Literal["qml", "ml"] = "qml",
+        effects: Optional[str] = None,
         initial_values: Optional[Dict[str, float]] = None,
         maxiter: int = 1000,
         **kwargs,
@@ -112,8 +121,11 @@ class SpatialDurbin(SpatialPanelModel):
         ----------
         method : {'qml', 'ml'}, default='qml'
             Estimation method:
-            - 'qml': Quasi-Maximum Likelihood (for fixed effects)
+            - 'qml': Quasi-Maximum Likelihood (pooled or fixed effects)
             - 'ml': Maximum Likelihood (for random effects)
+        effects : {'pooled', 'fixed', 'random'}, optional
+            Override the effects setting from __init__.  When omitted the
+            value set in the constructor (default ``'fixed'``) is used.
         initial_values : dict, optional
             Initial values for parameters {'rho': ..., 'beta': ..., 'theta': ...}
         maxiter : int, default=1000
@@ -126,15 +138,141 @@ class SpatialDurbin(SpatialPanelModel):
         SpatialPanelResult
             Fitted model results
         """
+        # Allow overriding effects at fit-time (mirrors SpatialLag API)
+        if effects is not None:
+            self.effects = effects
+
         # Validate panel structure
         self._validate_panel_structure()
 
-        if self.effects == "fixed" and method == "qml":
+        if self.effects == "pooled" and method == "qml":
+            return self._fit_qml_pooled(initial_values, maxiter, **kwargs)
+        elif self.effects == "fixed" and method == "qml":
             return self._fit_qml_fe(initial_values, maxiter, **kwargs)
         elif self.effects == "random" and method == "ml":
             return self._fit_ml_re(initial_values, maxiter, **kwargs)
         else:
             raise ValueError(f"Invalid combination: effects='{self.effects}', method='{method}'")
+
+    def _fit_qml_pooled(
+        self, initial_values: Optional[Dict[str, float]] = None, maxiter: int = 1000, **kwargs
+    ) -> SpatialPanelResult:
+        """
+        Quasi-Maximum Likelihood estimation (pooled, no fixed effects).
+
+        Procedure:
+        1. Build augmented design matrix [X, WX] (with constant if absent)
+        2. Concentrated log-likelihood optimization over ρ
+        3. Conditional OLS for β and θ given optimal ρ
+        """
+        y = (
+            self.endog.values.flatten()
+            if hasattr(self.endog, "values")
+            else np.asarray(self.endog).flatten()
+        )
+        X = np.asarray(self.exog)
+
+        # Add constant if not already present
+        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        if _const_added:
+            X = np.column_stack([np.ones(len(y)), X])
+
+        # Spatial lag of each X column
+        WX = self._spatial_lag(X)
+
+        # Augmented design matrix: [X, WX]
+        X_augmented = np.column_stack([X, WX])
+
+        # Bounds for rho
+        rho_min, rho_max = self._spatial_coefficient_bounds()
+
+        N = self.n_entities
+        T = self.T
+        NT = N * T
+
+        def concentrated_llf(rho):
+            Wy = self._spatial_lag(y)
+            y_filtered = y - rho * Wy
+            try:
+                beta_theta, _, _, _ = np.linalg.lstsq(X_augmented, y_filtered, rcond=None)
+            except np.linalg.LinAlgError:
+                return 1e10
+            residuals = y_filtered - X_augmented @ beta_theta
+            ssr = np.dot(residuals, residuals)
+            sigma2 = ssr / NT
+            if sigma2 <= 0:
+                return 1e10
+            log_det_jacobian = T * self._log_det_jacobian(rho)
+            llf = (
+                -NT / 2 * np.log(2 * np.pi)
+                - NT / 2 * np.log(sigma2)
+                + log_det_jacobian
+                - ssr / (2 * sigma2)
+            )
+            return -llf
+
+        rho0 = initial_values.get("rho", 0.1) if initial_values else 0.1
+        from scipy.optimize import minimize
+
+        result = minimize(
+            concentrated_llf,
+            x0=rho0,
+            method="L-BFGS-B",
+            bounds=[(rho_min, rho_max)],
+            options={"maxiter": maxiter, **kwargs},
+        )
+        if not result.success:
+            warnings.warn(f"Optimization did not converge: {result.message}")
+
+        rho_hat = result.x[0]
+        self.rho = rho_hat
+
+        # Final regression at optimal rho
+        Wy = self._spatial_lag(y)
+        y_filtered = y - rho_hat * Wy
+        beta_theta_hat, _, _, _ = np.linalg.lstsq(X_augmented, y_filtered, rcond=None)
+
+        # Split into beta (X part) and theta (WX part)
+        K = X.shape[1]
+        beta_hat = beta_theta_hat[:K]
+        theta_hat = beta_theta_hat[K:]
+        self.beta = beta_hat
+        self.theta = theta_hat
+
+        residuals = y_filtered - X_augmented @ beta_theta_hat
+        sigma2 = np.dot(residuals, residuals) / (self.n_obs - len(beta_theta_hat))
+
+        vcov = self._compute_qml_vcov(rho_hat, beta_hat, theta_hat, sigma2, X_augmented)
+
+        # Parameter names
+        if _const_added:
+            if hasattr(self.exog, "columns"):
+                base_names = ["const"] + list(self.exog.columns)
+            else:
+                base_names = ["const"] + [f"x{i}" for i in range(np.asarray(self.exog).shape[1])]
+        else:
+            if hasattr(self.exog, "columns"):
+                base_names = list(self.exog.columns)
+            else:
+                base_names = [f"x{i}" for i in range(X.shape[1])]
+
+        param_names = ["rho"] + base_names + [f"W*{n}" for n in base_names]
+        params = np.concatenate([[rho_hat], beta_hat, theta_hat])
+
+        return SpatialPanelResult(
+            model=self,
+            params=pd.Series(params, index=param_names),
+            cov_params=pd.DataFrame(vcov, index=param_names, columns=param_names),
+            llf=-result.fun,
+            nobs=self.n_obs,
+            df_model=len(params),
+            df_resid=self.n_obs - len(params),
+            method="Quasi-ML",
+            effects="pooled",
+            resid=residuals,
+            sigma2=sigma2,
+            spatial_params={"rho": rho_hat},
+        )
 
     def _fit_qml_fe(
         self, initial_values: Optional[Dict[str, float]] = None, maxiter: int = 1000, **kwargs
@@ -151,6 +289,14 @@ class SpatialDurbin(SpatialPanelModel):
         # Within transformation
         y_within = self._within_transformation(self.endog)
         X_within = self._within_transformation(self.exog)
+
+        # Drop zero-variance columns (e.g. Intercept becomes all-zeros after within-
+        # transformation).  Track which columns survive so param_names stays consistent.
+        col_std = np.std(X_within, axis=0)
+        _fe_col_mask = col_std > 1e-10
+        if not np.any(_fe_col_mask):
+            raise ValueError("All regressors are collinear with entity fixed effects.")
+        X_within = X_within[:, _fe_col_mask]
 
         # Construct spatial lag of X
         WX_within = self._spatial_lag(X_within)
@@ -232,13 +378,16 @@ class SpatialDurbin(SpatialPanelModel):
         Wy_within = self._spatial_lag(y_within)
         y_filtered = y_within - rho_hat * Wy_within
 
-        # Final regression
-        XtX = X_augmented.T @ X_augmented
-        Xty = X_augmented.T @ y_filtered
-        beta_theta_hat = np.linalg.solve(XtX, Xty)
+        # Final regression (use lstsq to handle potential singularity)
+        try:
+            XtX = X_augmented.T @ X_augmented
+            Xty = X_augmented.T @ y_filtered
+            beta_theta_hat = np.linalg.solve(XtX, Xty)
+        except np.linalg.LinAlgError:
+            beta_theta_hat, _, _, _ = np.linalg.lstsq(X_augmented, y_filtered, rcond=None)
 
-        # Separate β and θ
-        K = self.exog.shape[1]
+        # Separate β and θ — K is the number of columns that survived the FE filter
+        K = X_within.shape[1]
         beta_hat = beta_theta_hat[:K]
         theta_hat = beta_theta_hat[K:]
 
@@ -247,16 +396,24 @@ class SpatialDurbin(SpatialPanelModel):
 
         # Residuals and variance
         residuals = y_filtered - X_augmented @ beta_theta_hat
-        sigma2 = np.dot(residuals, residuals) / (self.nobs - len(beta_theta_hat))
+        sigma2 = np.dot(residuals, residuals) / (self.n_obs - len(beta_theta_hat))
 
         # Compute variance-covariance matrix
         # Using the sandwich formula for QML
         vcov = self._compute_qml_vcov(rho_hat, beta_hat, theta_hat, sigma2, X_augmented)
 
-        # Prepare parameter names
+        # Prepare parameter names using filtered column names
+        if hasattr(self.exog, "columns"):
+            all_exog_names = list(self.exog.columns)
+        elif hasattr(self, "exog_names"):
+            all_exog_names = list(self.exog_names)
+        else:
+            all_exog_names = [f"x{i}" for i in range(np.asarray(self.exog).shape[1])]
+        # Keep only columns that survived the zero-variance filter
+        fe_exog_names = [n for n, keep in zip(all_exog_names, _fe_col_mask) if keep]
         param_names = ["rho"]
-        param_names.extend(list(self.exog_names))
-        param_names.extend([f"W*{name}" for name in self.exog_names])
+        param_names.extend(fe_exog_names)
+        param_names.extend([f"W*{name}" for name in fe_exog_names])
 
         # Combine all parameters
         params = np.concatenate([[rho_hat], beta_hat, theta_hat])
@@ -265,15 +422,15 @@ class SpatialDurbin(SpatialPanelModel):
         return SpatialPanelResult(
             model=self,
             params=pd.Series(params, index=param_names),
-            cov_matrix=vcov,
-            residuals=residuals,
-            fitted_values=self.endog - residuals,
-            sigma2=sigma2,
-            log_likelihood=-result.fun,
-            nobs=self.nobs,
+            cov_params=pd.DataFrame(vcov, index=param_names, columns=param_names),
+            llf=-result.fun,
+            nobs=self.n_obs,
             df_model=len(params),
-            df_residual=self.nobs - len(params),
-            W=self.W_normalized,
+            df_resid=self.n_obs - len(params),
+            method="Quasi-ML",
+            effects="fixed",
+            resid=residuals,
+            sigma2=sigma2,
             spatial_params={"rho": rho_hat},
         )
 
@@ -290,11 +447,15 @@ class SpatialDurbin(SpatialPanelModel):
         NT = N * T
 
         # Prepare data
-        y = self.endog
-        X = self.exog
+        y = (
+            self.endog.values.flatten()
+            if hasattr(self.endog, "values")
+            else np.asarray(self.endog).flatten()
+        )
+        X = np.asarray(self.exog)
         WX = self._spatial_lag(X)
         X_augmented = np.column_stack([X, WX])
-        K = self.exog.shape[1]
+        K = X.shape[1]
 
         # Get bounds for rho
         rho_min, rho_max = self._spatial_coefficient_bounds()
@@ -397,9 +558,15 @@ class SpatialDurbin(SpatialPanelModel):
         vcov = np.linalg.inv(hessian)
 
         # Parameter names
+        if hasattr(self.exog, "columns"):
+            _ml_re_names = list(self.exog.columns)
+        elif hasattr(self, "exog_names"):
+            _ml_re_names = list(self.exog_names)
+        else:
+            _ml_re_names = [f"x{i}" for i in range(np.asarray(self.exog).shape[1])]
         param_names = ["rho"]
-        param_names.extend(list(self.exog_names))
-        param_names.extend([f"W*{name}" for name in self.exog_names])
+        param_names.extend(_ml_re_names)
+        param_names.extend([f"W*{name}" for name in _ml_re_names])
         param_names.extend(["sigma_alpha", "sigma_epsilon"])
 
         # All parameters
@@ -422,15 +589,15 @@ class SpatialDurbin(SpatialPanelModel):
         return SpatialPanelResult(
             model=self,
             params=pd.Series(all_params, index=param_names),
-            cov_matrix=vcov,
-            residuals=residuals,
-            fitted_values=self.endog - residuals,
-            sigma2=sigma_epsilon_hat**2,
-            log_likelihood=-result.fun,
-            nobs=self.nobs,
+            cov_params=pd.DataFrame(vcov, index=param_names, columns=param_names),
+            llf=-result.fun,
+            nobs=self.n_obs,
             df_model=len(all_params),
-            df_residual=self.nobs - len(all_params),
-            W=self.W_normalized,
+            df_resid=self.n_obs - len(all_params),
+            method="ML",
+            effects="random",
+            resid=residuals,
+            sigma2=sigma_epsilon_hat**2,
             spatial_params={"rho": rho_hat},
             variance_components={
                 "sigma_alpha": sigma_alpha_hat,

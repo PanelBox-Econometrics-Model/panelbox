@@ -182,25 +182,25 @@ class SpatialPanelModel(PanelModel):
         if X is None:
             X = self.exog
 
+        # Normalise: convert Series and ndarrays to DataFrame
+        if isinstance(X, pd.Series):
+            # 1-D Series → 2-D DataFrame with one column
+            X = X.to_frame()
         if isinstance(X, np.ndarray):
-            # Convert to DataFrame for grouped operations
-            df = pd.DataFrame(X)
-            df[self.entity_col] = self.entity_ids
+            X = pd.DataFrame(X)
 
-            # Demean by entity
-            cols = [c for c in df.columns if c != self.entity_col]
-            X_demeaned = df.groupby(self.entity_col)[cols].transform(lambda x: x - x.mean())
+        # Now X is a DataFrame (possibly from the original exog DataFrame)
+        X_df = X.copy()
+        X_df[self.entity_col] = self.entity_ids
 
-            return X_demeaned.values
-        else:
-            # Already a DataFrame
-            X_df = X.copy()
-            X_df[self.entity_col] = self.entity_ids
+        # Demean by entity
+        cols = [c for c in X_df.columns if c != self.entity_col]
+        X_demeaned = X_df.groupby(self.entity_col)[cols].transform(lambda x: x - x.mean())
 
-            cols = [c for c in X_df.columns if c != self.entity_col]
-            X_demeaned = X_df.groupby(self.entity_col)[cols].transform(lambda x: x - x.mean())
-
-            return X_demeaned.values
+        # Return 1-D array if input was effectively 1-D (single column)
+        if X_demeaned.shape[1] == 1:
+            return X_demeaned.values.flatten()
+        return X_demeaned.values
 
     def _spatial_lag(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
@@ -435,7 +435,9 @@ class SpatialPanelModel(PanelModel):
             If panel is unbalanced
         """
         # Check if panel is balanced
-        entity_counts = self.data.groupby(level=self.entity_col).size()
+        # self.data is a PanelData object; its underlying DataFrame is self.data.data
+        raw_data = self.data.data if hasattr(self.data, "data") else self.data
+        entity_counts = raw_data.groupby(self.entity_col).size()
         if not all(entity_counts == self.T):
             raise ValueError("Spatial models require balanced panels")
 

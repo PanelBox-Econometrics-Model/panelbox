@@ -1,0 +1,326 @@
+================================================================================
+PANELBOX VISUALIZATION MODULE - COMPLETE DIRECTORY TREE
+================================================================================
+
+/home/guhaase/projetos/panelbox/panelbox/visualization/
+|
+├── __init__.py
+|   Main module initialization with exports and registry initialization
+|   - Imports all chart classes to trigger registration
+|   - Exports BaseChart, ChartFactory, ChartRegistry, Themes, all chart classes
+|   - Exports all high-level API functions
+|
+├── api.py (1,386 lines, 44,405 bytes)
+|   High-level convenience APIs for common use cases
+|   Functions:
+|   - create_validation_charts()
+|   - create_residual_diagnostics()
+|   - create_comparison_charts()
+|   - export_chart()
+|   - export_charts()
+|   - export_charts_multiple_formats()
+|   - create_panel_charts()
+|   - create_entity_effects_plot()
+|   - create_time_effects_plot()
+|   - create_between_within_plot()
+|   - create_panel_structure_plot()
+|   - create_acf_pacf_plot()
+|   - create_unit_root_test_plot()
+|   - create_cointegration_heatmap()
+|   - create_cross_sectional_dependence_plot()
+|
+├── base.py (854 lines, 23,615 bytes)
+|   Abstract base classes for all chart types
+|   Classes:
+|   - BaseChart (Abstract base)
+|   - PlotlyChartBase (Plotly implementation)
+|   - MatplotlibChartBase (Matplotlib implementation)
+|   - NumpyEncoder (JSON encoder for numpy types)
+|
+├── factory.py (241 lines, 7,106 bytes)
+|   Factory pattern for centralized chart creation
+|   Class: ChartFactory
+|   Static Methods:
+|   - create()
+|   - create_multiple()
+|   - list_available_charts()
+|   - get_chart_info()
+|
+├── registry.py (306 lines, 8,211 bytes)
+|   Registry pattern for chart management
+|   Class: ChartRegistry
+|   Methods:
+|   - register()
+|   - get()
+|   - list_charts()
+|   - is_registered()
+|   - unregister()
+|   - clear()
+|   - get_chart_info()
+|   Decorator: @register_chart()
+|
+├── themes.py (402 lines, 12,091 bytes)
+|   Visual theming system
+|   Class: Theme (dataclass)
+|   Pre-built Themes:
+|   - PROFESSIONAL_THEME (10-color scheme, modern, accessible)
+|   - ACADEMIC_THEME (publication-ready, minimal)
+|   - PRESENTATION_THEME (bold, high-contrast)
+|
+├── exceptions.py (340 lines, 10,200 bytes)
+|   Custom exceptions for visualization module
+|   Classes:
+|   - ChartError
+|   - ChartCreationError
+|   - ChartExportError
+|   - ThemeError
+|   - RegistryError
+|   - DataTransformationError
+|
+├── spatial_plots.py (866 lines, 25,970 bytes)
+|   Spatial econometric model visualizations
+|   Classes:
+|   - SpatialLagPlot
+|   - SpatialErrorPlot
+|   - SpatialDurbinPlot
+|   - SpatialWeightsPlot
+|
+├── var_plots.py (1,164 lines, 34,913 bytes)
+|   VAR (Vector Autoregression) model visualizations
+|   Classes:
+|   - VARImpulseResponsePlot
+|   - VARForecastErrorVarianceDecomposition
+|   - VARForecastPlot
+|   - VARResidualCrossCorrelation
+|
+├── config/
+|   ├── __init__.py
+|   ├── chart_config.py
+|   |   ChartConfig dataclass - Per-chart configuration
+|   |   Properties: width, height, title, axes labels, legend, etc.
+|   └── color_schemes.py
+|       Color palette definitions
+|
+├── matplotlib/
+|   ├── __init__.py
+|   Static Matplotlib chart implementations (sparse, most charts use Plotly)
+|
+├── plotly/
+|   ├── __init__.py
+|   ├── basic.py
+|   |   BarChart, LineChart
+|   ├── residuals.py (7 charts)
+|   |   QQPlot
+|   |   ResidualVsFittedPlot
+|   |   ScaleLocationPlot
+|   |   ResidualVsLeveragePlot
+|   |   ResidualTimeSeriesPlot
+|   |   ResidualDistributionPlot
+|   |   PartialRegressionPlot
+|   ├── comparison.py (4 charts)
+|   |   CoefficientComparisonChart
+|   |   ForestPlotChart
+|   |   ModelFitComparisonChart
+|   |   InformationCriteriaChart
+|   ├── distribution.py (4 charts)
+|   |   HistogramChart
+|   |   KDEChart
+|   |   ViolinPlotChart
+|   |   BoxPlotChart
+|   ├── correlation.py (2 charts)
+|   |   CorrelationHeatmapChart
+|   |   PairwiseCorrelationChart
+|   ├── timeseries.py (3 charts)
+|   |   PanelTimeSeriesChart
+|   |   TrendLineChart
+|   |   FacetedTimeSeriesChart
+|   ├── panel.py (4 charts)
+|   |   EntityEffectsPlot
+|   |   TimeEffectsPlot
+|   |   BetweenWithinPlot
+|   |   PanelStructurePlot
+|   ├── validation.py (5 charts)
+|   |   TestOverviewChart
+|   |   PValueDistributionChart
+|   |   TestStatisticsChart
+|   |   TestComparisonHeatmap
+|   |   ValidationDashboard
+|   └── econometric_tests.py (4 charts)
+|       ACFPACFPlot
+|       UnitRootTestPlot
+|       CointegrationHeatmap
+|       CrossSectionalDependencePlot
+|
+├── quantile/
+|   ├── __init__.py
+|   ├── advanced_plots.py (1,064 lines, 32,288 bytes)
+|   |   QuantileVisualizer
+|   |   Advanced coefficient path plots
+|   ├── interactive.py (633 lines, 19,355 bytes)
+|   |   InteractivePlotter
+|   |   Interactive coefficient exploration
+|   ├── process_plots.py (152 lines, 4,642 bytes)
+|   |   Process plots for quantile regression
+|   |   Functions: qq_plot(), quantile_process_plot(), residual_plot()
+|   ├── surface_plots.py (596 lines, 18,180 bytes)
+|   |   SurfacePlotter
+|   |   3D surface visualizations
+|   └── themes.py (465 lines, 13,957 bytes)
+|       PublicationTheme
+|       Quantile-specific theme configurations
+|
+├── transformers/
+|   ├── __init__.py
+|   ├── validation.py (558 lines, 18,158 bytes)
+|   |   ValidationDataTransformer
+|   |   Transforms validation results to chart data
+|   ├── residuals.py (479 lines, 14,379 bytes)
+|   |   ResidualDataTransformer
+|   |   Prepares residual data from model results
+|   ├── comparison.py (457 lines, 15,709 bytes)
+|   |   ComparisonDataTransformer
+|   |   Prepares comparison data from multiple models
+|   └── panel.py (503 lines, 15,704 bytes)
+|       PanelDataTransformer
+|       Extracts panel-specific data (effects, structure, variance)
+|
+└── utils/
+    ├── __init__.py
+    ├── chart_selector.py
+    |   Helper functions for selecting appropriate chart types
+    └── theme_loader.py
+        Helper functions for loading and caching themes
+
+
+================================================================================
+CHART TYPES BY CATEGORY
+================================================================================
+
+BASIC CHARTS (2 types):
+  - bar_chart                    BarChart
+  - line_chart                   LineChart
+
+RESIDUAL DIAGNOSTICS (7 types):
+  - residual_qq_plot             QQPlot
+  - residual_vs_fitted           ResidualVsFittedPlot
+  - residual_scale_location      ScaleLocationPlot
+  - residual_vs_leverage         ResidualVsLeveragePlot
+  - residual_timeseries          ResidualTimeSeriesPlot
+  - residual_distribution        ResidualDistributionPlot
+  - residual_partial_regression  PartialRegressionPlot
+
+MODEL COMPARISON (4 types):
+  - comparison_coefficients      CoefficientComparisonChart
+  - comparison_forest_plot       ForestPlotChart
+  - comparison_model_fit         ModelFitComparisonChart
+  - comparison_ic                InformationCriteriaChart
+
+DISTRIBUTION CHARTS (4 types):
+  - distribution_histogram       HistogramChart
+  - distribution_kde             KDEChart
+  - distribution_violin          ViolinPlotChart
+  - distribution_boxplot         BoxPlotChart
+
+CORRELATION CHARTS (2 types):
+  - correlation_heatmap          CorrelationHeatmapChart
+  - correlation_pairwise         PairwiseCorrelationChart
+
+TIME SERIES CHARTS (3 types):
+  - timeseries_panel             PanelTimeSeriesChart
+  - timeseries_trend             TrendLineChart
+  - timeseries_faceted           FacetedTimeSeriesChart
+
+PANEL-SPECIFIC CHARTS (4 types):
+  - panel_entity_effects         EntityEffectsPlot
+  - panel_time_effects           TimeEffectsPlot
+  - panel_between_within         BetweenWithinPlot
+  - panel_structure              PanelStructurePlot
+
+VALIDATION CHARTS (5 types):
+  - validation_test_overview     TestOverviewChart
+  - validation_pvalue_distribution    PValueDistributionChart
+  - validation_test_statistics   TestStatisticsChart
+  - validation_comparison_heatmap TestComparisonHeatmap
+  - validation_dashboard         ValidationDashboard
+
+ECONOMETRIC TEST CHARTS (4 types):
+  - acf_pacf_plot                ACFPACFPlot
+  - unit_root_test_plot          UnitRootTestPlot
+  - cointegration_heatmap        CointegrationHeatmap
+  - cross_sectional_dependence_plot  CrossSectionalDependencePlot
+
+
+================================================================================
+MODULE DEPENDENCIES
+================================================================================
+
+Internal Dependencies:
+  All visualization modules depend on:
+  - base.py (BaseChart, PlotlyChartBase, MatplotlibChartBase)
+  - themes.py (Theme class and pre-built themes)
+  - registry.py (@register_chart decorator)
+  - factory.py (ChartFactory for creation)
+
+Plotly modules depend on:
+  - registry.py (@register_chart)
+  - base.py (PlotlyChartBase)
+  - themes.py (Theme)
+
+Quantile modules depend on:
+  - base.py (PlotlyChartBase)
+  - themes.py (Theme, PublicationTheme)
+
+Transformers depend on:
+  - Model results structures from panelbox.core
+  - NumPy/Pandas for data manipulation
+
+External Dependencies:
+  - plotly (chart rendering)
+  - matplotlib (static charts)
+  - numpy (numerical operations)
+  - scipy (statistical functions)
+  - kaleido (optional, for image export)
+
+
+================================================================================
+IMPORT HIERARCHY
+================================================================================
+
+Top-level imports (from panelbox.visualization):
+  BaseChart, PlotlyChartBase, MatplotlibChartBase
+  ChartFactory, ChartRegistry, register_chart
+  Theme, PROFESSIONAL_THEME, ACADEMIC_THEME, PRESENTATION_THEME
+  [35 chart classes]
+  [15 high-level API functions]
+
+Indirect imports (available but typically use factory):
+  QuantileVisualizer, SurfacePlotter, InteractivePlotter
+  ValidationDataTransformer, ResidualDataTransformer, etc.
+
+
+================================================================================
+FILE METRICS
+================================================================================
+
+Total Lines of Code: ~4,863 lines
+Total File Size: ~275 KB (combined)
+
+Breakdown by module:
+  api.py                    1,386 lines (44,405 bytes)
+  var_plots.py              1,164 lines (34,913 bytes)
+  spatial_plots.py            866 lines (25,970 bytes)
+  base.py                     854 lines (23,615 bytes)
+  plotly/*.py              ~1,500 lines (combined)
+  quantile/*.py              ~500 lines (combined)
+  transformers/*.py        ~1,200 lines (combined)
+  themes.py                   402 lines (12,091 bytes)
+  exceptions.py               340 lines (10,200 bytes)
+  registry.py                 306 lines (8,211 bytes)
+  factory.py                  241 lines (7,106 bytes)
+  config/*.py                ~300 lines (combined)
+  utils/*.py                 ~100 lines (combined)
+
+
+================================================================================
+END OF DIRECTORY TREE
+================================================================================

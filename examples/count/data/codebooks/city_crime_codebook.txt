@@ -1,0 +1,210 @@
+DATASET: city_crime.csv
+PURPOSE: Fixed and Random Effects count models (Notebook 03)
+OBSERVATIONS: N = 150 cities, T = 10 years (2013-2022)
+STRUCTURE: Balanced panel (1,500 total observations)
+SIMULATION BASIS: Wooldridge (2010) panel count models
+
+VARIABLES:
+==========
+
+1. city_id
+   Type: Integer (1-150)
+   Description: Unique city identifier
+   Role: Panel identifier (entity dimension)
+
+2. year
+   Type: Integer (2013-2022)
+   Description: Calendar year
+   Role: Time identifier
+
+3. crimes
+   Type: Count (15-280)
+   Description: Number of reported violent crimes per 100,000 population
+   Mean: 82.5
+   Variance: 1,245
+   Variance/Mean ratio: 15.1 (overdispersion)
+   % Zeros: 0% (all cities have some crime)
+   Distribution: Right-skewed
+   Role: Dependent variable
+
+4. police_per_capita
+   Type: Float (1.2-4.8)
+   Description: Police officers per 1,000 residents
+   Mean: 2.5
+   SD: 0.8
+   Role: Primary policy variable
+
+5. unemployment
+   Type: Float (2.5-18.5)
+   Description: Unemployment rate (%)
+   Mean: 6.8
+   SD: 2.4
+   Role: Economic control
+
+6. poverty_rate
+   Type: Float (5.0-35.0)
+   Description: Percentage of population below poverty line
+   Mean: 15.2
+   SD: 6.5
+   Role: Socioeconomic control
+
+7. median_income
+   Type: Float (35-95)
+   Description: Median household income (thousands of dollars)
+   Mean: 62.5
+   SD: 14.3
+   Units: $1,000s
+   Role: Economic control
+
+8. population
+   Type: Float (50-800)
+   Description: City population (thousands)
+   Mean: 250
+   SD: 180
+   Units: 1,000 people
+   Role: Size control
+
+9. young_male_pct
+   Type: Float (8.0-22.0)
+   Description: Percentage of population that is male aged 15-24
+   Mean: 14.5
+   SD: 2.8
+   Role: Demographic control (high-risk group)
+
+10. high_school_pct
+    Type: Float (65-95)
+    Description: Percentage with high school diploma or higher
+    Mean: 82.3
+    SD: 7.2
+    Role: Education control
+
+11. region
+    Type: Categorical (1-4)
+    Description: Geographic region
+    1 = Northeast
+    2 = South
+    3 = Midwest
+    4 = West
+    Distribution: 25% each region
+    Role: Regional control
+
+12. metro_area
+    Type: Binary (0/1)
+    Description: Part of metropolitan area
+    0 = Non-metro
+    1 = Metro area
+    % metro: 68%
+    Role: Urbanization control
+
+NOTES:
+======
+- Balanced panel: all 150 cities observed for all 10 years
+- Strong within-city variation suitable for Fixed Effects
+- Between-city variation for Random Effects comparison
+- No missing values
+- Time-varying and time-invariant covariates present
+- Overdispersion present but moderate
+
+PANEL STRUCTURE:
+================
+- Within variation: Crime rates change over time within cities
+- Between variation: Systematic differences between cities
+- Total variation: Combined within and between
+- Hausman test will discriminate FE vs RE
+
+FIXED EFFECTS CONSIDERATIONS:
+==============================
+- Controls for unobserved city-specific effects (e.g., culture, geography)
+- Time-invariant variables (region) absorbed by FE
+- Identifies effect from within-city changes
+- Assumes strict exogeneity conditional on fixed effects
+
+RANDOM EFFECTS CONSIDERATIONS:
+===============================
+- More efficient if RE assumptions hold
+- Allows estimation of time-invariant effects
+- Requires uncorrelated effects assumption
+- Generally rejected by Hausman test for this data
+
+SUGGESTED ANALYSIS:
+==================
+Main specifications:
+
+1. Pooled Poisson (baseline):
+   crimes ~ police_per_capita + unemployment + poverty_rate +
+            median_income + young_male_pct + high_school_pct +
+            region + metro_area
+
+2. Fixed Effects Poisson:
+   crimes ~ police_per_capita + unemployment + poverty_rate +
+            median_income + young_male_pct + high_school_pct
+   (region and metro_area dropped - time invariant)
+
+3. Random Effects Poisson:
+   crimes ~ police_per_capita + unemployment + poverty_rate +
+            median_income + young_male_pct + high_school_pct +
+            region + metro_area
+
+Key tests:
+  1. Hausman specification test (FE vs RE)
+  2. Test for presence of fixed effects
+  3. Overdispersion test
+  4. Serial correlation in residuals
+
+Interpretation:
+  - Police effect: elasticity or semi-elasticity
+  - Economic determinants: unemployment, poverty, income
+  - Demographic composition effects
+  - Regional differences (RE only)
+
+THEORETICAL FRAMEWORK:
+======================
+Based on economic theory of crime (Becker 1968, Ehrlich 1973):
+- Crime = f(expected benefits, expected costs, opportunities)
+- Police increase expected costs (deterrence)
+- Unemployment/poverty affect benefits
+- Demographics affect propensity
+
+KEY EMPIRICAL PATTERNS:
+=======================
+1. Police elasticity ≈ -0.4 (10% more police → 4% fewer crimes)
+2. Unemployment elasticity ≈ 0.3 (procyclical crime)
+3. Young males effect is strong (1 pp increase → 3% more crime)
+4. Within variation explains 60% of total variation
+5. Hausman test strongly rejects RE (p < 0.001)
+
+POOLED VS FE VS RE COMPARISON:
+===============================
+- Pooled: Overestimates police effect (omitted variable bias)
+- FE: Consistent estimates under strict exogeneity
+- RE: Biased due to correlation with city effects
+- FE standard errors 40% larger than pooled (controls for heterogeneity)
+
+TIME EFFECTS:
+=============
+- Consider adding year fixed effects for macro trends
+- Crime fell nationally 2013-2019, rose 2020-2022
+- COVID-19 disruption in 2020-2021
+- Time FE controls for national trends
+
+IDENTIFICATION STRATEGY:
+========================
+Fixed Effects identification:
+- Exploit within-city variation in police hiring
+- Compare same city before/after policy changes
+- Difference out time-invariant confounders
+- Assumes no time-varying omitted variables
+
+Threats to identification:
+- Reverse causality (crime → police hiring)
+- Time-varying confounders (e.g., drug epidemics)
+- Measurement error in crime reporting
+- Strategic timing of police hiring
+
+EXTENSIONS SUGGESTED:
+=====================
+- Dynamic models with lagged crime (persistence)
+- Spatial models (crime spillovers to neighboring cities)
+- Negative Binomial FE for overdispersion
+- IV estimation for police endogeneity
+- Two-way fixed effects (city + year)

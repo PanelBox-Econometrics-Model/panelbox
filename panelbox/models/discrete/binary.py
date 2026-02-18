@@ -121,6 +121,7 @@ class PooledLogit(NonlinearPanelModel):
         super().__init__(formula, data, entity_col, time_col, weights)
         self._sm_model = None
         self._sm_result = None
+        self.family = "logit"  # Identify model family for marginal effects
 
     def _log_likelihood(self, params: np.ndarray) -> float:
         """
@@ -607,6 +608,41 @@ class PooledLogit(NonlinearPanelModel):
 
         return results
 
+    @property
+    def exog(self) -> np.ndarray:
+        """
+        Exogenous variables matrix.
+
+        Returns
+        -------
+        np.ndarray
+            Design matrix X (N x K)
+
+        Notes
+        -----
+        This property rebuilds the design matrix from the formula and data.
+        It is used by marginal effects computations.
+        """
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        return X
+
+    @property
+    def exog_names(self) -> list:
+        """
+        Names of exogenous variables.
+
+        Returns
+        -------
+        list of str
+            Variable names corresponding to columns of exog
+
+        Notes
+        -----
+        This property extracts variable names from the formula parser.
+        It is used by marginal effects computations.
+        """
+        return self.formula_parser.get_variable_names(self.data.data)
+
     def predict(self, type: Literal["linear", "prob"] = "prob") -> np.ndarray:
         """
         Generate predictions from fitted model.
@@ -640,50 +676,77 @@ class PooledLogit(NonlinearPanelModel):
         else:
             raise ValueError(f"type must be 'linear' or 'prob', got '{type}'")
 
-    def marginal_effects(self, at: str = "mean", method: str = "dydx") -> pd.DataFrame:
+    def marginal_effects(
+        self, at: str = "overall", method: str = "dydx", representative: dict = None
+    ):
         """
         Compute marginal effects for binary choice models.
 
-        **NOTE:** This is a stub method. Full implementation will be available in Phase 2.
-
         Parameters
         ----------
-        at : str, default='mean'
+        at : str, default='overall'
             Where to evaluate marginal effects:
-            - 'mean': At mean values of covariates (MEM)
-            - 'overall': Average marginal effects (AME)
+            - 'overall': Average Marginal Effects (AME)
+            - 'mean': Marginal Effects at Means (MEM)
         method : str, default='dydx'
             Type of marginal effect:
             - 'dydx': Marginal effect (derivative)
-            - 'eyex': Elasticity
+            - 'eyex': Elasticity (not yet implemented)
+        representative : dict, optional
+            Values for MER computation. If provided, marginal effects are
+            computed at these representative values. Unspecified variables
+            are set to their means.
 
         Returns
         -------
-        pd.DataFrame
-            DataFrame with marginal effects (not yet implemented)
+        MarginalEffectsResult
+            Object containing marginal effects with standard errors, z-statistics,
+            p-values, and summary methods.
 
         Examples
         --------
         >>> results = model.fit()
-        >>> # This will raise NotImplementedError in Phase 1
-        >>> me = model.marginal_effects(at='mean')
+        >>> # Average Marginal Effects
+        >>> ame = model.marginal_effects(at='overall')
+        >>> print(ame.summary())
+        >>>
+        >>> # Marginal Effects at Means
+        >>> mem = model.marginal_effects(at='mean')
+        >>> print(mem.summary())
+        >>>
+        >>> # Marginal Effects at Representative values
+        >>> mer = model.marginal_effects(representative={'x1': 0.5, 'x2': 1.0})
+        >>> print(mer.summary())
 
         Notes
         -----
-        This method will be fully implemented in Phase 2 (US-2.1).
-        It will compute:
-        - Average Marginal Effects (AME)
-        - Marginal Effects at Means (MEM)
-        - Marginal Effects at Representative values (MER)
-        - Standard errors via delta method
+        For Logit models, marginal effects are computed as:
 
-        For Logit: ME = β * Λ(X'β) * (1 - Λ(X'β))
-        For Probit: ME = β * φ(X'β)
+        ME = β * Λ(X'β) * (1 - Λ(X'β))
+
+        where Λ is the logistic CDF.
+
+        Standard errors are computed via the delta method.
         """
-        raise NotImplementedError(
-            "Marginal effects computation is not yet implemented. "
-            "This feature will be available in Phase 2 of the discrete models implementation."
-        )
+        from panelbox.marginal_effects import compute_ame, compute_mem, compute_mer
+
+        if method != "dydx":
+            raise ValueError(f"Only 'dydx' method is currently supported, got '{method}'")
+
+        # Exclude intercept from marginal effects
+        varlist = [v for v in self.exog_names if v.lower() not in ["intercept", "const"]]
+
+        if representative is not None:
+            return compute_mer(self._results, at=representative, varlist=varlist)
+        elif at == "overall":
+            return compute_ame(self._results, varlist=varlist)
+        elif at == "mean":
+            return compute_mem(self._results, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. Must be 'overall' or 'mean', "
+                f"or provide 'representative' dict."
+            )
 
 
 class PooledProbit(NonlinearPanelModel):
@@ -739,6 +802,7 @@ class PooledProbit(NonlinearPanelModel):
         super().__init__(formula, data, entity_col, time_col, weights)
         self._sm_model = None
         self._sm_result = None
+        self.family = "probit"  # Identify model family for marginal effects
 
     def _log_likelihood(self, params: np.ndarray) -> float:
         """
@@ -824,7 +888,8 @@ class PooledProbit(NonlinearPanelModel):
 
         # Compute covariance matrix
         if cov_type == "nonrobust":
-            vcov = self._sm_result.cov_params().values
+            cov_result = self._sm_result.cov_params()
+            vcov = cov_result.values if hasattr(cov_result, "values") else np.asarray(cov_result)
 
         elif cov_type == "robust":
             # Heteroskedasticity-robust
@@ -847,19 +912,21 @@ class PooledProbit(NonlinearPanelModel):
             # Cluster-robust by entity
             entities = self.data.data[self.data.entity_col].values
 
+            # Compute scores for each observation
+            scores = (y - fitted_probs)[:, np.newaxis] * X
+
+            # Use cluster_robust_mle from mle module
+            from panelbox.standard_errors.mle import cluster_robust_mle
+
             # Hessian
             pdf = stats.norm.pdf(eta)
             cdf = fitted_probs
             cdf_comp = 1 - cdf
             W = (pdf**2) / (cdf * cdf_comp)
             H = -(X.T * W) @ X
-            H_inv = np.linalg.inv(H)
 
-            # Clustered meat
-            result = cluster_by_entity(X, resid, entities, df_correction=True)
-            S = result.meat
-
-            vcov = H_inv @ S @ H_inv
+            cluster_result = cluster_robust_mle(H, scores, entities, df_correction=True)
+            vcov = cluster_result.cov_matrix
 
         else:
             raise ValueError(
@@ -1149,6 +1216,41 @@ class PooledProbit(NonlinearPanelModel):
 
         return results
 
+    @property
+    def exog(self) -> np.ndarray:
+        """
+        Exogenous variables matrix.
+
+        Returns
+        -------
+        np.ndarray
+            Design matrix X (N x K)
+
+        Notes
+        -----
+        This property rebuilds the design matrix from the formula and data.
+        It is used by marginal effects computations.
+        """
+        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        return X
+
+    @property
+    def exog_names(self) -> list:
+        """
+        Names of exogenous variables.
+
+        Returns
+        -------
+        list of str
+            Variable names corresponding to columns of exog
+
+        Notes
+        -----
+        This property extracts variable names from the formula parser.
+        It is used by marginal effects computations.
+        """
+        return self.formula_parser.get_variable_names(self.data.data)
+
     def predict(self, type: Literal["linear", "prob"] = "prob") -> np.ndarray:
         """
         Generate predictions from fitted model.
@@ -1174,37 +1276,77 @@ class PooledProbit(NonlinearPanelModel):
         else:
             raise ValueError(f"type must be 'linear' or 'prob', got '{type}'")
 
-    def marginal_effects(self, at: str = "mean", method: str = "dydx") -> pd.DataFrame:
+    def marginal_effects(
+        self, at: str = "overall", method: str = "dydx", representative: dict = None
+    ):
         """
         Compute marginal effects for binary choice models.
 
-        **NOTE:** This is a stub method. Full implementation will be available in Phase 2.
-
         Parameters
         ----------
-        at : str, default='mean'
+        at : str, default='overall'
             Where to evaluate marginal effects:
-            - 'mean': At mean values of covariates (MEM)
-            - 'overall': Average marginal effects (AME)
+            - 'overall': Average Marginal Effects (AME)
+            - 'mean': Marginal Effects at Means (MEM)
         method : str, default='dydx'
             Type of marginal effect:
             - 'dydx': Marginal effect (derivative)
-            - 'eyex': Elasticity
+            - 'eyex': Elasticity (not yet implemented)
+        representative : dict, optional
+            Values for MER computation. If provided, marginal effects are
+            computed at these representative values. Unspecified variables
+            are set to their means.
 
         Returns
         -------
-        pd.DataFrame
-            DataFrame with marginal effects (not yet implemented)
+        MarginalEffectsResult
+            Object containing marginal effects with standard errors, z-statistics,
+            p-values, and summary methods.
+
+        Examples
+        --------
+        >>> results = model.fit()
+        >>> # Average Marginal Effects
+        >>> ame = model.marginal_effects(at='overall')
+        >>> print(ame.summary())
+        >>>
+        >>> # Marginal Effects at Means
+        >>> mem = model.marginal_effects(at='mean')
+        >>> print(mem.summary())
+        >>>
+        >>> # Marginal Effects at Representative values
+        >>> mer = model.marginal_effects(representative={'x1': 0.5, 'x2': 1.0})
+        >>> print(mer.summary())
 
         Notes
         -----
-        This method will be fully implemented in Phase 2 (US-2.1).
-        For Probit: ME = β * φ(X'β) where φ is the normal PDF
+        For Probit models, marginal effects are computed as:
+
+        ME = β * φ(X'β)
+
+        where φ is the standard normal PDF.
+
+        Standard errors are computed via the delta method.
         """
-        raise NotImplementedError(
-            "Marginal effects computation is not yet implemented. "
-            "This feature will be available in Phase 2 of the discrete models implementation."
-        )
+        from panelbox.marginal_effects import compute_ame, compute_mem, compute_mer
+
+        if method != "dydx":
+            raise ValueError(f"Only 'dydx' method is currently supported, got '{method}'")
+
+        # Exclude intercept from marginal effects
+        varlist = [v for v in self.exog_names if v.lower() not in ["intercept", "const"]]
+
+        if representative is not None:
+            return compute_mer(self._results, at=representative, varlist=varlist)
+        elif at == "overall":
+            return compute_ame(self._results, varlist=varlist)
+        elif at == "mean":
+            return compute_mem(self._results, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. Must be 'overall' or 'mean', "
+                f"or provide 'representative' dict."
+            )
 
 
 class FixedEffectsLogit(NonlinearPanelModel):
@@ -1611,10 +1753,14 @@ class FixedEffectsLogit(NonlinearPanelModel):
 
         # Compute covariance matrix (use Hessian)
         H = self._hessian(params)
-        vcov = -np.linalg.inv(H)  # -H^{-1}
+        try:
+            vcov = -np.linalg.inv(H)  # -H^{-1}
+        except np.linalg.LinAlgError:
+            # Singular Hessian (can occur with small samples or collinear regressors)
+            vcov = -np.linalg.pinv(H)
 
-        # Standard errors
-        std_errors = np.sqrt(np.diag(vcov))
+        # Standard errors (clip to zero to handle near-singular cases)
+        std_errors = np.sqrt(np.maximum(np.diag(vcov), 0.0))
 
         # Create pandas objects
         params_series = pd.Series(params, index=var_names)
@@ -1676,6 +1822,10 @@ class FixedEffectsLogit(NonlinearPanelModel):
 
         # Store additional info
         results.llf = llf
+        results.aic = -2 * llf + 2 * k
+        results.bic = -2 * llf + k * np.log(n)
+        results.sigma_alpha = None  # FE Logit does not estimate sigma_alpha
+        results.rho = None
         results.n_used_entities = self.n_used_entities
         results.n_dropped_entities = self.n_dropped_entities
 
@@ -1798,6 +1948,12 @@ class RandomEffectsProbit(NonlinearPanelModel):
         self._sigma_alpha = None
         self._beta = None
 
+        # Cached design matrices (built once in fit() for speed)
+        self._cached_y = None
+        self._cached_X = None
+        self._cached_entities = None
+        self._cached_q = None  # q_it = 2*y_it - 1 in {-1, +1}
+
     def _log_likelihood(self, params: np.ndarray) -> float:
         """
         Marginal log-likelihood via Gauss-Hermite quadrature.
@@ -1822,42 +1978,51 @@ class RandomEffectsProbit(NonlinearPanelModel):
         log_sigma_alpha = params[-1]
         sigma_alpha = np.exp(log_sigma_alpha)  # Ensure positivity
 
-        # Get data
-        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
-        y = y.ravel()
-        entities = self.data.data[self.data.entity_col].values
+        # Use cached data (built once in fit() for performance)
+        if self._cached_y is None:
+            y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+            self._cached_y = y.ravel()
+            self._cached_X = X
+            self._cached_entities = self.data.data[self.data.entity_col].values
+            self._cached_q = 2 * self._cached_y - 1  # Transform to {-1, +1}
+
+        y = self._cached_y
+        X = self._cached_X
+        entities = self._cached_entities
+        q = self._cached_q
 
         llf = 0.0
+
+        # Precompute scaled quadrature nodes: α_q = √2 * σ_α * ξ_q  (Q,)
+        alpha_nodes = np.sqrt(2) * sigma_alpha * self._quad_nodes  # (Q,)
 
         # Loop over entities
         for entity in np.unique(entities):
             mask = entities == entity
-            y_i = y[mask]
-            X_i = X[mask]
+            q_i = q[mask]  # (T,)
+            X_i = X[mask]  # (T, k)
 
-            # Quadrature sum for entity i
-            entity_contributions = []
+            # Linear index for this entity: X_i @ beta  →  (T,)
+            xb_i = X_i @ beta  # (T,)
 
-            for node, weight in zip(self._quad_nodes, self._quad_weights):
-                # Transform node: α_i = √2 * σ_α * ξ
-                alpha_i = np.sqrt(2) * sigma_alpha * node
+            # For each quadrature node: index = q_it * (xb_it + α_node)
+            # Shape: (T, 1) broadcasted with (1, Q) → (T, Q)
+            indices = q_i[:, None] * (xb_i[:, None] + alpha_nodes[None, :])  # (T, Q)
 
-                # Product over time: Π_t Φ(q_it * (X_it'β + α_i))
-                prob_product = 1.0
-                for t in range(len(y_i)):
-                    q_it = 2 * y_i[t] - 1  # Transform to {-1, +1}
-                    index = q_it * (X_i[t] @ beta + alpha_i)
-                    prob_product *= stats.norm.cdf(index)
+            # Φ(index) for all (t, q) pairs, then product over time → (Q,)
+            log_probs = stats.norm.logcdf(indices)  # (T, Q)
+            log_prob_product = log_probs.sum(axis=0)  # (Q,)
 
-                entity_contributions.append(weight * prob_product)
+            # Weighted sum: Σ_q w_q * exp(log_prod_q)
+            # Use log-sum-exp for numerical stability
+            log_weights = np.log(self._quad_weights)  # (Q,)
+            log_terms = log_weights + log_prob_product  # (Q,)
 
-            # Take log of sum
-            entity_llf = np.sum(entity_contributions)
-            if entity_llf > 0:
-                llf += np.log(entity_llf)
-            else:
-                # Handle numerical issues
-                llf += -1e10  # Large negative value
+            # log-sum-exp
+            log_max = log_terms.max()
+            entity_llf_log = log_max + np.log(np.sum(np.exp(log_terms - log_max)))
+
+            llf += entity_llf_log
 
         return float(llf)
 

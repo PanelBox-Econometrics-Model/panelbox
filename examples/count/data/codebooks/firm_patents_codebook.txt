@@ -1,0 +1,168 @@
+DATASET: firm_patents.csv
+PURPOSE: Introduction to Negative Binomial regression (Notebook 02)
+OBSERVATIONS: N = 1,500 firms, T = 5 years (2018-2022)
+STRUCTURE: Balanced panel (7,500 total observations)
+SIMULATION BASIS: Hausman, Hall & Griliches (1984) stylized facts
+
+VARIABLES:
+==========
+
+1. firm_id
+   Type: Integer (1-1500)
+   Description: Unique firm identifier
+   Role: Panel identifier
+
+2. year
+   Type: Integer (2018-2022)
+   Description: Calendar year
+   Role: Time identifier
+
+3. patents
+   Type: Count (non-negative integer)
+   Description: Number of patents filed in the year
+   Mean: ~5.6
+   Variance: ~105
+   Variance/Mean ratio: ~18.8 (severe overdispersion)
+   % Zeros: ~31%
+   Max: ~160
+   Distribution: Severely right-skewed with excess zeros
+   Role: Dependent variable
+
+4. rd_spending
+   Type: Float (positive)
+   Description: R&D expenditure in millions of dollars
+   Distribution: Log-normal
+   Units: $ millions
+   Role: Primary predictor
+
+5. employees
+   Type: Float (positive)
+   Description: Number of employees
+   Distribution: Log-normal
+   Role: Control variable (firm size)
+
+6. firm_age
+   Type: Float (positive)
+   Description: Years since firm establishment
+   Range: ~5-55 years
+   Role: Control variable
+
+7. tech_sector
+   Type: Binary (0/1)
+   Description: Technology sector indicator
+   0 = Traditional manufacturing
+   1 = Technology sector
+   % in tech sector: ~35%
+   Role: Control variable
+
+8. public_funding
+   Type: Binary (0/1)
+   Description: Received public R&D funding
+   0 = No public funding
+   1 = Received public funding
+   % with public funding: ~23%
+   Role: Control variable
+
+9. international
+   Type: Binary (0/1)
+   Description: Has international R&D collaborations
+   0 = Domestic only
+   1 = International collaborations
+   % international: ~30%
+   Role: Control variable
+
+DATA GENERATION PROCESS:
+========================
+The data is generated via a Negative Binomial (NB2) process:
+
+  log(mu_it) = beta_0 + beta_1 * log(rd_spending) + beta_2 * log(employees)
+               + beta_3 * firm_age + beta_4 * tech_sector
+               + beta_5 * public_funding + beta_6 * international
+               + alpha_i
+
+  Y_it ~ NB2(mu_it, alpha = 1.8)
+
+Where alpha_i ~ N(0, 0.5) is an unobserved firm-level random effect.
+
+True parameter values:
+  beta_0 (intercept)     =  0.20
+  beta_1 (log R&D)       =  0.35
+  beta_2 (log employees) =  0.20
+  beta_3 (firm age)      = -0.005
+  beta_4 (tech sector)   =  0.50
+  beta_5 (public funding)=  0.30
+  beta_6 (international) =  0.20
+  alpha (NB dispersion)  =  1.80
+
+NOTES:
+======
+- Severe overdispersion (Var/Mean ≈ 18), Negative Binomial strongly preferred
+- R&D spending has strong positive relationship with patents
+- Tech sector firms show higher innovation rates
+- Public funding effect boosts patenting output
+- Firm size shows positive but smaller effect
+- No missing values
+- Panel is balanced (all firms observed for 5 years)
+- Random seed: 42
+
+DISTRIBUTIONAL CHARACTERISTICS:
+================================
+- High proportion of zeros (~31%)
+- Long right tail (max ~160 patents)
+- Clear evidence against Poisson equidispersion
+- Overdispersion driven by both NB process and unobserved heterogeneity
+
+SUGGESTED ANALYSIS:
+==================
+Main specification:
+  patents ~ log(rd_spending) + log(employees) + firm_age + tech_sector +
+            public_funding + international
+
+Key tests:
+  1. Overdispersion test (reject Poisson)
+  2. Likelihood ratio test NB vs Poisson
+  3. Compare coefficients and standard errors
+  4. Rootogram visualization
+
+Interpretation:
+  - Coefficients as incidence rate ratios (IRRs)
+  - Marginal effects
+  - Effect of doubling R&D spending
+  - Economic significance of tech sector premium
+
+THEORETICAL BACKGROUND:
+=======================
+Based on knowledge production function literature:
+- Patents = f(R&D, firm characteristics, spillovers)
+- Knowledge accumulation is nonlinear
+- Unobserved heterogeneity in innovation capacity
+- Negative Binomial captures firm-level heterogeneity
+
+KEY EMPIRICAL PATTERNS:
+=======================
+1. R&D elasticity ≈ 0.35 (log specification)
+2. Size elasticity ≈ 0.20
+3. Tech sector premium ≈ 65% (exp(0.50) - 1)
+4. Public funding increases patents by ~35%
+5. Overdispersion parameter alpha ≈ 1.8 (highly significant)
+
+COMPARISON WITH POISSON:
+========================
+- Poisson severely underestimates standard errors
+- Poisson may show spurious significance for weak predictors
+- Negative Binomial has much lower AIC/BIC
+- LR test strongly rejects Poisson
+
+EXTENSIONS SUGGESTED:
+=====================
+- Zero-inflated models (~31% zeros may include structural zeros)
+- Fixed effects for firm heterogeneity (see Tutorial 03)
+- Dynamic models with lagged patents
+- Spatial spillovers between firms in same region
+
+REFERENCES:
+===========
+- Cameron, A. C., & Trivedi, P. K. (2013). "Regression Analysis of Count Data."
+- Hausman, J., Hall, B. H., & Griliches, Z. (1984). "Econometric Models for
+  Count Data with an Application to the Patents-R&D Relationship."
+- Hilbe, J. M. (2011). "Negative Binomial Regression."

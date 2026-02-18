@@ -49,6 +49,20 @@ class OutlierResults:
     threshold: float
     n_outliers: int
 
+    @property
+    def outlier_table(self) -> pd.DataFrame:
+        """Return DataFrame of flagged outlier rows only (convenience alias)."""
+        return self.outliers[self.outliers["is_outlier"]].copy()
+
+    @property
+    def studentized_residuals(self) -> Optional[pd.Series]:
+        """Return studentized residuals Series if available, else None."""
+        if "studentized_residual" in self.outliers.columns:
+            return self.outliers["studentized_residual"]
+        if "standardized_residual" in self.outliers.columns:
+            return self.outliers["standardized_residual"]
+        return None
+
     def summary(self) -> str:
         """Generate summary of outlier detection."""
         lines = []
@@ -379,6 +393,29 @@ class OutlierDetector:
             print(f"Detected {n_outliers} outliers using {method} residuals")
 
         return self.outlier_results_
+
+    def detect_outliers(
+        self, method: str = "standardized", threshold: float = 3.0
+    ) -> "OutlierResults":
+        """
+        Detect outliers using residual-based methods.
+
+        Convenience alias for :meth:`detect_outliers_residuals`.
+
+        Parameters
+        ----------
+        method : {'standardized', 'studentized'}, default='standardized'
+            Type of residuals to use.
+        threshold : float, default=3.0
+            Threshold for absolute residual value.
+
+        Returns
+        -------
+        outlier_results : OutlierResults
+            Outlier detection results with `.n_outliers`, `.outlier_table`,
+            and `.studentized_residuals` attributes.
+        """
+        return self.detect_outliers_residuals(method=method, threshold=threshold)
 
     def detect_leverage_points(self, threshold: Optional[float] = None) -> pd.DataFrame:
         """

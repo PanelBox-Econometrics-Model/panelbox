@@ -73,7 +73,7 @@ class QuantileVisualizer:
                     "font.serif": ["Times New Roman", "DejaVu Serif"],
                     "text.usetex": False,
                     "axes.grid": True,
-                    "axes.grid.alpha": 0.3,
+                    "grid.alpha": 0.3,
                     "grid.linestyle": "--",
                 }
             )

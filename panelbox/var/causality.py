@@ -932,3 +932,130 @@ def instantaneous_causality_matrix(result) -> Tuple[pd.DataFrame, pd.DataFrame]:
     pvalue_df = pd.DataFrame(pvalue_matrix, index=endog_names, columns=endog_names)
 
     return corr_df, pvalue_df
+
+
+def panel_granger_causality(
+    data: pd.DataFrame,
+    variables: List[str],
+    lags: int,
+    entity_col: str = "entity",
+    time_col: str = "time",
+) -> Dict[str, List[Tuple[str, "DumitrescuHurlinResult"]]]:
+    """
+    Test pairwise Granger causality for all variable pairs.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data
+    variables : List[str]
+        List of variable names to test
+    lags : int
+        Number of lags to use
+    entity_col : str, default='entity'
+        Name of entity identifier column
+    time_col : str, default='time'
+        Name of time identifier column
+
+    Returns
+    -------
+    Dict[str, List[Tuple[str, DumitrescuHurlinResult]]]
+        Dictionary mapping each effect variable to list of (cause, result) tuples
+        where result.Z_bar_pvalue < 0.10 (significant at 10% level)
+
+    Examples
+    --------
+    >>> result = panel_granger_causality(
+    ...     data=df,
+    ...     variables=['y1', 'y2', 'y3'],
+    ...     lags=1
+    ... )
+    >>> # result['y1'] contains causes of y1
+    >>> for cause, test_result in result['y1']:
+    ...     print(f"{cause} -> y1: p={test_result.Z_bar_pvalue:.4f}")
+    """
+    results = {}
+
+    for effect in variables:
+        causes = []
+        for cause in variables:
+            if cause == effect:
+                continue  # Skip self-causation
+
+            test_result = dumitrescu_hurlin_test(
+                data=data,
+                cause=cause,
+                effect=effect,
+                lags=lags,
+                entity_col=entity_col,
+                time_col=time_col,
+            )
+
+            # Store all results (user can filter by p-value)
+            causes.append((cause, test_result))
+
+        results[effect] = causes
+
+    return results
+
+
+def panel_granger_causality_matrix(
+    data: pd.DataFrame,
+    variables: List[str],
+    lags: int,
+    entity_col: str = "entity",
+    time_col: str = "time",
+) -> np.ndarray:
+    """
+    Create a matrix of Granger causality p-values.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data
+    variables : List[str]
+        List of variable names to test
+    lags : int
+        Number of lags to use
+    entity_col : str, default='entity'
+        Name of entity identifier column
+    time_col : str, default='time'
+        Name of time identifier column
+
+    Returns
+    -------
+    np.ndarray
+        Matrix of p-values where element (i, j) is the p-value for testing
+        if variable j causes variable i.
+        Diagonal elements are NaN (variable does not cause itself).
+
+    Examples
+    --------
+    >>> matrix = panel_granger_causality_matrix(
+    ...     data=df,
+    ...     variables=['y1', 'y2', 'y3'],
+    ...     lags=1
+    ... )
+    >>> # matrix[0, 1] is p-value for y2 -> y1
+    >>> # matrix[1, 0] is p-value for y1 -> y2
+    """
+    n_vars = len(variables)
+    pvalue_matrix = np.full((n_vars, n_vars), np.nan)
+
+    for i, effect in enumerate(variables):
+        for j, cause in enumerate(variables):
+            if i == j:
+                continue  # Diagonal: variable does not cause itself
+
+            test_result = dumitrescu_hurlin_test(
+                data=data,
+                cause=cause,
+                effect=effect,
+                lags=lags,
+                entity_col=entity_col,
+                time_col=time_col,
+            )
+
+            pvalue_matrix[i, j] = test_result.Z_bar_pvalue
+
+    return pvalue_matrix

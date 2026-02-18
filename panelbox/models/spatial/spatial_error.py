@@ -56,6 +56,14 @@ class SpatialError(SpatialPanelModel):
         super().__init__(*args, **kwargs)
         self.model_type = "SEM"
 
+    def _estimate_coefficients(self) -> np.ndarray:
+        """
+        Placeholder required by abstract base class.
+
+        Actual estimation is performed in ``fit()`` which returns full results.
+        """
+        return np.array([])
+
     def fit(
         self,
         effects: str = "fixed",
@@ -358,10 +366,11 @@ class SpatialError(SpatialPanelModel):
             print("Estimating pooled SEM using GMM")
 
         y = self.endog.values.flatten()
-        X = self.exog
+        X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
-        # Add constant if not present
-        if not np.any(np.all(X == X[0, :], axis=0)):
+        # Add constant if not present; track whether we added one
+        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        if _const_added:
             X = np.column_stack([np.ones(len(y)), X])
 
         # Construct instruments
@@ -424,10 +433,17 @@ class SpatialError(SpatialPanelModel):
         # Results
         params = np.concatenate([[lambda_hat], beta_2])
 
-        if hasattr(self.exog, "columns"):
-            param_names = ["lambda", "const"] + list(self.exog.columns)
+        # Build param_names to match [lambda, beta...] where beta has X.shape[1] entries
+        if _const_added:
+            if hasattr(self.exog, "columns"):
+                param_names = ["lambda", "const"] + list(self.exog.columns)
+            else:
+                param_names = ["lambda", "const"] + [f"x{i}" for i in range(self.exog.shape[1])]
         else:
-            param_names = ["lambda", "const"] + [f"x{i}" for i in range(X.shape[1] - 1)]
+            if hasattr(self.exog, "columns"):
+                param_names = ["lambda"] + list(self.exog.columns)
+            else:
+                param_names = ["lambda"] + [f"x{i}" for i in range(X.shape[1])]
 
         results = SpatialPanelResults(
             model=self,

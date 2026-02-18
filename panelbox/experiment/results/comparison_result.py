@@ -5,8 +5,12 @@ This module provides a concrete implementation of BaseResult for
 model comparison results.
 """
 
+import math
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+import numpy as np
+import pandas as pd
 
 from panelbox.experiment.results.base import BaseResult
 
@@ -122,28 +126,44 @@ class ComparisonResult(BaseResult):
                 fvalue = f_stat_attr
                 f_pvalue = getattr(results, "f_pvalue", None)
 
+            n = getattr(results, "nobs", None)
+            k = (getattr(results, "df_model", 0) or 0) + 1
+
             model_metrics = {
                 "rsquared": getattr(results, "rsquared", None),
                 "rsquared_adj": getattr(results, "rsquared_adj", None),
+                "r2": getattr(results, "rsquared", None),
+                "r2_within": getattr(results, "rsquared_within", None),
+                "r2_between": getattr(results, "rsquared_between", None),
+                "r2_overall": getattr(results, "rsquared_overall", None),
                 "fvalue": fvalue,
                 "f_pvalue": f_pvalue,
-                "nobs": getattr(results, "nobs", None),
+                "nobs": n,
+                "n_obs": n,
                 "df_model": getattr(results, "df_model", None),
                 "df_resid": getattr(results, "df_resid", None),
             }
 
-            # Add information criteria if available
-            if hasattr(results, "loglik"):
-                k = results.df_model + 1  # Number of parameters
-                n = results.nobs
+            # Compute RMSE from residuals if available
+            resid = getattr(results, "resid", None)
+            if resid is not None and n is not None and n > 0:
+                rss = float(np.sum(np.asarray(resid) ** 2))
+                model_metrics["rmse"] = float(np.sqrt(rss / n))
+
+                # Compute AIC/BIC via concentrated log-likelihood if loglik not available
+                if not hasattr(results, "loglik") or getattr(results, "loglik", None) is None:
+                    sigma2 = rss / n
+                    if sigma2 > 0:
+                        ll = -n / 2.0 * (1.0 + math.log(2 * math.pi) + math.log(sigma2))
+                        model_metrics["aic"] = -2 * ll + 2 * k
+                        model_metrics["bic"] = -2 * ll + k * math.log(n)
+                else:
+                    ll = results.loglik
+                    model_metrics["aic"] = -2 * ll + 2 * k
+                    model_metrics["bic"] = -2 * ll + k * math.log(n)
+            elif hasattr(results, "loglik") and getattr(results, "loglik", None) is not None:
                 ll = results.loglik
-
-                # AIC = -2*LL + 2*k
                 model_metrics["aic"] = -2 * ll + 2 * k
-
-                # BIC = -2*LL + k*ln(n)
-                import math
-
                 model_metrics["bic"] = -2 * ll + k * math.log(n)
 
             metrics[name] = model_metrics
@@ -278,17 +298,40 @@ class ComparisonResult(BaseResult):
 
         return "\n".join(lines)
 
-    def best_model(self, metric: str, prefer_lower: bool = False) -> Optional[str]:
+    def as_dataframe(self) -> "pd.DataFrame":
+        """
+        Return comparison metrics as a pandas DataFrame.
+
+        Rows are model names; columns are available metrics such as
+        ``r2``, ``r2_within``, ``aic``, ``bic``, ``rmse``, ``nobs``, etc.
+
+        Returns
+        -------
+        pd.DataFrame
+            Metrics table with one row per model.
+
+        Examples
+        --------
+        >>> comp_df = comp_result.as_dataframe()
+        >>> print(comp_df[["r2", "aic", "bic", "rmse"]])
+        """
+        return pd.DataFrame(self.comparison_metrics).T
+
+    def best_model(self, metric: str, prefer_lower: Optional[bool] = None) -> Optional[str]:
         """
         Find the best model according to a specific metric.
 
         Parameters
         ----------
         metric : str
-            Metric to use ('rsquared', 'rsquared_adj', 'aic', 'bic', etc.)
-        prefer_lower : bool, default False
-            If True, lower values are better (e.g., for AIC, BIC)
-            If False, higher values are better (e.g., for R²)
+            Metric to use ('rsquared', 'r2', 'rsquared_adj', 'aic', 'bic',
+            'rmse', 'mae', etc.)
+        prefer_lower : bool or None, default None
+            If True, lower values are better (e.g., for AIC, BIC, RMSE).
+            If False, higher values are better (e.g., for R²).
+            If None (default), automatically determined: AIC, BIC, and RMSE
+            metrics default to ``prefer_lower=True``; all others default to
+            ``prefer_lower=False``.
 
         Returns
         -------
@@ -297,11 +340,18 @@ class ComparisonResult(BaseResult):
 
         Examples
         --------
-        >>> comp_result.best_model('rsquared')
-        'Fixed Effects'
+        >>> comp_result.best_model('r2')
+        'fe'
+        >>> comp_result.best_model('aic')
+        'fe'
         >>> comp_result.best_model('aic', prefer_lower=True)
-        'Random Effects'
+        'fe'
         """
+        # Determine prefer_lower automatically for common metrics
+        if prefer_lower is None:
+            lower_is_better = {"aic", "bic", "rmse", "mae", "mse", "mape"}
+            prefer_lower = metric.lower() in lower_is_better
+
         valid_models = {
             name: metrics.get(metric)
             for name, metrics in self.comparison_metrics.items()

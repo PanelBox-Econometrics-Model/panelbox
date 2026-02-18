@@ -223,6 +223,38 @@ class InfluenceDiagnostics:
 
         return dfbetas_df
 
+    @property
+    def leverage(self) -> pd.Series:
+        """Leverage (hat) values; calls compute() if not yet done."""
+        if self.influence_results_ is None:
+            self.compute()
+        assert self.influence_results_ is not None
+        return self.influence_results_.leverage
+
+    @property
+    def cooks_d(self) -> pd.Series:
+        """Cook's distance values; calls compute() if not yet done."""
+        if self.influence_results_ is None:
+            self.compute()
+        assert self.influence_results_ is not None
+        return self.influence_results_.cooks_d
+
+    @property
+    def dffits(self) -> pd.Series:
+        """DFFITS values; calls compute() if not yet done."""
+        if self.influence_results_ is None:
+            self.compute()
+        assert self.influence_results_ is not None
+        return self.influence_results_.dffits
+
+    @property
+    def dfbetas(self) -> pd.DataFrame:
+        """DFBETAS DataFrame (obs × params); calls compute() if not yet done."""
+        if self.influence_results_ is None:
+            self.compute()
+        assert self.influence_results_ is not None
+        return self.influence_results_.dfbetas
+
     def influential_observations(
         self, method: str = "cooks_d", threshold: Optional[float] = None
     ) -> pd.DataFrame:

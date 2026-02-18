@@ -1080,25 +1080,413 @@ class ConditionalLogit(NonlinearPanelModel):
     """
     Conditional Logit for choice-specific attributes.
 
-    This is for when attributes vary across alternatives, not just
-    individual characteristics.
+    For situations where alternative attributes vary across alternatives.
+    Example: Travel mode choice where each mode has different cost, time, etc.
 
-    Note: This is different from multinomial logit where only
-    individual characteristics enter the utility function.
+    This is different from multinomial logit where only individual characteristics
+    enter the utility function.
 
     Parameters
     ----------
-    choice : array-like
-        Choice indicator (which alternative was chosen)
-    attributes : array-like
-        Alternative-specific attributes (stacked format)
-    alternatives : array-like
-        Alternative identifiers
+    data : pd.DataFrame
+        Long format data where each row is a choice occasion × alternative.
+        Must contain:
+        - choice_id: identifier for each choice occasion
+        - alternative_id: identifier for each alternative
+        - chosen: binary indicator (1 if this alternative was chosen)
+        - alternative-varying attributes (e.g., price, time)
+    choice_col : str
+        Column name for choice occasion identifier
+    alt_col : str
+        Column name for alternative identifier
+    chosen_col : str
+        Column name for chosen indicator (0/1)
+    alt_varying_vars : list
+        Names of alternative-varying attributes
+    case_varying_vars : list, optional
+        Names of case-varying attributes (interact with alternative dummies)
+
+    References
+    ----------
+    McFadden, D. (1974). "Conditional logit analysis of qualitative choice behavior."
+    Train, K. (2009). "Discrete Choice Methods with Simulation."
     """
 
-    def __init__(self, choice, attributes, alternatives):
-        """Initialize Conditional Logit."""
-        raise NotImplementedError(
-            "Conditional Logit with alternative-specific attributes "
-            "will be implemented in a future release"
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        choice_col: str,
+        alt_col: str,
+        chosen_col: str,
+        alt_varying_vars: list,
+        case_varying_vars: Optional[list] = None,
+    ):
+        self.data = data
+        self.choice_col = choice_col
+        self.alt_col = alt_col
+        self.chosen_col = chosen_col
+        self.alt_varying_vars = alt_varying_vars
+        self.case_varying_vars = case_varying_vars or []
+
+        self._validate_data()
+        self._prepare_data()
+
+    def _validate_data(self):
+        """Validate input data structure."""
+        required_cols = [self.choice_col, self.alt_col, self.chosen_col]
+        required_cols.extend(self.alt_varying_vars)
+        required_cols.extend(self.case_varying_vars)
+
+        missing = [c for c in required_cols if c not in self.data.columns]
+        if missing:
+            raise ValueError(f"Missing columns: {missing}")
+
+        # Check that each choice occasion has exactly one chosen alternative
+        choice_sums = self.data.groupby(self.choice_col)[self.chosen_col].sum()
+        invalid = choice_sums[choice_sums != 1]
+        if len(invalid) > 0:
+            raise ValueError(
+                f"Each choice occasion must have exactly one chosen alternative. "
+                f"Found {len(invalid)} violations."
+            )
+
+    def _prepare_data(self):
+        """Prepare data arrays for estimation."""
+        # Get unique choice occasions and alternatives
+        self.choices = self.data[self.choice_col].unique()
+        self.alternatives = self.data[self.alt_col].unique()
+        self.n_choices = len(self.choices)
+        self.n_alts = len(self.alternatives)
+
+        # Number of parameters
+        self.n_alt_varying = len(self.alt_varying_vars)
+        self.n_case_varying = len(self.case_varying_vars)
+        # For case-varying: (J-1) sets of coefficients (base alternative normalized)
+        self.n_params = self.n_alt_varying + self.n_case_varying * (self.n_alts - 1)
+
+        # Set n_obs for compatibility with PanelModelResults
+        self.n_obs = self.n_choices
+
+        # Create design matrices
+        self._create_design_matrices()
+
+    def _create_design_matrices(self):
+        """Create X matrices for each choice occasion."""
+        self.X_list = []  # List of (n_alts, n_params) matrices
+        self.y_list = []  # List of chosen alternative indices
+
+        for choice_id in self.choices:
+            choice_data = self.data[self.data[self.choice_col] == choice_id]
+            choice_data = choice_data.sort_values(self.alt_col)
+
+            # Alternative-varying attributes (same coefficient for all alts)
+            X_alt_varying = choice_data[self.alt_varying_vars].values
+
+            # Case-varying attributes (different coefficient per alternative)
+            if self.case_varying_vars:
+                X_case = choice_data[self.case_varying_vars].values
+                # Create alternative-specific dummies interaction
+                # Base alternative (first) is normalized to 0
+                X_case_expanded = np.zeros((self.n_alts, self.n_case_varying * (self.n_alts - 1)))
+                for j in range(1, self.n_alts):
+                    start_col = (j - 1) * self.n_case_varying
+                    end_col = j * self.n_case_varying
+                    X_case_expanded[j, start_col:end_col] = X_case[j]
+                X = np.hstack([X_alt_varying, X_case_expanded])
+            else:
+                X = X_alt_varying
+
+            self.X_list.append(X)
+
+            # Which alternative was chosen
+            chosen_idx = choice_data[self.chosen_col].values.argmax()
+            self.y_list.append(chosen_idx)
+
+    def _log_likelihood(self, params: np.ndarray) -> float:
+        """
+        Compute log-likelihood (required by NonlinearPanelModel).
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter vector
+
+        Returns
+        -------
+        float
+            Log-likelihood
+        """
+        llf = 0.0
+
+        for X, y in zip(self.X_list, self.y_list):
+            # Utilities for all alternatives
+            utilities = X @ params
+
+            # Log probability of chosen alternative
+            log_prob = utilities[y] - logsumexp(utilities)
+            llf += log_prob
+
+        return llf
+
+    def log_likelihood(self, params: np.ndarray) -> float:
+        """
+        Compute negative log-likelihood (for minimization).
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter vector
+
+        Returns
+        -------
+        float
+            Negative log-likelihood
+        """
+        return -self._log_likelihood(params)
+
+    def gradient(self, params: np.ndarray) -> np.ndarray:
+        """
+        Compute gradient of negative log-likelihood.
+
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter vector
+
+        Returns
+        -------
+        np.ndarray
+            Gradient vector
+        """
+        grad = np.zeros(self.n_params)
+
+        for X, y in zip(self.X_list, self.y_list):
+            # Utilities and probabilities
+            utilities = X @ params
+            exp_utils = np.exp(utilities - utilities.max())
+            probs = exp_utils / exp_utils.sum()
+
+            # Gradient: X_chosen - E[X]
+            # = X[y] - Σ_j P_j X[j]
+            expected_X = probs @ X
+            grad += X[y] - expected_X
+
+        return -grad  # Negative for minimization
+
+    def predict(self, params=None, exog=None):
+        """
+        Predict chosen alternative (required by PanelModel).
+
+        Parameters
+        ----------
+        params : np.ndarray, optional
+            Parameters to use for prediction. If None, uses fitted params.
+        exog : ignored
+            Not used for conditional logit
+
+        Returns
+        -------
+        np.ndarray
+            Predicted alternative indices
+        """
+        if params is None:
+            if not hasattr(self, "_fitted_params"):
+                raise RuntimeError("Model must be fitted before predict() can be called")
+            params = self._fitted_params
+
+        predictions = []
+        for X in self.X_list:
+            utilities = X @ params
+            predictions.append(np.argmax(utilities))
+
+        return np.array(predictions)
+
+    def fit(
+        self,
+        start_params: Optional[np.ndarray] = None,
+        method: str = "BFGS",
+        maxiter: int = 1000,
+        **kwargs,
+    ) -> "ConditionalLogitResult":
+        """
+        Estimate conditional logit parameters.
+
+        Parameters
+        ----------
+        start_params : np.ndarray, optional
+            Starting values
+        method : str, default='BFGS'
+            Optimization method
+        maxiter : int, default=1000
+            Maximum iterations
+
+        Returns
+        -------
+        ConditionalLogitResult
+            Fitted model results
+        """
+        if start_params is None:
+            start_params = np.zeros(self.n_params)
+
+        result = minimize(
+            fun=self.log_likelihood,
+            x0=start_params,
+            jac=self.gradient,
+            method=method,
+            options={"maxiter": maxiter},
+            **kwargs,
         )
+
+        if not result.success:
+            warnings.warn(f"Optimization did not converge: {result.message}")
+
+        # Store fitted params for predict()
+        self._fitted_params = result.x
+
+        return ConditionalLogitResult(
+            model=self, params=result.x, llf=-result.fun, converged=result.success
+        )
+
+
+class ConditionalLogitResult(PanelModelResults):
+    """Results class for Conditional Logit."""
+
+    def __init__(self, model, params, llf, converged):
+        self.model = model
+        self.params = params
+        self.llf = llf
+        self.converged = converged
+
+        # Compute standard errors via numerical Hessian
+        self._compute_standard_errors()
+
+        # Call parent with vcov
+        super().__init__(model, params, self.vcov)
+
+        # Compute fit statistics
+        self._compute_fit_statistics()
+
+    def _compute_standard_errors(self):
+        """Compute SEs via numerical Hessian."""
+        from scipy.optimize import approx_fprime
+
+        n_params = len(self.params)
+        hess = np.zeros((n_params, n_params))
+        eps = 1e-5
+
+        for i in range(n_params):
+
+            def grad_i(params):
+                return self.model.gradient(params)[i]
+
+            hess[i, :] = approx_fprime(self.params, grad_i, eps)
+
+        try:
+            self.vcov = np.linalg.inv(hess)
+            self.bse = np.sqrt(np.diag(self.vcov))
+        except np.linalg.LinAlgError:
+            warnings.warn("Could not compute standard errors")
+            self.vcov = np.full((n_params, n_params), np.nan)
+            self.bse = np.full(n_params, np.nan)
+
+    def _compute_fit_statistics(self):
+        """Compute goodness-of-fit."""
+        n = self.model.n_choices
+        k = len(self.params)
+
+        # AIC/BIC
+        self.aic = 2 * k - 2 * self.llf
+        self.bic = np.log(n) * k - 2 * self.llf
+
+        # McFadden's pseudo R²
+        # Null model: equal probs for all alternatives
+        llf_null = n * np.log(1 / self.model.n_alts)
+        self.pseudo_r2 = 1 - (self.llf / llf_null)
+
+        # Prediction accuracy
+        self._compute_predictions()
+
+    def _compute_predictions(self):
+        """Compute predicted choices."""
+        correct = 0
+        total = self.model.n_choices
+
+        for X, y_true in zip(self.model.X_list, self.model.y_list):
+            utilities = X @ self.params
+            y_pred = np.argmax(utilities)
+            if y_pred == y_true:
+                correct += 1
+
+        self.accuracy = correct / total
+
+    def predict_proba(self, data: Optional[pd.DataFrame] = None) -> np.ndarray:
+        """
+        Predict choice probabilities.
+
+        Parameters
+        ----------
+        data : pd.DataFrame, optional
+            New data. If None, uses training data.
+
+        Returns
+        -------
+        np.ndarray
+            Probabilities of shape (n_choices, n_alts)
+        """
+        if data is None:
+            X_list = self.model.X_list
+        else:
+            # Would need to recreate design matrices
+            raise NotImplementedError("Prediction on new data not yet implemented")
+
+        probs = np.zeros((len(X_list), self.model.n_alts))
+
+        for i, X in enumerate(X_list):
+            utilities = X @ self.params
+            exp_utils = np.exp(utilities - utilities.max())
+            probs[i] = exp_utils / exp_utils.sum()
+
+        return probs
+
+    def summary(self) -> str:
+        """Generate summary."""
+        lines = []
+        lines.append("=" * 70)
+        lines.append("Conditional Logit Results")
+        lines.append("=" * 70)
+        lines.append(f"Number of choice occasions: {self.model.n_choices}")
+        lines.append(f"Number of alternatives: {self.model.n_alts}")
+        lines.append(f"Log-likelihood: {self.llf:.4f}")
+        lines.append(f"Pseudo R²: {self.pseudo_r2:.4f}")
+        lines.append(f"Prediction accuracy: {self.accuracy:.4f}")
+        lines.append(f"Converged: {self.converged}")
+        lines.append("")
+        lines.append("-" * 70)
+        lines.append(f"{'Variable':<25} {'Coef':<12} {'SE':<12} {'z':<8} {'P>|z|':<8}")
+        lines.append("-" * 70)
+
+        # Alternative-varying variables
+        for i, var in enumerate(self.model.alt_varying_vars):
+            coef = self.params[i]
+            se = self.bse[i]
+            z = coef / se if not np.isnan(se) else np.nan
+            p = 2 * (1 - stats.norm.cdf(abs(z))) if not np.isnan(z) else np.nan
+            lines.append(f"{var:<25} {coef:<12.4f} {se:<12.4f} {z:<8.3f} {p:<8.3f}")
+
+        # Case-varying variables
+        if self.model.case_varying_vars:
+            offset = self.model.n_alt_varying
+            for j in range(1, self.model.n_alts):
+                alt = self.model.alternatives[j]
+                for k, var in enumerate(self.model.case_varying_vars):
+                    idx = offset + (j - 1) * self.model.n_case_varying + k
+                    coef = self.params[idx]
+                    se = self.bse[idx]
+                    z = coef / se if not np.isnan(se) else np.nan
+                    p = 2 * (1 - stats.norm.cdf(abs(z))) if not np.isnan(z) else np.nan
+                    name = f"{var}:{alt}"
+                    lines.append(f"{name:<25} {coef:<12.4f} {se:<12.4f} {z:<8.3f} {p:<8.3f}")
+
+        lines.append("=" * 70)
+
+        return "\n".join(lines)

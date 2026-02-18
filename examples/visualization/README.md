@@ -1,0 +1,239 @@
+# Visualization and Reports — Tutorial Series 15
+
+**Author**: PanelBox Contributors
+**Version**: 1.0
+**Last Updated**: 2026-02-17
+
+---
+
+## Overview
+
+This directory contains a comprehensive tutorial series on **visualization and automated report generation** using the PanelBox library. These tutorials cover the full range of PanelBox plotting capabilities — from basic model plots and residual diagnostics to interactive charts, custom themes, and publication-ready HTML/LaTeX reports.
+
+### What You'll Learn
+
+- Core visualization API: coefficients, residuals, fit plots
+- Residual and influence diagnostics
+- Heteroskedasticity and autocorrelation visualization
+- Advanced techniques: custom themes, interactive Plotly charts, combined layouts
+- Automated HTML reports (self-contained, interactive)
+- LaTeX table and figure generation for publications
+
+---
+
+## Learning Path
+
+The tutorials are designed to be completed sequentially:
+
+### Notebook 01 — Visualization Introduction (`01_visualization_introduction.ipynb`)
+- PanelBox plotting API overview
+- Coefficient plots and confidence intervals
+- Fitted vs. actual plots
+- Residual scatter and histogram
+- Exporting charts (`png/`, `svg/`, `pdf/`)
+
+### Notebook 02 — Visual Diagnostics (`02_visual_diagnostics.ipynb`)
+- Residual diagnostic suite
+- Leverage and influence plots (Cook's D, DFFITS)
+- Heteroskedasticity visualization (Breusch-Pagan, White)
+- Autocorrelation (ACF/PACF plots)
+- Within-group vs. between-group variation
+
+### Notebook 03 — Advanced Visualizations (`03_advanced_visualizations.ipynb`)
+- Custom and built-in themes (`academic`, `minimal`, `dark`, `publication`)
+- Interactive Plotly charts with `pio.renderers.default = 'notebook'`
+- Multi-panel / facet layouts
+- Coefficient comparison across models
+- Heatmaps for panel balance and missing data
+
+### Notebook 04 — Automated Reports (`04_automated_reports.ipynb`)
+- Generating self-contained HTML reports
+- LaTeX table generation (`stargazer`-style)
+- Embedding charts in reports
+- Batch report generation for multiple models
+- Customizing report templates
+
+---
+
+## Prerequisites
+
+### Statistical Background
+- Panel data econometrics fundamentals
+- Basic regression analysis and inference
+- Understanding of residual diagnostics
+
+**Recommended Resources**:
+- Baltagi, B.H. (2021). *Econometric Analysis of Panel Data*, 6th ed.
+- Wooldridge, J.M. (2010). *Econometric Analysis of Cross Section and Panel Data*, 2nd ed.
+
+### Programming Skills
+- Python 3.8+: variables, functions, loops
+- pandas for data manipulation
+- Basic matplotlib/Plotly familiarity
+- Jupyter notebooks
+
+**Recommended Preparation**:
+- Complete PanelBox "Getting Started" tutorial (`GETTING_STARTED.md`)
+- Review the `examples/static_models/` tutorials
+
+---
+
+## Directory Structure
+
+```
+visualization/
+├── README.md                    # This file
+├── GETTING_STARTED.md           # Quick setup guide
+├── __init__.py                  # Python module
+├── notebooks/                   # Tutorial notebooks (01-04)
+│   ├── 01_visualization_introduction.ipynb
+│   ├── 02_visual_diagnostics.ipynb
+│   ├── 03_advanced_visualizations.ipynb
+│   └── 04_automated_reports.ipynb
+├── data/                        # Datasets (see data/README.md)
+│   ├── README.md
+│   └── .gitkeep
+├── outputs/                     # Generated artifacts (git-ignored except .gitkeep)
+│   ├── charts/
+│   │   ├── png/
+│   │   ├── svg/
+│   │   └── pdf/
+│   └── reports/
+│       ├── html/
+│       └── latex/
+├── solutions/                   # Solution notebooks (all cells executed)
+│   ├── 01_visualization_introduction_solution.ipynb
+│   ├── 02_visual_diagnostics_solution.ipynb
+│   ├── 03_advanced_visualizations_solution.ipynb
+│   └── 04_automated_reports_solution.ipynb
+├── utils/                       # Shared utility functions
+│   ├── __init__.py
+│   └── data_generators.py
+└── tests/                       # Example sanity tests
+    └── test_visualization_examples.py
+```
+
+---
+
+## Installation and Setup
+
+See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed instructions.
+
+**Quick start**:
+
+```bash
+pip install panelbox plotly kaleido
+cd examples/visualization/notebooks
+jupyter notebook 01_visualization_introduction.ipynb
+```
+
+---
+
+## Code Conventions
+
+All notebooks follow consistent conventions:
+
+```python
+import sys
+sys.path.insert(0, '../../../')   # or: pip install -e /path/to/panelbox
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.io as pio
+
+import panelbox as pb
+
+# Plotly renderer
+pio.renderers.default = 'notebook'
+
+# Reproducibility
+np.random.seed(42)
+
+# Default theme
+THEME = 'academic'
+
+# Output paths (relative to notebook)
+CHARTS_PNG = '../outputs/charts/png/'
+CHARTS_SVG = '../outputs/charts/svg/'
+CHARTS_PDF = '../outputs/charts/pdf/'
+REPORTS_HTML = '../outputs/reports/html/'
+REPORTS_LATEX = '../outputs/reports/latex/'
+```
+
+---
+
+## Datasets
+
+Most examples use:
+1. **PanelBox built-in datasets** (`panelbox.datasets`)
+2. **Synthetic data** generated by `utils/data_generators.py`
+
+External CSV files (if any) are stored in `data/`. See [data/README.md](data/README.md).
+
+---
+
+## Running the Tests
+
+```bash
+cd examples/visualization
+pytest tests/test_visualization_examples.py -v
+```
+
+---
+
+## Troubleshooting
+
+**`ModuleNotFoundError: No module named 'panelbox'`**
+- Install with `pip install panelbox` or `pip install -e /path/to/panelbox`
+
+**Plotly charts not rendering**
+- Ensure `pio.renderers.default = 'notebook'` is set at the top of the notebook
+- For JupyterLab: install the Plotly extension: `pip install jupyterlab-plotly`
+
+**Chart export (PNG/SVG/PDF) failing**
+- Install kaleido: `pip install kaleido`
+
+**LaTeX report generation failing**
+- Ensure a LaTeX distribution is installed (e.g., TeX Live, MiKTeX)
+
+### Getting Help
+
+- **PanelBox Documentation**: https://panelbox.readthedocs.io
+- **GitHub Issues**: https://github.com/panelbox/panelbox/issues
+- **Discussions**: https://github.com/panelbox/panelbox/discussions
+
+---
+
+## Key References
+
+### Textbooks
+
+1. **Baltagi, B.H.** (2021). *Econometric Analysis of Panel Data*, 6th ed. Wiley.
+2. **Wooldridge, J.M.** (2010). *Econometric Analysis of Cross Section and Panel Data*, 2nd ed. MIT Press.
+3. **Wilke, C.O.** (2019). *Fundamentals of Data Visualization*. O'Reilly. (Free: https://clauswilke.com/dataviz/)
+
+### Software Documentation
+
+- **PanelBox Visualization API**: https://panelbox.readthedocs.io/visualization
+- **Plotly Python**: https://plotly.com/python/
+- **Matplotlib**: https://matplotlib.org/stable/tutorials/
+- **kaleido** (static export): https://github.com/plotly/Kaleido
+
+---
+
+## License
+
+These tutorials are part of the PanelBox project and are released under the MIT License.
+
+## Citation
+
+```bibtex
+@misc{panelbox_visualization_tutorials,
+  title={Visualization and Reports Tutorial Series},
+  author={PanelBox Contributors},
+  year={2026},
+  howpublished={\url{https://github.com/panelbox/panelbox/examples/visualization}},
+  note={Version 1.0}
+}
+```

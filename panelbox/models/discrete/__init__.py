@@ -32,6 +32,7 @@ from panelbox.models.discrete.binary import (
 )
 from panelbox.models.discrete.multinomial import (
     ConditionalLogit,
+    ConditionalLogitResult,
     MultinomialLogit,
     MultinomialLogitResult,
 )
@@ -49,4 +50,5 @@ __all__ = [
     "MultinomialLogit",
     "MultinomialLogitResult",
     "ConditionalLogit",
+    "ConditionalLogitResult",
 ]

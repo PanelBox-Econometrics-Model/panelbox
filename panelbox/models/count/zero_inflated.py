@@ -32,10 +32,20 @@ from scipy import stats
 from scipy.optimize import minimize
 from scipy.special import gammaln
 
-from panelbox.models.base import NonlinearPanelModel, PanelModelResults
+
+def _to_array(data):
+    """Convert input data to numpy array."""
+    if isinstance(data, pd.DataFrame):
+        return data.values.astype(float)
+    elif isinstance(data, pd.Series):
+        return data.values.astype(float)
+    elif isinstance(data, np.ndarray):
+        return data.astype(float)
+    else:
+        return np.asarray(data, dtype=float)
 
 
-class ZeroInflatedPoisson(NonlinearPanelModel):
+class ZeroInflatedPoisson:
     """
     Zero-Inflated Poisson model for count data with excess zeros.
 
@@ -48,20 +58,14 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
     endog : array-like or pd.Series
         Dependent variable (count data)
     exog_count : array-like or pd.DataFrame
-        Regressors for the count model
+        Regressors for the count model (should include constant)
     exog_inflate : array-like or pd.DataFrame, optional
-        Regressors for the inflation model. If None, uses exog_count
-    entity_col : str, optional
-        Name of entity/individual identifier column
-    time_col : str, optional
-        Name of time identifier column
-
-    Attributes
-    ----------
-    n_count_params : int
-        Number of parameters in count model
-    n_inflate_params : int
-        Number of parameters in inflation model
+        Regressors for the inflation model (should include constant).
+        If None, uses exog_count.
+    exog_count_names : list of str, optional
+        Names for count model variables
+    exog_inflate_names : list of str, optional
+        Names for inflation model variables
     """
 
     def __init__(
@@ -69,25 +73,44 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         endog: Union[np.ndarray, pd.Series],
         exog_count: Union[np.ndarray, pd.DataFrame],
         exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        entity_col: Optional[str] = None,
-        time_col: Optional[str] = None,
+        exog_count_names: Optional[list] = None,
+        exog_inflate_names: Optional[list] = None,
     ):
         """Initialize ZIP model."""
-        super().__init__(endog, exog_count, entity_col, time_col)
-
-        # Store count model regressors
-        self.exog = self._prepare_data(exog_count)
+        # Convert to arrays
+        self.endog = _to_array(endog).ravel()
+        self.exog = _to_array(exog_count)
+        if self.exog.ndim == 1:
+            self.exog = self.exog.reshape(-1, 1)
 
         # Inflation model regressors
         if exog_inflate is None:
             self.exog_inflate = self.exog.copy()
         else:
-            self.exog_inflate = self._prepare_data(exog_inflate)
+            self.exog_inflate = _to_array(exog_inflate)
+            if self.exog_inflate.ndim == 1:
+                self.exog_inflate = self.exog_inflate.reshape(-1, 1)
+
+        # Store variable names
+        if exog_count_names is not None:
+            self.exog_count_names = list(exog_count_names)
+        elif isinstance(exog_count, pd.DataFrame):
+            self.exog_count_names = list(exog_count.columns)
+        else:
+            self.exog_count_names = [f"X{i}" for i in range(self.exog.shape[1])]
+
+        if exog_inflate_names is not None:
+            self.exog_inflate_names = list(exog_inflate_names)
+        elif isinstance(exog_inflate, pd.DataFrame):
+            self.exog_inflate_names = list(exog_inflate.columns)
+        else:
+            self.exog_inflate_names = [f"Z{i}" for i in range(self.exog_inflate.shape[1])]
 
         # Parameter counts
         self.n_count_params = self.exog.shape[1]
         self.n_inflate_params = self.exog_inflate.shape[1]
         self.n_params = self.n_count_params + self.n_inflate_params
+        self.n_obs = len(self.endog)
 
         # Check for non-negative integers
         if np.any(self.endog < 0):
@@ -95,9 +118,9 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         if not np.allclose(self.endog, self.endog.astype(int)):
             warnings.warn("Count data contains non-integer values")
 
-    def log_likelihood(self, params: np.ndarray) -> float:
+    def _neg_log_likelihood(self, params: np.ndarray) -> float:
         """
-        Compute log-likelihood for ZIP model.
+        Compute negative log-likelihood for ZIP model.
 
         Parameters
         ----------
@@ -117,8 +140,10 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         xb_count = self.exog @ beta
         xb_inflate = self.exog_inflate @ gamma
 
-        # Probabilities
+        # Probabilities with numerical safeguards
+        xb_inflate = np.clip(xb_inflate, -30, 30)
         pi = 1 / (1 + np.exp(-xb_inflate))  # Inflation probability
+        xb_count = np.clip(xb_count, -30, 30)
         lambda_ = np.exp(xb_count)  # Poisson parameter
 
         # Log-likelihood
@@ -126,12 +151,14 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         zero_mask = y == 0
 
         # For zeros: log(π + (1-π)exp(-λ))
-        ll_zero = np.log(pi[zero_mask] + (1 - pi[zero_mask]) * np.exp(-lambda_[zero_mask]))
+        ll_zero = np.log(
+            np.maximum(pi[zero_mask] + (1 - pi[zero_mask]) * np.exp(-lambda_[zero_mask]), 1e-300)
+        )
 
         # For non-zeros: log((1-π)) + log(Poisson(y|λ))
         ll_nonzero = (
-            np.log(1 - pi[~zero_mask])
-            + y[~zero_mask] * np.log(lambda_[~zero_mask])
+            np.log(np.maximum(1 - pi[~zero_mask], 1e-300))
+            + y[~zero_mask] * np.log(np.maximum(lambda_[~zero_mask], 1e-300))
             - lambda_[~zero_mask]
             - gammaln(y[~zero_mask] + 1)
         )
@@ -141,9 +168,9 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
 
         return -ll  # Return negative for minimization
 
-    def gradient(self, params: np.ndarray) -> np.ndarray:
+    def _gradient(self, params: np.ndarray) -> np.ndarray:
         """
-        Compute analytical gradient of log-likelihood.
+        Compute analytical gradient of negative log-likelihood.
 
         Parameters
         ----------
@@ -153,15 +180,15 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         Returns
         -------
         np.ndarray
-            Gradient vector
+            Gradient vector (of negative log-likelihood)
         """
         # Split parameters
         beta = params[: self.n_count_params]
         gamma = params[self.n_count_params :]
 
         # Linear predictors
-        xb_count = self.exog @ beta
-        xb_inflate = self.exog_inflate @ gamma
+        xb_count = np.clip(self.exog @ beta, -30, 30)
+        xb_inflate = np.clip(self.exog_inflate @ gamma, -30, 30)
 
         # Probabilities
         pi = 1 / (1 + np.exp(-xb_inflate))
@@ -171,9 +198,8 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         zero_mask = y == 0
 
         # Gradient for count parameters (beta)
-        # For zeros
         p0 = np.exp(-lambda_)
-        denom_zero = pi + (1 - pi) * p0
+        denom_zero = np.maximum(pi + (1 - pi) * p0, 1e-300)
         w_zero = (1 - pi) * p0 / denom_zero
 
         grad_beta_zero = (
@@ -182,17 +208,13 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
             * self.exog[zero_mask]
         )
 
-        # For non-zeros
-        grad_beta_nonzero = (
-            (y[~zero_mask] / lambda_[~zero_mask] - 1)[:, np.newaxis]
-            * lambda_[~zero_mask][:, np.newaxis]
-            * self.exog[~zero_mask]
-        )
+        grad_beta_nonzero = (y[~zero_mask] - lambda_[~zero_mask])[:, np.newaxis] * self.exog[
+            ~zero_mask
+        ]
 
         grad_beta = np.sum(grad_beta_zero, axis=0) + np.sum(grad_beta_nonzero, axis=0)
 
         # Gradient for inflation parameters (gamma)
-        # For zeros
         v_zero = (1 - p0[zero_mask]) / denom_zero[zero_mask]
         grad_gamma_zero = (
             v_zero[:, np.newaxis]
@@ -201,7 +223,6 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
             * self.exog_inflate[zero_mask]
         )
 
-        # For non-zeros
         grad_gamma_nonzero = -pi[~zero_mask][:, np.newaxis] * self.exog_inflate[~zero_mask]
 
         grad_gamma = np.sum(grad_gamma_zero, axis=0) + np.sum(grad_gamma_nonzero, axis=0)
@@ -237,27 +258,25 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         """
         # Starting values if not provided
         if start_params is None:
-            # Use Poisson regression for count part
             from panelbox.models.count import PooledPoisson
 
             poisson_model = PooledPoisson(self.endog, self.exog)
-            poisson_result = poisson_model.fit()
+            poisson_result = poisson_model.fit(se_type="robust")
             beta_start = poisson_result.params
 
             # Use constant-only logit for inflation part
             gamma_start = np.zeros(self.n_inflate_params)
             prop_zeros = np.mean(self.endog == 0)
-            if prop_zeros > 0.01 and prop_zeros < 0.99:
-                # Initial value for constant in logit
+            if 0.01 < prop_zeros < 0.99:
                 gamma_start[0] = np.log(prop_zeros / (1 - prop_zeros))
 
             start_params = np.concatenate([beta_start, gamma_start])
 
         # Optimize
         result = minimize(
-            fun=self.log_likelihood,
+            fun=self._neg_log_likelihood,
             x0=start_params,
-            jac=self.gradient,
+            jac=self._gradient,
             method=method,
             options={"maxiter": maxiter},
             **kwargs,
@@ -266,10 +285,12 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         if not result.success:
             warnings.warn(f"Optimization did not converge: {result.message}")
 
-        # Create result object
+        # Store log-likelihood for the fitted model
+        self.llf = -result.fun
+
         return ZeroInflatedPoissonResult(
             model=self,
-            params=result.params,
+            params=result.x,
             llf=-result.fun,
             converged=result.success,
             iterations=result.nit,
@@ -278,7 +299,8 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
     def predict(
         self,
         params: np.ndarray,
-        exog: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        exog_count: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         which: str = "mean",
     ) -> np.ndarray:
         """
@@ -288,56 +310,68 @@ class ZeroInflatedPoisson(NonlinearPanelModel):
         ----------
         params : np.ndarray
             Model parameters
-        exog : array-like, optional
-            New data for prediction
+        exog_count : array-like, optional
+            New count model data. If None, uses training data.
+        exog_inflate : array-like, optional
+            New inflation model data. If None, uses training data.
         which : str, default='mean'
             What to predict:
-            - 'mean': Expected value E[y]
-            - 'prob-zero': Probability of zero
-            - 'prob-zero-structural': Probability of structural zero
+            - 'mean': Expected value E[y] = (1-pi)*lambda
+            - 'prob-zero': Total probability of zero P(y=0)
+            - 'prob-zero-structural': Probability of structural zero (pi)
+            - 'prob-zero-sampling': Probability of sampling zero (1-pi)*exp(-lambda)
+            - 'count-mean': Expected count among potential users (lambda)
 
         Returns
         -------
         np.ndarray
             Predictions
         """
-        if exog is None:
-            exog_count = self.exog
-            exog_inflate = self.exog_inflate
+        if exog_count is None:
+            exog_c = self.exog
         else:
-            # Handle new data
-            exog_count = self._prepare_data(exog)
-            exog_inflate = exog_count  # Simplified for now
+            exog_c = _to_array(exog_count)
+
+        if exog_inflate is None:
+            exog_i = self.exog_inflate
+        else:
+            exog_i = _to_array(exog_inflate)
 
         # Split parameters
         beta = params[: self.n_count_params]
         gamma = params[self.n_count_params :]
 
         # Predictions
-        pi = 1 / (1 + np.exp(-exog_inflate @ gamma))
-        lambda_ = np.exp(exog_count @ beta)
+        xb_inflate = np.clip(exog_i @ gamma, -30, 30)
+        pi = 1 / (1 + np.exp(-xb_inflate))
+        xb_count = np.clip(exog_c @ beta, -30, 30)
+        lambda_ = np.exp(xb_count)
 
         if which == "mean":
-            # E[y] = (1-π) × λ
             return (1 - pi) * lambda_
         elif which == "prob-zero":
-            # P(y=0) = π + (1-π)exp(-λ)
             return pi + (1 - pi) * np.exp(-lambda_)
         elif which == "prob-zero-structural":
-            # P(structural zero) = π
             return pi
+        elif which == "prob-zero-sampling":
+            return (1 - pi) * np.exp(-lambda_)
+        elif which == "count-mean":
+            return lambda_
         else:
             raise ValueError(f"Unknown prediction type: {which}")
 
 
-class ZeroInflatedPoissonResult(PanelModelResults):
+class ZeroInflatedPoissonResult:
     """Results class for Zero-Inflated Poisson model."""
 
     def __init__(self, model, params, llf, converged, iterations):
         """Initialize ZIP results."""
-        super().__init__(model, params, llf)
+        self.model = model
+        self.params = params
+        self.llf = llf
         self.converged = converged
         self.iterations = iterations
+        self.n_obs = model.n_obs
 
         # Split parameters
         self.params_count = params[: model.n_count_params]
@@ -350,24 +384,29 @@ class ZeroInflatedPoissonResult(PanelModelResults):
         self._compute_fit_statistics()
 
     def _compute_standard_errors(self):
-        """Compute standard errors via Hessian."""
+        """Compute standard errors via numerical Hessian."""
         try:
             from scipy.optimize import approx_fprime
 
-            # Numerical Hessian
             eps = 1e-5
-            hess = np.zeros((self.model.n_params, self.model.n_params))
+            n_params = self.model.n_params
+            hess = np.zeros((n_params, n_params))
 
-            for i in range(self.model.n_params):
+            for i in range(n_params):
 
-                def grad_i(params):
-                    return self.model.gradient(params)[i]
+                def grad_i(params, idx=i):
+                    return self.model._gradient(params)[idx]
 
                 hess[i, :] = approx_fprime(self.params, grad_i, eps)
 
+            # Symmetrize
+            hess = (hess + hess.T) / 2
+
             # Invert Hessian for covariance matrix
             self.cov_params = np.linalg.inv(hess)
-            self.bse = np.sqrt(np.diag(self.cov_params))
+            diag = np.diag(self.cov_params)
+            # Handle potential negative diagonal elements
+            self.bse = np.sqrt(np.maximum(diag, 0))
 
             # Split standard errors
             self.bse_count = self.bse[: self.model.n_count_params]
@@ -376,12 +415,12 @@ class ZeroInflatedPoissonResult(PanelModelResults):
         except Exception as e:
             warnings.warn(f"Could not compute standard errors: {e}")
             self.bse = np.full(len(self.params), np.nan)
+            self.bse_count = np.full(self.model.n_count_params, np.nan)
+            self.bse_inflate = np.full(self.model.n_inflate_params, np.nan)
             self.cov_params = np.full((len(self.params), len(self.params)), np.nan)
 
     def _compute_fit_statistics(self):
         """Compute goodness-of-fit statistics."""
-        # Predictions
-        y_pred = self.model.predict(self.params, which="mean")
         y = self.model.endog
 
         # Proportion of zeros
@@ -398,56 +437,73 @@ class ZeroInflatedPoissonResult(PanelModelResults):
         self._compute_vuong_test()
 
     def _compute_vuong_test(self):
-        """
-        Compute Vuong test for ZIP vs standard Poisson.
-
-        Tests whether ZIP significantly improves over Poisson.
-        """
+        """Compute Vuong test for ZIP vs standard Poisson."""
         try:
             from panelbox.models.count import PooledPoisson
 
             # Fit standard Poisson
             poisson_model = PooledPoisson(self.model.endog, self.model.exog)
-            poisson_result = poisson_model.fit()
+            poisson_result = poisson_model.fit(se_type="robust")
 
-            # Log-likelihood contributions
             y = self.model.endog
 
             # ZIP log-likelihood per observation
-            pi = 1 / (1 + np.exp(-self.model.exog_inflate @ self.params_inflate))
-            lambda_zip = np.exp(self.model.exog @ self.params_count)
+            pi = 1 / (1 + np.exp(-np.clip(self.model.exog_inflate @ self.params_inflate, -30, 30)))
+            lambda_zip = np.exp(np.clip(self.model.exog @ self.params_count, -30, 30))
 
             ll_zip = np.where(
                 y == 0,
-                np.log(pi + (1 - pi) * np.exp(-lambda_zip)),
-                np.log(1 - pi) + y * np.log(lambda_zip) - lambda_zip - gammaln(y + 1),
+                np.log(np.maximum(pi + (1 - pi) * np.exp(-lambda_zip), 1e-300)),
+                np.log(np.maximum(1 - pi, 1e-300))
+                + y * np.log(np.maximum(lambda_zip, 1e-300))
+                - lambda_zip
+                - gammaln(y + 1),
             )
 
             # Poisson log-likelihood per observation
-            lambda_pois = np.exp(self.model.exog @ poisson_result.params)
-            ll_pois = y * np.log(lambda_pois) - lambda_pois - gammaln(y + 1)
+            lambda_pois = np.exp(np.clip(self.model.exog @ poisson_result.params, -30, 30))
+            ll_pois = y * np.log(np.maximum(lambda_pois, 1e-300)) - lambda_pois - gammaln(y + 1)
 
             # Vuong statistic
             m = ll_zip - ll_pois
-            v_stat = np.sqrt(len(y)) * np.mean(m) / np.std(m, ddof=1)
+            sd_m = np.std(m, ddof=1)
+            if sd_m > 0:
+                v_stat = np.sqrt(len(y)) * np.mean(m) / sd_m
+                self.vuong_stat = v_stat
+                self.vuong_pvalue = 2 * (1 - stats.norm.cdf(abs(v_stat)))
+            else:
+                self.vuong_stat = np.nan
+                self.vuong_pvalue = np.nan
 
-            self.vuong_stat = v_stat
-            self.vuong_pvalue = 2 * (1 - stats.norm.cdf(abs(v_stat)))
+            # Store the Poisson log-likelihood for comparisons
+            self._poisson_llf = poisson_model.llf
 
         except Exception as e:
             warnings.warn(f"Could not compute Vuong test: {e}")
             self.vuong_stat = np.nan
             self.vuong_pvalue = np.nan
 
-    def summary(self) -> str:
+    def summary(self, count_names=None, inflate_names=None) -> str:
         """
         Generate summary of results.
+
+        Parameters
+        ----------
+        count_names : list of str, optional
+            Variable names for count model
+        inflate_names : list of str, optional
+            Variable names for inflation model
 
         Returns
         -------
         str
             Formatted summary
         """
+        if count_names is None:
+            count_names = self.model.exog_count_names
+        if inflate_names is None:
+            inflate_names = self.model.exog_inflate_names
+
         summary = []
         summary.append("=" * 70)
         summary.append("Zero-Inflated Poisson Model Results")
@@ -472,27 +528,29 @@ class ZeroInflatedPoissonResult(PanelModelResults):
             summary.append(f"  Statistic: {self.vuong_stat:.4f}")
             summary.append(f"  p-value: {self.vuong_pvalue:.4f}")
             if self.vuong_pvalue < 0.05:
-                summary.append("  ZIP is preferred over standard Poisson")
+                summary.append("  --> ZIP is preferred over standard Poisson")
+            else:
+                summary.append("  --> Standard Poisson is adequate")
             summary.append("")
 
         # Count model parameters
         summary.append("-" * 70)
         summary.append("Count Model (Poisson)")
         summary.append("-" * 70)
-        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<8} {'P>|z|':<8}")
+        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<10} {'P>|z|':<10}")
 
         for i in range(self.model.n_count_params):
-            if not np.isnan(self.bse_count[i]):
+            name = count_names[i] if i < len(count_names) else f"X{i}"
+            if not np.isnan(self.bse_count[i]) and self.bse_count[i] > 0:
                 z_stat = self.params_count[i] / self.bse_count[i]
                 p_val = 2 * (1 - stats.norm.cdf(abs(z_stat)))
                 summary.append(
-                    f"{'X' + str(i):<20} {self.params_count[i]:<12.4f} "
-                    f"{self.bse_count[i]:<12.4f} {z_stat:<8.3f} {p_val:<8.3f}"
+                    f"{name:<20} {self.params_count[i]:<12.4f} "
+                    f"{self.bse_count[i]:<12.4f} {z_stat:<10.3f} {p_val:<10.4f}"
                 )
             else:
                 summary.append(
-                    f"{'X' + str(i):<20} {self.params_count[i]:<12.4f} "
-                    f"{'NA':<12} {'NA':<8} {'NA':<8}"
+                    f"{name:<20} {self.params_count[i]:<12.4f} " f"{'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("")
@@ -501,20 +559,21 @@ class ZeroInflatedPoissonResult(PanelModelResults):
         summary.append("-" * 70)
         summary.append("Zero-Inflation Model (Logit)")
         summary.append("-" * 70)
-        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<8} {'P>|z|':<8}")
+        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<10} {'P>|z|':<10}")
 
         for i in range(self.model.n_inflate_params):
-            if not np.isnan(self.bse_inflate[i]):
+            name = inflate_names[i] if i < len(inflate_names) else f"Z{i}"
+            if not np.isnan(self.bse_inflate[i]) and self.bse_inflate[i] > 0:
                 z_stat = self.params_inflate[i] / self.bse_inflate[i]
                 p_val = 2 * (1 - stats.norm.cdf(abs(z_stat)))
                 summary.append(
-                    f"{'Z' + str(i):<20} {self.params_inflate[i]:<12.4f} "
-                    f"{self.bse_inflate[i]:<12.4f} {z_stat:<8.3f} {p_val:<8.3f}"
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
+                    f"{self.bse_inflate[i]:<12.4f} {z_stat:<10.3f} {p_val:<10.4f}"
                 )
             else:
                 summary.append(
-                    f"{'Z' + str(i):<20} {self.params_inflate[i]:<12.4f} "
-                    f"{'NA':<12} {'NA':<8} {'NA':<8}"
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
+                    f"{'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("=" * 70)
@@ -522,7 +581,7 @@ class ZeroInflatedPoissonResult(PanelModelResults):
         return "\n".join(summary)
 
 
-class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
+class ZeroInflatedNegativeBinomial:
     """
     Zero-Inflated Negative Binomial model for overdispersed count data with excess zeros.
 
@@ -535,13 +594,14 @@ class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
     endog : array-like or pd.Series
         Dependent variable (count data)
     exog_count : array-like or pd.DataFrame
-        Regressors for the count model
+        Regressors for the count model (should include constant)
     exog_inflate : array-like or pd.DataFrame, optional
-        Regressors for the inflation model. If None, uses exog_count
-    entity_col : str, optional
-        Name of entity/individual identifier column
-    time_col : str, optional
-        Name of time identifier column
+        Regressors for the inflation model (should include constant).
+        If None, uses exog_count.
+    exog_count_names : list of str, optional
+        Names for count model variables
+    exog_inflate_names : list of str, optional
+        Names for inflation model variables
     """
 
     def __init__(
@@ -549,29 +609,52 @@ class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
         endog: Union[np.ndarray, pd.Series],
         exog_count: Union[np.ndarray, pd.DataFrame],
         exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        entity_col: Optional[str] = None,
-        time_col: Optional[str] = None,
+        exog_count_names: Optional[list] = None,
+        exog_inflate_names: Optional[list] = None,
     ):
         """Initialize ZINB model."""
-        super().__init__(endog, exog_count, entity_col, time_col)
-
-        # Store count model regressors
-        self.exog = self._prepare_data(exog_count)
+        # Convert to arrays
+        self.endog = _to_array(endog).ravel()
+        self.exog = _to_array(exog_count)
+        if self.exog.ndim == 1:
+            self.exog = self.exog.reshape(-1, 1)
 
         # Inflation model regressors
         if exog_inflate is None:
             self.exog_inflate = self.exog.copy()
         else:
-            self.exog_inflate = self._prepare_data(exog_inflate)
+            self.exog_inflate = _to_array(exog_inflate)
+            if self.exog_inflate.ndim == 1:
+                self.exog_inflate = self.exog_inflate.reshape(-1, 1)
+
+        # Store variable names
+        if exog_count_names is not None:
+            self.exog_count_names = list(exog_count_names)
+        elif isinstance(exog_count, pd.DataFrame):
+            self.exog_count_names = list(exog_count.columns)
+        else:
+            self.exog_count_names = [f"X{i}" for i in range(self.exog.shape[1])]
+
+        if exog_inflate_names is not None:
+            self.exog_inflate_names = list(exog_inflate_names)
+        elif isinstance(exog_inflate, pd.DataFrame):
+            self.exog_inflate_names = list(exog_inflate.columns)
+        else:
+            self.exog_inflate_names = [f"Z{i}" for i in range(self.exog_inflate.shape[1])]
 
         # Parameter counts (include alpha for NB)
         self.n_count_params = self.exog.shape[1]
         self.n_inflate_params = self.exog_inflate.shape[1]
         self.n_params = self.n_count_params + self.n_inflate_params + 1  # +1 for alpha
+        self.n_obs = len(self.endog)
 
-    def log_likelihood(self, params: np.ndarray) -> float:
+        # Validate
+        if np.any(self.endog < 0):
+            raise ValueError("Count data must be non-negative")
+
+    def _neg_log_likelihood(self, params: np.ndarray) -> float:
         """
-        Compute log-likelihood for ZINB model.
+        Compute negative log-likelihood for ZINB model.
 
         Parameters
         ----------
@@ -587,42 +670,39 @@ class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
         beta = params[: self.n_count_params]
         gamma = params[self.n_count_params : self.n_count_params + self.n_inflate_params]
         log_alpha = params[-1]
-        alpha = np.exp(log_alpha)  # Ensure alpha > 0
+        alpha = np.exp(np.clip(log_alpha, -10, 10))
 
-        # Linear predictors
-        xb_count = self.exog @ beta
-        xb_inflate = self.exog_inflate @ gamma
+        # Linear predictors with safeguards
+        xb_count = np.clip(self.exog @ beta, -30, 30)
+        xb_inflate = np.clip(self.exog_inflate @ gamma, -30, 30)
 
         # Probabilities
-        pi = 1 / (1 + np.exp(-xb_inflate))  # Inflation probability
-        mu = np.exp(xb_count)  # NB mean parameter
+        pi = 1 / (1 + np.exp(-xb_inflate))
+        mu = np.exp(xb_count)
 
         # NB parameters
-        size = 1 / alpha  # NB size parameter
-        prob = size / (size + mu)  # NB prob parameter
+        size = 1 / alpha
+        prob = size / (size + mu)
 
-        # Log-likelihood
         y = self.endog
         zero_mask = y == 0
 
         # For zeros: log(π + (1-π) × NB(0|μ,α))
-        nb_zero_prob = (size / (size + mu[zero_mask])) ** size
-        ll_zero = np.log(pi[zero_mask] + (1 - pi[zero_mask]) * nb_zero_prob)
+        nb_zero_prob = np.power(prob[zero_mask], size)
+        ll_zero = np.log(np.maximum(pi[zero_mask] + (1 - pi[zero_mask]) * nb_zero_prob, 1e-300))
 
         # For non-zeros: log((1-π)) + log(NB(y|μ,α))
         ll_nonzero = (
-            np.log(1 - pi[~zero_mask])
+            np.log(np.maximum(1 - pi[~zero_mask], 1e-300))
             + gammaln(y[~zero_mask] + size)
             - gammaln(y[~zero_mask] + 1)
             - gammaln(size)
-            + size * np.log(prob[~zero_mask])
-            + y[~zero_mask] * np.log(1 - prob[~zero_mask])
+            + size * np.log(np.maximum(prob[~zero_mask], 1e-300))
+            + y[~zero_mask] * np.log(np.maximum(1 - prob[~zero_mask], 1e-300))
         )
 
-        # Total log-likelihood
         ll = np.sum(ll_zero) + np.sum(ll_nonzero)
-
-        return -ll  # Return negative for minimization
+        return -ll
 
     def fit(
         self,
@@ -642,28 +722,23 @@ class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
             Optimization method
         maxiter : int, default=1000
             Maximum iterations
-        **kwargs
-            Additional arguments for optimizer
 
         Returns
         -------
         ZeroInflatedNegativeBinomialResult
             Fitted model results
         """
-        # Starting values if not provided
         if start_params is None:
             # Use ZIP for starting values
             zip_model = ZeroInflatedPoisson(self.endog, self.exog, self.exog_inflate)
             zip_result = zip_model.fit()
+            start_params = np.concatenate([zip_result.params, [0.0]])
 
-            # Add starting value for log(alpha)
-            start_params = np.concatenate([zip_result.params, [0.0]])  # log(alpha) = 0 => alpha = 1
-
-        # Optimize with bounds for alpha
-        bounds = [(None, None)] * (self.n_params - 1) + [(-10, 10)]  # Bounds for log(alpha)
+        # Optimize with bounds for log(alpha)
+        bounds = [(None, None)] * (self.n_params - 1) + [(-10, 10)]
 
         result = minimize(
-            fun=self.log_likelihood,
+            fun=self._neg_log_likelihood,
             x0=start_params,
             method=method,
             bounds=bounds,
@@ -674,24 +749,98 @@ class ZeroInflatedNegativeBinomial(NonlinearPanelModel):
         if not result.success:
             warnings.warn(f"Optimization did not converge: {result.message}")
 
-        # Create result object
+        self.llf = -result.fun
+
         return ZeroInflatedNegativeBinomialResult(
             model=self,
-            params=result.params,
+            params=result.x,
             llf=-result.fun,
             converged=result.success,
             iterations=result.nit,
         )
 
+    def predict(
+        self,
+        params: np.ndarray,
+        exog_count: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        which: str = "mean",
+    ) -> np.ndarray:
+        """
+        Predict using fitted model.
 
-class ZeroInflatedNegativeBinomialResult(PanelModelResults):
+        Parameters
+        ----------
+        params : np.ndarray
+            Model parameters [beta_count, gamma_inflate, log_alpha]
+        exog_count : array-like, optional
+            New count model data
+        exog_inflate : array-like, optional
+            New inflation model data
+        which : str, default='mean'
+            What to predict:
+            - 'mean': Expected value E[y] = (1-pi)*mu
+            - 'prob-zero': Total probability of zero
+            - 'prob-zero-structural': Probability of structural zero (pi)
+            - 'prob-zero-sampling': Probability of sampling zero
+            - 'count-mean': Expected count among potential users (mu)
+
+        Returns
+        -------
+        np.ndarray
+            Predictions
+        """
+        if exog_count is None:
+            exog_c = self.exog
+        else:
+            exog_c = _to_array(exog_count)
+
+        if exog_inflate is None:
+            exog_i = self.exog_inflate
+        else:
+            exog_i = _to_array(exog_inflate)
+
+        # Split parameters
+        beta = params[: self.n_count_params]
+        gamma = params[self.n_count_params : self.n_count_params + self.n_inflate_params]
+        log_alpha = params[-1]
+        alpha = np.exp(np.clip(log_alpha, -10, 10))
+
+        # Predictions
+        xb_inflate = np.clip(exog_i @ gamma, -30, 30)
+        pi = 1 / (1 + np.exp(-xb_inflate))
+        xb_count = np.clip(exog_c @ beta, -30, 30)
+        mu = np.exp(xb_count)
+
+        if which == "mean":
+            return (1 - pi) * mu
+        elif which == "prob-zero":
+            size = 1 / alpha
+            nb_zero = np.power(size / (size + mu), size)
+            return pi + (1 - pi) * nb_zero
+        elif which == "prob-zero-structural":
+            return pi
+        elif which == "prob-zero-sampling":
+            size = 1 / alpha
+            nb_zero = np.power(size / (size + mu), size)
+            return (1 - pi) * nb_zero
+        elif which == "count-mean":
+            return mu
+        else:
+            raise ValueError(f"Unknown prediction type: {which}")
+
+
+class ZeroInflatedNegativeBinomialResult:
     """Results class for Zero-Inflated Negative Binomial model."""
 
     def __init__(self, model, params, llf, converged, iterations):
         """Initialize ZINB results."""
-        super().__init__(model, params, llf)
+        self.model = model
+        self.params = params
+        self.llf = llf
         self.converged = converged
         self.iterations = iterations
+        self.n_obs = model.n_obs
 
         # Split parameters
         self.params_count = params[: model.n_count_params]
@@ -699,10 +848,53 @@ class ZeroInflatedNegativeBinomialResult(PanelModelResults):
             model.n_count_params : model.n_count_params + model.n_inflate_params
         ]
         self.log_alpha = params[-1]
-        self.alpha = np.exp(self.log_alpha)
+        self.alpha = np.exp(np.clip(self.log_alpha, -10, 10))
+
+        # Compute standard errors
+        self._compute_standard_errors()
 
         # Compute fit statistics
         self._compute_fit_statistics()
+
+    def _compute_standard_errors(self):
+        """Compute standard errors via numerical Hessian."""
+        try:
+            from scipy.optimize import approx_fprime
+
+            eps = 1e-5
+            n_params = self.model.n_params
+            hess = np.zeros((n_params, n_params))
+
+            for i in range(n_params):
+
+                def grad_func(params, idx=i):
+                    # Numerical gradient of neg log-likelihood w.r.t. all params
+                    g = approx_fprime(params, self.model._neg_log_likelihood, eps)
+                    return g[idx]
+
+                hess[i, :] = approx_fprime(self.params, grad_func, eps)
+
+            # Symmetrize
+            hess = (hess + hess.T) / 2
+
+            self.cov_params = np.linalg.inv(hess)
+            diag = np.diag(self.cov_params)
+            self.bse = np.sqrt(np.maximum(diag, 0))
+
+            # Split standard errors
+            self.bse_count = self.bse[: self.model.n_count_params]
+            self.bse_inflate = self.bse[
+                self.model.n_count_params : self.model.n_count_params + self.model.n_inflate_params
+            ]
+            self.bse_alpha = self.bse[-1]
+
+        except Exception as e:
+            warnings.warn(f"Could not compute standard errors: {e}")
+            self.bse = np.full(len(self.params), np.nan)
+            self.bse_count = np.full(self.model.n_count_params, np.nan)
+            self.bse_inflate = np.full(self.model.n_inflate_params, np.nan)
+            self.bse_alpha = np.nan
+            self.cov_params = np.full((len(self.params), len(self.params)), np.nan)
 
     def _compute_fit_statistics(self):
         """Compute goodness-of-fit statistics."""
@@ -716,22 +908,34 @@ class ZeroInflatedNegativeBinomialResult(PanelModelResults):
 
         # Proportion of zeros
         self.actual_zeros = np.mean(y == 0)
+        self.predicted_zeros = np.mean(self.model.predict(self.params, which="prob-zero"))
 
-    def summary(self) -> str:
+    def summary(self, count_names=None, inflate_names=None) -> str:
         """
         Generate summary of results.
+
+        Parameters
+        ----------
+        count_names : list of str, optional
+            Variable names for count model
+        inflate_names : list of str, optional
+            Variable names for inflation model
 
         Returns
         -------
         str
             Formatted summary
         """
+        if count_names is None:
+            count_names = self.model.exog_count_names
+        if inflate_names is None:
+            inflate_names = self.model.exog_inflate_names
+
         summary = []
         summary.append("=" * 70)
         summary.append("Zero-Inflated Negative Binomial Model Results")
         summary.append("=" * 70)
 
-        # Model info
         summary.append(f"Number of observations: {len(self.model.endog)}")
         summary.append(f"Log-likelihood: {self.llf:.4f}")
         summary.append(f"AIC: {self.aic:.4f}")
@@ -740,18 +944,29 @@ class ZeroInflatedNegativeBinomialResult(PanelModelResults):
         summary.append(f"Converged: {self.converged}")
         summary.append("")
 
-        # Zero proportions
         summary.append(f"Actual proportion of zeros: {self.actual_zeros:.4f}")
+        summary.append(f"Predicted proportion of zeros: {self.predicted_zeros:.4f}")
         summary.append("")
 
         # Count model parameters
         summary.append("-" * 70)
         summary.append("Count Model (Negative Binomial)")
         summary.append("-" * 70)
-        summary.append(f"{'Variable':<20} {'Coef':<12}")
+        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<10} {'P>|z|':<10}")
 
         for i in range(self.model.n_count_params):
-            summary.append(f"{'X' + str(i):<20} {self.params_count[i]:<12.4f}")
+            name = count_names[i] if i < len(count_names) else f"X{i}"
+            if not np.isnan(self.bse_count[i]) and self.bse_count[i] > 0:
+                z_stat = self.params_count[i] / self.bse_count[i]
+                p_val = 2 * (1 - stats.norm.cdf(abs(z_stat)))
+                summary.append(
+                    f"{name:<20} {self.params_count[i]:<12.4f} "
+                    f"{self.bse_count[i]:<12.4f} {z_stat:<10.3f} {p_val:<10.4f}"
+                )
+            else:
+                summary.append(
+                    f"{name:<20} {self.params_count[i]:<12.4f} " f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                )
 
         summary.append("")
 
@@ -759,10 +974,22 @@ class ZeroInflatedNegativeBinomialResult(PanelModelResults):
         summary.append("-" * 70)
         summary.append("Zero-Inflation Model (Logit)")
         summary.append("-" * 70)
-        summary.append(f"{'Variable':<20} {'Coef':<12}")
+        summary.append(f"{'Variable':<20} {'Coef':<12} {'Std.Err':<12} {'z':<10} {'P>|z|':<10}")
 
         for i in range(self.model.n_inflate_params):
-            summary.append(f"{'Z' + str(i):<20} {self.params_inflate[i]:<12.4f}")
+            name = inflate_names[i] if i < len(inflate_names) else f"Z{i}"
+            if not np.isnan(self.bse_inflate[i]) and self.bse_inflate[i] > 0:
+                z_stat = self.params_inflate[i] / self.bse_inflate[i]
+                p_val = 2 * (1 - stats.norm.cdf(abs(z_stat)))
+                summary.append(
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
+                    f"{self.bse_inflate[i]:<12.4f} {z_stat:<10.3f} {p_val:<10.4f}"
+                )
+            else:
+                summary.append(
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
+                    f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                )
 
         summary.append("=" * 70)
 

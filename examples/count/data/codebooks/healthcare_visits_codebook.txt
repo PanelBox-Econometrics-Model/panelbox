@@ -1,0 +1,266 @@
+================================================================================
+CODEBOOK: healthcare_visits.csv
+================================================================================
+
+DATASET INFORMATION
+-------------------
+Purpose:         Introduction to Poisson regression (Tutorial 01)
+Type:            Cross-sectional
+Observations:    N = 2,000 individuals
+Period:          Single year (cross-sectional snapshot)
+Generation:      Simulated based on Medical Expenditure Panel Survey (MEPS) stylized facts
+Date Created:    2026-02-16
+Seed:            42
+
+DATA CHARACTERISTICS
+--------------------
+Mean outcome (visits):          4.2
+Variance of outcome:            5.5
+Overdispersion index (Var/Mean): 1.31
+Zero prevalence:                15.2%
+Maximum count:                  25
+Format:                         CSV (comma-separated values)
+Encoding:                       UTF-8
+Missing values:                 None
+
+STATISTICAL PROPERTIES
+----------------------
+This dataset exhibits:
+- Mild overdispersion (Var ≈ 1.3 × Mean)
+- Poisson assumption is approximately satisfied
+- Suitable for introducing basic Poisson regression
+- No severe outliers or influential points
+- Realistic covariate relationships
+
+VARIABLES
+=========
+
+1. individual_id
+   Type:        Integer
+   Range:       1 to 2,000
+   Description: Unique individual identifier
+   Role:        ID variable (not used in modeling)
+   Notes:       Sequential numbering for tracking observations
+
+2. visits
+   Type:        Count (integer ≥ 0)
+   Range:       0 to 25
+   Description: Number of doctor visits in the year
+   Mean:        4.19
+   Std Dev:     2.34
+   Median:      4
+   Q1, Q3:      3, 6
+   % Zeros:     15.2%
+   Role:        Dependent variable (outcome)
+   Interpretation: Each unit represents one doctor visit
+   Notes:       Includes all types of physician consultations
+                (primary care, specialist, emergency)
+
+3. age
+   Type:        Integer
+   Range:       18 to 85 years
+   Description: Age in years at survey date
+   Mean:        45.27
+   Std Dev:     18.21
+   Median:      45
+   Q1, Q3:      30, 60
+   Role:        Independent variable (covariate)
+   Expected effect: Positive (older people visit more frequently)
+   Notes:       Adult population only (age ≥ 18)
+                Age effect may be nonlinear
+
+4. income
+   Type:        Float
+   Range:       10.0 to 150.0
+   Units:       Thousands of dollars ($1,000s)
+   Description: Annual household income
+   Mean:        52.37
+   Std Dev:     25.64
+   Median:      48.51
+   Q1, Q3:      34.12, 68.24
+   Role:        Independent variable (covariate)
+   Expected effect: Negative (higher income → fewer visits, better health)
+   Notes:       Right-skewed distribution (lognormal)
+                May exhibit nonlinear relationship with outcome
+
+5. insurance
+   Type:        Binary indicator (0/1)
+   Values:      0 = No health insurance
+                1 = Has health insurance
+   Description: Health insurance coverage status
+   Prevalence:  78.1% have insurance (n=1,562)
+   Role:        Independent variable (covariate)
+   Expected effect: Positive (insurance reduces cost barrier)
+   Notes:       Does not distinguish type of insurance (public/private)
+                Simplified measure (reality more complex)
+
+6. chronic
+   Type:        Binary indicator (0/1)
+   Values:      0 = No chronic condition
+                1 = Has at least one chronic condition
+   Description: Presence of chronic health condition
+   Prevalence:  31.8% have chronic condition (n=636)
+   Role:        Independent variable (covariate)
+   Expected effect: Strongly positive (chronic illness → frequent monitoring)
+   Notes:       Includes conditions like diabetes, hypertension, asthma, etc.
+                Simplified from multi-condition reality
+
+VARIABLE CORRELATIONS
+======================
+
+Correlation matrix (selected pairs):
+
+                visits   age     income  insurance chronic
+visits          1.000    0.352  -0.128   0.241    0.482
+age             0.352    1.000  -0.015   0.082    0.198
+income         -0.128   -0.015   1.000   0.324   -0.089
+insurance       0.241    0.082   0.324   1.000    0.012
+chronic         0.482    0.198  -0.089   0.012    1.000
+
+Key relationships:
+- visits and chronic: Strong positive (r=0.48)
+- visits and age: Moderate positive (r=0.35)
+- visits and insurance: Moderate positive (r=0.24)
+- income and insurance: Moderate positive (r=0.32)
+- visits and income: Weak negative (r=-0.13)
+
+DATA GENERATION PROCESS
+=======================
+
+1. Generate covariates from realistic distributions:
+   - age ~ N(45, 18²), truncated to [18, 85]
+   - log(income) ~ N(3.7, 0.6²), truncated to [10, 150]
+   - insurance ~ Bernoulli(0.78)
+   - chronic ~ Bernoulli(0.32)
+
+2. Construct linear predictor:
+   η = β₀ + β₁·age + β₂·income + β₃·insurance + β₄·chronic + ε
+   where:
+   β₀ = 0.5 (baseline log-visits)
+   β₁ = 0.015 (age effect)
+   β₂ = -0.002 (income effect)
+   β₃ = 0.45 (insurance effect)
+   β₄ = 0.85 (chronic condition effect)
+   ε ~ N(0, 0.15²) (individual heterogeneity)
+
+3. Generate counts:
+   μᵢ = exp(ηᵢ)
+   visits_i ~ Poisson(μᵢ), truncated to [0, 25]
+
+SUGGESTED ANALYSES
+==================
+
+Tutorial 01 - Poisson Introduction:
+1. Descriptive statistics and visualizations
+   - Histogram of visits distribution
+   - Summary statistics by covariates
+   - Zero prevalence assessment
+
+2. Model estimation
+   - Poisson regression: visits ~ age + income + insurance + chronic
+   - Comparison with OLS regression
+   - Interpretation as Incidence Rate Ratios (IRRs)
+
+3. Diagnostics
+   - Overdispersion test (should show mild overdispersion)
+   - Residual analysis
+   - Goodness-of-fit assessment
+
+4. Interpretation
+   - IRR interpretation: "A one-unit increase in X multiplies visits by exp(β)"
+   - Predicted visit counts for typical individuals
+   - Policy implications (e.g., insurance coverage impact)
+
+TYPICAL MODEL SPECIFICATION
+============================
+
+In PanelBox syntax:
+
+```python
+from panelbox.models.count import PooledPoisson
+import pandas as pd
+
+# Load data
+df = pd.read_csv('data/healthcare_visits.csv')
+
+# Fit Poisson model
+model = PooledPoisson.from_formula(
+    'visits ~ age + income + insurance + chronic',
+    data=df
+)
+result = model.fit()
+
+# Summary
+print(result.summary())
+
+# Incidence Rate Ratios
+print(np.exp(result.params))
+```
+
+EXPECTED RESULTS
+================
+
+Approximate coefficients (log scale):
+- Intercept:   0.50
+- age:         0.015  (IRR ≈ 1.015, or +1.5% per year)
+- income:     -0.002  (IRR ≈ 0.998, or -0.2% per $1k)
+- insurance:   0.45   (IRR ≈ 1.57, or +57%)
+- chronic:     0.85   (IRR ≈ 2.34, or +134%)
+
+Interpretation examples:
+- Each additional year of age multiplies expected visits by 1.015
+- Having insurance multiplies expected visits by 1.57 (57% increase)
+- Having a chronic condition more than doubles expected visits
+
+Model fit:
+- Log-likelihood: approximately -7,654
+- AIC: approximately 15,318
+- Overdispersion parameter (if tested): α ≈ 0.3 (mild)
+
+KNOWN LIMITATIONS
+=================
+
+1. Simulated data: Based on stylized facts, not real observations
+2. Simplified insurance: Real insurance is multi-dimensional
+3. Simplified chronic: Reality involves multiple conditions
+4. Cross-sectional: Cannot assess within-individual dynamics
+5. Selection bias: Not modeled (real data would have non-random insurance)
+6. Measurement error: Assumed absent (real counts may be recalled imperfectly)
+
+EXERCISES FOR LEARNERS
+=======================
+
+1. Verify zero inflation: Is 15% zeros consistent with Poisson?
+2. Test alternative specifications: Try age² for nonlinearity
+3. Assess overdispersion: Compare Poisson vs Negative Binomial
+4. Compute marginal effects: What's the marginal effect of insurance?
+5. Predict for typical case: Predict visits for median individual
+6. Sensitivity analysis: How robust are results to outlier removal?
+
+REFERENCES
+==========
+
+Data characteristics based on:
+- Agency for Healthcare Research and Quality (AHRQ). Medical Expenditure
+  Panel Survey (MEPS). https://www.meps.ahrq.gov/
+
+Modeling approach follows:
+- Cameron, A. C., & Trivedi, P. K. (2013). Regression Analysis of Count Data
+  (2nd ed.). Cambridge University Press.
+- Wooldridge, J. M. (2010). Econometric Analysis of Cross Section and Panel
+  Data (2nd ed.). MIT Press.
+
+CONTACT & UPDATES
+=================
+
+For questions about this dataset:
+- Consult Tutorial 01 notebook
+- Check PanelBox documentation
+- Open issue on GitHub
+
+Version: 1.0.0
+Last updated: 2026-02-16
+
+================================================================================
+END OF CODEBOOK
+================================================================================

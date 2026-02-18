@@ -254,17 +254,65 @@ class PooledPoisson(NonlinearPanelModel):
 
         return result
 
-    def _get_start_params(self) -> np.ndarray:
-        """Get starting values for optimization using linear approximation."""
-        # Use log(y + 0.5) as approximation for small counts
-        y_transformed = np.log(self.endog + 0.5)
+    def marginal_effects(
+        self,
+        result: Optional[PanelModelResults] = None,
+        at: str = "overall",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Poisson model.
 
-        # OLS on transformed variable
-        from numpy.linalg import lstsq
+        For Poisson models, marginal effects measure the change in expected
+        count E[y|X] = exp(X'β) for a one-unit change in a covariate.
 
-        params, _, _, _ = lstsq(self.exog, y_transformed, rcond=None)
+        Parameters
+        ----------
+        result : PanelModelResults, optional
+            Fitted model result. If None, uses self._results
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall' or 'mean': AME (Average Marginal Effects)
+            - 'means' or 'mem': MEM (Marginal Effects at Means)
+        varlist : list of str, optional
+            Variables to compute ME for. If None, compute for all.
 
-        return params
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and inference
+
+        Examples
+        --------
+        >>> model = PooledPoisson(y, X, entity_id=firms)
+        >>> result = model.fit()
+        >>> ame = model.marginal_effects(result, at='overall')
+        >>> mem = model.marginal_effects(result, at='means')
+        >>> print(ame.summary())
+
+        See Also
+        --------
+        panelbox.marginal_effects.count_me.compute_poisson_ame
+        panelbox.marginal_effects.count_me.compute_poisson_mem
+        """
+        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+
+        # Get result object
+        if result is None:
+            if not hasattr(self, "_results"):
+                raise RuntimeError("Model must be fitted first or result must be provided")
+            result = self._results
+
+        # Compute marginal effects based on 'at' parameter
+        if at in ["overall", "mean"]:
+            return compute_poisson_ame(result, varlist=varlist)
+        elif at in ["means", "mem"]:
+            return compute_poisson_mem(result, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. "
+                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+            )
 
     def fit(
         self,
@@ -333,8 +381,24 @@ class PooledPoisson(NonlinearPanelModel):
             except np.linalg.LinAlgError:
                 self.vcov = -np.linalg.pinv(hessian)
 
+        # Store result for marginal_effects method
+        result_obj = PanelModelResults(self, self.params, self.vcov)
+        self._results = result_obj
+
         # Return results object
-        return PanelModelResults(self, self.params, self.vcov)
+        return result_obj
+
+    def _get_start_params(self) -> np.ndarray:
+        """Get starting values for optimization using linear approximation."""
+        # Use log(y + 0.5) as approximation for small counts
+        y_transformed = np.log(self.endog + 0.5)
+
+        # OLS on transformed variable
+        from numpy.linalg import lstsq
+
+        params, _, _, _ = lstsq(self.exog, y_transformed, rcond=None)
+
+        return params
 
 
 class PoissonFixedEffects(NonlinearPanelModel):
@@ -573,6 +637,66 @@ class PoissonFixedEffects(NonlinearPanelModel):
 
         return hess
 
+    def marginal_effects(
+        self,
+        result: Optional[PanelModelResults] = None,
+        at: str = "overall",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Poisson Fixed Effects model.
+
+        For Poisson models, marginal effects measure the change in expected
+        count E[y|X] = exp(X'β) for a one-unit change in a covariate.
+
+        Parameters
+        ----------
+        result : PanelModelResults, optional
+            Fitted model result. If None, uses self._results
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall' or 'mean': AME (Average Marginal Effects)
+            - 'means' or 'mem': MEM (Marginal Effects at Means)
+        varlist : list of str, optional
+            Variables to compute ME for. If None, compute for all.
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and inference
+
+        Examples
+        --------
+        >>> model = PoissonFixedEffects(y, X, entity_id=firms)
+        >>> result = model.fit()
+        >>> ame = model.marginal_effects(result, at='overall')
+        >>> mem = model.marginal_effects(result, at='means')
+        >>> print(ame.summary())
+
+        See Also
+        --------
+        panelbox.marginal_effects.count_me.compute_poisson_ame
+        panelbox.marginal_effects.count_me.compute_poisson_mem
+        """
+        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+
+        # Get result object
+        if result is None:
+            if not hasattr(self, "_results"):
+                raise RuntimeError("Model must be fitted first or result must be provided")
+            result = self._results
+
+        # Compute marginal effects based on 'at' parameter
+        if at in ["overall", "mean"]:
+            return compute_poisson_ame(result, varlist=varlist)
+        elif at in ["means", "mem"]:
+            return compute_poisson_mem(result, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. "
+                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+            )
+
     def predict(
         self, X: Optional[np.ndarray] = None, type: str = "response", include_fe: bool = False
     ) -> np.ndarray:
@@ -673,8 +797,12 @@ class PoissonFixedEffects(NonlinearPanelModel):
             # Use pseudo-inverse if singular
             self.vcov = -np.linalg.pinv(hessian)
 
+        # Create and store results object
+        result_obj = PoissonFixedEffectsResults(self, self.params, self.vcov)
+        self._results = result_obj
+
         # Return results object
-        return PoissonFixedEffectsResults(self, self.params, self.vcov)
+        return result_obj
 
     def _get_start_params(self) -> np.ndarray:
         """Get starting values using Poisson Pooled as approximation."""
@@ -807,6 +935,9 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         self.theta = np.exp(self.params[-1])  # Ensure positivity
         self.params_exog = self.params[:-1]
 
+        # Store result for marginal_effects method
+        self._results = result
+
         return result
 
     def _log_likelihood_gamma(self, params: np.ndarray) -> float:
@@ -912,6 +1043,66 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         eps = np.sqrt(np.finfo(float).eps)
 
         return approx_fprime(params, lambda p: self._log_likelihood_func(p), eps)
+
+    def marginal_effects(
+        self,
+        result: Optional[PanelModelResults] = None,
+        at: str = "overall",
+        varlist: Optional[List[str]] = None,
+    ):
+        """
+        Compute marginal effects for Random Effects Poisson model.
+
+        For Poisson models, marginal effects measure the change in expected
+        count E[y|X] = exp(X'β) for a one-unit change in a covariate.
+
+        Parameters
+        ----------
+        result : PanelModelResults, optional
+            Fitted model result. If None, uses self._results
+        at : str, default='overall'
+            Where to evaluate marginal effects:
+            - 'overall' or 'mean': AME (Average Marginal Effects)
+            - 'means' or 'mem': MEM (Marginal Effects at Means)
+        varlist : list of str, optional
+            Variables to compute ME for. If None, compute for all.
+
+        Returns
+        -------
+        MarginalEffectsResult
+            Container with marginal effects, standard errors, and inference
+
+        Examples
+        --------
+        >>> model = RandomEffectsPoisson(y, X, entity_id=firms)
+        >>> result = model.fit()
+        >>> ame = model.marginal_effects(result, at='overall')
+        >>> mem = model.marginal_effects(result, at='means')
+        >>> print(ame.summary())
+
+        See Also
+        --------
+        panelbox.marginal_effects.count_me.compute_poisson_ame
+        panelbox.marginal_effects.count_me.compute_poisson_mem
+        """
+        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+
+        # Get result object
+        if result is None:
+            if not hasattr(self, "_results"):
+                raise RuntimeError("Model must be fitted first or result must be provided")
+            result = self._results
+
+        # Compute marginal effects based on 'at' parameter
+        if at in ["overall", "mean"]:
+            return compute_poisson_ame(result, varlist=varlist)
+        elif at in ["means", "mem"]:
+            return compute_poisson_mem(result, varlist=varlist)
+        else:
+            raise ValueError(
+                f"Unknown 'at' value: {at}. "
+                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+            )
 
     def predict(self, X: Optional[np.ndarray] = None, type: str = "response") -> np.ndarray:
         """

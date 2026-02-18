@@ -1,0 +1,153 @@
+DATASET: healthcare_zinb.csv
+PURPOSE: Zero-Inflated Models (Notebook 05)
+OBSERVATIONS: N = 3,000 individuals
+STRUCTURE: Cross-sectional
+SIMULATION BASIS: Lambert (1992), Mullahy (1986) two-process model
+
+VARIABLES:
+==========
+
+1. individual_id
+   Type: Integer (1-3000)
+   Description: Unique individual identifier
+
+2. doctor_visits
+   Type: Count (0-20)
+   Description: Number of doctor visits in the past year
+   Mean: ~1.35
+   Variance: ~5.77
+   Variance/Mean ratio: ~4.27 (severe overdispersion)
+   % Zeros: ~62%
+   Distribution: Highly zero-inflated, right-skewed
+   Role: Dependent variable
+
+3. age
+   Type: Integer (18-85)
+   Description: Age in years
+   Mean: ~51
+   SD: ~19.6
+   Role: Count model covariate
+
+4. income
+   Type: Float (10-150)
+   Description: Annual income (thousands of dollars)
+   Mean: ~54.8
+   SD: ~35.5
+   Units: $1,000s
+   Role: Count model covariate
+
+5. chronic_condition
+   Type: Binary (0/1)
+   Description: Has chronic health condition
+   0 = No chronic condition
+   1 = Has chronic condition
+   % with chronic: ~30%
+   Role: Count model covariate (intensity driver)
+
+6. insurance
+   Type: Binary (0/1)
+   Description: Has health insurance
+   0 = Uninsured
+   1 = Insured
+   % insured: ~65%
+   Role: Inflation model covariate (access barrier)
+
+7. distance_clinic
+   Type: Float (1-80)
+   Description: Distance to nearest clinic (km)
+   Mean: ~15 km
+   SD: ~14.6 km
+   Units: Kilometers
+   Role: Inflation model covariate (access barrier)
+
+8. urban
+   Type: Binary (0/1)
+   Description: Urban residence
+   0 = Rural
+   1 = Urban
+   % urban: ~61%
+   Role: Inflation model covariate (access facilitator)
+
+NOTES:
+======
+- ~62% zeros: Mix of structural and sampling zeros
+- Structural zeros: "Never user" group (no insurance, far from clinic)
+- Sampling zeros: "Potential users" with zero visits in observation period
+- Overdispersion present even among non-zero counts (Var/Mean ~2.06)
+- Two distinct processes: participation and frequency
+
+ZERO-INFLATION STRUCTURE:
+=========================
+Two latent groups:
+
+1. "Structural zeros" (never-users): ~55%
+   Characteristics:
+   - No insurance, live far from clinics, rural
+   - Fundamentally different population
+   - Will not use healthcare regardless of health need
+
+2. "Potential users" (count process): ~45%
+   Characteristics:
+   - Have insurance and access
+   - May have zero visits by chance (sampling zeros)
+   - Visits follow Poisson/Negative Binomial distribution
+
+Observed zeros = Structural zeros + Sampling zeros from potential users
+
+KEY EMPIRICAL PATTERNS:
+=======================
+
+Inflation equation (logit coefficients):
+- Insurance:    -1.41 (insured less likely to be structural zero)
+- Distance:     +0.04 per km (farther --> more likely structural zero)
+- Urban:        -0.69 (urban less likely to be structural zero)
+
+Count equation (coefficients):
+- Age:          +0.013 per year (older visit more, among users)
+- Income:       -0.003 per $1K (small negative effect)
+- Chronic:      +0.622 (chronic condition increases visits ~86%)
+
+Overdispersion parameter (ZINB):
+- alpha = 0.316 (mild overdispersion, ZINB preferred over ZIP)
+
+ZERO RATES BY SUBGROUP:
+========================
+- No insurance: ~79% zeros
+- Has insurance: ~53% zeros
+- Rural: ~70% zeros
+- Urban: ~57% zeros
+- No chronic: ~65% zeros
+- Has chronic: ~57% zeros
+
+MODEL COMPARISON:
+=================
+Model          | Log-Lik   | AIC      | BIC      | Best?
+---------------|-----------|----------|----------|------
+Poisson        | -6,215    | 12,438   | 12,462   | No
+Neg Binomial   | -5,753    | 11,517   | 11,547   | No
+ZIP            | -4,193    | 8,401    | 8,449    | No
+ZINB           | -4,071    | 8,160    | 8,214    | Yes
+
+ZINB is preferred model (Vuong test V=25.70, p < 0.001)
+
+SUGGESTED ANALYSIS:
+==================
+Model progression:
+1. Poisson (baseline, inadequate for excess zeros)
+2. Negative Binomial (handles overdispersion, not zeros)
+3. ZIP (handles zeros, but equidispersion in count part)
+4. ZINB (handles both -- best fit)
+
+Key specification:
+- Count covariates (X): age, income, chronic_condition
+- Inflation covariates (Z): insurance, distance_clinic, urban
+- Different covariates for participation vs intensity
+
+POLICY APPLICATIONS:
+====================
+1. Insurance expansion: Reduces structural zeros by ~10.5 pp
+   - Universal insurance would increase expected visits by ~24%
+2. Access improvement: Reducing distance barriers
+   - Mainly affects participation margin
+3. Chronic disease management:
+   - Affects intensity margin among users
