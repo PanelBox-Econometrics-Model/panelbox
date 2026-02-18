@@ -444,12 +444,22 @@ class DifferenceGMM:
         instrument_names_filtered = [
             name for i, name in enumerate(Z.instrument_names) if not_all_nan[i]
         ]
-        gmm_cols = [i for i, name in enumerate(instrument_names_filtered) if name.startswith("n_t")]
+        # Identify GMM-style instrument columns (as opposed to IV-style)
+        # GMM columns have names like "y_L2_collapsed", "y_t3_L2", etc.
+        # IV columns have names like "x_L0" (simple lag pattern without _t or _collapsed)
+        iv_vars = set(self.exog_vars)
+        gmm_cols = [
+            i
+            for i, name in enumerate(instrument_names_filtered)
+            if not any(name.startswith(f"{v}_L") for v in iv_vars)
+            or "collapsed" in name
+            or "_t" in name
+        ]
 
         if len(gmm_cols) > 0:
             Z_gmm = Z_matrix_filtered[:, gmm_cols]
             n_valid_gmm = (~np.isnan(Z_gmm)).sum(axis=1)
-            min_gmm_instruments = 2  # Stata xtabond2 default
+            min_gmm_instruments = 1  # At least one valid GMM instrument per obs
             obs_valid_mask = n_valid_gmm >= min_gmm_instruments
 
             # Filter all arrays
