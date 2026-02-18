@@ -159,6 +159,24 @@ class PanelResults:
         self.f_statistic: Optional[float] = None
         self.f_pvalue: Optional[float] = None
 
+    @property
+    def model(self):
+        """
+        Access to the model object that produced these results.
+
+        Returns
+        -------
+        model : Model
+            The fitted model object, or None if not available.
+
+        Notes
+        -----
+        This property provides access to the model object for methods
+        that need to compute post-estimation quantities like marginal
+        effects, which require access to the model's data and methods.
+        """
+        return self._model
+
     def conf_int(self, alpha: float = 0.05) -> pd.DataFrame:
         """
         Compute confidence intervals for parameters.

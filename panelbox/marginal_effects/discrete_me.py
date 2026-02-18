@@ -69,7 +69,10 @@ class MarginalEffectsResult:
     def pvalues(self) -> pd.Series:
         """P-values from two-sided z-tests."""
         z_stats = self.z_stats
-        return 2 * norm.cdf(-np.abs(z_stats))
+        pvals = 2 * norm.cdf(-np.abs(z_stats))
+        if not isinstance(pvals, pd.Series):
+            pvals = pd.Series(pvals, index=self.marginal_effects.index)
+        return pvals
 
     def conf_int(self, alpha: float = 0.05) -> pd.DataFrame:
         """
@@ -120,7 +123,10 @@ class MarginalEffectsResult:
                 return ""
 
         pvals = self.pvalues
-        stars = pvals.apply(add_stars)
+        if isinstance(pvals, pd.Series):
+            stars = pvals.apply(add_stars)
+        else:
+            stars = pd.Series([add_stars(p) for p in pvals], index=self.marginal_effects.index)
 
         df = pd.DataFrame(
             {

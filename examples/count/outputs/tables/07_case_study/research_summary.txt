@@ -1,0 +1,64 @@
+
+RESEARCH QUESTION:
+  How do R&D subsidies affect firm innovation (patent output)?
+
+DATA:
+  - 500 firms over 8 years (4,000 observations)
+  - Outcome: Patent applications (count data)
+  - Panel structure: 2012-2019
+
+METHODOLOGY:
+  - Negative Binomial regression (accounts for overdispersion)
+  - Multiple specifications with fixed effects
+  - Heterogeneity analysis (interactions)
+  - Robustness checks
+
+KEY FINDINGS:
+
+1. SUBSIDY EFFECT (Main Result):
+   → R&D subsidies are associated with +22.37% change in patent output
+   → Effect is statistically significant
+   → Evidence supports additionality hypothesis
+
+2. R&D INTENSITY:
+   → Strong positive effect on patents
+   → Key driver of innovation output
+
+3. FIRM SIZE:
+   → Larger firms produce more patents
+   → Subsidy effects may vary by size (heterogeneity)
+
+4. ROBUSTNESS:
+   → Results stable across specifications
+   → Not driven by outliers
+   → Some industry heterogeneity
+
+POLICY IMPLICATIONS:
+
+1. PROGRAM EFFECTIVENESS:
+   → Subsidies appear to stimulate innovation
+   → Cost-benefit analysis recommended
+
+2. TARGETING:
+   → Focus on firms with high R&D capacity
+   → Consider industry-specific programs
+   → Monitor for displacement effects
+
+3. PROGRAM DESIGN:
+   → Effects heterogeneous - one-size-fits-all may be inefficient
+   → Consider graduated subsidy levels
+
+LIMITATIONS:
+
+1. Causality: Observational data - selection bias possible
+2. Patents: Imperfect measure of innovation
+3. Time horizon: May miss long-run effects
+4. General equilibrium: Spillovers not modeled
+
+FUTURE RESEARCH:
+
+1. Instrumental variables for subsidy assignment
+2. Longer time horizon (lagged effects)
+3. Alternative innovation metrics (citations, products)
+4. Spillover effects on competitors
+5. Cost-effectiveness analysis

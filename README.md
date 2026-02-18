@@ -274,7 +274,29 @@ Based on Roodman (2009) "How to do xtabond2":
 - 💡 [Example scripts](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/) for common use cases
 - 🔬 [Unbalanced panel guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/unbalanced_panel_guide.py)
 
-## Examples
+## Learning Resources
+
+### 📚 Interactive Tutorials (NEW!)
+
+We've created comprehensive Jupyter notebook tutorials to help you master panel data econometrics:
+
+**[Getting Started Guide](examples/GETTING_STARTED.md)** - Your roadmap to learning PanelBox
+
+#### Module 1: Fundamentals (3.5-4.5 hours)
+Perfect for beginners! Learn the core concepts:
+- [01 - Introduction to Panel Data](examples/tutorials/01_fundamentals/01_introduction_panel_data.ipynb) - Loading and transforming panel data
+- [02 - Model Specification with Formulas](examples/tutorials/01_fundamentals/02_formulas_specification.ipynb) - R-style formula syntax
+- [03 - Estimation and Results Interpretation](examples/tutorials/01_fundamentals/03_estimation_interpretation.ipynb) - Fitting models and understanding output
+- [04 - Spatial Fundamentals](examples/tutorials/01_fundamentals/04_spatial_fundamentals.ipynb) - Creating spatial weight matrices
+
+**More modules coming soon:**
+- Module 2: Classical Estimators (Fixed Effects, Random Effects)
+- Module 3: Dynamic GMM (Arellano-Bond)
+- Module 4: Spatial Panel Models
+
+See the [tutorials directory](examples/tutorials/) for the complete learning path.
+
+### 💡 Example Scripts
 
 See the [examples directory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples) for:
 

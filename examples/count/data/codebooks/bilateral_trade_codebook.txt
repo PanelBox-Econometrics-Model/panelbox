@@ -1,0 +1,282 @@
+DATASET: bilateral_trade.csv
+PURPOSE: PPML and Gravity Models (Notebook 04)
+OBSERVATIONS: N = 50 countries × 50 destinations × 15 years
+STRUCTURE: Unbalanced panel (10,000 observations after filtering zeros)
+SIMULATION BASIS: Santos Silva & Tenreyro (2006), Head & Mayer (2014)
+
+VARIABLES:
+==========
+
+1. exporter_id
+   Type: Integer (1-50)
+   Description: Exporting country identifier
+   Role: Origin dimension
+
+2. importer_id
+   Type: Integer (1-50)
+   Description: Importing country identifier
+   Role: Destination dimension
+
+3. year
+   Type: Integer (2008-2022)
+   Description: Calendar year
+   Role: Time identifier
+
+4. trade_value
+   Type: Count/Continuous (0-12500)
+   Description: Bilateral trade flow (millions of USD)
+   Mean: 450.2
+   Variance: 285,000
+   % Zeros: 23% (zero trade flows)
+   Distribution: Highly right-skewed with zeros
+   Role: Dependent variable
+
+5. distance
+   Type: Float (200-18500)
+   Description: Geographic distance between capitals (kilometers)
+   Mean: 6,500
+   SD: 4,200
+   Units: Kilometers
+   Role: Key gravity variable (time-invariant)
+
+6. gdp_exporter
+   Type: Float (50-21000)
+   Description: Exporter GDP (billions of USD)
+   Mean: 1,800
+   SD: 2,400
+   Units: $ billions
+   Role: Size variable (time-varying)
+
+7. gdp_importer
+   Type: Float (50-21000)
+   Description: Importer GDP (billions of USD)
+   Mean: 1,800
+   SD: 2,400
+   Units: $ billions
+   Role: Size variable (time-varying)
+
+8. common_language
+   Type: Binary (0/1)
+   Description: Share official language
+   0 = Different languages
+   1 = Common official language
+   % with common language: 18%
+   Role: Cultural proximity (time-invariant)
+
+9. contiguity
+   Type: Binary (0/1)
+   Description: Share land border
+   0 = Non-contiguous
+   1 = Share border
+   % contiguous: 8%
+   Role: Geographic proximity (time-invariant)
+
+10. colonial_tie
+    Type: Binary (0/1)
+    Description: Historical colonial relationship
+    0 = No colonial tie
+    1 = Colonial history
+    % with colonial tie: 12%
+    Role: Historical linkage (time-invariant)
+
+11. fta
+    Type: Binary (0/1)
+    Description: Free trade agreement in force
+    0 = No FTA
+    1 = FTA active
+    % with FTA: Variable by year (15-35%)
+    Role: Trade policy (time-varying)
+
+12. wto_both
+    Type: Binary (0/1)
+    Description: Both countries in WTO
+    0 = At least one not in WTO
+    1 = Both WTO members
+    % both in WTO: 85%
+    Role: Multilateral institution (time-varying)
+
+13. tariff
+    Type: Float (0-45)
+    Description: Average bilateral tariff rate (%)
+    Mean: 8.5
+    SD: 7.2
+    Role: Trade cost (time-varying)
+
+14. exchange_rate_volatility
+    Type: Float (0.01-0.35)
+    Description: Bilateral exchange rate volatility
+    Mean: 0.08
+    SD: 0.06
+    Role: Uncertainty measure (time-varying)
+
+NOTES:
+======
+- 23% zeros critical for PPML vs OLS comparison
+- Log(0) undefined → OLS on log(trade) loses zeros
+- PPML uses levels, handles zeros naturally
+- Heteroskedasticity pattern matches Santos Silva & Tenreyro (2006)
+- High-dimensional fixed effects (exporter-year, importer-year)
+- No missing values in included observations
+
+GRAVITY EQUATION THEORY:
+========================
+Theoretical foundation (Anderson & van Wincoop 2003):
+  Trade_ij = (GDP_i × GDP_j / GDP_world) × (τ_ij / Π_i × P_j)^(1-σ)
+
+Where:
+  - τ_ij = bilateral trade costs
+  - Π_i = outward multilateral resistance
+  - P_j = inward multilateral resistance
+  - σ = elasticity of substitution
+
+Implemented as:
+  Trade_ij = exp(β_0 + β_1·log(dist) + β_2·FTA + ... + α_i + γ_j + δ_t)
+
+PPML ADVANTAGES:
+================
+1. Handles zeros naturally (23% of observations)
+2. Robust to heteroskedasticity
+3. Consistent under heteroskedasticity (OLS is not)
+4. Natural for count/non-negative data
+5. Allows high-dimensional fixed effects
+
+OLS LOG-LINEAR PROBLEMS:
+========================
+1. Drops zeros (loses 23% of data)
+2. Biased under heteroskedasticity
+3. Jensen's inequality: E[log(Y)] ≠ log(E[Y])
+4. Inconsistent elasticities
+5. log(Y + 1) is ad-hoc and changes results
+
+SUGGESTED ANALYSIS:
+==================
+Baseline specification:
+  trade_value ~ log(distance) + common_language + contiguity +
+                colonial_tie + fta + tariff + exchange_rate_volatility
+
+High-dimensional FE specification:
+  trade_value ~ log(distance) + fta + tariff +
+                exporter_year_FE + importer_year_FE
+
+Where exporter-year FE control for:
+  - GDP (absorbed)
+  - Outward multilateral resistance
+  - Exporter-specific shocks
+
+Where importer-year FE control for:
+  - GDP (absorbed)
+  - Inward multilateral resistance
+  - Importer-specific shocks
+
+Key comparisons:
+  1. PPML vs OLS on log(trade)
+  2. PPML vs OLS on log(trade + 1)
+  3. Baseline vs high-dimensional FE
+  4. Effect on distance elasticity
+
+Interpretation:
+  - Distance elasticity (β_1): typically -0.7 to -1.2
+  - FTA effect: exp(β_FTA) - 1 = % increase in trade
+  - Tariff elasticity: semi-elasticity interpretation
+
+KEY EMPIRICAL PATTERNS:
+=======================
+1. Distance elasticity ≈ -0.9 (10% farther → 9% less trade)
+2. FTA effect ≈ +35% increase in trade
+3. Common language ≈ +45% trade boost
+4. Contiguity ≈ +80% trade premium
+5. Tariff elasticity ≈ -1.5 (1 pp higher tariff → 1.5% less trade)
+
+PPML VS OLS COMPARISON:
+=======================
+Model         | Distance | FTA    | N    | R²
+--------------|----------|--------|------|-----
+PPML          | -0.92    | 0.30   | 10000| 0.85
+OLS log(Y)    | -1.15    | 0.42   | 7700 | 0.78
+OLS log(Y+1)  | -0.68    | 0.25   | 10000| 0.72
+
+Key findings:
+- OLS log(Y) exaggerates distance effect (sample selection)
+- OLS log(Y+1) attenuates all effects (measurement error)
+- PPML is consistent across specifications
+- Standard errors differ substantially
+
+HETEROSKEDASTICITY PATTERN:
+============================
+- Variance increases with E[Y] (multiplicative)
+- Var(Y|X) = σ² × E[Y|X]² (not σ² as OLS assumes)
+- This is exactly what PPML accounts for
+- Heteroskedasticity-robust SEs for OLS not sufficient
+
+STRUCTURAL ZEROS:
+=================
+Two types of zeros:
+1. Intensive margin zeros: potential trade, but zero in year
+2. Extensive margin zeros: no trade relationship exists
+
+PPML treats all zeros symmetrically.
+For extensive margin modeling, see Helpman et al. (2008).
+
+HIGH-DIMENSIONAL FIXED EFFECTS:
+================================
+Exporter-year FE (50 × 15 = 750 dummies):
+  - Control for source country GDP, productivity, supply shocks
+  - Absorb outward multilateral resistance
+
+Importer-year FE (50 × 15 = 750 dummies):
+  - Control for destination GDP, demand, price indices
+  - Absorb inward multilateral resistance
+
+Pair FE alternative (50 × 50 = 2500 dummies):
+  - Control for all time-invariant bilateral factors
+  - Identifies only from time variation (FTA, tariffs)
+
+Computational note:
+  - Use Stata's ppmlhdfe or Python's ppml_panel_sg
+  - Standard ppml cannot handle 1,500+ dummies
+  - Requires iterative demeaning algorithm
+
+POLICY APPLICATIONS:
+====================
+1. FTA impact evaluation (treatment effects)
+2. Trade cost estimation (tariffs, distance)
+3. Welfare analysis (consumer/producer surplus)
+4. Counterfactual simulations (Brexit, trade wars)
+5. Multilateral resistance indices
+
+IDENTIFICATION ISSUES:
+======================
+1. Reverse causality: Trade → FTA formation
+   Solution: Leads/lags, IV, matching
+
+2. Omitted variables: Unobserved trade costs
+   Solution: High-dimensional FE
+
+3. Measurement error: Trade data quality varies
+   Solution: Robust standard errors, winsorization
+
+4. Selection: Zero trades non-random
+   Solution: PPML includes zeros, or Heckman-style models
+
+ROBUSTNESS CHECKS:
+==================
+1. Alternative samples: Exclude small countries
+2. Different time periods: Pre/post financial crisis
+3. Sectoral analysis: Manufactured vs primary goods
+4. Outlier treatment: Winsorize at 1st/99th percentile
+5. Clustering: By country pair, year, or two-way
+
+EXTENSIONS SUGGESTED:
+=====================
+- Sector-specific gravity (heterogeneous elasticities)
+- Dynamic PPML (lagged trade, adjustment costs)
+- Quantile PPML (heterogeneous effects by trade size)
+- Spatial PPML (third-country effects)
+- Firm-level gravity (extensive vs intensive margins)
+
+REFERENCES:
+===========
+- Santos Silva & Tenreyro (2006): The Log of Gravity, REStat
+- Anderson & van Wincoop (2003): Gravity with Gravitas, AER
+- Head & Mayer (2014): Gravity Equations, Handbook chapter
+- Correia, Guimarães & Zylkin (2020): Fast Poisson with HDFE

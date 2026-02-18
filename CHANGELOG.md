@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### 📚 Interactive Tutorial System (`examples/tutorials/`) - NEW!
+
+**Implementation Date:** February 2026
+**Status:** Module 1 Complete - Production Ready
+
+A comprehensive, hands-on learning system for panel data econometrics with PanelBox:
+
+**Module 1: Fundamentals** (3.5-4.5 hours)
+- **Tutorial 01**: Introduction to Panel Data Structures (45-60 min)
+  - Loading and validating panel datasets
+  - Panel data transformations (demeaning, lags, first differences)
+  - Working with balanced and unbalanced panels
+
+- **Tutorial 02**: Model Specification with Formulas (50-60 min)
+  - R-style formula syntax with patsy
+  - Transformations (log, polynomial, interactions)
+  - Entity and time fixed effects
+  - Advanced formula patterns
+
+- **Tutorial 03**: Estimation and Results Interpretation (60-75 min)
+  - Estimating Pooled OLS models
+  - Understanding coefficients, standard errors, p-values
+  - Robust and clustered standard errors
+  - Exporting results (LaTeX, Markdown, JSON, HTML)
+  - Professional report generation
+
+- **Tutorial 04**: Spatial Fundamentals (60-70 min, optional)
+  - Creating spatial weight matrices
+  - Contiguity, distance-based, and KNN weights
+  - Row and spectral normalization
+  - Visualizing spatial connections
+  - Spatial autocorrelation
+
+**Features:**
+- ✨ **Structured Learning Paths**: Linear, spatial, and complete paths for different goals
+- ✨ **Real Datasets**: Grunfeld investment data and simulated spatial examples
+- ✨ **Hands-On Exercises**: Practice problems with solutions (coming soon)
+- ✨ **Competency Checkpoints**: Self-assessment after each notebook
+- ✨ **Professional Setup**: Environment checker and utility scripts
+- ✨ **Rich Documentation**: Comprehensive README files with learning objectives
+
+**Quick Start:**
+```bash
+# Verify environment
+cd examples/scripts
+python setup_environment.py
+
+# Start learning
+cd ../tutorials/01_fundamentals
+jupyter notebook 01_introduction_panel_data.ipynb
+```
+
+**Documentation:**
+- [Getting Started Guide](examples/GETTING_STARTED.md)
+- [Examples Overview](examples/README.md)
+- [Module 1 README](examples/tutorials/01_fundamentals/README.md)
+
+**Coming Soon:**
+- Module 2: Classical Estimators (Fixed Effects, Random Effects, Between)
+- Module 3: Dynamic GMM (Arellano-Bond, System GMM)
+- Module 4: Spatial Panel Models
+- Module 5: Advanced Topics
+- Exercise solutions for all tutorials
+
 #### Advanced GMM Estimators (`panelbox/gmm/`) - FASE 1 COMPLETE ✅
 
 **Implementation Date:** February 2026

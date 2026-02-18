@@ -269,6 +269,9 @@ class ContinuousUpdatedGMM:
         # Overidentification degree
         self.overid_df = self.n_instruments - self.k
 
+        # Number of moments (for performance warnings)
+        self.m = self.n_instruments
+
     def _criterion(self, params: np.ndarray) -> float:
         """
         GMM criterion function Q(β) = g(β)' W(β)⁻¹ g(β).

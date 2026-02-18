@@ -1,394 +1,184 @@
-# PanelBox Examples
+# PanelBox Examples and Tutorials
 
-This directory contains comprehensive examples demonstrating PanelBox's capabilities.
+Welcome to the PanelBox examples repository! This directory contains comprehensive tutorials and example notebooks to help you master panel data econometrics with PanelBox.
 
-## 🎯 Recommended Starting Point
+## Quick Start
 
-### **Complete Workflow (v0.7.0)**
-**File**: `complete_workflow_v07.py`
-
-**What it demonstrates**:
-- ✅ Complete analysis pipeline with PanelExperiment
-- ✅ All three result containers:
-  - ValidationResult - Model specification tests
-  - ComparisonResult - Model comparison and selection
-  - ResidualResult - Residual diagnostics (NEW in v0.7.0!)
-- ✅ HTML report generation with interactive charts
-- ✅ JSON export for programmatic analysis
-
-**Run it**:
+### Installation
 ```bash
-poetry run python examples/complete_workflow_v07.py
+pip install panelbox
 ```
 
-**Output files**:
-- `validation_report_v07.html` - Comprehensive validation diagnostics
-- `comparison_report_v07.html` - Model comparison with metrics
-- `residuals_report_v07.html` - Residual diagnostics with 4 tests
-- JSON files for programmatic analysis
-
----
-
-## 📚 Examples by Category
-
-### 1. Getting Started
-
-#### `basic_usage.py`
-Basic usage of static panel models (Pooled OLS, Fixed Effects, Random Effects).
-
-**Run it**:
+### Your First Analysis
+Start with the fundamentals module:
 ```bash
-poetry run python examples/basic_usage.py
+cd tutorials/01_fundamentals
+jupyter notebook 01_introduction_panel_data.ipynb
 ```
 
----
+## Tutorial Modules
 
-### 2. Jupyter Notebooks
+### 1. Fundamentals (Start Here!)
+**Time**: 3.5-4.5 hours | **Level**: Beginner to Intermediate
 
-Interactive tutorials in `jupyter/` directory:
+Learn the core concepts of panel data analysis:
+- [01 - Introduction to Panel Data Structures](tutorials/01_fundamentals/01_introduction_panel_data.ipynb)
+- [02 - Model Specification with Formulas](tutorials/01_fundamentals/02_formulas_specification.ipynb)
+- [03 - Estimation and Results Interpretation](tutorials/01_fundamentals/03_estimation_interpretation.ipynb)
+- [04 - Spatial Fundamentals](tutorials/01_fundamentals/04_spatial_fundamentals.ipynb) (Optional)
 
-#### `00_getting_started.ipynb`
-Introduction to PanelBox with step-by-step walkthrough.
+### 2. Classical Estimators (Coming Soon)
+Fixed Effects, Random Effects, Between, First Difference
 
-#### `01_static_models_complete.ipynb`
-Comprehensive guide to static panel models.
+### 3. Dynamic GMM (Coming Soon)
+Arellano-Bond, Difference GMM, System GMM
 
-#### `02_dynamic_gmm_complete.ipynb`
-Dynamic GMM estimation (Difference GMM and System GMM).
+### 4. Spatial Models (Coming Soon)
+Spatial Lag, Spatial Error, Spatial Panel
 
-#### `03_validation_complete.ipynb`
-Model validation and specification tests.
+### 5. Advanced Topics (Coming Soon)
+Quantile Regression, Stochastic Frontier Analysis, Selection Models
 
-#### `04_robust_inference.ipynb`
-Robust standard errors and bootstrap inference.
+### 15. Visualization and Reports
+**Time**: ~4 hours | **Level**: Beginner to Intermediate
 
-#### `05_report_generation.ipynb`
-HTML and LaTeX report generation.
+Master PanelBox's visualization and report generation capabilities:
+- [01 - Visualization Introduction](visualization/notebooks/01_visualization_introduction.ipynb)
+- [02 - Visual Diagnostics](visualization/notebooks/02_visual_diagnostics.ipynb)
+- [03 - Advanced Visualizations](visualization/notebooks/03_advanced_visualizations.ipynb)
+- [04 - Automated Reports](visualization/notebooks/04_automated_reports.ipynb)
 
-#### `06_visualization_reports.ipynb`
-Interactive visualizations and chart customization (NEW in v0.5.0!).
+## Learning Paths
 
-#### `07_real_world_case_study.ipynb`
-Real-world application with complete analysis.
+### Path A: General Panel Data Analysis
+```
+01_fundamentals → 02_classical_estimators → 03_gmm_dynamic
+```
 
-#### `08_html_reports_complete_guide.ipynb`
-Comprehensive guide to HTML report generation.
+### Path B: Spatial Econometrics
+```
+01_fundamentals (notebooks 1,2,3,4) → 04_spatial_models
+```
 
-#### `09_residual_diagnostics_v07.ipynb` ⭐ **NEW in v0.7.0!**
-**Complete guide to residual diagnostics**:
-- ResidualResult container usage
-- 4 diagnostic tests (Shapiro-Wilk, Jarque-Bera, Durbin-Watson, Ljung-Box)
-- Summary statistics and interpretation
-- HTML report generation
-- Outlier detection with standardized residuals
+## Datasets
 
-**Run notebooks**:
+All datasets are located in `/datasets/` with detailed documentation.
+
+**Included:**
+- Grunfeld Investment Data (1935-1954)
+- Arellano-Bond Employment Data (future)
+- Sample Spatial Data (future)
+
+See [datasets/README.md](datasets/README.md) for complete documentation.
+
+## Directory Structure
+
+```
+examples/
+├── tutorials/              # Tutorial notebooks organized by module
+│   ├── 01_fundamentals/
+│   ├── 02_classical_estimators/
+│   ├── 03_gmm_dynamic/
+│   ├── 04_spatial_models/
+│   └── 05_advanced/
+├── visualization/         # Series 15 — Visualization and Reports
+│   ├── notebooks/         # 01-04 tutorial notebooks
+│   ├── data/              # Datasets (mostly synthetic)
+│   ├── outputs/           # Generated charts and reports (git-ignored)
+│   ├── solutions/         # Fully executed solution notebooks
+│   ├── utils/             # Shared data generators
+│   └── tests/             # Sanity tests
+├── datasets/              # Datasets used in tutorials
+├── solutions/             # Solutions to exercises
+├── scripts/               # Utility scripts
+└── cheatsheets/          # Quick reference materials
+```
+
+## Prerequisites
+
+### Required Knowledge
+- Basic Python (variables, loops, functions)
+- Pandas fundamentals (DataFrames, indexing)
+- Introductory econometrics (linear regression, hypothesis testing)
+- Basic linear algebra (matrices, vectors)
+
+### Software Requirements
+- Python 3.8+
+- Jupyter Notebook or JupyterLab
+- PanelBox and dependencies (installed via pip)
+
+### Environment Setup
+To verify your environment is ready:
 ```bash
-jupyter lab examples/jupyter/
+cd scripts
+python setup_environment.py
+```
+
+## Additional Resources
+
+### 📖 Documentation
+- **Main Documentation**: https://panelbox.readthedocs.io
+- **API Reference**: https://panelbox.readthedocs.io/en/latest/api/
+- **GMM Tutorial**: [docs/gmm/tutorial.md](../docs/gmm/tutorial.md)
+- **GMM Interpretation Guide**: [docs/gmm/interpretation_guide.md](../docs/gmm/interpretation_guide.md)
+
+### 💡 Example Scripts
+Beyond tutorials, check out practical examples:
+- **GMM Examples**: [examples/gmm/](gmm/)
+  - Basic Difference GMM
+  - System GMM
+  - Unbalanced panel handling
+  - Production function estimation
+- **Validation Examples**: [examples/validation/](validation/)
+  - Bootstrap methods
+  - Cross-validation
+  - Sensitivity analysis
+- **Spatial Examples**: [examples/spatial/](spatial/)
+  - Basic spatial models
+  - Technology diffusion
+  - Regional analysis
+
+### 🔗 External Resources
+- **Arellano-Bond (1991)**: Original Difference GMM paper
+- **Blundell-Bond (1998)**: System GMM methodology
+- **Roodman (2009)**: "How to do xtabond2" - Essential GMM guide
+- **Baltagi (2021)**: Panel Data Econometrics textbook
+- **Wooldridge (2010)**: Cross Section and Panel Data
+
+## Need Help?
+
+- **Documentation**: https://panelbox.readthedocs.io
+- **Issues**: https://github.com/panelbox/panelbox/issues
+- **Discussions**: https://github.com/panelbox/panelbox/discussions
+
+## Contributing
+
+Found a typo or want to improve an example? Contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your improvements
+4. Test all notebooks (Restart Kernel and Run All)
+5. Submit a pull request
+
+## License
+
+PanelBox is licensed under the BSD 3-Clause License. See LICENSE file for details.
+
+## Citation
+
+If you use PanelBox in your research, please cite:
+
+```bibtex
+@software{panelbox,
+  title={PanelBox: A Python Library for Panel Data Econometrics},
+  author={Your Name},
+  year={2026},
+  url={https://github.com/panelbox/panelbox}
+}
 ```
 
 ---
 
-### 3. Workflow Examples
-
-#### `complete_workflow_v07.py` ⭐ **RECOMMENDED**
-**Complete workflow with v0.7.0 features**:
-- PanelExperiment for model management
-- ValidationResult, ComparisonResult, ResidualResult
-- HTML reports with interactive charts
-- JSON export
-
-#### `complete_workflow_example.py`
-Alternative complete workflow example.
-
----
-
-### 4. Report Generation
-
-#### `report_generation_example.py`
-Advanced HTML report generation with custom templates.
-
-#### `simple_report_example.py`
-Minimal example of report generation.
-
-#### `minimal_report_example.py`
-Bare-bones report generation.
-
----
-
-### 5. Validation & Testing
-
-#### `validation_example.py`
-Comprehensive model validation with diagnostic tests.
-
-#### Unit Root Tests:
-- `llc_unit_root_example.py` - LLC test for unit roots
-- `ips_unit_root_example.py` - IPS test for unit roots
-- `fisher_unit_root_example.py` - Fisher test for unit roots
-
----
-
-### 6. Utilities
-
-#### `serialization_example.py`
-Save and load model results.
-
-#### `gallery_generator.py`
-Generate visualization galleries.
-
----
-
-## 📖 Feature-Specific Examples
-
-### Experiment Pattern (v0.6.0+)
-
-The **Experiment Pattern** is the recommended way to use PanelBox:
-
-```python
-import panelbox as pb
-
-# Create experiment
-experiment = pb.PanelExperiment(
-    data=data,
-    formula="y ~ x1 + x2",
-    entity_col="firm",
-    time_col="year"
-)
-
-# Fit multiple models at once
-experiment.fit_all_models(names=['pooled', 'fe', 're'])
-
-# Validate model
-validation_result = experiment.validate_model('fe')
-
-# Compare models
-comparison_result = experiment.compare_models(['pooled', 'fe', 're'])
-
-# Analyze residuals (NEW in v0.7.0!)
-residual_result = experiment.analyze_residuals('fe')
-
-# Generate HTML reports
-validation_result.save_html('validation.html', test_type='validation')
-comparison_result.save_html('comparison.html', test_type='comparison')
-residual_result.save_html('residuals.html', test_type='residuals')
-```
-
-**Example**: `complete_workflow_v07.py`
-
----
-
-### Residual Diagnostics (v0.7.0)
-
-**NEW** in v0.7.0: Comprehensive residual diagnostics with 4 tests:
-
-```python
-# Analyze residuals
-residual_result = experiment.analyze_residuals('fe')
-
-# Print summary
-print(residual_result.summary())
-
-# Access individual tests
-stat, pvalue = residual_result.shapiro_test  # Normality
-stat, pvalue = residual_result.jarque_bera   # Normality
-dw = residual_result.durbin_watson            # Autocorrelation
-stat, pvalue = residual_result.ljung_box      # Serial correlation
-
-# Summary statistics
-mean = residual_result.mean
-std = residual_result.std
-skewness = residual_result.skewness
-kurtosis = residual_result.kurtosis
-
-# Generate HTML report
-residual_result.save_html('residuals.html', test_type='residuals')
-```
-
-**Example**: `complete_workflow_v07.py` (Step 6)
-
----
-
-### Visualization System (v0.5.0+)
-
-35+ interactive Plotly charts with 3 professional themes:
-
-```python
-from panelbox.visualization import create_validation_charts
-
-# Create validation charts
-charts = create_validation_charts(validation_result.to_dict())
-
-# Export to HTML
-export_chart(charts['test_overview'], 'test_overview.html')
-```
-
-**Example**: `jupyter/06_visualization_reports.ipynb`
-
----
-
-### Model Validation
-
-Comprehensive specification tests:
-
-```python
-validation_result = experiment.validate_model('fe')
-
-# Access test results
-for test_name, test_result in validation_result.tests.items():
-    print(f"{test_name}: p-value = {test_result.pvalue:.4f}")
-```
-
-**Example**: `validation_example.py`, `jupyter/03_validation_complete.ipynb`
-
----
-
-### Model Comparison
-
-Compare multiple models and select the best:
-
-```python
-comparison_result = experiment.compare_models(['pooled', 'fe', 're'])
-
-# Get best model
-best = comparison_result.best_model('aic', prefer_lower=True)
-print(f"Best model by AIC: {best}")
-
-# Compare all models
-print(comparison_result.summary())
-```
-
-**Example**: `complete_workflow_v07.py` (Step 5)
-
----
-
-## 🚀 Quick Start
-
-1. **Install PanelBox**:
-   ```bash
-   pip install panelbox
-   ```
-
-2. **Run the recommended example**:
-   ```bash
-   poetry run python examples/complete_workflow_v07.py
-   ```
-
-3. **Explore the generated HTML reports** in your browser
-
-4. **Try the Jupyter notebooks**:
-   ```bash
-   jupyter lab examples/jupyter/
-   ```
-
----
-
-## 📊 Datasets Used
-
-### Grunfeld Investment Data
-Classic panel dataset used in most examples. Included in PanelBox:
-
-```python
-data = pb.load_grunfeld()
-```
-
-**Variables**:
-- `invest`: Gross investment
-- `value`: Market value
-- `capital`: Capital stock
-- `firm`: Firm identifier (10 firms)
-- `year`: Year (1935-1954, 20 years)
-
----
-
-## 🎯 Learning Path
-
-### Beginner
-1. `basic_usage.py` - Understand static models
-2. `jupyter/00_getting_started.ipynb` - Interactive tutorial
-3. `complete_workflow_v07.py` - Complete analysis pipeline
-
-### Intermediate
-4. `jupyter/01_static_models_complete.ipynb` - Deep dive into static models
-5. `jupyter/03_validation_complete.ipynb` - Model validation
-6. `jupyter/04_robust_inference.ipynb` - Robust standard errors
-
-### Advanced
-7. `jupyter/02_dynamic_gmm_complete.ipynb` - GMM estimation
-8. `jupyter/06_visualization_reports.ipynb` - Custom visualizations
-9. `jupyter/07_real_world_case_study.ipynb` - Real applications
-
----
-
-## 📝 Example Output
-
-When you run `complete_workflow_v07.py`, you'll see:
-
-```
-================================================================================
-PanelBox v0.7.0 - Complete Workflow Example
-================================================================================
-
-Step 1: Loading Grunfeld investment dataset...
-Dataset shape: (200, 5)
-Panel structure: 10 firms, 20 years
-
-Step 2: Creating PanelExperiment...
-✓ Experiment created successfully
-
-Step 3: Fitting multiple panel models...
-✓ Models fitted:
-  - pooled: R² = 0.8090
-  - fe: R² = 0.7899
-  - re: R² = 0.8003
-
-Step 4: Validating Fixed Effects model...
-✓ ValidationResult created
-
-Step 5: Comparing all models...
-✓ ComparisonResult created
-Best model by AIC: fe
-Best model by Adjusted R²: pooled
-
-Step 6: Analyzing residuals (NEW in v0.7.0!)...
-✓ ResidualResult created
-
-Shapiro-Wilk Test: p-value = 0.0234
-Durbin-Watson Statistic: 1.2456
-...
-
-Workflow Complete!
-================================================================================
-```
-
----
-
-## 🆘 Getting Help
-
-- **Documentation**: https://github.com/PanelBox-Econometrics-Model/panelbox
-- **Issues**: https://github.com/PanelBox-Econometrics-Model/panelbox/issues
-- **Discussions**: https://github.com/PanelBox-Econometrics-Model/panelbox/discussions
-
----
-
-## 🎉 What's New
-
-### v0.7.0 (2026-02-08)
-- ✨ **ResidualResult** - Complete residual diagnostics with 4 tests
-- ✨ `analyze_residuals()` method in PanelExperiment
-- ✨ All 35 charts now correctly registered
-- ✨ Zero console warnings
-- ✨ HTML reports with embedded interactive charts
-
-### v0.6.0 (2026-02-08)
-- ✨ **PanelExperiment** - Factory-based model management
-- ✨ **ValidationResult** & **ComparisonResult** containers
-- ✨ One-liner workflows: `validate_model()`, `compare_models()`
-
-### v0.5.0 (2026-02-08)
-- ✨ 35+ interactive Plotly charts
-- ✨ 3 professional themes
-- ✨ HTML report generation system
-
----
-
-**Made with ❤️ for econometricians and researchers**
+**Last Updated**: 2026-02-16
+**PanelBox Version**: 0.8.0+

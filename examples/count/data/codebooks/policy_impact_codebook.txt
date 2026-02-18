@@ -1,0 +1,404 @@
+DATASET: policy_impact.csv
+PURPOSE: Marginal Effects for Count Models (Notebook 06)
+OBSERVATIONS: N = 1,200 individuals
+STRUCTURE: Cross-sectional with treatment/control
+SIMULATION BASIS: Policy evaluation with heterogeneous treatment effects
+
+VARIABLES:
+==========
+
+1. individual_id
+   Type: Integer (1-1200)
+   Description: Unique individual identifier
+
+2. outcome_count
+   Type: Count (0-28)
+   Description: Number of positive outcomes in year
+   Examples: job applications, health checkups, training sessions
+   Mean: 6.2
+   Variance: 15.8
+   Variance/Mean ratio: 2.5 (moderate overdispersion)
+   % Zeros: 18%
+   Distribution: Right-skewed
+   Role: Dependent variable
+
+3. treatment
+   Type: Binary (0/1)
+   Description: Received policy intervention
+   0 = Control group
+   1 = Treatment group
+   % treated: 50% (randomized)
+   Role: Primary treatment variable
+
+4. age
+   Type: Integer (18-65)
+   Description: Age in years
+   Mean: 38.5
+   SD: 12.8
+   Role: Continuous covariate
+
+5. education
+   Type: Categorical (1-4)
+   Description: Highest education level
+   1 = High school or less
+   2 = Some college
+   3 = Bachelor's degree
+   4 = Graduate degree
+   Distribution: 30%, 25%, 30%, 15%
+   Role: Categorical covariate
+
+6. income
+   Type: Float (15-120)
+   Description: Annual income (thousands of dollars)
+   Mean: 52.5
+   SD: 24.3
+   Units: $1,000s
+   Role: Continuous covariate
+
+7. baseline_count
+   Type: Count (0-15)
+   Description: Pre-treatment count of outcome
+   Mean: 3.5
+   SD: 2.8
+   Role: Control for initial conditions
+
+8. female
+   Type: Binary (0/1)
+   Description: Gender
+   0 = Male
+   1 = Female
+   % female: 51%
+   Role: Binary covariate
+
+9. urban
+   Type: Binary (0/1)
+   Description: Residence type
+   0 = Rural
+   1 = Urban
+   % urban: 68%
+   Role: Binary covariate
+
+10. motivation_score
+    Type: Float (1-10)
+    Description: Baseline motivation assessment score
+    Mean: 6.2
+    SD: 1.8
+    Role: Mediator variable
+
+11. access_index
+    Type: Float (0-100)
+    Description: Index of access to resources (0=low, 100=high)
+    Mean: 58.5
+    SD: 18.2
+    Role: Moderator variable
+
+12. time_available
+    Type: Float (5-40)
+    Description: Hours per week available for activity
+    Mean: 18.5
+    SD: 8.4
+    Units: Hours/week
+    Role: Capacity variable
+
+NOTES:
+======
+- Treatment randomized within strata (education × urban)
+- Rich heterogeneity across covariates
+- Ideal for demonstrating marginal effects calculation
+- Moderate overdispersion suitable for Negative Binomial
+- Interaction effects present (treatment × education, treatment × income)
+- No missing values
+
+PURPOSE OF DATASET:
+===================
+This dataset is specifically designed to teach marginal effects:
+1. Average Marginal Effects (AME)
+2. Marginal Effects at the Mean (MEM)
+3. Marginal Effects at Representative Values (MER)
+4. Conditional marginal effects
+5. Treatment effect heterogeneity
+
+MARGINAL EFFECTS TYPES:
+========================
+
+1. AVERAGE MARGINAL EFFECTS (AME):
+   - Calculate ME for each individual
+   - Average across sample
+   - Accounts for distribution of X
+   - Preferred for policy analysis
+   - Example: Average effect of treatment across all people
+
+2. MARGINAL EFFECTS AT THE MEAN (MEM):
+   - Set all X to sample means
+   - Calculate ME at this point
+   - Does not account for X distribution
+   - Can give misleading results with nonlinearity
+   - Example: Effect for "average person"
+
+3. MARGINAL EFFECTS AT REPRESENTATIVE VALUES (MER):
+   - Choose specific values of X (e.g., quartiles)
+   - Calculate ME at these points
+   - Shows heterogeneity in effects
+   - Example: Effect for low/medium/high education
+
+SUGGESTED ANALYSIS:
+==================
+
+Baseline model (Negative Binomial):
+  outcome_count ~ treatment + age + education + income + female +
+                  urban + baseline_count + motivation_score
+
+With interactions:
+  outcome_count ~ treatment + age + education + income +
+                  treatment × education + treatment × income +
+                  female + urban + baseline_count
+
+Marginal effects to compute:
+
+1. Treatment effect (AME):
+   ∂E[Y|X]/∂treatment
+   Interpretation: Average change in expected count from treatment
+
+2. Age effect (AME):
+   ∂E[Y|X]/∂age
+   Interpretation: Average change per additional year
+
+3. Income effect (AME):
+   ∂E[Y|X]/∂income
+   Interpretation: Average change per $1,000 income increase
+
+4. Education effects (AME for discrete change):
+   E[Y|education=2] - E[Y|education=1]
+   Interpretation: Effect of some college vs high school
+
+5. Heterogeneous treatment effects (MER):
+   - By education level
+   - By income quartile
+   - By urban/rural
+
+INTERPRETATION GUIDANCE:
+========================
+
+For Negative Binomial, marginal effects are NOT equal to β!
+
+E[Y|X] = exp(Xβ)
+∂E[Y|X]/∂X_j = β_j × exp(Xβ) = β_j × E[Y|X]
+
+This means:
+- ME depends on level of all X (nonlinear)
+- ME varies across individuals
+- AME ≠ MEM in general
+- Heterogeneity is substantive, not just sampling variation
+
+Example: Treatment effect β = 0.4
+- MEM (at means): ME = 0.4 × 6.2 = 2.48 additional outcomes
+- AME (averaged):  ME = 2.65 (accounts for X distribution)
+- For high baseline: ME = 0.4 × 12 = 4.8
+- For low baseline:  ME = 0.4 × 2 = 0.8
+
+DISCRETE CHANGES:
+=================
+
+For binary/categorical variables, use discrete change:
+
+Treatment effect:
+  E[Y|treatment=1, X] - E[Y|treatment=0, X]
+
+Education effect (some college vs high school):
+  E[Y|education=2, X] - E[Y|education=1, X]
+
+Average across sample for AME:
+  AME = (1/N) Σ_i [E[Y|treatment=1, X_i] - E[Y|treatment=0, X_i]]
+
+KEY EMPIRICAL PATTERNS:
+=======================
+
+Treatment effects (heterogeneous):
+- AME:                  +2.65 outcomes (p < 0.001)
+- For low education:    +1.80 outcomes
+- For high education:   +3.50 outcomes
+- For low income:       +2.20 outcomes
+- For high income:      +3.10 outcomes
+
+Interpretation: Treatment increases outcomes by average of 2.65,
+but effect is 95% larger for college grads vs high school only.
+
+Age effect:
+- AME: -0.08 per year (older → fewer outcomes)
+- At age 25: -0.12 per year
+- At age 55: -0.05 per year
+
+Income effect:
+- AME: +0.04 per $1,000 (p < 0.01)
+- Elasticity at mean: 0.42 (10% income → 4.2% more outcomes)
+
+Education effects (vs high school):
+- Some college:        +1.2 outcomes
+- Bachelor's:          +2.8 outcomes
+- Graduate degree:     +4.1 outcomes
+
+STANDARD ERRORS FOR MARGINAL EFFECTS:
+======================================
+
+Methods for inference:
+1. Delta method (analytical)
+2. Bootstrap (resampling)
+3. Simulation (draw from coefficient distribution)
+
+Delta method (most common):
+- Fast, asymptotically valid
+- Can fail with extreme nonlinearity
+- Standard in Stata, Python marginal effects packages
+
+Bootstrap:
+- More robust
+- Computationally intensive
+- Better for small samples or complex MEs
+
+Confidence intervals:
+- Report 95% CI for all marginal effects
+- Show whether ME is significantly different from zero
+- Compare CI across groups for heterogeneity
+
+ELASTICITIES:
+=============
+
+For continuous X, semi-elasticity or elasticity often more useful:
+
+Semi-elasticity:
+  ∂log(E[Y|X])/∂X_j = β_j
+
+Elasticity:
+  ∂log(E[Y|X])/∂log(X_j) = β_j × X_j
+
+Example (income at mean):
+  β_income = 0.04
+  X_income = 52.5
+  Elasticity = 0.04 × 52.5 = 2.1
+
+Interpretation: 1% increase in income → 2.1% increase in outcomes
+
+VISUALIZATION OF MARGINAL EFFECTS:
+===================================
+
+1. ME plot by covariate level:
+   - X-axis: Values of moderator (e.g., income)
+   - Y-axis: Marginal effect of treatment
+   - Shows how treatment effect varies
+
+2. Predicted outcome plot:
+   - X-axis: Treatment (0/1)
+   - Y-axis: E[Y|treatment, X]
+   - Separate lines for education levels
+   - Gap = treatment effect for that group
+
+3. Coefficient plot with AMEs:
+   - Point estimates + 95% CI
+   - Compare ME across variables (same units)
+
+4. Histogram of individual MEs:
+   - Distribution of treatment effect across sample
+   - Shows heterogeneity beyond mean
+
+COMPARISON WITH OLS:
+====================
+
+OLS assumes:
+  E[Y|X] = Xβ
+  ∂E[Y|X]/∂X_j = β_j (constant marginal effect)
+
+Count models:
+  E[Y|X] = exp(Xβ)
+  ∂E[Y|X]/∂X_j = β_j × exp(Xβ) (varies with X)
+
+Implications:
+- OLS ME = coefficient
+- Count model ME ≠ coefficient
+- Count model captures heterogeneity naturally
+- OLS with interactions needed for heterogeneity
+
+Example comparison (treatment effect):
+  OLS:    β = 2.65 (constant)
+  Poisson: AME = 2.65, but varies from 1.5 to 4.2 across individuals
+  Negative Binomial: Similar to Poisson but accounts for overdispersion
+
+POLICY APPLICATIONS:
+====================
+
+1. Program evaluation:
+   - AME of treatment = average program impact
+   - MER by subgroup = targeting analysis
+   - Cost-effectiveness: benefit per person vs program cost
+
+2. Dosage effects (if treatment is continuous):
+   - ME shows effect of increasing intervention intensity
+   - Elasticity shows percentage change
+   - Optimal dosage where ME/cost maximized
+
+3. Heterogeneous effects:
+   - Who benefits most from treatment?
+   - Should program be targeted?
+   - Equity concerns (equal absolute vs equal percentage gains)
+
+4. Mediator analysis:
+   - How much of treatment effect goes through motivation?
+   - Decompose total effect into direct and indirect
+
+PRACTICAL COMPUTATION:
+======================
+
+In Python with PanelBox:
+
+from panelbox.marginal_effects import count_me
+from panelbox.models.count import NegativeBinomial
+
+# Fit model
+model = NegativeBinomial(data, 'outcome_count', X_vars)
+result = model.fit()
+
+# Average Marginal Effects
+ame = count_me.compute_ame(result, 'treatment')
+
+# Marginal Effects at Representative Values
+mer_education = count_me.compute_mer(
+    result, 'treatment',
+    at={'education': [1, 2, 3, 4]}
+)
+
+# Discrete change for categorical
+discrete_change = count_me.discrete_change(
+    result, 'education',
+    from_val=1, to_val=3
+)
+
+COMMON MISTAKES:
+================
+
+1. Reporting coefficients as marginal effects
+   ❌ "Treatment increases outcomes by 0.4"
+   ✓ "Treatment AME is 2.65 additional outcomes"
+
+2. Using MEM when heterogeneity is important
+   ❌ Evaluate at means for diverse population
+   ✓ Use AME or MER to show heterogeneity
+
+3. Ignoring standard errors
+   ❌ Report point estimate only
+   ✓ Report 95% CI, test significance
+
+4. Linear interpretation of nonlinear model
+   ❌ "Doubling income doubles outcomes"
+   ✓ "10% income increase raises outcomes by 4.2%"
+
+5. Forgetting discrete change for binary variables
+   ❌ Derivative of treatment dummy
+   ✓ Discrete change from 0 to 1
+
+EXTENSIONS SUGGESTED:
+=====================
+- Conditional Average Treatment Effects (CATE)
+- Mediation analysis (direct vs indirect effects)
+- Quantile treatment effects
+- Instrumental variables with endogenous treatment
+- Difference-in-differences if panel available
+- Machine learning for heterogeneous effects (causal forests)

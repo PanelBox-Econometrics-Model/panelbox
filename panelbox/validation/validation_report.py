@@ -53,7 +53,7 @@ class ValidationReport:
         )
         return f"ValidationReport(model='{self.model_info.get('model_type')}', tests={n_tests})"
 
-    def summary(self, verbose: bool = True) -> str:
+    def summary(self, verbose: bool = True, as_dataframe: bool = False):
         """
         Generate formatted summary of all validation tests.
 
@@ -62,12 +62,41 @@ class ValidationReport:
         verbose : bool, default=True
             If True, include full details of each test
             If False, show only summary table
+        as_dataframe : bool, default=False
+            If True, return a pandas DataFrame with one row per test instead
+            of a formatted string.  The DataFrame has columns:
+            ``category``, ``test``, ``statistic``, ``pvalue``, ``reject``
 
         Returns
         -------
-        str
-            Formatted validation report
+        str or pandas.DataFrame
+            Formatted validation report (str) or summary table (DataFrame)
         """
+        if as_dataframe:
+            try:
+                import pandas as pd
+            except ImportError as exc:
+                raise ImportError("pandas is required for as_dataframe=True") from exc
+
+            rows = []
+            for category, label, tests in [
+                ("specification", "Specification", self.specification_tests),
+                ("serial", "Serial Correlation", self.serial_tests),
+                ("heteroskedasticity", "Heteroskedasticity", self.het_tests),
+                ("cross_sectional", "Cross-Sectional Dep.", self.cd_tests),
+            ]:
+                for name, result in tests.items():
+                    rows.append(
+                        {
+                            "category": label,
+                            "test": name,
+                            "statistic": result.statistic,
+                            "pvalue": result.pvalue,
+                            "reject": result.reject_null,
+                            "conclusion": result.conclusion,
+                        }
+                    )
+            return pd.DataFrame(rows)
         lines = []
         lines.append("=" * 78)
         lines.append("MODEL VALIDATION REPORT")
