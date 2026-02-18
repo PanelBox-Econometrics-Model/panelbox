@@ -86,7 +86,7 @@ class TestInstrumentBuilder:
         assert Z.n_obs == 20  # 5 groups * 4 periods
         assert Z.style == "iv"
         assert not Z.collapsed
-        assert Z.instrument_names == ["x_L0"]
+        assert Z.instrument_names == ["D.x_L0"]
 
     def test_iv_style_instruments_multiple_lags(self, simple_panel):
         """Test IV-style instruments with multiple lags."""
@@ -95,7 +95,7 @@ class TestInstrumentBuilder:
         Z = builder.create_iv_style_instruments(var="x", min_lag=1, max_lag=2, equation="diff")
 
         assert Z.n_instruments == 2
-        assert Z.instrument_names == ["x_L1", "x_L2"]
+        assert Z.instrument_names == ["D.x_L1", "D.x_L2"]
 
     def test_gmm_style_collapsed(self, simple_panel):
         """Test GMM-style collapsed instruments."""

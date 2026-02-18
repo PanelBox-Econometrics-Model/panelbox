@@ -446,12 +446,12 @@ class DifferenceGMM:
         ]
         # Identify GMM-style instrument columns (as opposed to IV-style)
         # GMM columns have names like "y_L2_collapsed", "y_t3_L2", etc.
-        # IV columns have names like "x_L0" (simple lag pattern without _t or _collapsed)
+        # IV columns have names like "D.x_L0" (diff eq) or "x_L0" (level eq)
         iv_vars = set(self.exog_vars)
         gmm_cols = [
             i
             for i, name in enumerate(instrument_names_filtered)
-            if not any(name.startswith(f"{v}_L") for v in iv_vars)
+            if not any(name.startswith(f"{v}_L") or name.startswith(f"D.{v}_L") for v in iv_vars)
             or "collapsed" in name
             or "_t" in name
         ]
