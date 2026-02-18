@@ -308,8 +308,8 @@ class TestSystemGMMEstimation:
         results = try_fit_system_gmm(model)
 
         assert isinstance(results, GMMResults)
-        # Should have y_lag1, y_lag2, x
-        assert len(results.params) == 3
+        # Should have y_lag1, y_lag2, x, _cons
+        assert len(results.params) == 4
 
     def test_fit_coefficient_sign(self, balanced_panel_data):
         """Test that estimated coefficients have expected signs."""
@@ -496,9 +496,10 @@ class TestSystemVsDifferenceGMM:
         )
         sys_results = try_fit_system_gmm(sys_model)
 
-        # System GMM stacks difference and level equations
-        # So should have more observations
-        assert sys_results.nobs > diff_results.nobs
+        # System GMM nobs counts only the diff equation rows (same convention
+        # as Stata xtabond2), so nobs is the same as Difference GMM.
+        # The level equation adds moment conditions but not "observations".
+        assert sys_results.nobs == diff_results.nobs
 
     def test_similar_coefficients(self, balanced_panel_data):
         """Test that coefficients are similar between System and Difference GMM."""
@@ -580,7 +581,7 @@ class TestEdgeCases:
         results = try_fit_system_gmm(model)
 
         assert isinstance(results, GMMResults)
-        assert len(results.params) == 1  # Only y_lag1
+        assert len(results.params) == 2  # y_lag1 + _cons
 
     def test_with_time_dummies(self, balanced_panel_data):
         """Test System GMM with time dummies."""

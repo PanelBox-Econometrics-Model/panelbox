@@ -310,7 +310,7 @@ class SystemGMM(DifferenceGMM):
         5. Compute specification tests including Diff-in-Hansen
         """
         # Step 1 & 2: Transform data (both differences and levels)
-        y_diff, X_diff, y_level, X_level, ids, times = self._transform_data_system()
+        y_diff, X_diff, y_level, X_level, ids, times, valid_diff = self._transform_data_system()
 
         # Step 3: Generate instruments (difference + level)
         # Note: _generate_instruments_system will recreate InstrumentBuilder internally
@@ -330,7 +330,19 @@ class SystemGMM(DifferenceGMM):
         X_stacked = np.vstack([X_diff, X_level])
         X_stacked = np.hstack([X_stacked, const_col])
 
-        Z_stacked_raw = self._stack_instruments(Z_diff, Z_level)
+        # Trim instrument matrices to match valid_diff rows before stacking.
+        # Z_diff/Z_level have n_full rows (from self.data), but y/X are already
+        # trimmed to n_valid rows by _transform_data_system via valid_diff.
+        Z_diff_trimmed = Z_diff.Z[valid_diff]
+        Z_level_trimmed = Z_level.Z[valid_diff]
+
+        # Filter invalid columns and stack as block-diagonal
+        Z_diff_clean = self._filter_invalid_columns(Z_diff_trimmed, min_coverage=0.10)
+        Z_level_clean = self._filter_invalid_columns(Z_level_trimmed, min_coverage=0.10)
+        n_instruments_total = Z_diff_clean.shape[1] + Z_level_clean.shape[1]
+        Z_stacked_raw = np.zeros((2 * n_diff, n_instruments_total))
+        Z_stacked_raw[:n_diff, : Z_diff_clean.shape[1]] = Z_diff_clean
+        Z_stacked_raw[n_diff:, Z_diff_clean.shape[1] :] = Z_level_clean
 
         # Build stacked ids for per-individual computation
         ids_stacked = np.concatenate([ids, ids])
@@ -457,8 +469,10 @@ class SystemGMM(DifferenceGMM):
 
         # Difference-in-Hansen test for level instruments
         try:
-            diff_hansen = self._compute_diff_hansen(residuals_clean, Z_diff, Z_level, W, n_params)
-        except (ValueError, np.linalg.LinAlgError):
+            diff_hansen = self._compute_diff_hansen(
+                residuals_clean, Z_diff, Z_level, W, n_params, valid_diff
+            )
+        except (ValueError, np.linalg.LinAlgError, IndexError):
             diff_hansen = None
 
         # Bug 3 fix: nobs counts only diff equation observations (not stacked total)
@@ -530,6 +544,8 @@ class SystemGMM(DifferenceGMM):
             ID variable
         times : np.ndarray
             Time variable
+        valid_diff : np.ndarray
+            Boolean mask of valid rows (used to trim instrument matrices)
         """
         # Get difference transformation from parent
         y_diff, X_diff, ids, times = super()._transform_data()
@@ -576,7 +592,7 @@ class SystemGMM(DifferenceGMM):
         ids = ids[valid_diff]
         times = times[valid_diff]
 
-        return y_diff, X_diff, y_level, X_level, ids, times
+        return y_diff, X_diff, y_level, X_level, ids, times, valid_diff
 
     def _generate_instruments_system(self) -> tuple:
         """
@@ -792,6 +808,7 @@ class SystemGMM(DifferenceGMM):
         Z_level: InstrumentSet,
         W_full: np.ndarray,
         n_params: int,
+        valid_diff: Optional[np.ndarray] = None,
     ):
         """
         Compute Difference-in-Hansen test for level instruments.
@@ -811,25 +828,43 @@ class SystemGMM(DifferenceGMM):
             Weight matrix from full system
         n_params : int
             Number of parameters
+        valid_diff : np.ndarray, optional
+            Boolean mask to trim instrument rows to match data
 
         Returns
         -------
         TestResult
             Difference-in-Hansen test result
         """
-        # Full system instruments
-        Z_full = self._stack_instruments(Z_diff, Z_level)
+        # Trim instruments to match residuals if valid_diff provided
+        if valid_diff is not None:
+            Z_diff_Z = Z_diff.Z[valid_diff]
+            Z_level_Z = Z_level.Z[valid_diff]
+        else:
+            Z_diff_Z = Z_diff.Z
+            Z_level_Z = Z_level.Z
+
+        n_obs = Z_diff_Z.shape[0]
+
+        # Filter invalid columns
+        Z_diff_clean = self._filter_invalid_columns(Z_diff_Z, min_coverage=0.10)
+        Z_level_clean = self._filter_invalid_columns(Z_level_Z, min_coverage=0.10)
+
+        # Full system instruments (block diagonal)
+        n_instr_total = Z_diff_clean.shape[1] + Z_level_clean.shape[1]
+        Z_full = np.zeros((2 * n_obs, n_instr_total))
+        Z_full[:n_obs, : Z_diff_clean.shape[1]] = Z_diff_clean
+        Z_full[n_obs:, Z_diff_clean.shape[1] :] = Z_level_clean
 
         # Subset system (difference only)
-        n_obs = Z_diff.n_obs
-        Z_subset = np.zeros((2 * n_obs, Z_diff.n_instruments))
-        Z_subset[:n_obs, :] = Z_diff.Z
-        # Level equations get same instruments as difference (for subset comparison)
-        Z_subset[n_obs:, :] = Z_diff.Z
+        Z_subset = np.zeros((2 * n_obs, Z_diff_clean.shape[1]))
+        Z_subset[:n_obs, :] = Z_diff_clean
+        Z_subset[n_obs:, :] = Z_diff_clean
 
         # Compute weight matrix for subset
         # (simplified - in practice should re-estimate)
-        W_subset = W_full[: Z_diff.n_instruments, : Z_diff.n_instruments]
+        n_diff_instr = Z_diff_clean.shape[1]
+        W_subset = W_full[:n_diff_instr, :n_diff_instr]
 
         # Compute Difference-in-Hansen test
         diff_hansen = self.tester.difference_in_hansen(
