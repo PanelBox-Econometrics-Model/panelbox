@@ -389,6 +389,16 @@ class SystemGMM(DifferenceGMM):
 
         # Clean instrument matrix before estimation
         valid_mask = self._get_valid_mask_system(y_stacked, X_stacked, Z_stacked_raw)
+
+        if not valid_mask.any():
+            n_params = X_stacked.shape[1]
+            raise ValueError(
+                f"System GMM is under-identified: {n_instruments_total} instruments "
+                f"< {n_params + 1} required (parameters + 1). "
+                f"Reduce the number of parameters (e.g., set time_dummies=False) "
+                f"or add more instruments."
+            )
+
         y_stacked_clean = y_stacked[valid_mask]
         X_stacked_clean = X_stacked[valid_mask]
         Z_stacked_clean = Z_stacked_raw[valid_mask]

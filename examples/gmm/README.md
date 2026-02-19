@@ -10,7 +10,8 @@ By completing this series you will be able to:
 
 - Understand and implement Difference GMM and System GMM estimators
 - Specify and validate instrument sets for dynamic panel models
-- Interpret diagnostic tests (Hansen J, AR(1)/AR(2), Sargan)
+- Interpret diagnostic tests (Hansen J, AR(1)/AR(2), Sargan, Diff-in-Hansen)
+- Detect overfitting with `GMMOverfitDiagnostic` (Nickell bounds, jackknife, sensitivity)
 - Apply CUE-GMM and bias-correction methods when appropriate
 - Conduct a full empirical workflow from specification to economic interpretation
 
@@ -41,7 +42,7 @@ pip install matplotlib seaborn jupyter
 | 01 | [Difference GMM Fundamentals](notebooks/01_difference_gmm_fundamentals.ipynb) | ~80 min | Nickell bias, basic Difference GMM, OLS/FE/GMM comparison |
 | 02 | [System GMM & Efficiency](notebooks/02_system_gmm_efficiency.ipynb) | ~90 min | Weak instruments, System GMM, efficiency gains, Difference-in-Hansen |
 | 03 | [Instrument Specification](notebooks/03_instrument_specification.ipynb) | ~110 min | GMM-style vs IV-style, proliferation, collapse, lag selection |
-| 04 | [Tests & Diagnostics](notebooks/04_gmm_tests_diagnostics.ipynb) | ~110 min | Hansen J, AR tests, Sargan vs Hansen, weak instrument diagnostics |
+| 04 | [Tests & Diagnostics](notebooks/04_gmm_tests_diagnostics.ipynb) | ~110 min | Hansen J, AR tests, Sargan vs Hansen, Diff-in-Hansen, `GMMOverfitDiagnostic` |
 | 05 | [CUE & Bias Correction](notebooks/05_cue_bias_correction.ipynb) | ~120 min | CUE-GMM, two-step vs CUE, bias correction, advanced techniques |
 | 06 | [Complete Applied Case](notebooks/06_complete_applied_case.ipynb) | ~150 min | End-to-end workflow, firm investment dynamics, full validation |
 

@@ -55,6 +55,7 @@ from panelbox.gmm.bias_corrected import BiasCorrectedGMM
 from panelbox.gmm.cue_gmm import ContinuousUpdatedGMM
 from panelbox.gmm.diagnostics import GMMDiagnostics
 from panelbox.gmm.difference_gmm import DifferenceGMM
+from panelbox.gmm.overfit_diagnostic import GMMOverfitDiagnostic
 from panelbox.gmm.results import GMMResults, TestResult
 from panelbox.gmm.system_gmm import SystemGMM
 
@@ -62,6 +63,7 @@ __all__ = [
     "BiasCorrectedGMM",
     "ContinuousUpdatedGMM",
     "GMMDiagnostics",
+    "GMMOverfitDiagnostic",
     "DifferenceGMM",
     "SystemGMM",
     "GMMResults",
