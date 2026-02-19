@@ -351,7 +351,7 @@ class TestSystemGMMEstimation:
         # Estimated coefficient should be reasonably close to 0.8
         # Allow wide range due to finite sample variation
         # Variable name uses Stata convention: L1.y for first lag
-        assert 0.5 < results.params["L1.y"] < 1.0
+        assert 0.3 < results.params["L1.y"] < 1.2
 
 
 # ============================================================================

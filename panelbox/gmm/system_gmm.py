@@ -313,14 +313,14 @@ class SystemGMM(DifferenceGMM):
         y_diff, X_diff, y_level, X_level, ids, times, valid_diff = self._transform_data_system()
 
         # Step 3: Generate instruments (difference + level)
-        # Note: _generate_instruments_system will recreate InstrumentBuilder internally
-        Z_diff, Z_level = self._generate_instruments_system()
+        # Returns separate GMM and IV instruments for proper stacking
+        Z_diff_gmm, Z_diff_iv, Z_level_gmm = self._generate_instruments_system()
 
         # Step 4: Stack equations
         n_diff = len(y_diff)
         y_stacked = np.vstack([y_diff, y_level])
 
-        # Bug 6 fix: Add constant column (0 for diff, 1 for level)
+        # Add constant column to X (0 for diff, 1 for level)
         const_col = np.vstack(
             [
                 np.zeros((n_diff, 1)),
@@ -330,19 +330,59 @@ class SystemGMM(DifferenceGMM):
         X_stacked = np.vstack([X_diff, X_level])
         X_stacked = np.hstack([X_stacked, const_col])
 
-        # Trim instrument matrices to match valid_diff rows before stacking.
-        # Z_diff/Z_level have n_full rows (from self.data), but y/X are already
-        # trimmed to n_valid rows by _transform_data_system via valid_diff.
-        Z_diff_trimmed = Z_diff.Z[valid_diff]
-        Z_level_trimmed = Z_level.Z[valid_diff]
+        # Trim instrument matrices by valid_diff mask.
+        # Z matrices have n_full rows (from self.data), but y/X are already
+        # trimmed to n_valid rows by _transform_data_system.
+        Z_dgmm = Z_diff_gmm.Z[valid_diff]
+        Z_div = Z_diff_iv.Z[valid_diff]
+        Z_lgmm = Z_level_gmm.Z[valid_diff]
 
-        # Filter invalid columns and stack as block-diagonal
-        Z_diff_clean = self._filter_invalid_columns(Z_diff_trimmed, min_coverage=0.10)
-        Z_level_clean = self._filter_invalid_columns(Z_level_trimmed, min_coverage=0.10)
-        n_instruments_total = Z_diff_clean.shape[1] + Z_level_clean.shape[1]
+        # Filter invalid columns and apply nan_to_num
+        Z_dgmm_clean = self._filter_invalid_columns(Z_dgmm, min_coverage=0.10)
+        Z_lgmm_clean = self._filter_invalid_columns(Z_lgmm, min_coverage=0.10)
+        Z_div_clean = self._filter_invalid_columns(Z_div, min_coverage=0.10)
+
+        # Build IV instruments as shared columns for level equation.
+        # For exogenous vars, level equation uses levels (not differences).
+        Z_liv_cols = []
+        for var in self.exog_vars:
+            Z_lev_iv = self.instrument_builder.create_iv_style_instruments(
+                var=var, min_lag=0, max_lag=self.iv_max_lag, equation="level"
+            )
+            Z_liv_cols.append(
+                self._filter_invalid_columns(Z_lev_iv.Z[valid_diff], min_coverage=0.10)
+            )
+
+        # Build stacked instrument matrix following pydynpd/xtabond2 convention:
+        # [Z_gmm_diff    0         | Δx1  Δx2 |   0  ]  <- diff rows
+        # [   0       Z_gmm_level  |  x1   x2 | _cons]  <- level rows
+        n_gmm_diff = Z_dgmm_clean.shape[1]
+        n_gmm_level = Z_lgmm_clean.shape[1]
+        n_iv = Z_div_clean.shape[1]
+        n_const = 1  # _cons column as instrument
+        n_instruments_total = n_gmm_diff + n_gmm_level + n_iv + n_const
+
         Z_stacked_raw = np.zeros((2 * n_diff, n_instruments_total))
-        Z_stacked_raw[:n_diff, : Z_diff_clean.shape[1]] = Z_diff_clean
-        Z_stacked_raw[n_diff:, Z_diff_clean.shape[1] :] = Z_level_clean
+
+        # GMM diff block (block-diagonal: only in diff rows)
+        col = 0
+        Z_stacked_raw[:n_diff, col : col + n_gmm_diff] = Z_dgmm_clean
+        col += n_gmm_diff
+
+        # GMM level block (block-diagonal: only in level rows)
+        Z_stacked_raw[n_diff:, col : col + n_gmm_level] = Z_lgmm_clean
+        col += n_gmm_level
+
+        # IV shared columns (Δx in diff rows, x in level rows)
+        Z_stacked_raw[:n_diff, col : col + n_iv] = Z_div_clean
+        if Z_liv_cols:
+            Z_liv_stacked = np.hstack(Z_liv_cols) if len(Z_liv_cols) > 1 else Z_liv_cols[0]
+            # Ensure same number of columns as diff IV
+            Z_stacked_raw[n_diff:, col : col + n_iv] = Z_liv_stacked[:, :n_iv]
+        col += n_iv
+
+        # _cons as instrument (0 in diff rows, 1 in level rows)
+        Z_stacked_raw[n_diff:, col] = 1.0
 
         # Build stacked ids for per-individual computation
         ids_stacked = np.concatenate([ids, ids])
@@ -470,7 +510,7 @@ class SystemGMM(DifferenceGMM):
         # Difference-in-Hansen test for level instruments
         try:
             diff_hansen = self._compute_diff_hansen(
-                residuals_clean, Z_diff, Z_level, W, n_params, valid_diff
+                residuals_clean, Z_diff_gmm, Z_level_gmm, W, n_params, valid_diff
             )
         except (ValueError, np.linalg.LinAlgError, IndexError):
             diff_hansen = None
@@ -598,63 +638,117 @@ class SystemGMM(DifferenceGMM):
         """
         Generate instruments for System GMM.
 
+        Following pydynpd/xtabond2 convention:
+        - GMM instruments: block-diagonal (separate for diff and level equations)
+        - IV instruments: shared columns (Δx in diff rows, x in level rows)
+        - _cons: instrument column (0 in diff rows, 1 in level rows)
+
         Returns
         -------
-        Z_diff : np.ndarray
-            Instruments for difference equations
-        Z_level : np.ndarray
-            Instruments for level equations
+        Z_diff_gmm : InstrumentSet
+            GMM-style instruments for difference equations
+        Z_diff_iv : InstrumentSet
+            IV-style instruments for difference equations
+        Z_level_gmm : InstrumentSet
+            GMM-style instruments for level equations
         """
-        # Difference equation instruments (same as Difference GMM)
-        Z_diff = self._generate_instruments()
+        # Generate diff instruments in separate groups (GMM vs IV)
+        diff_gmm_sets = []
+        diff_iv_sets = []
 
-        # FIRST: Create ALL differenced variables and add to data
+        # GMM-style instruments for lagged dependent (diff equation)
+        for lag in self.lags:
+            max_lag = self.gmm_max_lag if self.gmm_max_lag is not None else 99
+            Z_lag = self.instrument_builder.create_gmm_style_instruments(
+                var=self.dep_var,
+                min_lag=lag + 1,
+                max_lag=max_lag,
+                equation="diff",
+                collapse=self.collapse,
+            )
+            diff_gmm_sets.append(Z_lag)
+
+        # GMM-style instruments for predetermined variables (diff equation)
+        for var in self.predetermined_vars:
+            Z_pred = self.instrument_builder.create_gmm_style_instruments(
+                var=var, min_lag=2, max_lag=99, equation="diff", collapse=self.collapse
+            )
+            diff_gmm_sets.append(Z_pred)
+
+        # GMM-style instruments for endogenous variables (diff equation)
+        for var in self.endogenous_vars:
+            Z_endog = self.instrument_builder.create_gmm_style_instruments(
+                var=var, min_lag=3, max_lag=99, equation="diff", collapse=self.collapse
+            )
+            diff_gmm_sets.append(Z_endog)
+
+        # IV-style instruments for exogenous variables (diff equation)
+        for var in self.exog_vars:
+            Z_exog = self.instrument_builder.create_iv_style_instruments(
+                var=var, min_lag=0, max_lag=self.iv_max_lag, equation="diff"
+            )
+            diff_iv_sets.append(Z_exog)
+
+        # Combine diff GMM instruments
+        n_obs = len(self.data)
+        if diff_gmm_sets:
+            Z_diff_gmm = self.instrument_builder.combine_instruments(*diff_gmm_sets)
+        else:
+            Z_diff_gmm = InstrumentSet(
+                Z=np.empty((n_obs, 0)),
+                variable_names=[],
+                instrument_names=[],
+                equation="diff",
+                style="gmm",
+                collapsed=False,
+            )
+
+        if diff_iv_sets:
+            Z_diff_iv = self.instrument_builder.combine_instruments(*diff_iv_sets)
+        else:
+            Z_diff_iv = InstrumentSet(
+                Z=np.empty((n_obs, 0)),
+                variable_names=[],
+                instrument_names=[],
+                equation="diff",
+                style="iv",
+                collapsed=False,
+            )
+
+        # Create differenced variables for level equation instruments
         df = self.data.sort_values([self.id_var, self.time_var]).copy()
-
-        # Create differences of lagged dependent variable
         for lag in self.lags:
             lag_name = f"{self.dep_var}_L{lag}"
             if lag_name in df.columns:
                 df[f"{lag_name}_diff"] = df.groupby(self.id_var)[lag_name].diff()
                 self.data[f"{lag_name}_diff"] = df[f"{lag_name}_diff"]
-
-        # Create differences of predetermined/endogenous variables
         for var in self.predetermined_vars + self.endogenous_vars:
             if var in df.columns:
                 df[f"{var}_diff"] = df.groupby(self.id_var)[var].diff()
                 self.data[f"{var}_diff"] = df[f"{var}_diff"]
 
-        # SECOND: Recreate InstrumentBuilder with updated data
+        # Recreate InstrumentBuilder with updated data
         self.instrument_builder = InstrumentBuilder(self.data, self.id_var, self.time_var)
 
-        # THIRD: Generate level instruments using the differenced variables
-        instrument_sets_level = []
+        # Generate level GMM instruments only (no IV — those are shared columns)
+        level_gmm_sets = []
 
-        # For lagged dependent variable in levels, use differences as instruments
-        # Pass the LEVEL variable; create_gmm_style_instruments with equation="level"
-        # will compute first differences internally (Δy_{t-1} = y_{t-1} - y_{t-2})
+        # For lagged dependent: use Δy_{t-1} as instrument (Blundell-Bond)
+        # min_lag=0 of y_L1 with equation="level" computes:
+        #   y_L1(t) - y_L1(t-1) = y_{t-1} - y_{t-2} = Δy_{t-1}
+        # max_lag=0 ensures exactly 1 instrument per lagged dependent
         for lag in self.lags:
             lag_name = f"{self.dep_var}_L{lag}"
-
-            max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_lag = self.instrument_builder.create_gmm_style_instruments(
                 var=lag_name,
                 min_lag=0,
-                max_lag=max_lags_level,
+                max_lag=0,
                 equation="level",
                 collapse=self.collapse,
             )
-            instrument_sets_level.append(Z_level_lag)
+            level_gmm_sets.append(Z_level_lag)
 
-        # For exogenous variables in levels, use themselves
-        for var in self.exog_vars:
-            Z_level_exog = self.instrument_builder.create_iv_style_instruments(
-                var=var, min_lag=0, max_lag=0, equation="level"
-            )
-            instrument_sets_level.append(Z_level_exog)
-
-        # For predetermined/endogenous in levels, use lagged differences
-        # Pass the LEVEL variable; equation="level" handles differencing
+        # For predetermined/endogenous: use lagged differences
         for var in self.predetermined_vars + self.endogenous_vars:
             max_lags_level = self.level_instruments.get("max_lags", 1)
             Z_level_var = self.instrument_builder.create_gmm_style_instruments(
@@ -664,23 +758,22 @@ class SystemGMM(DifferenceGMM):
                 equation="level",
                 collapse=self.collapse,
             )
-            instrument_sets_level.append(Z_level_var)
+            level_gmm_sets.append(Z_level_var)
 
-        # Combine level instruments
-        if instrument_sets_level:
-            Z_level = self.instrument_builder.combine_instruments(*instrument_sets_level)
+        # Combine level GMM instruments
+        if level_gmm_sets:
+            Z_level_gmm = self.instrument_builder.combine_instruments(*level_gmm_sets)
         else:
-            # No level-specific instruments, use empty matrix
-            Z_level = InstrumentSet(
-                Z=np.empty((len(self.data), 0)),
+            Z_level_gmm = InstrumentSet(
+                Z=np.empty((n_obs, 0)),
                 variable_names=[],
                 instrument_names=[],
                 equation="level",
-                style="mixed",
+                style="gmm",
                 collapsed=False,
             )
 
-        return Z_diff, Z_level
+        return Z_diff_gmm, Z_diff_iv, Z_level_gmm
 
     def _stack_instruments(self, Z_diff: InstrumentSet, Z_level: InstrumentSet) -> np.ndarray:
         """
