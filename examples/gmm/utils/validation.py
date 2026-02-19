@@ -2,7 +2,7 @@
 Validation and diagnostic helper functions for GMM tutorials.
 
 Provides checklist automation, test interpretation utilities,
-and specification checking tools.
+specification checking tools, and overfit diagnostic helpers.
 """
 
 from typing import Any
@@ -81,6 +81,31 @@ def gmm_diagnostic_checklist(result: Any) -> pd.DataFrame:
                 "interpretation": (
                     "Tests joint validity of instruments. Rejection indicates "
                     "misspecification. Very high p-values (>0.99) may indicate "
+                    "instrument proliferation."
+                ),
+            }
+        )
+
+    # Hansen J-test (using GMMResults.hansen_j attribute)
+    if hasattr(result, "hansen_j") and hasattr(result.hansen_j, "pvalue"):
+        p = result.hansen_j.pvalue
+        if p > 0.25:
+            status = "PASS"
+        elif p > 0.05:
+            status = "WARNING"
+        elif p > 0.90:
+            status = "WARNING"
+        else:
+            status = "FAIL"
+        checks.append(
+            {
+                "test": "Hansen J overidentification",
+                "statistic": result.hansen_j.statistic,
+                "p_value": p,
+                "status": status,
+                "interpretation": (
+                    "Tests joint validity of instruments. Rejection indicates "
+                    "misspecification. Very high p-values (>0.90) may indicate "
                     "instrument proliferation."
                 ),
             }
@@ -236,6 +261,48 @@ def specification_checklist() -> pd.DataFrame:
         },
     ]
     return pd.DataFrame(items)
+
+
+def overfit_summary_table(models_results: dict[str, tuple]) -> pd.DataFrame:
+    """
+    Create a summary table of overfitting diagnostics across multiple models.
+
+    Parameters
+    ----------
+    models_results : dict
+        Mapping of model names to (model, results) tuples.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary with columns: model, n_groups, n_instruments, ratio,
+        feasibility, bounds, step_comparison.
+    """
+    try:
+        from panelbox.gmm import GMMOverfitDiagnostic
+    except ImportError:
+        return pd.DataFrame({"error": ["GMMOverfitDiagnostic not available"]})
+
+    rows = []
+    for name, (model, results) in models_results.items():
+        diag = GMMOverfitDiagnostic(model, results)
+        feas = diag.assess_feasibility()
+        bounds = diag.coefficient_bounds_test()
+        step = diag.step_comparison()
+
+        rows.append(
+            {
+                "model": name,
+                "n_groups": feas["n_groups"],
+                "n_instruments": feas["n_instruments"],
+                "ratio": feas["instrument_ratio"],
+                "feasibility": feas["signal"],
+                "bounds": bounds["signal"],
+                "step_comparison": step["signal"],
+            }
+        )
+
+    return pd.DataFrame(rows)
 
 
 def compare_estimators(
