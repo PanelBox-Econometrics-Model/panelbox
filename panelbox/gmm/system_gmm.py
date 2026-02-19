@@ -761,7 +761,14 @@ class SystemGMM(DifferenceGMM):
             warnings.warn("No valid instrument columns found. System GMM may fail.")
             return np.zeros((n_obs, 1))
 
-        return Z[:, valid_cols]
+        Z_filtered = Z[:, valid_cols]
+
+        # Replace NaN with 0 for computation.
+        # GMM-style instruments are naturally sparse (NaN for unavailable lags).
+        # This matches how Difference GMM handles sparse instruments.
+        Z_filtered = np.nan_to_num(Z_filtered, nan=0.0)
+
+        return Z_filtered
 
     def _get_valid_mask_system(
         self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: Optional[int] = None
