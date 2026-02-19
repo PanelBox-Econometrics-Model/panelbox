@@ -615,12 +615,31 @@ class GMMEstimator:
 
     @staticmethod
     def _safe_pinv(A: np.ndarray) -> np.ndarray:
-        """Invert matrix, falling back to pseudo-inverse if singular."""
+        """Invert matrix, using pseudo-inverse when ill-conditioned.
+
+        When N (groups) < L (instruments), the weight matrix is rank-deficient.
+        ``linalg.inv`` may succeed without raising an exception but return
+        numerically garbage results.  We detect this via condition number
+        and fall back to the Moore–Penrose pseudo-inverse (SVD-based).
+        """
         try:
             result = linalg.inv(A)
-            return np.asarray(result)
+            result = np.asarray(result)
+            # Check if the inverse is numerically reliable
+            cond = np.linalg.norm(A) * np.linalg.norm(result)
+            if cond > 1e12:
+                warnings.warn(
+                    f"Ill-conditioned matrix (cond≈{cond:.1e}), "
+                    "using pseudo-inverse for numerical stability",
+                    stacklevel=2,
+                )
+                return np.asarray(linalg.pinv(A))
+            return result
         except (linalg.LinAlgError, ValueError):
-            warnings.warn("Singular matrix encountered, using pseudo-inverse")
+            warnings.warn(
+                "Singular matrix encountered, using pseudo-inverse",
+                stacklevel=2,
+            )
             return np.asarray(linalg.pinv(A))
 
     def _check_convergence(self, beta_old: np.ndarray, beta_new: np.ndarray) -> bool:
