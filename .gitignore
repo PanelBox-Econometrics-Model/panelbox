@@ -254,6 +254,9 @@ examples/count/outputs/results/diagnostics/*.csv
 !examples/count/outputs/results/diagnostics/.gitkeep
 !examples/count/outputs/.gitkeep
 
+# LGD validation notebook (internal/server use only)
+examples/gmm/notebooks/lgd_validacao_panelbox_vs_pydynpd.ipynb
+
 # Jupyter notebook checkpoints
 examples/**/.ipynb_checkpoints/
 
