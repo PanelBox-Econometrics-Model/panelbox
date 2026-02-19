@@ -265,11 +265,19 @@ class DifferenceGMM:
         self.predetermined_vars = predetermined_vars or []
         self.time_dummies = time_dummies
         self.collapse = collapse
-        self.two_step = two_step
         self.robust = robust
-        self.gmm_type = gmm_type
         self.gmm_max_lag = gmm_max_lag
         self.iv_max_lag = iv_max_lag
+
+        # Reconcile two_step flag and gmm_type parameter.
+        # If the caller explicitly set two_step=False but left gmm_type at its
+        # default ("two_step"), honour the two_step flag.
+        if not two_step and gmm_type == "two_step":
+            self.gmm_type = "one_step"
+            self.two_step = False
+        else:
+            self.gmm_type = gmm_type
+            self.two_step = two_step
 
         # Convert datetime/period time variable to numeric index
         # This ensures lag arithmetic works correctly with any time format
@@ -321,7 +329,7 @@ class DifferenceGMM:
         if self.gmm_type not in valid_types:
             raise ValueError(f"gmm_type must be one of {valid_types}")
 
-        # If gmm_type is specified, override two_step flag
+        # Keep two_step and gmm_type in sync (already reconciled in __init__)
         if self.gmm_type == "one_step":
             self.two_step = False
         elif self.gmm_type == "two_step":
