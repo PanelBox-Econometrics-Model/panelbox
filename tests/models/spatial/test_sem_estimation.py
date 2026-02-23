@@ -396,7 +396,7 @@ class TestSEMGMMInstruments:
         Z = [X_within]
         WkX = X_within
         for _ in range(n_lags):
-            WkX = model.W_normalized @ WkX
+            WkX = model._spatial_lag(WkX)
             Z.append(WkX)
 
         Z = np.hstack(Z)
@@ -435,7 +435,7 @@ class TestSEMGMMInstruments:
 
         # Construct instruments
         Z = [X_within]
-        WX = model.W_normalized @ X_within
+        WX = model._spatial_lag(X_within)
         Z.append(WX)
         Z = np.hstack(Z)
 
