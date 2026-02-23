@@ -109,8 +109,9 @@ class TestEfficiencyEstimation:
 
         eff = result.efficiency(estimator="bc")
 
-        # Cost efficiency should be >= 1
-        assert np.all(eff["efficiency"] >= 1), "Some cost efficiencies < 1"
+        # Cost efficiency (BC estimator) should be in (0, 1]
+        assert np.all(eff["efficiency"] > 0), "Some cost efficiencies <= 0"
+        assert np.all(eff["efficiency"] <= 1), "Some cost efficiencies > 1"
 
     def test_jlms_vs_bc_correlation(self, production_with_known_efficiency):
         """JLMS and BC estimators should be highly correlated."""
