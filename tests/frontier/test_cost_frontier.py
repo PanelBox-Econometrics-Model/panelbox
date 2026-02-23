@@ -22,6 +22,8 @@ Autor: PanelBox Development Team
 Data: 2026-02-15
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import numpy as np
