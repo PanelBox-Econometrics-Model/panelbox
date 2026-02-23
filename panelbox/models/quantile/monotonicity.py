@@ -572,7 +572,7 @@ class MonotonicityComparison:
                 # Standard QR without constraints
                 results = {}
                 for tau in self.tau_list:
-                    model = PooledQuantile(data=None, endog=self.y, exog=self.X, tau=tau)
+                    model = PooledQuantile(endog=self.y, exog=self.X, quantiles=tau)
                     result = model.fit()
                     results[tau] = result
 
@@ -580,7 +580,7 @@ class MonotonicityComparison:
                 # First estimate unconstrained, then rearrange
                 unconstrained = {}
                 for tau in self.tau_list:
-                    model = PooledQuantile(data=None, endog=self.y, exog=self.X, tau=tau)
+                    model = PooledQuantile(endog=self.y, exog=self.X, quantiles=tau)
                     result = model.fit()
                     unconstrained[tau] = result
 
@@ -590,7 +590,7 @@ class MonotonicityComparison:
                 # Isotonic regression on coefficients
                 coef_matrix = []
                 for tau in self.tau_list:
-                    model = PooledQuantile(data=None, endog=self.y, exog=self.X, tau=tau)
+                    model = PooledQuantile(endog=self.y, exog=self.X, quantiles=tau)
                     result = model.fit()
                     coef_matrix.append(result.params)
 

@@ -105,6 +105,7 @@ class TestRandomEffectsTobit:
         assert result.sigma_eps > 0
         assert result.sigma_alpha > 0
 
+    @pytest.mark.slow
     def test_parameter_recovery(self, simulated_data):
         """Test parameter recovery on larger simulated dataset."""
         # Generate larger dataset for better parameter recovery

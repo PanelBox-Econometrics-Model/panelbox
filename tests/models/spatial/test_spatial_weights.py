@@ -135,7 +135,7 @@ class TestSpatialWeightsNormalization:
         W.standardize("row")
 
         # Each row should sum to 1
-        row_sums = W.matrix.sum(axis=1)
+        row_sums = np.asarray(W.matrix.sum(axis=1)).flatten()
         assert_allclose(row_sums, np.ones(4))
         assert W.normalized
 
