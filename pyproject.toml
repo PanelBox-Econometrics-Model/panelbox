@@ -260,7 +260,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "D104", "E402"]
 "tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
-"mutants/tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
 "panelbox/tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
 "panelbox/gmm/test_*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
 "vulture_whitelist.py" = ["B018", "F821", "D100", "F811", "ANN"]

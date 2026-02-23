@@ -227,6 +227,17 @@ validation/
 .claude/
 prompt.txt
 
+# Mutation testing output
+mutants/
+
+# Temporary test/output files
+figure.pdf
+binary_panel_test.csv
+censored_panel_test.csv
+count_panel_test.csv
+my_theme.yaml
+my_theme_template.yaml
+
 # =============================================================================
 # Examples Directory - Tutorial Outputs
 # =============================================================================
