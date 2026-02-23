@@ -71,8 +71,8 @@ class TestSpatialWeightsCreation:
             [[0, 0], [1, 0], [0, 1], [1, 1]]  # Bottom-left  # Bottom-right  # Top-left  # Top-right
         )
 
-        # Threshold = 1.5 (connects direct neighbors only)
-        W = SpatialWeights.from_distance(coords, threshold=1.5, binary=True)
+        # Threshold = 1.1 (connects direct neighbors only, excludes diagonals at √2≈1.414)
+        W = SpatialWeights.from_distance(coords, threshold=1.1, binary=True)
 
         # Expected: each point connects to its direct neighbors
         expected = np.array(
