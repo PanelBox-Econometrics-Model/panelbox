@@ -1,19 +1,8 @@
 name: Quantile Regression Validation
 
 on:
-  push:
-    branches: [ main, develop ]
-    paths:
-      - 'panelbox/models/quantile/**'
-      - 'tests/validation/quantile/**'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'panelbox/models/quantile/**'
-      - 'tests/validation/quantile/**'
-  schedule:
-    # Run weekly on Sundays at midnight
-    - cron: '0 0 * * 0'
+  # Disabled: validation scripts (tests/validation/quantile/) not yet created
+  workflow_dispatch:
 
 jobs:
   validate-against-r:
