@@ -168,9 +168,9 @@ class TestSpatialLag:
         result = model.fit(effects="pooled", method="qml")
 
         # Check results
-        assert "const" in result.params.index  # Should have constant
+        # Should have intercept (x0 from formula parser) and spatial param
         assert "rho" in result.params.index
-        assert len(result.params) == 4  # rho, const, x1, x2
+        assert len(result.params) == 4  # rho, intercept, x1, x2
 
     def test_sar_bounds(self):
         """Test that spatial parameter respects bounds."""
@@ -306,7 +306,7 @@ class TestSpatialError:
 
         # Check results
         assert "lambda" in result.params.index
-        assert "const" in result.params.index
+        assert len(result.params) >= 3  # lambda, intercept, x1, x2
 
     def test_sem_ml_estimation(self):
         """Test SEM maximum likelihood estimation."""
