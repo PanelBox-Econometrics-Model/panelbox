@@ -87,8 +87,8 @@ class SpatialPanelModel(PanelModel):
             y, X = self.formula_parser.build_design_matrices(
                 self.data.data, return_type="dataframe"
             )
-            self.endog = y
-            self.exog = X
+            self._y_orig = y.values if hasattr(y, "values") else y
+            self._X_orig = X.values if hasattr(X, "values") else X
 
         # Validate and store W
         self.W = self._validate_weight_matrix(W)
