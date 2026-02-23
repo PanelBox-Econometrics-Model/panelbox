@@ -90,9 +90,9 @@ class TestPesaranCD:
 
         # CD statistic should typically be within reasonable bounds for N(0,1)
         # (allowing for some variation, typically within [-4, 4] with high probability)
-        assert (
-            -10 < result.statistic < 10
-        ), f"CD statistic {result.statistic} seems unreasonable for N(0,1)"
+        assert -10 < result.statistic < 10, (
+            f"CD statistic {result.statistic} seems unreasonable for N(0,1)"
+        )
 
     def test_different_alpha_levels(self, clean_panel_data):
         """Test behavior with different significance levels."""

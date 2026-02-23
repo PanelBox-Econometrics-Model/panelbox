@@ -15,8 +15,6 @@ Functions:
 - generate_dynamic_panel: Dynamic panel for GMM (100 countries, 15 years)
 """
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 
@@ -166,7 +164,7 @@ def _check_var_stability(A_matrices: list, label: str = "") -> None:
     max_mod = np.max(np.abs(eigvals))
     if max_mod >= 1.0:
         raise ValueError(
-            f"VAR process '{label}' is not stable: " f"max eigenvalue modulus = {max_mod:.4f} >= 1"
+            f"VAR process '{label}' is not stable: max eigenvalue modulus = {max_mod:.4f} >= 1"
         )
 
 
@@ -287,7 +285,7 @@ def generate_macro_panel(
     sigma_mu = np.array([0.8, 1.0, 1.5, 2.0, 10.0])
 
     records = []
-    for c_idx, cname in enumerate(countries):
+    for _c_idx, cname in enumerate(countries):
         mu_i = mu_global + sigma_mu * np.random.randn(5)
         Y = _simulate_var([A_1, A_2], Sigma, mu_i, n_quarters, burn_in=50)
 

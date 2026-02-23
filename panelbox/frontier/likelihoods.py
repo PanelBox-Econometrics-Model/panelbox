@@ -9,7 +9,8 @@ All functions use the parameterization:
 
 where ln(·) parameterization ensures positivity constraints during optimization.
 
-References:
+References
+----------
     Aigner, D., Lovell, C. K., & Schmidt, P. (1977).
         Normal-half normal model.
 
@@ -23,11 +24,15 @@ References:
         Gamma distribution model.
 """
 
-from typing import Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import stats
-from scipy.special import gammaln, log_ndtr, ndtr
+from scipy.special import log_ndtr, ndtr
+
+logger = logging.getLogger(__name__)
 
 # Constants for numerical stability
 SQRT_2PI = np.sqrt(2 * np.pi)
@@ -46,19 +51,22 @@ def loglik_half_normal(theta: np.ndarray, y: np.ndarray, X: np.ndarray, sign: in
     where σ² = σ²_v + σ²_u, λ = σ_u/σ_v, φ is standard normal pdf,
     and Φ is standard normal cdf.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u)]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Aigner, D., Lovell, C. K., & Schmidt, P. (1977).
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -113,19 +121,22 @@ def loglik_exponential(theta: np.ndarray, y: np.ndarray, X: np.ndarray, sign: in
 
     where μ_i = -sign*ε - σ²_v/σ_u
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u)]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Meeusen, W., & van Den Broeck, J. (1977).
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -169,7 +180,8 @@ def loglik_truncated_normal(
     The truncated normal has location parameter μ ≥ 0, which can be
     heterogeneous: μ_i = Z_i'δ (Battese-Coelli 1995).
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), δ] if Z provided,
                else [β, ln(σ²_v), ln(σ²_u), μ]
         y: Dependent variable (n,)
@@ -177,10 +189,12 @@ def loglik_truncated_normal(
         Z: Variables for μ_i = Z_i'δ (n, m) - optional
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Stevenson, R. E. (1980).
         Battese, G. E., & Coelli, T. J. (1995).
     """
@@ -194,7 +208,7 @@ def loglik_truncated_normal(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Compute σ² and σ_*²
@@ -258,7 +272,8 @@ def loglik_gamma(
 
     This is a flexible model that generalizes the exponential (P=1).
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(P), ln(θ)]
             β: frontier parameters (k,)
             ln(σ²_v): log variance of noise
@@ -270,10 +285,12 @@ def loglik_gamma(
         n_simulations: Number of draws for SML (default 100)
         use_halton: Use Halton sequences for stability (default True)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Greene, W. H. (1990).
             A gamma-distributed stochastic frontier model.
             Journal of Econometrics, 46(1-2), 141-163.
@@ -283,12 +300,13 @@ def loglik_gamma(
             stochastic frontier function.
             Journal of Productivity Analysis, 19(2-3), 179-190.
 
-    Notes:
+    Notes
+    -----
         - Uses Simulated Maximum Likelihood (SML)
         - Halton sequences reduce simulation variance
         - For P=1, reduces to exponential (can use closed form)
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -360,16 +378,18 @@ def gradient_half_normal(
 
     Returns gradient with respect to θ = [β, ln(σ²_v), ln(σ²_u)].
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector
         y: Dependent variable
         X: Exogenous variables
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Gradient vector (same shape as theta)
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -421,16 +441,18 @@ def gradient_exponential(
 ) -> np.ndarray:
     """Analytical gradient for exponential log-likelihood.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector
         y: Dependent variable
         X: Exogenous variables
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Gradient vector
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -498,7 +520,8 @@ def loglik_wang_2002(
     distribution to depend on covariates, providing a flexible framework
     for modeling inefficiency determinants in a single step.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), δ, γ]
             β: frontier parameters (k,)
             ln(σ²_v): log variance of noise
@@ -510,16 +533,19 @@ def loglik_wang_2002(
         W: Scale determinants (n, p) - includes constant
         sign: +1 for production, -1 for cost
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Wang, H. J. (2002).
             Heteroscedasticity and non-monotonic efficiency effects
             of a stochastic frontier model.
             Journal of Productivity Analysis, 18, 241-253.
 
-    Notes:
+    Notes
+    -----
         - Single-step estimation avoids inconsistency of two-stage approaches
         - Z and W can overlap (same variables in both)
         - Typically include constant in both Z and W
@@ -544,7 +570,7 @@ def loglik_wang_2002(
 
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
 
     # Residuals
     epsilon = y - X @ beta

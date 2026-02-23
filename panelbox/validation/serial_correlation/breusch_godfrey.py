@@ -13,6 +13,7 @@ Econometrica, 46(6), 1293-1301.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,6 +24,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class BreuschGodfreyTest(ValidationTest):
@@ -59,7 +62,7 @@ class BreuschGodfreyTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Breusch-Godfrey test.
 

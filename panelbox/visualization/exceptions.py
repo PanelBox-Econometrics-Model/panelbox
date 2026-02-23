@@ -5,13 +5,17 @@ This module provides specialized exceptions with helpful error messages
 and suggestions for common visualization errors.
 """
 
-from typing import List, Optional
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class VisualizationError(Exception):
     """Base exception for all visualization-related errors."""
 
-    def __init__(self, message: str, suggestion: Optional[str] = None):
+    def __init__(self, message: str, suggestion: str | None = None):
         """
         Initialize visualization error.
 
@@ -37,7 +41,7 @@ class VisualizationError(Exception):
 class ChartNotFoundError(VisualizationError):
     """Raised when a chart type is not found in the registry."""
 
-    def __init__(self, chart_type: str, available_charts: Optional[List[str]] = None):
+    def __init__(self, chart_type: str, available_charts: list[str] | None = None):
         """
         Initialize chart not found error.
 
@@ -65,7 +69,7 @@ class ChartNotFoundError(VisualizationError):
 class MissingDataError(VisualizationError):
     """Raised when required data is missing for chart creation."""
 
-    def __init__(self, missing_keys: List[str], chart_type: str):
+    def __init__(self, missing_keys: list[str], chart_type: str):
         """
         Initialize missing data error.
 
@@ -91,7 +95,7 @@ class MissingDataError(VisualizationError):
 class InvalidThemeError(VisualizationError):
     """Raised when an invalid theme is specified."""
 
-    def __init__(self, theme_name: str, available_themes: Optional[List[str]] = None):
+    def __init__(self, theme_name: str, available_themes: list[str] | None = None):
         """
         Initialize invalid theme error.
 
@@ -235,7 +239,7 @@ class PerformanceWarning(UserWarning):
     pass
 
 
-def raise_if_missing_data(data: dict, required_keys: List[str], chart_type: str):
+def raise_if_missing_data(data: dict, required_keys: list[str], chart_type: str):
     """
     Raise MissingDataError if required keys are missing from data.
 
@@ -281,7 +285,7 @@ def validate_data_structure(data, expected_type: type, param_name: str = "data")
 
 
 # Helper function for better error messages
-def did_you_mean(invalid_name: str, valid_names: List[str], threshold: int = 3) -> Optional[str]:
+def did_you_mean(invalid_name: str, valid_names: list[str], threshold: int = 3) -> str | None:
     """
     Suggest a valid name similar to the invalid one.
 

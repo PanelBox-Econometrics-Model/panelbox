@@ -6,8 +6,11 @@ with panel data, including utilities for spatial weight matrices,
 log-determinant computation, and spatial transformations.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -16,6 +19,8 @@ from scipy.sparse.linalg import eigs, splu
 
 from panelbox.core.base_model import PanelModel
 from panelbox.core.spatial_weights import SpatialWeights
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialPanelModel(PanelModel):
@@ -59,8 +64,8 @@ class SpatialPanelModel(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        W: Union[np.ndarray, SpatialWeights],
-        weights: Optional[np.ndarray] = None,
+        W: np.ndarray | SpatialWeights,
+        weights: np.ndarray | None = None,
     ):
         """Initialize spatial panel model."""
         super().__init__(formula, data, entity_col, time_col, weights)
@@ -97,7 +102,7 @@ class SpatialPanelModel(PanelModel):
         self._W_eigenvalues = None
         self._sparse_W = None
 
-    def _validate_weight_matrix(self, W: Union[np.ndarray, SpatialWeights]) -> np.ndarray:
+    def _validate_weight_matrix(self, W: np.ndarray | SpatialWeights) -> np.ndarray:
         """
         Validate spatial weight matrix.
 
@@ -117,10 +122,7 @@ class SpatialPanelModel(PanelModel):
             If W dimensions don't match number of entities
             If W contains negative values
         """
-        if isinstance(W, SpatialWeights):
-            W_matrix = W.to_dense()
-        else:
-            W_matrix = np.asarray(W)
+        W_matrix = W.to_dense() if isinstance(W, SpatialWeights) else np.asarray(W)
 
         # Check dimensions
         N = len(self.entities)
@@ -129,7 +131,7 @@ class SpatialPanelModel(PanelModel):
 
         # Check diagonal
         if not np.allclose(np.diag(W_matrix), 0):
-            warnings.warn("W has non-zero diagonal; setting to zero")
+            warnings.warn("W has non-zero diagonal; setting to zero", stacklevel=2)
             np.fill_diagonal(W_matrix, 0)
 
         # Check non-negative
@@ -164,7 +166,7 @@ class SpatialPanelModel(PanelModel):
             return W.copy()
 
     def _within_transformation(
-        self, X: Optional[Union[np.ndarray, pd.DataFrame]] = None
+        self, X: np.ndarray | pd.DataFrame | None = None
     ) -> np.ndarray:
         """
         Apply within transformation (entity demeaning).
@@ -202,7 +204,7 @@ class SpatialPanelModel(PanelModel):
             return X_demeaned.values.flatten()
         return X_demeaned.values
 
-    def _spatial_lag(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+    def _spatial_lag(self, X: np.ndarray | pd.DataFrame) -> np.ndarray:
         """
         Compute spatial lag WX.
 
@@ -254,7 +256,7 @@ class SpatialPanelModel(PanelModel):
     def _log_det_jacobian(
         self,
         rho: float,
-        W: Optional[np.ndarray] = None,
+        W: np.ndarray | None = None,
         method: Literal["auto", "eigenvalue", "sparse_lu", "chebyshev"] = "auto",
     ) -> float:
         """
@@ -347,7 +349,7 @@ class SpatialPanelModel(PanelModel):
         else:
             raise ValueError(f"Unknown method: {method}")
 
-    def _spatial_coefficient_bounds(self, W: Optional[np.ndarray] = None) -> Tuple[float, float]:
+    def _spatial_coefficient_bounds(self, W: np.ndarray | None = None) -> tuple[float, float]:
         """
         Compute bounds for spatial parameter.
 
@@ -384,15 +386,9 @@ class SpatialPanelModel(PanelModel):
         lambda_max = np.max(eigenvalues)
 
         # Compute bounds
-        if lambda_min < 0:
-            rho_min = 1 / lambda_min
-        else:
-            rho_min = -0.99
+        rho_min = 1 / lambda_min if lambda_min < 0 else -0.99
 
-        if lambda_max > 0:
-            rho_max = 1 / lambda_max
-        else:
-            rho_max = 0.99
+        rho_max = 1 / lambda_max if lambda_max > 0 else 0.99
 
         # Clip for stability
         rho_min = max(rho_min, -0.99)

@@ -5,12 +5,17 @@ This module provides fundamental chart types that serve as examples
 and building blocks for more complex visualizations.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import plotly.graph_objects as go
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("bar_chart")
@@ -38,48 +43,48 @@ class BarChart(PlotlyChartBase):
     Simple bar chart:
 
     >>> chart = BarChart()
-    >>> chart.create(data={
-    ...     'x': ['Category A', 'Category B', 'Category C'],
-    ...     'y': [10, 25, 15]
-    ... })
+    >>> chart.create(data={"x": ["Category A", "Category B", "Category C"], "y": [10, 25, 15]})
     >>> html = chart.to_html()
 
     Grouped bar chart:
 
     >>> chart = BarChart()
-    >>> chart.create(data={
-    ...     'x': ['Q1', 'Q2', 'Q3', 'Q4'],
-    ...     'y': {
-    ...         '2023': [100, 120, 115, 140],
-    ...         '2024': [110, 130, 125, 150]
-    ...     },
-    ...     'barmode': 'group'
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "x": ["Q1", "Q2", "Q3", "Q4"],
+    ...         "y": {"2023": [100, 120, 115, 140], "2024": [110, 130, 125, 150]},
+    ...         "barmode": "group",
+    ...     }
+    ... )
 
     Stacked bar chart:
 
-    >>> chart = BarChart(config={'title': 'Sales by Region'})
-    >>> chart.create(data={
-    ...     'x': ['North', 'South', 'East', 'West'],
-    ...     'y': {
-    ...         'Product A': [30, 40, 35, 45],
-    ...         'Product B': [20, 25, 30, 20],
-    ...         'Product C': [15, 20, 18, 25]
-    ...     },
-    ...     'barmode': 'stack'
-    ... })
+    >>> chart = BarChart(config={"title": "Sales by Region"})
+    >>> chart.create(
+    ...     data={
+    ...         "x": ["North", "South", "East", "West"],
+    ...         "y": {
+    ...             "Product A": [30, 40, 35, 45],
+    ...             "Product B": [20, 25, 30, 20],
+    ...             "Product C": [15, 20, 18, 25],
+    ...         },
+    ...         "barmode": "stack",
+    ...     }
+    ... )
 
     Horizontal bar chart:
 
     >>> chart = BarChart()
-    >>> chart.create(data={
-    ...     'x': [15, 25, 20, 30],
-    ...     'y': ['Item 1', 'Item 2', 'Item 3', 'Item 4'],
-    ...     'orientation': 'h'
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "x": [15, 25, 20, 30],
+    ...         "y": ["Item 1", "Item 2", "Item 3", "Item 4"],
+    ...         "orientation": "h",
+    ...     }
+    ... )
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate bar chart data."""
         super()._validate_data(data)
 
@@ -102,7 +107,7 @@ class BarChart(PlotlyChartBase):
                 f"Length of 'y' ({len(data['y'])}) must match length of 'x' ({len(data['x'])})"
             )
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data to standardize format."""
         processed = data.copy()
 
@@ -118,7 +123,7 @@ class BarChart(PlotlyChartBase):
 
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create Plotly bar chart figure."""
         fig = go.Figure()
 
@@ -131,7 +136,7 @@ class BarChart(PlotlyChartBase):
         show_values = data["show_values"]
 
         # Create traces (one per series)
-        for i, (series_name, y_values) in enumerate(y_data.items()):
+        for _i, (series_name, y_values) in enumerate(y_data.items()):
             # Determine bar orientation
             if orientation == "h":
                 trace_data = {"y": x_values, "x": y_values, "orientation": "h"}
@@ -187,20 +192,17 @@ class LineChart(PlotlyChartBase):
     Examples
     --------
     >>> chart = LineChart()
-    >>> chart.create(data={
-    ...     'x': [1, 2, 3, 4, 5],
-    ...     'y': [10, 12, 15, 14, 18]
-    ... })
+    >>> chart.create(data={"x": [1, 2, 3, 4, 5], "y": [10, 12, 15, 14, 18]})
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate line chart data."""
         super()._validate_data(data)
 
         if "x" not in data or "y" not in data:
             raise ValueError("Line chart requires both 'x' and 'y'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
 
@@ -213,7 +215,7 @@ class LineChart(PlotlyChartBase):
 
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create Plotly line chart."""
         fig = go.Figure()
 

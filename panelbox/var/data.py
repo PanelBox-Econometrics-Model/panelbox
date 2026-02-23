@@ -5,10 +5,15 @@ This module provides the PanelVARData class for representing Panel VAR systems,
 with rigorous handling of lags, temporal gaps, and panel structure.
 """
 
-from typing import List, Literal, Optional, Tuple
+from __future__ import annotations
+
+import logging
+from typing import Literal
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class PanelVARData:
@@ -76,11 +81,11 @@ class PanelVARData:
     >>> # Create Panel VAR data
     >>> data = PanelVARData(
     ...     df,
-    ...     endog_vars=['gdp', 'inflation', 'rate'],
-    ...     entity_col='country',
-    ...     time_col='year',
+    ...     endog_vars=["gdp", "inflation", "rate"],
+    ...     entity_col="country",
+    ...     time_col="year",
     ...     lags=2,
-    ...     trend='constant'
+    ...     trend="constant",
     ... )
     >>>
     >>> print(f"Variables: {data.K}, Lags: {data.p}, Entities: {data.N}")
@@ -122,10 +127,10 @@ class PanelVARData:
     def __init__(
         self,
         data: pd.DataFrame,
-        endog_vars: List[str],
+        endog_vars: list[str],
         entity_col: str,
         time_col: str,
-        exog_vars: Optional[List[str]] = None,
+        exog_vars: list[str] | None = None,
         lags: int = 1,
         trend: Literal["none", "constant", "trend", "both"] = "constant",
         dropna: Literal["any", "equation"] = "any",
@@ -292,7 +297,7 @@ class PanelVARData:
                         continue
 
                     # Get current and lagged values (skip NaN)
-                    current_vals = entity_data[var].values[lag:]
+                    entity_data[var].values[lag:]
                     lagged_vals = entity_data[lag_col].values[lag:]
 
                     # The lagged value at position t should equal the current value at position t-lag
@@ -302,18 +307,17 @@ class PanelVARData:
                     if len(expected_lagged) > 0 and len(lagged_vals) > 0:
                         # Remove NaN for comparison
                         valid_mask = ~(np.isnan(expected_lagged) | np.isnan(lagged_vals))
-                        if np.any(valid_mask):
-                            if not np.allclose(
-                                expected_lagged[valid_mask],
-                                lagged_vals[valid_mask],
-                                rtol=1e-10,
-                                equal_nan=True,
-                            ):
-                                raise ValueError(
-                                    f"Cross-contamination detected for entity '{entity}', "
-                                    f"variable '{var}', lag {lag}. "
-                                    f"This is a critical bug in lag construction."
-                                )
+                        if np.any(valid_mask) and not np.allclose(
+                            expected_lagged[valid_mask],
+                            lagged_vals[valid_mask],
+                            rtol=1e-10,
+                            equal_nan=True,
+                        ):
+                            raise ValueError(
+                                f"Cross-contamination detected for entity '{entity}', "
+                                f"variable '{var}', lag {lag}. "
+                                f"This is a critical bug in lag construction."
+                            )
 
     def _compute_panel_properties(self) -> None:
         """Compute panel properties (N, T, balance, etc.)."""
@@ -385,7 +389,7 @@ class PanelVARData:
         """
         return self.data_with_lags.copy()
 
-    def equation_data(self, k: int, include_constant: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+    def equation_data(self, k: int, include_constant: bool = True) -> tuple[np.ndarray, np.ndarray]:
         """
         Get y and X matrices for equation k.
 
@@ -466,7 +470,7 @@ class PanelVARData:
 
         return y, X
 
-    def get_regressor_names(self, include_constant: bool = True) -> List[str]:
+    def get_regressor_names(self, include_constant: bool = True) -> list[str]:
         """
         Get names of all regressors in the VAR equations.
 

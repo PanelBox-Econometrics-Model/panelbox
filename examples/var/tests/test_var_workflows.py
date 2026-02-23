@@ -6,7 +6,6 @@ Tests that key PanelBox operations work correctly with generated data.
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 

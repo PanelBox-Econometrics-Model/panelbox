@@ -1,5 +1,5 @@
 """
-Discrete Choice Models - Tutorials and Examples
+Discrete Choice Models - Tutorials and Examples.
 
 Part of the PanelBox tutorial series on discrete choice econometrics.
 

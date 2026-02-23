@@ -5,7 +5,7 @@ Provides utilities for comparing Tobit vs OLS, Heckman two-step vs MLE,
 and running sensitivity analyses across model specifications.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ import pandas as pd
 def compare_tobit_ols(
     tobit_result: Any,
     ols_result: Any,
-    variable_names: Optional[List[str]] = None,
+    variable_names: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """
     Compare Tobit and OLS estimation results side by side.
@@ -90,7 +90,7 @@ def compare_tobit_ols(
 def compare_heckman_methods(
     twostep_result: Any,
     mle_result: Any,
-    variable_names: Optional[List[str]] = None,
+    variable_names: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """
     Compare Heckman two-step and MLE estimation results.
@@ -177,8 +177,8 @@ def sensitivity_analysis(
     model_class: type,
     base_endog: np.ndarray,
     base_exog: np.ndarray,
-    specifications: List[Dict[str, Any]],
-    variable_names: Optional[List[str]] = None,
+    specifications: list[dict[str, Any]],
+    variable_names: Optional[list[str]] = None,
     **model_kwargs: Any,
 ) -> pd.DataFrame:
     """

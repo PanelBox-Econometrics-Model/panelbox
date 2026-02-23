@@ -5,13 +5,15 @@ This module provides interactive plots that allow users to explore
 quantile regression results dynamically through web-based interfaces.
 """
 
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+logger = logging.getLogger(__name__)
 
 
 class InteractivePlotter:
@@ -39,7 +41,7 @@ class InteractivePlotter:
         """
         self.theme = theme
 
-    def coefficient_dashboard(self, result, var_names: Optional[List[str]] = None) -> go.Figure:
+    def coefficient_dashboard(self, result, var_names: list[str] | None = None) -> go.Figure:
         """
         Create interactive dashboard for coefficient exploration.
 
@@ -68,7 +70,7 @@ class InteractivePlotter:
             coef_matrix = np.array([result.results[tau] for tau in tau_list])
 
         if var_names is None:
-            var_names = [f"Variable {i+1}" for i in range(n_vars)]
+            var_names = [f"Variable {i + 1}" for i in range(n_vars)]
 
         # Create subplots
         fig = make_subplots(
@@ -100,8 +102,8 @@ class InteractivePlotter:
                     mode="lines+markers",
                     name=var_name,
                     visible=visible,
-                    line=dict(width=3),
-                    marker=dict(size=8),
+                    line={"width": 3},
+                    marker={"size": 8},
                     hovertemplate="τ: %{x:.2f}<br>Coefficient: %{y:.4f}<extra></extra>",
                 ),
                 row=1,
@@ -123,7 +125,7 @@ class InteractivePlotter:
                         x=tau_list,
                         y=upper,
                         mode="lines",
-                        line=dict(width=0),
+                        line={"width": 0},
                         showlegend=False,
                         visible=visible,
                         hoverinfo="skip",
@@ -138,7 +140,7 @@ class InteractivePlotter:
                         x=tau_list,
                         y=lower,
                         mode="lines",
-                        line=dict(width=0),
+                        line={"width": 0},
                         fill="tonexty",
                         fillcolor="rgba(68, 68, 68, 0.2)",
                         showlegend=False,
@@ -229,14 +231,14 @@ class InteractivePlotter:
             visible_list.extend([True] * (len(fig.data) - n_vars * n_traces_per_var))
 
             dropdown_buttons.append(
-                dict(
-                    label=var_name,
-                    method="update",
-                    args=[
+                {
+                    "label": var_name,
+                    "method": "update",
+                    "args": [
                         {"visible": visible_list},
                         {"title.text": f"Quantile Regression Analysis - {var_name}"},
                     ],
-                )
+                }
             )
 
         # Update layout
@@ -246,17 +248,17 @@ class InteractivePlotter:
             showlegend=True,
             height=800,
             updatemenus=[
-                dict(
-                    active=0,
-                    buttons=dropdown_buttons,
-                    direction="down",
-                    pad={"r": 10, "t": 10},
-                    showactive=True,
-                    x=0.1,
-                    xanchor="left",
-                    y=1.15,
-                    yanchor="top",
-                )
+                {
+                    "active": 0,
+                    "buttons": dropdown_buttons,
+                    "direction": "down",
+                    "pad": {"r": 10, "t": 10},
+                    "showactive": True,
+                    "x": 0.1,
+                    "xanchor": "left",
+                    "y": 1.15,
+                    "yanchor": "top",
+                }
             ],
         )
 
@@ -270,7 +272,7 @@ class InteractivePlotter:
         return fig
 
     def animated_coefficient_path(
-        self, result, var_idx: int = 0, var_name: Optional[str] = None
+        self, result, var_idx: int = 0, var_name: str | None = None
     ) -> go.Figure:
         """
         Create animated coefficient path showing evolution across quantiles.
@@ -312,8 +314,8 @@ class InteractivePlotter:
                         x=tau_list[:i],
                         y=coefs[:i],
                         mode="lines+markers",
-                        line=dict(color="blue", width=3),
-                        marker=dict(size=8, color="blue"),
+                        line={"color": "blue", "width": 3},
+                        marker={"size": 8, "color": "blue"},
                     )
                 ],
                 name=str(i),
@@ -327,8 +329,8 @@ class InteractivePlotter:
                     x=[tau_list[0]],
                     y=[coefs[0]],
                     mode="lines+markers",
-                    line=dict(color="blue", width=3),
-                    marker=dict(size=8, color="blue"),
+                    line={"color": "blue", "width": 3},
+                    marker={"size": 8, "color": "blue"},
                 )
             ],
             frames=frames,
@@ -338,17 +340,17 @@ class InteractivePlotter:
         fig.update_layout(
             title=f"Animated Coefficient Path - {var_name}",
             template=self.theme,
-            xaxis=dict(range=[0, 1], title="Quantile (τ)"),
-            yaxis=dict(range=[min(coefs) * 1.1, max(coefs) * 1.1], title="Coefficient"),
+            xaxis={"range": [0, 1], "title": "Quantile (τ)"},
+            yaxis={"range": [min(coefs) * 1.1, max(coefs) * 1.1], "title": "Coefficient"},
             updatemenus=[
-                dict(
-                    type="buttons",
-                    showactive=False,
-                    buttons=[
-                        dict(
-                            label="Play",
-                            method="animate",
-                            args=[
+                {
+                    "type": "buttons",
+                    "showactive": False,
+                    "buttons": [
+                        {
+                            "label": "Play",
+                            "method": "animate",
+                            "args": [
                                 None,
                                 {
                                     "frame": {"duration": 100, "redraw": True},
@@ -356,51 +358,51 @@ class InteractivePlotter:
                                     "mode": "immediate",
                                 },
                             ],
-                        ),
-                        dict(
-                            label="Pause",
-                            method="animate",
-                            args=[
+                        },
+                        {
+                            "label": "Pause",
+                            "method": "animate",
+                            "args": [
                                 [None],
                                 {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"},
                             ],
-                        ),
+                        },
                     ],
-                    direction="left",
-                    pad={"r": 10, "t": 70},
-                    x=0.1,
-                    xanchor="right",
-                    y=0,
-                    yanchor="top",
-                )
+                    "direction": "left",
+                    "pad": {"r": 10, "t": 70},
+                    "x": 0.1,
+                    "xanchor": "right",
+                    "y": 0,
+                    "yanchor": "top",
+                }
             ],
             sliders=[
-                dict(
-                    active=0,
-                    steps=[
-                        dict(
-                            args=[
+                {
+                    "active": 0,
+                    "steps": [
+                        {
+                            "args": [
                                 [frame.name],
                                 {"frame": {"duration": 100, "redraw": True}, "mode": "immediate"},
                             ],
-                            label=f"τ={tau_list[i]:.2f}",
-                            method="animate",
-                        )
+                            "label": f"τ={tau_list[i]:.2f}",
+                            "method": "animate",
+                        }
                         for i, frame in enumerate(frames)
                     ],
-                    x=0.1,
-                    xanchor="left",
-                    y=0,
-                    yanchor="top",
-                    pad={"b": 10, "t": 50},
-                    len=0.9,
-                    currentvalue={
+                    "x": 0.1,
+                    "xanchor": "left",
+                    "y": 0,
+                    "yanchor": "top",
+                    "pad": {"b": 10, "t": 50},
+                    "len": 0.9,
+                    "currentvalue": {
                         "font": {"size": 16},
                         "prefix": "Quantile: ",
                         "visible": True,
                         "xanchor": "right",
                     },
-                )
+                }
             ],
         )
 
@@ -410,7 +412,7 @@ class InteractivePlotter:
         return fig
 
     def quantile_surface_interactive(
-        self, result, X_grid: Optional[np.ndarray] = None
+        self, result, X_grid: np.ndarray | None = None
     ) -> go.Figure:
         """
         Create fully interactive 3D surface with controls.
@@ -485,35 +487,35 @@ class InteractivePlotter:
         # Create slider for quantile selection
         steps = []
         for i, tau in enumerate(tau_list):
-            step = dict(
-                method="update",
-                args=[
+            step = {
+                "method": "update",
+                "args": [
                     {"visible": [j == i for j in range(len(tau_list))]},
                     {"title": f"Quantile Surface: τ = {tau:.2f}"},
                 ],
-                label=f"{tau:.2f}",
-            )
+                "label": f"{tau:.2f}",
+            }
             steps.append(step)
 
         sliders = [
-            dict(
-                active=len(tau_list) // 2,  # Start at median
-                currentvalue={"prefix": "Quantile: "},
-                pad={"t": 50},
-                steps=steps,
-            )
+            {
+                "active": len(tau_list) // 2,  # Start at median
+                "currentvalue": {"prefix": "Quantile: "},
+                "pad": {"t": 50},
+                "steps": steps,
+            }
         ]
 
         # Update layout
         fig.update_layout(
             title="Interactive Quantile Surface",
             template=self.theme,
-            scene=dict(
-                xaxis_title="X1",
-                yaxis_title="X2",
-                zaxis_title="Predicted Value",
-                camera=dict(eye=dict(x=1.5, y=1.5, z=1.5)),
-            ),
+            scene={
+                "xaxis_title": "X1",
+                "yaxis_title": "X2",
+                "zaxis_title": "Predicted Value",
+                "camera": {"eye": {"x": 1.5, "y": 1.5, "z": 1.5}},
+            },
             sliders=sliders,
             height=700,
             showlegend=True,
@@ -551,7 +553,7 @@ class InteractivePlotter:
         first_result = result.results[tau_sample[0]]
         if hasattr(first_result, "params"):
             n_vars = len(first_result.params)
-            var_names = [f"Var{i+1}" for i in range(n_vars)]
+            var_names = [f"Var{i + 1}" for i in range(n_vars)]
         else:
             n_vars = 1
             var_names = ["Var1"]
@@ -580,16 +582,16 @@ class InteractivePlotter:
         # Create parallel coordinates plot
         fig = go.Figure(
             data=go.Parcoords(
-                line=dict(
-                    color=df["tau"],
-                    colorscale="Viridis",
-                    showscale=True,
-                    cmin=0,
-                    cmax=1,
-                    colorbar=dict(title="Quantile"),
-                ),
+                line={
+                    "color": df["tau"],
+                    "colorscale": "Viridis",
+                    "showscale": True,
+                    "cmin": 0,
+                    "cmax": 1,
+                    "colorbar": {"title": "Quantile"},
+                },
                 dimensions=[
-                    dict(range=[df[col].min(), df[col].max()], label=col, values=df[col])
+                    {"range": [df[col].min(), df[col].max()], "label": col, "values": df[col]}
                     for col in var_names
                 ],
             )

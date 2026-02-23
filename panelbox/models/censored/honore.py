@@ -8,12 +8,19 @@ Author: PanelBox Developers
 License: MIT
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import numpy as np
+import pandas as pd
 from scipy import optimize
+
+from panelbox.core.serialization import SerializableMixin
+
+logger = logging.getLogger(__name__)
 
 
 class ExperimentalWarning(UserWarning):
@@ -23,7 +30,7 @@ class ExperimentalWarning(UserWarning):
 
 
 @dataclass
-class HonoreResults:
+class HonoreResults(SerializableMixin):
     """Results container for Honoré estimator."""
 
     params: np.ndarray
@@ -32,6 +39,36 @@ class HonoreResults:
     n_obs: int
     n_entities: int
     n_trimmed: int
+    exog_names: list | None = None
+
+    def predict(self, exog: np.ndarray | pd.DataFrame | None = None) -> np.ndarray:
+        """
+        Generate predictions using fitted parameters.
+
+        Parameters
+        ----------
+        exog : array-like, pd.DataFrame, or None
+            Explanatory variables for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
+
+        Returns
+        -------
+        np.ndarray
+            Linear predictions X'β
+        """
+        if exog is None:
+            raise ValueError("exog is required for prediction from HonoreResults")
+
+        if isinstance(exog, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
+
+        return exog @ self.params
 
 
 class HonoreTrimmedEstimator:
@@ -80,6 +117,7 @@ class HonoreTrimmedEstimator:
             "and experimental. It may take a long time to converge for "
             "moderate to large datasets. Use with caution.",
             ExperimentalWarning,
+            stacklevel=2,
         )
 
         self.endog = np.asarray(endog).flatten()
@@ -121,7 +159,7 @@ class HonoreTrimmedEstimator:
                 "n_obs": mask.sum(),
             }
 
-    def _create_pairwise_differences(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _create_pairwise_differences(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Create pairwise differences for all entities and time periods.
 
@@ -224,7 +262,7 @@ class HonoreTrimmedEstimator:
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "L-BFGS-B",
         maxiter: int = 500,
         tol: float = 1e-6,
@@ -255,7 +293,7 @@ class HonoreTrimmedEstimator:
             Fitted model results
         """
         if verbose:
-            print("Creating pairwise differences...")
+            logger.info("Creating pairwise differences...")
 
         # Create pairwise differences
         delta_y, delta_X, trim_indicator = self._create_pairwise_differences()
@@ -264,9 +302,9 @@ class HonoreTrimmedEstimator:
         n_trimmed = int(n_pairs - trim_indicator.sum())
 
         if verbose:
-            print(f"Total pairwise differences: {n_pairs}")
-            print(f"Trimmed observations: {n_trimmed}")
-            print(f"Retained observations: {int(trim_indicator.sum())}")
+            logger.info(f"Total pairwise differences: {n_pairs}")
+            logger.info(f"Trimmed observations: {n_trimmed}")
+            logger.info(f"Retained observations: {int(trim_indicator.sum())}")
 
         # Starting values
         if start_params is None:
@@ -279,7 +317,7 @@ class HonoreTrimmedEstimator:
                 start_params = np.zeros(self.n_features)
 
         if verbose:
-            print(f"Starting optimization with method: {method}")
+            logger.info(f"Starting optimization with method: {method}")
 
         # Optimize
         options = kwargs.pop("options", {})
@@ -311,9 +349,9 @@ class HonoreTrimmedEstimator:
 
         if verbose:
             if result.success:
-                print(f"Optimization converged in {result.nit} iterations")
+                logger.info(f"Optimization converged in {result.nit} iterations")
             else:
-                print(f"Optimization failed: {result.message}")
+                logger.warning(f"Optimization failed: {result.message}")
 
         # Store results
         self.params = result.x
@@ -331,7 +369,7 @@ class HonoreTrimmedEstimator:
 
         return results
 
-    def predict(self, exog: Optional[np.ndarray] = None) -> np.ndarray:
+    def predict(self, exog: np.ndarray | pd.DataFrame | None = None) -> np.ndarray:
         """
         Generate predictions from the fitted model.
 
@@ -340,8 +378,9 @@ class HonoreTrimmedEstimator:
 
         Parameters
         ----------
-        exog : array-like, optional
-            Explanatory variables for prediction (uses training data if None)
+        exog : array-like, pd.DataFrame, or None
+            Explanatory variables for prediction (uses training data if None).
+            If pd.DataFrame, extracts columns matching exog_names.
 
         Returns
         -------
@@ -353,6 +392,14 @@ class HonoreTrimmedEstimator:
 
         if exog is None:
             exog = self.exog
+        elif isinstance(exog, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
 
         return exog @ self.params
 

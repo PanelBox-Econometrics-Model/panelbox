@@ -1,10 +1,11 @@
 """
-GMM Estimation for Panel VAR Models
+GMM Estimation for Panel VAR Models.
 
 This module implements Generalized Method of Moments estimation for Panel VAR following
 Holtz-Eakin, Newey & Rosen (1988) and Abrigo & Love (2016).
 
-References:
+References
+----------
 - Holtz-Eakin, D., Newey, W., & Rosen, H. S. (1988). Estimating vector autoregressions
   with panel data. Econometrica, 1371-1395.
 - Abrigo, M. R., & Love, I. (2016). Estimation of panel vector autoregression in Stata.
@@ -13,15 +14,19 @@ References:
   two-step GMM estimators. Journal of econometrics, 126(1), 25-51.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from panelbox.var.instruments import build_gmm_instruments
 from panelbox.var.transforms import first_difference, forward_orthogonal_deviation
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -69,8 +74,8 @@ class GMMEstimationResult:
 
 
 def gmm_one_step(
-    y: np.ndarray, X: np.ndarray, Z: np.ndarray, weight_matrix: Optional[np.ndarray] = None
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    y: np.ndarray, X: np.ndarray, Z: np.ndarray, weight_matrix: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     One-step GMM estimation.
 
@@ -96,8 +101,8 @@ def gmm_one_step(
     residuals : np.ndarray
         Residuals
     """
-    n_obs, n_instruments = Z.shape
-    K = y.shape[1] if y.ndim > 1 else 1
+    _n_obs, n_instruments = Z.shape
+    y.shape[1] if y.ndim > 1 else 1
 
     # Ensure y is 2D
     if y.ndim == 1:
@@ -120,8 +125,8 @@ def gmm_one_step(
     # Solve for β̂
     try:
         beta = np.linalg.solve(XtZ_W_ZtX, XtZ_W_ZtY)  # (n_params × K)
-    except np.linalg.LinAlgError:
-        raise ValueError("GMM estimation failed: singular matrix. Check instruments.")
+    except np.linalg.LinAlgError as err:
+        raise ValueError("GMM estimation failed: singular matrix. Check instruments.") from err
 
     # Compute residuals
     residuals = y - X @ beta  # (n_obs × K)
@@ -130,7 +135,7 @@ def gmm_one_step(
     try:
         vcov = np.linalg.inv(XtZ_W_ZtX)  # (n_params × n_params)
     except np.linalg.LinAlgError:
-        warnings.warn("Could not compute variance-covariance matrix")
+        warnings.warn("Could not compute variance-covariance matrix", stacklevel=2)
         vcov = np.full_like(XtZ_W_ZtX, np.nan)
 
     return beta, vcov, residuals
@@ -138,7 +143,7 @@ def gmm_one_step(
 
 def gmm_two_step(
     y: np.ndarray, X: np.ndarray, Z: np.ndarray, windmeijer_correction: bool = True
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
     """
     Two-step GMM estimation with optional Windmeijer correction.
 
@@ -172,14 +177,14 @@ def gmm_two_step(
         y = y.reshape(-1, 1)
 
     # Step 1: One-step GMM with identity weight matrix
-    beta_1, vcov_1, resid_1 = gmm_one_step(y, X, Z, weight_matrix=None)
+    beta_1, _vcov_1, resid_1 = gmm_one_step(y, X, Z, weight_matrix=None)
 
     # Step 2: Construct optimal weight matrix
     # W₂ = [Σᵢ Zᵢ'êᵢêᵢ'Zᵢ]⁻¹ = [Z'ΩZ]⁻¹ where Ω = diag(ê²)
     # For robust standard errors, use White-type covariance
 
     # Moment conditions: gᵢ = Zᵢ'êᵢ
-    moment_conditions = Z.T @ resid_1  # (n_instruments × K)
+    Z.T @ resid_1  # (n_instruments × K)
 
     # Outer product of moment conditions (robust to heteroskedasticity)
     # S = Z'ΩZ where Ω = diag(ê²)
@@ -198,7 +203,7 @@ def gmm_two_step(
     try:
         W_2 = np.linalg.inv(S)
     except np.linalg.LinAlgError:
-        warnings.warn("Could not invert moment covariance matrix. Using identity.")
+        warnings.warn("Could not invert moment covariance matrix. Using identity.", stacklevel=2)
         W_2 = np.eye(S.shape[0])
 
     # Step 2 estimation with optimal weight matrix
@@ -223,7 +228,7 @@ def windmeijer_correction_matrix(
     beta_2: np.ndarray,
     vcov_2: np.ndarray,
     W_2: np.ndarray,
-) -> Optional[np.ndarray]:
+) -> np.ndarray | None:
     """
     Apply Windmeijer (2005) finite-sample correction to two-step GMM SEs.
 
@@ -272,20 +277,20 @@ def windmeijer_correction_matrix(
         return vcov_corrected
 
     except Exception as e:
-        warnings.warn(f"Windmeijer correction failed: {e}")
+        warnings.warn(f"Windmeijer correction failed: {e}", stacklevel=2)
         return None
 
 
 def estimate_panel_var_gmm(
     data: pd.DataFrame,
     var_lags: int,
-    value_cols: List[str],
+    value_cols: list[str],
     entity_col: str = "entity",
     time_col: str = "time",
     transform: str = "fod",
     gmm_step: str = "two-step",
     instrument_type: str = "all",
-    max_instruments: Optional[int] = None,
+    max_instruments: int | None = None,
     windmeijer_correction: bool = True,
 ) -> GMMEstimationResult:
     """
@@ -322,13 +327,15 @@ def estimate_panel_var_gmm(
     Examples
     --------
     >>> import pandas as pd
-    >>> df = pd.DataFrame({
-    ...     'entity': [1]*10 + [2]*10,
-    ...     'time': list(range(1,11)) * 2,
-    ...     'y1': np.random.randn(20),
-    ...     'y2': np.random.randn(20)
-    ... })
-    >>> result = estimate_panel_var_gmm(df, var_lags=1, value_cols=['y1', 'y2'])
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "entity": [1] * 10 + [2] * 10,
+    ...         "time": list(range(1, 11)) * 2,
+    ...         "y1": np.random.randn(20),
+    ...         "y2": np.random.randn(20),
+    ...     }
+    ... )
+    >>> result = estimate_panel_var_gmm(df, var_lags=1, value_cols=["y1", "y2"])
     >>> print(result.coefficients.shape)
     (2, 2)
     """
@@ -345,7 +352,7 @@ def estimate_panel_var_gmm(
         raise ValueError(f"Unknown transform: {transform}. Use 'fod' or 'fd'.")
 
     # Step 2: Construct instruments
-    Z, instrument_meta = build_gmm_instruments(
+    Z, _instrument_meta = build_gmm_instruments(
         data=data,
         var_lags=var_lags,
         n_vars=len(value_cols),
@@ -364,7 +371,7 @@ def estimate_panel_var_gmm(
     y_list = []
     X_list = []
 
-    for entity_id, group in data_transformed.groupby(entity_col):
+    for _entity_id, group in data_transformed.groupby(entity_col):
         group = group.sort_values(time_col)
 
         # Need at least var_lags + 1 observations
@@ -417,7 +424,7 @@ def estimate_panel_var_gmm(
     # beta shape is (K*p × K) where K*p is number of parameters per equation
     # and K is number of equations
     # For now, assume same SEs across equations (simplified)
-    n_params = beta.shape[0]
+    beta.shape[0]
     n_equations = beta.shape[1]
 
     # Replicate SE vector across equations

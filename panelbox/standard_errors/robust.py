@@ -5,12 +5,17 @@ This module implements White's heteroskedasticity-robust covariance
 estimators and their finite-sample improvements.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 
 from .utils import compute_bread, compute_leverage, compute_meat_hc, sandwich_covariance
+
+logger = logging.getLogger(__name__)
 
 HC_TYPES = Literal["HC0", "HC1", "HC2", "HC3"]
 
@@ -41,7 +46,7 @@ class RobustCovarianceResult:
     method: str
     n_obs: int
     n_params: int
-    leverage: Optional[np.ndarray] = None
+    leverage: np.ndarray | None = None
 
 
 class RobustStandardErrors:
@@ -103,8 +108,8 @@ class RobustStandardErrors:
         self.n_obs, self.n_params = X.shape
 
         # Cache for efficiency
-        self._leverage: Optional[np.ndarray] = None
-        self._bread: Optional[np.ndarray] = None
+        self._leverage: np.ndarray | None = None
+        self._bread: np.ndarray | None = None
 
     @property
     def leverage(self) -> np.ndarray:
@@ -267,7 +272,7 @@ class RobustStandardErrors:
         Examples
         --------
         >>> robust = RobustStandardErrors(X, resid)
-        >>> result = robust.compute('HC1')
+        >>> result = robust.compute("HC1")
         >>> print(result.std_errors)
         """
         method_upper = method.upper()
@@ -282,7 +287,7 @@ class RobustStandardErrors:
             return self.hc3()
         else:
             raise ValueError(
-                f"Unknown HC method: {method}. " f"Must be one of: 'HC0', 'HC1', 'HC2', 'HC3'"
+                f"Unknown HC method: {method}. Must be one of: 'HC0', 'HC1', 'HC2', 'HC3'"
             )
 
 
@@ -309,7 +314,7 @@ def robust_covariance(
     Examples
     --------
     >>> from panelbox.standard_errors import robust_covariance
-    >>> result = robust_covariance(X, resid, method='HC1')
+    >>> result = robust_covariance(X, resid, method="HC1")
     >>> print(result.std_errors)
     """
     robust = RobustStandardErrors(X, resid)

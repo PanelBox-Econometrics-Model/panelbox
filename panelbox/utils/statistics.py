@@ -5,14 +5,18 @@ This module provides statistical utilities including robust covariance estimatio
 hypothesis testing, and other statistical computations.
 """
 
-from typing import Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import linalg, stats
 
+logger = logging.getLogger(__name__)
+
 
 def compute_sandwich_covariance(
-    hessian: np.ndarray, gradient_contributions: np.ndarray, entity_id: Optional[np.ndarray] = None
+    hessian: np.ndarray, gradient_contributions: np.ndarray, entity_id: np.ndarray | None = None
 ) -> np.ndarray:
     """
     Compute sandwich (robust) covariance matrix.
@@ -74,7 +78,7 @@ def compute_cluster_robust_covariance(
     residuals: np.ndarray,
     X: np.ndarray,
     entity_id: np.ndarray,
-    vcov_base: Optional[np.ndarray] = None,
+    vcov_base: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Compute cluster-robust covariance matrix.
@@ -162,7 +166,7 @@ def wald_test(
     params: np.ndarray,
     vcov: np.ndarray,
     restrictions: np.ndarray,
-    values: Optional[np.ndarray] = None,
+    values: np.ndarray | None = None,
 ) -> dict:
     """
     Perform Wald test for linear restrictions.
@@ -279,7 +283,7 @@ def compute_standard_errors(vcov: np.ndarray) -> np.ndarray:
 
 
 def compute_t_statistics(
-    params: np.ndarray, standard_errors: np.ndarray, null_values: Optional[np.ndarray] = None
+    params: np.ndarray, standard_errors: np.ndarray, null_values: np.ndarray | None = None
 ) -> np.ndarray:
     """
     Compute t-statistics for parameters.
@@ -304,7 +308,7 @@ def compute_t_statistics(
     return (params - null_values) / standard_errors
 
 
-def compute_p_values(t_statistics: np.ndarray, df: Optional[int] = None) -> np.ndarray:
+def compute_p_values(t_statistics: np.ndarray, df: int | None = None) -> np.ndarray:
     """
     Compute two-sided p-values from t-statistics.
 
@@ -331,8 +335,8 @@ def compute_p_values(t_statistics: np.ndarray, df: Optional[int] = None) -> np.n
 
 
 def compute_confidence_intervals(
-    params: np.ndarray, standard_errors: np.ndarray, alpha: float = 0.05, df: Optional[int] = None
-) -> Tuple[np.ndarray, np.ndarray]:
+    params: np.ndarray, standard_errors: np.ndarray, alpha: float = 0.05, df: int | None = None
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute confidence intervals for parameters.
 

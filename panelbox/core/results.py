@@ -8,9 +8,10 @@ and provides methods for inference, prediction, and reporting.
 from __future__ import annotations
 
 import json
+import logging
 import pickle
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,8 @@ from scipy import stats
 
 if TYPE_CHECKING:
     from panelbox.validation.validation_suite import ValidationReport
+
+logger = logging.getLogger(__name__)
 
 
 class PanelResults:
@@ -93,10 +96,11 @@ class PanelResults:
         cov_params: pd.DataFrame,
         resid: np.ndarray,
         fittedvalues: np.ndarray,
-        model_info: Dict[str, Any],
-        data_info: Dict[str, Any],
-        rsquared_dict: Optional[Dict[str, float]] = None,
-        model: Optional[Any] = None,
+        model_info: dict[str, Any],
+        data_info: dict[str, Any],
+        rsquared_dict: dict[str, float] | None = None,
+        model: Any | None = None,
+        formula_parser: Any | None = None,
     ):
         # Parameter estimates
         self.params = params
@@ -116,23 +120,26 @@ class PanelResults:
         # Data information
         self.nobs = data_info["nobs"]
         self.n_entities = data_info["n_entities"]
-        self.n_periods = data_info.get("n_periods", None)
+        self.n_periods = data_info.get("n_periods")
         self.df_model = data_info["df_model"]
         self.df_resid = data_info["df_resid"]
 
         # Entity and time indices (for validation tests)
-        self.entity_index = data_info.get("entity_index", None)
-        self.time_index = data_info.get("time_index", None)
+        self.entity_index = data_info.get("entity_index")
+        self.time_index = data_info.get("time_index")
 
         # Model-specific attributes (for First Difference, etc.)
-        self.n_obs_original = data_info.get("n_obs_original", None)
-        self.n_obs_dropped = data_info.get("n_obs_dropped", None)
+        self.n_obs_original = data_info.get("n_obs_original")
+        self.n_obs_dropped = data_info.get("n_obs_dropped")
 
         # Store reference to model for validation tests
         self._model = model
 
+        # Store formula parser for predict on new data
+        self._formula_parser = formula_parser
+
         # IV/2SLS specific - first stage results (set externally if needed)
-        self.first_stage_results: Optional[Dict[str, Any]] = None
+        self.first_stage_results: dict[str, Any] | None = None
 
         # Compute t-values and p-values (after df_resid is defined)
         self.tvalues = self.params / self.std_errors
@@ -156,8 +163,11 @@ class PanelResults:
 
         # F-test statistics (for Fixed Effects vs Pooled OLS)
         # These will be set externally by the FixedEffects model if applicable
-        self.f_statistic: Optional[float] = None
-        self.f_pvalue: Optional[float] = None
+        self.f_statistic: float | None = None
+        self.f_pvalue: float | None = None
+
+        # Sum of squared residuals (for Wald encompassing test and other diagnostics)
+        self.ssr: float = float(np.sum(resid**2))
 
     @property
     def model(self):
@@ -205,14 +215,51 @@ class PanelResults:
 
         return ci
 
-    def predict(self, newdata: Optional[pd.DataFrame] = None) -> np.ndarray:
+    def _build_design_matrix(self, newdata: pd.DataFrame) -> np.ndarray:
+        """
+        Build design matrix X from new data using the stored formula.
+
+        Parameters
+        ----------
+        newdata : pd.DataFrame
+            New data with same column names as training data
+
+        Returns
+        -------
+        np.ndarray
+            Design matrix X (may include intercept column if formula has one)
+
+        Raises
+        ------
+        ValueError
+            If formula is not available or required columns are missing
+        """
+        if self._formula_parser is not None:
+            # Use stored formula parser
+            _, X = self._formula_parser.build_design_matrices(newdata, return_type="array")
+            return X
+        elif self.formula:
+            # Reconstruct parser from formula string
+            from panelbox.core.formula_parser import FormulaParser
+
+            parser = FormulaParser(self.formula).parse()
+            _, X = parser.build_design_matrices(newdata, return_type="array")
+            return X
+        else:
+            raise ValueError(
+                "Cannot build design matrix: no formula available. "
+                "Re-estimate the model or pass X directly."
+            )
+
+    def predict(self, newdata: pd.DataFrame | None = None) -> np.ndarray:
         """
         Generate predictions.
 
         Parameters
         ----------
         newdata : pd.DataFrame, optional
-            New data for prediction. If None, returns fitted values.
+            New data for prediction. Must contain the same columns as the
+            original formula. If None, returns fitted values from estimation.
 
         Returns
         -------
@@ -226,10 +273,49 @@ class PanelResults:
         """
         if newdata is None:
             return self.fittedvalues
-        else:
-            raise NotImplementedError("Prediction on new data not yet implemented")
 
-    def summary(self, title: Optional[str] = None) -> str:
+        X = self._build_design_matrix(newdata)
+
+        # Check if this is a Fixed Effects model with stored FE
+        has_entity_fe = (
+            getattr(self, "_entity_effects", False)
+            and getattr(self, "_entity_fe", None) is not None
+        )
+        has_time_fe = (
+            getattr(self, "_time_effects", False) and getattr(self, "_time_fe", None) is not None
+        )
+
+        if has_entity_fe or has_time_fe:
+            # FE model: use slopes only (exclude intercept column)
+            parser = self._formula_parser
+            if parser is not None and parser.has_intercept:
+                X = X[:, 1:]
+
+            y_hat = X @ self.params.values
+
+            # Add overall intercept
+            intercept = getattr(self, "_intercept", 0.0)
+            y_hat += intercept
+
+            # Add entity fixed effects
+            if has_entity_fe:
+                entities_new = newdata[self._entity_col].values
+                for i, entity in enumerate(entities_new):
+                    if entity in self._entity_fe.index:
+                        y_hat[i] += self._entity_fe[entity]
+
+            # Add time fixed effects
+            if has_time_fe:
+                times_new = newdata[self._time_col].values
+                for i, t in enumerate(times_new):
+                    if t in self._time_fe.index:
+                        y_hat[i] += self._time_fe[t]
+
+            return y_hat
+
+        return X @ self.params.values
+
+    def summary(self, title: str | None = None) -> str:
         """
         Generate formatted summary table of estimation results.
 
@@ -302,8 +388,15 @@ class PanelResults:
         ...
 
         >>> # GMM example with diagnostics
-        >>> gmm = pb.SystemGMM(data, 'invest', lags=1, exog_vars=['value', 'capital'],
-        ...                    id_var='firm', time_var='year', collapse=True)
+        >>> gmm = pb.SystemGMM(
+        ...     data,
+        ...     "invest",
+        ...     lags=1,
+        ...     exog_vars=["value", "capital"],
+        ...     id_var="firm",
+        ...     time_var="year",
+        ...     collapse=True,
+        ... )
         >>> gmm_results = gmm.fit()
         >>> print(gmm_results.summary())
         ================================================================================
@@ -410,7 +503,7 @@ class PanelResults:
 
         return "\n".join(lines)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Export results as dictionary.
 
@@ -489,7 +582,7 @@ class PanelResults:
             },
         }
 
-    def to_json(self, filepath: Optional[Union[str, Path]] = None, indent: int = 2) -> str:
+    def to_json(self, filepath: str | Path | None = None, indent: int = 2) -> str:
         """
         Export results to JSON format.
 
@@ -509,7 +602,7 @@ class PanelResults:
         --------
         >>> results = fe.fit()
         >>> # Save to file
-        >>> results.to_json('results.json')
+        >>> results.to_json("results.json")
         >>> # Get JSON string
         >>> json_str = results.to_json()
         >>> print(json_str[:100])
@@ -524,7 +617,7 @@ class PanelResults:
 
         return json_str
 
-    def save(self, filepath: Union[str, Path], format: str = "pickle") -> None:
+    def save(self, filepath: str | Path, format: str = "pickle") -> None:
         """
         Save results to file.
 
@@ -541,9 +634,9 @@ class PanelResults:
         --------
         >>> results = fe.fit()
         >>> # Save as pickle (recommended)
-        >>> results.save('results.pkl')
+        >>> results.save("results.pkl")
         >>> # Save as JSON
-        >>> results.save('results.json', format='json')
+        >>> results.save("results.json", format="json")
 
         Notes
         -----
@@ -555,17 +648,26 @@ class PanelResults:
         filepath = Path(filepath)
 
         if format == "pickle":
+            # Add version metadata
+            try:
+                import panelbox
+
+                self._panelbox_version = getattr(panelbox, "__version__", "unknown")
+            except Exception:
+                self._panelbox_version = "unknown"
+            self._save_timestamp = pd.Timestamp.now().isoformat()
+
             with open(filepath, "wb") as f:
                 pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
         elif format == "json":
             self.to_json(filepath)
         else:
             raise ValueError(
-                f"Format '{format}' not supported. " f"Supported formats: 'pickle', 'json'"
+                f"Format '{format}' not supported. Supported formats: 'pickle', 'json'"
             )
 
     @classmethod
-    def load(cls, filepath: Union[str, Path]) -> "PanelResults":
+    def load(cls, filepath: str | Path) -> PanelResults:
         """
         Load results from pickle file.
 
@@ -583,9 +685,9 @@ class PanelResults:
         --------
         >>> # Save results
         >>> results = fe.fit()
-        >>> results.save('results.pkl')
+        >>> results.save("results.pkl")
         >>> # Load results later
-        >>> loaded_results = PanelResults.load('results.pkl')
+        >>> loaded_results = PanelResults.load("results.pkl")
         >>> print(loaded_results.summary())
 
         Notes
@@ -600,18 +702,18 @@ class PanelResults:
             raise FileNotFoundError(f"File not found: {filepath}")
 
         with open(filepath, "rb") as f:
-            results = pickle.load(f)
+            results = pickle.load(f)  # noqa: S301 — intentional deserialization of user's own saved results
 
         if not isinstance(results, cls):
             raise TypeError(
-                f"Loaded object is not a PanelResults instance. " f"Got type: {type(results)}"
+                f"Loaded object is not a PanelResults instance. Got type: {type(results)}"
             )
 
         return results
 
     def validate(
         self, tests: str = "default", alpha: float = 0.05, verbose: bool = False
-    ) -> "ValidationReport":
+    ) -> ValidationReport:
         """
         Run validation tests on model results.
 
@@ -637,7 +739,7 @@ class PanelResults:
         Examples
         --------
         >>> results = fe.fit()
-        >>> validation = results.validate(tests='all', verbose=True)
+        >>> validation = results.validate(tests="all", verbose=True)
         >>> print(validation)
         """
         from panelbox.validation.validation_suite import ValidationSuite

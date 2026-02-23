@@ -230,15 +230,14 @@ class TestBaltagiWuTest:
             # Return empty DataFrame
             return pd.DataFrame(columns=self.columns)
 
-        with patch.object(pd.DataFrame, "dropna", mock_dropna):
-            with pytest.raises(
-                ValueError, match="No valid observations after computing differences"
-            ):
-                test.run()
+        with (
+            patch.object(pd.DataFrame, "dropna", mock_dropna),
+            pytest.raises(ValueError, match="No valid observations after computing differences"),
+        ):
+            test.run()
 
     def test_zero_squared_residuals(self, balanced_panel_data):
         """Test ValueError when sum of squared residuals is zero (line 136)."""
-        from unittest.mock import Mock
 
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()

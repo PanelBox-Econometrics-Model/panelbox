@@ -5,7 +5,8 @@ This module implements Fisher-type panel unit root tests that combine
 p-values from individual unit root tests. The Fisher tests are based on
 combining p-values using inverse chi-square transformation.
 
-References:
+References
+----------
     Maddala, G. S., & Wu, S. (1999). A comparative study of unit root tests
     with panel data and a new simple test. Oxford Bulletin of Economics and
     Statistics, 61(S1), 631-652.
@@ -14,6 +15,9 @@ References:
     Money and Finance, 20(2), 249-272.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import Literal, Optional
 
@@ -21,6 +25,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from statsmodels.tsa.stattools import adfuller
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -179,12 +185,12 @@ class FisherTest:
 
     1. **First-difference the data**:
        ```python
-       data['Δy'] = data.groupby('entity')['y'].diff()
+       data["Δy"] = data.groupby("entity")["y"].diff()
        ```
 
     2. **Use GMM estimators** designed for non-stationary data:
        ```python
-       gmm = pb.DifferenceGMM(data, 'Δy', ['x1', 'x2'], ...)
+       gmm = pb.DifferenceGMM(data, "Δy", ["x1", "x2"], ...)
        ```
 
     3. **Test for cointegration** if variables share common trends:
@@ -343,7 +349,7 @@ class FisherTest:
             raise ValueError("trend must be 'n', 'c', or 'ct'")
 
         # Check for missing values
-        if self.data[self.variable].isna().any():
+        if bool(self.data[self.variable].isna().any()):
             raise ValueError(f"Variable '{self.variable}' contains missing values")
 
     def _adf_test_entity(self, entity_data: pd.DataFrame, lags: Optional[int]) -> float:
@@ -528,11 +534,11 @@ class FisherTest:
         # Conclusion
         if pvalue < alpha:
             conclusion = (
-                f"Reject H0 at {alpha*100}% level: Evidence against unit root "
+                f"Reject H0 at {alpha * 100}% level: Evidence against unit root "
                 f"(at least one series is stationary)"
             )
         else:
-            conclusion = f"Fail to reject H0 at {alpha*100}% level: Evidence of unit root"
+            conclusion = f"Fail to reject H0 at {alpha * 100}% level: Evidence of unit root"
 
         return FisherTestResult(
             statistic=fisher_stat,

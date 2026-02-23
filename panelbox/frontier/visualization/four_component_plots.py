@@ -9,13 +9,15 @@ the results of four-component stochastic frontier analysis, including:
     - Variance component pie charts
 """
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
-from matplotlib.patches import Rectangle
+
+logger = logging.getLogger(__name__)
 
 # Set style
 sns.set_style("whitegrid")
@@ -24,19 +26,21 @@ plt.rcParams["figure.figsize"] = (12, 8)
 
 def plot_efficiency_distributions(
     result,
-    figsize: Tuple[float, float] = (14, 5),
+    figsize: tuple[float, float] = (14, 5),
     bins: int = 30,
     alpha: float = 0.7,
 ) -> plt.Figure:
     """Plot distributions of persistent, transient, and overall efficiency.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         figsize: Figure size (width, height)
         bins: Number of histogram bins
         alpha: Transparency level
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Get efficiency measures
@@ -98,19 +102,21 @@ def plot_efficiency_distributions(
 
 def plot_efficiency_scatter(
     result,
-    figsize: Tuple[float, float] = (10, 8),
+    figsize: tuple[float, float] = (10, 8),
     alpha: float = 0.6,
-    highlight_entities: Optional[list] = None,
+    highlight_entities: list | None = None,
 ) -> plt.Figure:
     """Plot scatter of persistent vs transient efficiency.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         figsize: Figure size (width, height)
         alpha: Point transparency
         highlight_entities: List of entity IDs to highlight
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Get efficiency measures (average transient for each entity)
@@ -197,19 +203,21 @@ def plot_efficiency_scatter(
 
 def plot_efficiency_evolution(
     result,
-    entity_ids: Optional[list] = None,
+    entity_ids: list | None = None,
     n_entities: int = 5,
-    figsize: Tuple[float, float] = (14, 8),
+    figsize: tuple[float, float] = (14, 8),
 ) -> plt.Figure:
     """Plot time evolution of efficiency for selected entities.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         entity_ids: Specific entity IDs to plot (if None, select random)
         n_entities: Number of entities to plot if entity_ids is None
         figsize: Figure size (width, height)
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Select entities
@@ -225,7 +233,7 @@ def plot_efficiency_evolution(
     fig, axes = plt.subplots(2, 1, figsize=figsize)
 
     # Get unique time periods
-    unique_times = np.unique(result.model.time_id)
+    np.unique(result.model.time_id)
 
     # Plot each entity
     colors = plt.cm.tab10(np.linspace(0, 1, len(entity_ids)))
@@ -299,21 +307,23 @@ def plot_efficiency_evolution(
 
 def plot_entity_decomposition(
     result,
-    entity_ids: Optional[list] = None,
+    entity_ids: list | None = None,
     n_entities: int = 10,
-    figsize: Tuple[float, float] = (12, 8),
+    figsize: tuple[float, float] = (12, 8),
 ) -> plt.Figure:
     """Plot component decomposition for selected entities.
 
     Shows the four components (μ_i, η_i, u_it_mean, v_it_mean) for each entity.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         entity_ids: Specific entity IDs to plot (if None, select top/bottom)
         n_entities: Number of entities to plot if entity_ids is None
         figsize: Figure size (width, height)
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Select entities (top and bottom by overall efficiency)
@@ -355,7 +365,7 @@ def plot_entity_decomposition(
     width = 0.2
 
     # Plot bars
-    bars1 = ax.bar(
+    ax.bar(
         x - 1.5 * width,
         mu_i,
         width,
@@ -363,7 +373,7 @@ def plot_entity_decomposition(
         color="skyblue",
         edgecolor="black",
     )
-    bars2 = ax.bar(
+    ax.bar(
         x - 0.5 * width,
         -eta_i,
         width,
@@ -371,7 +381,7 @@ def plot_entity_decomposition(
         color="indianred",
         edgecolor="black",
     )
-    bars3 = ax.bar(
+    ax.bar(
         x + 0.5 * width,
         v_it_mean,
         width,
@@ -379,7 +389,7 @@ def plot_entity_decomposition(
         color="lightgreen",
         edgecolor="black",
     )
-    bars4 = ax.bar(
+    ax.bar(
         x + 1.5 * width,
         -u_it_mean,
         width,
@@ -407,17 +417,19 @@ def plot_entity_decomposition(
 
 def plot_variance_decomposition(
     result,
-    figsize: Tuple[float, float] = (10, 8),
-    explode: Tuple[float, ...] = (0.05, 0.05, 0.05, 0.05),
+    figsize: tuple[float, float] = (10, 8),
+    explode: tuple[float, ...] = (0.05, 0.05, 0.05, 0.05),
 ) -> plt.Figure:
     """Plot pie chart of variance component shares.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         figsize: Figure size (width, height)
         explode: Tuple of explosion values for each slice
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Variance components
@@ -444,7 +456,7 @@ def plot_variance_decomposition(
 
     colors = ["lightgreen", "orange", "skyblue", "indianred"]
 
-    wedges, texts, autotexts = ax1.pie(
+    _wedges, _texts, _autotexts = ax1.pie(
         shares,
         labels=labels,
         colors=colors,
@@ -490,19 +502,21 @@ def plot_variance_decomposition(
 
 def plot_comprehensive_summary(
     result,
-    entity_highlight: Optional[list] = None,
+    entity_highlight: list | None = None,
     n_evolution: int = 3,
-    figsize: Tuple[float, float] = (16, 12),
+    figsize: tuple[float, float] = (16, 12),
 ) -> plt.Figure:
     """Create comprehensive summary plot with multiple panels.
 
-    Parameters:
+    Parameters
+    ----------
         result: FourComponentResult object
         entity_highlight: Entities to highlight in scatter plot
         n_evolution: Number of entities for evolution plot
         figsize: Figure size (width, height)
 
-    Returns:
+    Returns
+    -------
         Matplotlib figure object
     """
     # Create figure with subplots
@@ -552,7 +566,7 @@ def plot_comprehensive_summary(
         mask = result.model.entity_id == i
         te_transient_mean[i] = np.exp(-result.u_it[mask]).mean()
 
-    scatter = ax4.scatter(
+    ax4.scatter(
         te_persistent,
         te_transient_mean,
         s=60,

@@ -11,28 +11,33 @@ Features:
 - Save themes to files
 - Merge with base themes
 
-Examples:
+Examples
+--------
     Load theme from file:
     >>> from panelbox.visualization.utils import load_theme
-    >>> theme = load_theme('my_theme.yaml')
-    >>> chart = ChartFactory.create('bar_chart', data, theme=theme)
+    >>> theme = load_theme("my_theme.yaml")
+    >>> chart = ChartFactory.create("bar_chart", data, theme=theme)
 
     Create and save custom theme:
     >>> from panelbox.visualization import Theme
     >>> from panelbox.visualization.utils import save_theme
-    >>> custom_theme = Theme(name='My Theme', colors=['#FF5733', ...])
-    >>> save_theme(custom_theme, 'my_theme.yaml')
+    >>> custom_theme = Theme(name="My Theme", colors=["#FF5733", ...])
+    >>> save_theme(custom_theme, "my_theme.yaml")
 """
 
+from __future__ import annotations
+
 import json
+import logging
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List, Union
 
 import yaml
 
 from ..exceptions import InvalidThemeError, ThemeLoadError
 from ..themes import Theme
+
+logger = logging.getLogger(__name__)
 
 # Theme schema for validation
 THEME_SCHEMA = {
@@ -89,7 +94,7 @@ THEME_SCHEMA = {
 }
 
 
-def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
+def load_theme(file_path: str | Path, validate: bool = True) -> Theme:
     """
     Load a custom theme from YAML or JSON file.
 
@@ -115,13 +120,13 @@ def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
     Examples
     --------
     >>> from panelbox.visualization.utils import load_theme
-    >>> theme = load_theme('custom_theme.yaml')
+    >>> theme = load_theme("custom_theme.yaml")
     >>> print(theme.name)
     'My Custom Theme'
 
     >>> # Use with chart creation
     >>> from panelbox.visualization import ChartFactory
-    >>> chart = ChartFactory.create('bar_chart', data, theme=theme)
+    >>> chart = ChartFactory.create("bar_chart", data, theme=theme)
     """
     file_path = Path(file_path)
 
@@ -130,7 +135,7 @@ def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
 
     try:
         # Load file based on extension
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             if file_path.suffix in [".yaml", ".yml"]:
                 theme_data = yaml.safe_load(f)
             elif file_path.suffix == ".json":
@@ -153,13 +158,13 @@ def load_theme(file_path: Union[str, Path], validate: bool = True) -> Theme:
         return theme
 
     except (yaml.YAMLError, json.JSONDecodeError) as e:
-        raise ThemeLoadError(str(file_path), f"Parse error: {str(e)}")
+        raise ThemeLoadError(str(file_path), f"Parse error: {e!s}") from e
     except Exception as e:
-        raise ThemeLoadError(str(file_path), str(e))
+        raise ThemeLoadError(str(file_path), str(e)) from e
 
 
 def save_theme(
-    theme: Theme, file_path: Union[str, Path], format: str = "yaml", include_defaults: bool = False
+    theme: Theme, file_path: str | Path, format: str = "yaml", include_defaults: bool = False
 ) -> None:
     """
     Save a theme to YAML or JSON file.
@@ -179,18 +184,18 @@ def save_theme(
     --------
     >>> from panelbox.visualization import PROFESSIONAL_THEME
     >>> from panelbox.visualization.utils import save_theme
-    >>> save_theme(PROFESSIONAL_THEME, 'my_theme.yaml')
+    >>> save_theme(PROFESSIONAL_THEME, "my_theme.yaml")
 
     >>> # Create custom theme and save
     >>> custom_theme = Theme(
-    ...     name='Dark Mode',
-    ...     colors=['#FF5733', '#33FF57', '#3357FF'],
-    ...     font_family='Arial',
+    ...     name="Dark Mode",
+    ...     colors=["#FF5733", "#33FF57", "#3357FF"],
+    ...     font_family="Arial",
     ...     font_size=12,
-    ...     background_color='#1a1a1a',
-    ...     text_color='#ffffff'
+    ...     background_color="#1a1a1a",
+    ...     text_color="#ffffff",
     ... )
-    >>> save_theme(custom_theme, 'dark_theme.json', format='json')
+    >>> save_theme(custom_theme, "dark_theme.json", format="json")
     """
     file_path = Path(file_path)
 
@@ -210,13 +215,13 @@ def save_theme(
             else:
                 raise ValueError(f"Unsupported format: {format}. Use 'yaml' or 'json'")
 
-        print(f"✅ Theme saved to: {file_path}")
+        logger.info(f"Theme saved to: {file_path}")
 
     except Exception as e:
-        raise ThemeLoadError(str(file_path), f"Failed to save: {str(e)}")
+        raise ThemeLoadError(str(file_path), f"Failed to save: {e!s}") from e
 
 
-def merge_themes(base_theme: Theme, overrides: Dict) -> Theme:
+def merge_themes(base_theme: Theme, overrides: dict) -> Theme:
     """
     Create a new theme by merging a base theme with overrides.
 
@@ -237,8 +242,7 @@ def merge_themes(base_theme: Theme, overrides: Dict) -> Theme:
     >>> from panelbox.visualization import PROFESSIONAL_THEME
     >>> from panelbox.visualization.utils import merge_themes
     >>> custom = merge_themes(
-    ...     PROFESSIONAL_THEME,
-    ...     {'name': 'My Custom', 'background_color': '#f0f0f0'}
+    ...     PROFESSIONAL_THEME, {"name": "My Custom", "background_color": "#f0f0f0"}
     ... )
     """
     # Convert base theme to dict
@@ -251,7 +255,7 @@ def merge_themes(base_theme: Theme, overrides: Dict) -> Theme:
     return _create_theme_from_dict(theme_dict)
 
 
-def _validate_theme_data(theme_data: Dict, file_path: str) -> None:
+def _validate_theme_data(theme_data: dict, file_path: str) -> None:
     """
     Validate theme data structure.
 
@@ -311,7 +315,7 @@ def _validate_theme_data(theme_data: Dict, file_path: str) -> None:
                 )
 
 
-def _create_theme_from_dict(theme_data: Dict) -> Theme:
+def _create_theme_from_dict(theme_data: dict) -> Theme:
     """
     Create Theme object from dictionary.
 
@@ -334,11 +338,11 @@ def _create_theme_from_dict(theme_data: Dict) -> Theme:
         return Theme(**filtered_data)
     except TypeError as e:
         raise InvalidThemeError(
-            theme_data.get("name", "unknown"), f"Invalid theme structure: {str(e)}"
-        )
+            theme_data.get("name", "unknown"), f"Invalid theme structure: {e!s}"
+        ) from e
 
 
-def create_theme_template(output_path: Union[str, Path], format: str = "yaml") -> None:
+def create_theme_template(output_path: str | Path, format: str = "yaml") -> None:
     """
     Create a template theme file with all available options.
 
@@ -352,9 +356,9 @@ def create_theme_template(output_path: Union[str, Path], format: str = "yaml") -
     Examples
     --------
     >>> from panelbox.visualization.utils import create_theme_template
-    >>> create_theme_template('my_theme_template.yaml')
+    >>> create_theme_template("my_theme_template.yaml")
     >>> # Edit the template and load it
-    >>> theme = load_theme('my_theme_template.yaml')
+    >>> theme = load_theme("my_theme_template.yaml")
     """
     template = {
         "name": "My Custom Theme",
@@ -409,17 +413,19 @@ def create_theme_template(output_path: Union[str, Path], format: str = "yaml") -
             else:
                 raise ValueError(f"Unsupported format: {format}")
 
-        print(f"✅ Theme template created at: {output_path}")
-        print("\n💡 Edit the file and load it with:")
-        print("   from panelbox.visualization.utils import load_theme")
-        print(f"   theme = load_theme('{output_path}')")
+        logger.info(f"Theme template created at: {output_path}")
+        logger.info(
+            "Edit the file and load it with:\n"
+            "   from panelbox.visualization.utils import load_theme\n"
+            f"   theme = load_theme('{output_path}')"
+        )
 
     except Exception as e:
-        raise ThemeLoadError(str(output_path), f"Failed to create template: {str(e)}")
+        raise ThemeLoadError(str(output_path), f"Failed to create template: {e!s}") from e
 
 
 # Convenience function for listing built-in themes
-def list_builtin_themes() -> List[str]:
+def list_builtin_themes() -> list[str]:
     """
     List all built-in theme names.
 
@@ -438,7 +444,7 @@ def list_builtin_themes() -> List[str]:
     return ["professional", "academic", "presentation"]
 
 
-def get_theme_colors(theme_name_or_path: Union[str, Path]) -> List[str]:
+def get_theme_colors(theme_name_or_path: str | Path) -> list[str]:
     """
     Get color palette from a theme.
 
@@ -455,7 +461,7 @@ def get_theme_colors(theme_name_or_path: Union[str, Path]) -> List[str]:
     Examples
     --------
     >>> from panelbox.visualization.utils import get_theme_colors
-    >>> colors = get_theme_colors('professional')
+    >>> colors = get_theme_colors("professional")
     >>> print(colors[:3])
     ['#2563eb', '#dc2626', '#059669']
     """
@@ -475,9 +481,6 @@ if __name__ == "__main__":
     # Create template when run as script
     import sys
 
-    if len(sys.argv) > 1:
-        output_file = sys.argv[1]
-    else:
-        output_file = "custom_theme_template.yaml"
+    output_file = sys.argv[1] if len(sys.argv) > 1 else "custom_theme_template.yaml"
 
     create_theme_template(output_file)

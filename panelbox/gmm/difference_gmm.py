@@ -1,5 +1,6 @@
 """
-Difference GMM Estimator
+Difference GMM Estimator.
+
 =========================
 
 Arellano-Bond (1991) Difference GMM estimator for dynamic panel data models.
@@ -15,7 +16,9 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -24,6 +27,8 @@ from panelbox.gmm.estimator import GMMEstimator
 from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
 from panelbox.gmm.results import GMMResults
 from panelbox.gmm.tests import GMMTests
+
+logger = logging.getLogger(__name__)
 
 
 class DifferenceGMM:
@@ -79,20 +84,20 @@ class DifferenceGMM:
     >>> from panelbox.gmm import DifferenceGMM
     >>>
     >>> # Load panel data (firms over time)
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>>
     >>> # Estimate Difference GMM
     >>> model = DifferenceGMM(
     ...     data=data,
-    ...     dep_var='employment',
-    ...     lags=1,                    # Include employment_{t-1}
-    ...     id_var='firm_id',
-    ...     time_var='year',
-    ...     exog_vars=['wages', 'capital'],
+    ...     dep_var="employment",
+    ...     lags=1,  # Include employment_{t-1}
+    ...     id_var="firm_id",
+    ...     time_var="year",
+    ...     exog_vars=["wages", "capital"],
     ...     time_dummies=True,
-    ...     collapse=True,             # Recommended to avoid instrument proliferation
-    ...     two_step=True,             # Two-step with Windmeijer correction
-    ...     robust=True                # Robust standard errors
+    ...     collapse=True,  # Recommended to avoid instrument proliferation
+    ...     two_step=True,  # Two-step with Windmeijer correction
+    ...     robust=True,  # Robust standard errors
     ... )
     >>>
     >>> # Fit and get results
@@ -108,10 +113,8 @@ class DifferenceGMM:
     >>> # Check if estimation is valid
     >>> if results.ar2_test.pvalue > 0.10:
     ...     print("✓ Moment conditions valid")
-    ...
     >>> if 0.10 < results.hansen_j.pvalue < 0.25:
     ...     print("✓ Instruments appear valid")
-    ...
     >>> if results.instrument_ratio < 1.0:
     ...     print("✓ Instrument count appropriate")
 
@@ -120,13 +123,13 @@ class DifferenceGMM:
     >>> # Some variables may not be strictly exogenous
     >>> model = DifferenceGMM(
     ...     data=data,
-    ...     dep_var='output',
+    ...     dep_var="output",
     ...     lags=1,
-    ...     exog_vars=['policy_var'],        # Strictly exogenous
-    ...     predetermined_vars=['capital'],   # Instruments: t-1 and earlier
-    ...     endogenous_vars=['labor'],        # Instruments: t-2 and earlier
+    ...     exog_vars=["policy_var"],  # Strictly exogenous
+    ...     predetermined_vars=["capital"],  # Instruments: t-1 and earlier
+    ...     endogenous_vars=["labor"],  # Instruments: t-2 and earlier
     ...     collapse=True,
-    ...     two_step=True
+    ...     two_step=True,
     ... )
     >>> results = model.fit()
 
@@ -135,12 +138,12 @@ class DifferenceGMM:
     >>> # Always use collapse=True and avoid many time dummies
     >>> model = DifferenceGMM(
     ...     data=unbalanced_data,
-    ...     dep_var='y',
+    ...     dep_var="y",
     ...     lags=1,
-    ...     exog_vars=['x1', 'x2'],
+    ...     exog_vars=["x1", "x2"],
     ...     time_dummies=False,  # Or use linear trend
-    ...     collapse=True,       # Essential for unbalanced panels
-    ...     two_step=True
+    ...     collapse=True,  # Essential for unbalanced panels
+    ...     two_step=True,
     ... )
     >>> results = model.fit()
     >>> print(f"Retained {results.nobs}/{len(unbalanced_data)} observations")
@@ -228,18 +231,18 @@ class DifferenceGMM:
         self,
         data: pd.DataFrame,
         dep_var: str,
-        lags: Union[int, List[int]],
+        lags: int | list[int],
         id_var: str = "id",
         time_var: str = "year",
-        exog_vars: Optional[List[str]] = None,
-        endogenous_vars: Optional[List[str]] = None,
-        predetermined_vars: Optional[List[str]] = None,
+        exog_vars: list[str] | None = None,
+        endogenous_vars: list[str] | None = None,
+        predetermined_vars: list[str] | None = None,
         time_dummies: bool = True,
         collapse: bool = False,
         two_step: bool = True,
         robust: bool = True,
         gmm_type: str = "two_step",
-        gmm_max_lag: Optional[int] = None,
+        gmm_max_lag: int | None = None,
         iv_max_lag: int = 0,
     ):
         """Initialize Difference GMM model.
@@ -299,8 +302,8 @@ class DifferenceGMM:
         self.tester = GMMTests()
 
         # Results (populated after fit)
-        self.results: Optional[GMMResults] = None
-        self.params: Optional[Union[np.ndarray, pd.Series]] = None
+        self.results: GMMResults | None = None
+        self.params: np.ndarray | pd.Series | None = None
 
         # Validate inputs
         self._validate_inputs()
@@ -344,7 +347,7 @@ class DifferenceGMM:
 
                 if n_dummies >= 5 and balance_rate < 0.80:
                     warnings.warn(
-                        f"\nUnbalanced panel detected ({balance_rate*100:.0f}% balanced) with "
+                        f"\nUnbalanced panel detected ({balance_rate * 100:.0f}% balanced) with "
                         f"{n_dummies} time dummies.\n"
                         f"This may result in very few observations being retained.\n\n"
                         f"Recommendations:\n"
@@ -353,6 +356,7 @@ class DifferenceGMM:
                         f"  3. Ensure collapse=True (currently: {self.collapse})\n\n"
                         f"See examples/gmm/unbalanced_panel_guide.py for details.",
                         UserWarning,
+                        stacklevel=2,
                     )
 
         # Check collapse recommendation
@@ -381,6 +385,7 @@ class DifferenceGMM:
                 "The Stata Journal, 9(1), 86-136.\n"
                 "=" * 70,
                 UserWarning,
+                stacklevel=2,
             )
 
     def _check_panel_balance(self):
@@ -571,6 +576,13 @@ class DifferenceGMM:
             model_type="difference",
             transformation="fd",
             residuals=residuals,
+            dep_var=self.dep_var,
+            exog_vars=list(self.exog_vars),
+            id_var=self.id_var,
+            time_var=self.time_var,
+            n_lags=max(self.lags),
+            endogenous_vars=list(self.endogenous_vars),
+            predetermined_vars=list(self.predetermined_vars),
         )
 
         self.params = self.results.params
@@ -582,7 +594,7 @@ class DifferenceGMM:
 
             warnings.warn(
                 f"\nLow observation retention: {self.results.nobs}/{len(self.data)} "
-                f"({retention_rate*100:.1f}%).\n"
+                f"({retention_rate * 100:.1f}%).\n"
                 f"Many observations were dropped due to insufficient valid instruments.\n\n"
                 f"Recommendations:\n"
                 f"  1. Simplify specification (fewer variables/lags)\n"
@@ -591,6 +603,7 @@ class DifferenceGMM:
                 f"  4. Check data for excessive missing values\n\n"
                 f"See examples/gmm/unbalanced_panel_guide.py for detailed guidance.",
                 UserWarning,
+                stacklevel=2,
             )
 
         return self.results
@@ -715,7 +728,7 @@ class DifferenceGMM:
 
         return Z_combined
 
-    def _get_variable_names(self) -> List[str]:
+    def _get_variable_names(self) -> list[str]:
         """
         Get list of variable names in order.
 
@@ -765,4 +778,4 @@ class DifferenceGMM:
     def __repr__(self) -> str:
         """Representation of the model."""
         status = "fitted" if self.results is not None else "not fitted"
-        return f"DifferenceGMM(dep_var='{self.dep_var}', lags={self.lags}, " f"status='{status}')"
+        return f"DifferenceGMM(dep_var='{self.dep_var}', lags={self.lags}, status='{status}')"

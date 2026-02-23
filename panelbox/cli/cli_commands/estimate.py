@@ -5,6 +5,8 @@ This module implements the 'estimate' command which allows users to estimate
 panel data models from the command line.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path

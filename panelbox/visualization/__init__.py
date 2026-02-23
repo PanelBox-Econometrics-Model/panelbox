@@ -15,7 +15,7 @@ Main Features
 Quick Start
 -----------
 >>> from panelbox.visualization import create_validation_charts
->>> charts = create_validation_charts(validation_report, theme='professional')
+>>> charts = create_validation_charts(validation_report, theme="professional")
 
 Architecture
 ------------
@@ -42,20 +42,14 @@ Create validation charts:
 >>> from panelbox.validation import ValidationReport
 >>> from panelbox.visualization import create_validation_charts
 >>>
->>> charts = create_validation_charts(
-...     validation_report,
-...     theme='professional',
-...     interactive=True
-... )
+>>> charts = create_validation_charts(validation_report, theme="professional", interactive=True)
 
 Create residual diagnostics:
 
 >>> from panelbox.visualization import create_residual_diagnostics
 >>>
 >>> diagnostics = create_residual_diagnostics(
-...     results,
-...     theme='academic',
-...     charts=['qq_plot', 'residual_vs_fitted']
+...     results, theme="academic", charts=["qq_plot", "residual_vs_fitted"]
 ... )
 
 Create custom chart:
@@ -64,12 +58,12 @@ Create custom chart:
 >>> from panelbox.visualization.themes import PROFESSIONAL_THEME
 >>>
 >>> chart = ChartFactory.create(
-...     chart_type='residual_qq_plot',
-...     data={'residuals': residuals},
-...     theme=PROFESSIONAL_THEME
+...     chart_type="residual_qq_plot", data={"residuals": residuals}, theme=PROFESSIONAL_THEME
 ... )
 >>> html = chart.to_html()
 """
+
+from __future__ import annotations
 
 from .base import BaseChart, MatplotlibChartBase, PlotlyChartBase
 from .factory import ChartFactory
@@ -197,81 +191,81 @@ except ImportError:
     _has_api = False
 
 __all__ = [
-    # Base classes
-    "BaseChart",
-    "PlotlyChartBase",
-    "MatplotlibChartBase",
-    # Registry and Factory
-    "ChartRegistry",
-    "register_chart",
-    "ChartFactory",
-    # Themes
-    "Theme",
-    "PROFESSIONAL_THEME",
     "ACADEMIC_THEME",
     "PRESENTATION_THEME",
-    # Basic Charts
-    "BarChart",
-    "LineChart",
-    # Validation Charts
-    "TestOverviewChart",
-    "PValueDistributionChart",
-    "TestStatisticsChart",
-    "TestComparisonHeatmap",
-    "ValidationDashboard",
-    # Residual Diagnostic Charts
-    "QQPlot",
-    "ResidualVsFittedPlot",
-    "ScaleLocationPlot",
-    "ResidualVsLeveragePlot",
-    "ResidualTimeSeriesPlot",
-    "ResidualDistributionPlot",
-    "PartialRegressionPlot",
-    # Model Comparison Charts
-    "CoefficientComparisonChart",
-    "ForestPlotChart",
-    "ModelFitComparisonChart",
-    "InformationCriteriaChart",
-    # Distribution Charts
-    "HistogramChart",
-    "KDEChart",
-    "ViolinPlotChart",
-    "BoxPlotChart",
-    # Correlation Charts
-    "CorrelationHeatmapChart",
-    "PairwiseCorrelationChart",
-    # Time Series Charts
-    "PanelTimeSeriesChart",
-    "TrendLineChart",
-    "FacetedTimeSeriesChart",
-    # Panel-Specific Charts
-    "EntityEffectsPlot",
-    "TimeEffectsPlot",
-    "BetweenWithinPlot",
-    "PanelStructurePlot",
-    # High-level APIs
-    "create_validation_charts",
-    "create_residual_diagnostics",
-    "create_comparison_charts",
-    "create_panel_charts",
-    # Panel-specific APIs
-    "create_entity_effects_plot",
-    "create_time_effects_plot",
-    "create_between_within_plot",
-    "create_panel_structure_plot",
+    "PROFESSIONAL_THEME",
     # Econometric test APIs (Phase 7)
     "ACFPACFPlot",
-    "UnitRootTestPlot",
+    # Basic Charts
+    "BarChart",
+    # Base classes
+    "BaseChart",
+    "BetweenWithinPlot",
+    "BoxPlotChart",
+    "ChartFactory",
+    # Registry and Factory
+    "ChartRegistry",
+    # Model Comparison Charts
+    "CoefficientComparisonChart",
     "CointegrationHeatmap",
+    # Correlation Charts
+    "CorrelationHeatmapChart",
     "CrossSectionalDependencePlot",
+    # Panel-Specific Charts
+    "EntityEffectsPlot",
+    "FacetedTimeSeriesChart",
+    "ForestPlotChart",
+    # Distribution Charts
+    "HistogramChart",
+    "InformationCriteriaChart",
+    "KDEChart",
+    "LineChart",
+    "MatplotlibChartBase",
+    "ModelFitComparisonChart",
+    "PValueDistributionChart",
+    "PairwiseCorrelationChart",
+    "PanelStructurePlot",
+    # Time Series Charts
+    "PanelTimeSeriesChart",
+    "PartialRegressionPlot",
+    "PlotlyChartBase",
+    # Residual Diagnostic Charts
+    "QQPlot",
+    "ResidualDistributionPlot",
+    "ResidualTimeSeriesPlot",
+    "ResidualVsFittedPlot",
+    "ResidualVsLeveragePlot",
+    "ScaleLocationPlot",
+    "TestComparisonHeatmap",
+    # Validation Charts
+    "TestOverviewChart",
+    "TestStatisticsChart",
+    # Themes
+    "Theme",
+    "TimeEffectsPlot",
+    "TrendLineChart",
+    "UnitRootTestPlot",
+    "ValidationDashboard",
+    "ViolinPlotChart",
     "create_acf_pacf_plot",
-    "create_unit_root_test_plot",
+    "create_between_within_plot",
     "create_cointegration_heatmap",
+    "create_comparison_charts",
     "create_cross_sectional_dependence_plot",
+    # Panel-specific APIs
+    "create_entity_effects_plot",
+    "create_panel_charts",
+    "create_panel_structure_plot",
+    "create_residual_diagnostics",
+    "create_time_effects_plot",
+    "create_unit_root_test_plot",
+    # High-level APIs
+    "create_validation_charts",
     # Export functions
     "export_chart",
     "export_charts",
     "export_charts_multiple_formats",
+    "register_chart",
 ]
 
 __version__ = "0.6.0"

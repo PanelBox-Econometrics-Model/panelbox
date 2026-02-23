@@ -15,12 +15,16 @@ Anselin, L., & Rey, S.J. (2014). "Modern Spatial Econometrics in Practice:
     A Guide to GeoDa, GeoDaSpace and PySAL." GeoDa Press LLC.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -412,7 +416,7 @@ def robust_lm_error_test(
 
 def run_lm_tests(
     model_result, W: np.ndarray, alpha: float = 0.05
-) -> Dict[str, Union[LMTestResult, str, pd.DataFrame]]:
+) -> dict[str, LMTestResult | str | pd.DataFrame]:
     """
     Run all LM tests and provide model recommendation using decision tree.
 
@@ -520,7 +524,7 @@ class MoranIResult:
     z_score: float
     pvalue: float
     conclusion: str
-    additional_info: Dict
+    additional_info: dict
 
     def summary(self) -> str:
         """Print formatted summary."""
@@ -567,7 +571,7 @@ class MoranIPanelTest:
         self.n_entities = len(np.unique(entity_ids))
         self.n_periods = len(np.unique(time_ids))
 
-    def run(self, method: str = "pooled") -> Union[MoranIResult, Dict[str, MoranIResult]]:
+    def run(self, method: str = "pooled") -> MoranIResult | dict[str, MoranIResult]:
         """
         Run Moran's I test.
 
@@ -608,7 +612,7 @@ class MoranIPanelTest:
 
         return self._compute_moran(avg_resid)
 
-    def _test_by_period(self) -> Dict[str, MoranIResult]:
+    def _test_by_period(self) -> dict[str, MoranIResult]:
         """Test for each period separately."""
         results = {}
         unique_times = np.unique(self.time_ids)

@@ -8,9 +8,14 @@ the errors and use FGLS to obtain efficient standard errors.
 PCSE requires T > N (more time periods than entities).
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -118,12 +123,11 @@ class PanelCorrectedStandardErrors:
         # Validate dimensions
         if len(self.entity_ids) != self.n_obs:
             raise ValueError(
-                f"entity_ids dimension mismatch: expected {self.n_obs}, "
-                f"got {len(self.entity_ids)}"
+                f"entity_ids dimension mismatch: expected {self.n_obs}, got {len(self.entity_ids)}"
             )
         if len(self.time_ids) != self.n_obs:
             raise ValueError(
-                f"time_ids dimension mismatch: expected {self.n_obs}, " f"got {len(self.time_ids)}"
+                f"time_ids dimension mismatch: expected {self.n_obs}, got {len(self.time_ids)}"
             )
 
         # Get unique entities and periods
@@ -141,6 +145,7 @@ class PanelCorrectedStandardErrors:
                 f"The estimated Σ matrix may be singular or poorly estimated. "
                 f"Consider using cluster-robust or Driscoll-Kraay SEs instead.",
                 UserWarning,
+                stacklevel=2,
             )
 
     def _reshape_panel(self) -> np.ndarray:
@@ -224,8 +229,9 @@ class PanelCorrectedStandardErrors:
             import warnings
 
             warnings.warn(
-                "Σ matrix is singular. Using pseudoinverse. " "Results may be unreliable.",
+                "Σ matrix is singular. Using pseudoinverse. Results may be unreliable.",
                 UserWarning,
+                stacklevel=2,
             )
             sigma_inv = np.linalg.pinv(sigma)
 
@@ -264,7 +270,9 @@ class PanelCorrectedStandardErrors:
         except np.linalg.LinAlgError:
             import warnings
 
-            warnings.warn("X'ΩX matrix is singular. Using pseudoinverse.", UserWarning)
+            warnings.warn(
+                "X'ΩX matrix is singular. Using pseudoinverse.", UserWarning, stacklevel=2
+            )
             cov_matrix = np.linalg.pinv(XtOmegaX)
 
         std_errors = np.sqrt(np.diag(cov_matrix))

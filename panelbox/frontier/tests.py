@@ -5,7 +5,8 @@ This module provides hypothesis tests for comparing different SFA model
 specifications, including the Hausman-type test for choosing between
 True Fixed Effects and True Random Effects models.
 
-References:
+References
+----------
     Hausman, J. A. (1978).
         Specification tests in econometrics. Econometrica, 1251-1271.
 
@@ -14,12 +15,21 @@ References:
         Journal of Productivity Analysis, 23(1), 7-32.
 """
 
+from __future__ import annotations
+
 import warnings
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from scipy import stats
 from scipy.linalg import inv, pinv
+
+if TYPE_CHECKING:
+    from panelbox.frontier.result import SFResult
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def hausman_test_tfe_tre(
@@ -27,8 +37,8 @@ def hausman_test_tfe_tre(
     params_tre: np.ndarray,
     vcov_tfe: np.ndarray,
     vcov_tre: np.ndarray,
-    param_names: Optional[list] = None,
-) -> Dict[str, any]:
+    param_names: list | None = None,
+) -> dict[str, Any]:
     """Hausman-type test for choosing between TFE and TRE models.
 
     Tests the null hypothesis that TRE is consistent and efficient
@@ -42,14 +52,16 @@ def hausman_test_tfe_tre(
 
     Under H0, H ~ χ²(K) where K is the number of frontier parameters.
 
-    Parameters:
+    Parameters
+    ----------
         params_tfe: Parameter estimates from TFE model
         params_tre: Parameter estimates from TRE model
         vcov_tfe: Variance-covariance matrix from TFE
         vcov_tre: Variance-covariance matrix from TRE
         param_names: Names of parameters (optional)
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - statistic: Test statistic value
             - df: Degrees of freedom
@@ -58,13 +70,15 @@ def hausman_test_tfe_tre(
             - difference: Parameter differences
             - std_difference: Standardized differences
 
-    Notes:
+    Notes
+    -----
         - Only frontier parameters (β) are compared
         - Variance parameters are excluded from test
         - If variance difference matrix is not positive definite,
           the test uses pseudo-inverse
 
-    References:
+    References
+    ----------
         Hausman, J. A. (1978). Econometrica, 1251-1271.
         Greene, W. H. (2005). Journal of Productivity Analysis, 23(1), 7-32.
     """
@@ -112,6 +126,7 @@ def hausman_test_tfe_tre(
             "Using pseudo-inverse for Hausman test. "
             "Results may not be reliable.",
             UserWarning,
+            stacklevel=2,
         )
 
     # Compute test statistic
@@ -123,7 +138,9 @@ def hausman_test_tfe_tre(
             # Fallback to pseudo-inverse
             V_diff_inv = pinv(V_diff)
             warnings.warn(
-                "Variance difference matrix is singular. Using pseudo-inverse.", UserWarning
+                "Variance difference matrix is singular. Using pseudo-inverse.",
+                UserWarning,
+                stacklevel=2,
             )
     else:
         # Use pseudo-inverse
@@ -181,7 +198,7 @@ def hausman_test_tfe_tre(
     }
 
 
-def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) -> Dict[str, float]:
+def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) -> dict[str, float]:
     """Likelihood ratio test for nested models.
 
     Tests whether additional parameters in the unrestricted model
@@ -192,12 +209,14 @@ def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) 
 
     Test statistic: LR = 2 * (LL_unrestricted - LL_restricted) ~ χ²(df_diff)
 
-    Parameters:
+    Parameters
+    ----------
         loglik_restricted: Log-likelihood of restricted model
         loglik_unrestricted: Log-likelihood of unrestricted model
         df_diff: Difference in degrees of freedom (number of restrictions)
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - statistic: LR test statistic
             - df: Degrees of freedom
@@ -217,6 +236,7 @@ def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) 
             f"LR statistic is negative ({lr_stat:.4f}). "
             "This usually indicates numerical issues. Setting to 0.",
             UserWarning,
+            stacklevel=2,
         )
         lr_stat = 0
 
@@ -233,7 +253,7 @@ def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) 
     else:
         conclusion = "Do not reject H0"
         interpretation = (
-            "Restricted model is adequate. " "Additional parameters not statistically justified."
+            "Restricted model is adequate. Additional parameters not statistically justified."
         )
 
     return {
@@ -246,8 +266,8 @@ def lr_test(loglik_restricted: float, loglik_unrestricted: float, df_diff: int) 
 
 
 def wald_test(
-    params: np.ndarray, vcov: np.ndarray, R: np.ndarray, r: Optional[np.ndarray] = None
-) -> Dict[str, float]:
+    params: np.ndarray, vcov: np.ndarray, R: np.ndarray, r: np.ndarray | None = None
+) -> dict[str, float]:
     """Wald test for linear restrictions on parameters.
 
     Tests H0: R*θ = r against H1: R*θ ≠ r
@@ -256,13 +276,15 @@ def wald_test(
 
     where q is the number of restrictions (rows of R).
 
-    Parameters:
+    Parameters
+    ----------
         params: Parameter estimates (k,)
         vcov: Variance-covariance matrix (k, k)
         R: Restriction matrix (q, k)
         r: Restriction vector (q,). If None, defaults to zeros.
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - statistic: Wald test statistic
             - df: Degrees of freedom
@@ -288,7 +310,11 @@ def wald_test(
         V_restriction_inv = inv(V_restriction)
     except np.linalg.LinAlgError:
         V_restriction_inv = pinv(V_restriction)
-        warnings.warn("Restriction variance matrix is singular. Using pseudo-inverse.", UserWarning)
+        warnings.warn(
+            "Restriction variance matrix is singular. Using pseudo-inverse.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     # Wald statistic
     wald_stat = restriction.T @ V_restriction_inv @ restriction
@@ -316,18 +342,20 @@ def wald_test(
     }
 
 
-def heterogeneity_significance_test(sigma_w_sq: float, se_sigma_w_sq: float) -> Dict[str, float]:
+def heterogeneity_significance_test(sigma_w_sq: float, se_sigma_w_sq: float) -> dict[str, float]:
     """Test if heterogeneity variance is significantly different from zero.
 
     For TRE model, tests H0: σ²_w = 0 vs H1: σ²_w > 0
 
     If σ²_w = 0, TRE reduces to pooled SFA model.
 
-    Parameters:
+    Parameters
+    ----------
         sigma_w_sq: Estimated variance of heterogeneity
         se_sigma_w_sq: Standard error of σ²_w estimate
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - statistic: z-statistic
             - pvalue: One-sided p-value
@@ -364,16 +392,16 @@ def heterogeneity_significance_test(sigma_w_sq: float, se_sigma_w_sq: float) -> 
     }
 
 
-def summary_model_comparison(
-    results_dict: Dict[str, "SFResult"], test_type: str = "hausman"
-) -> str:
+def summary_model_comparison(results_dict: dict[str, SFResult], test_type: str = "hausman") -> str:
     """Generate a summary table comparing multiple SFA models.
 
-    Parameters:
+    Parameters
+    ----------
         results_dict: Dictionary of model results {model_name: SFResult}
         test_type: Type of comparison ('hausman', 'lr', 'aic', 'bic')
 
-    Returns:
+    Returns
+    -------
         Formatted string with comparison table
     """
     # Extract information from each model
@@ -429,7 +457,7 @@ def inefficiency_presence_test(
     residuals_ols: np.ndarray,
     frontier_type: str = "production",
     distribution: str = "half_normal",
-) -> Dict[str, any]:
+) -> dict[str, Any]:
     """Test for the presence of inefficiency (σ²_u > 0).
 
     Tests H0: σ²_u = 0 (OLS is sufficient) vs H1: σ²_u > 0 (SFA is needed)
@@ -448,14 +476,16 @@ def inefficiency_presence_test(
     - Production frontier: OLS residuals should have negative skewness
     - Cost frontier: OLS residuals should have positive skewness
 
-    Parameters:
+    Parameters
+    ----------
         loglik_sfa: Log-likelihood from SFA model
         loglik_ols: Log-likelihood from OLS model (H0)
         residuals_ols: OLS residuals for skewness test
         frontier_type: 'production' or 'cost'
         distribution: 'half_normal', 'exponential', or 'truncated_normal'
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - lr_statistic: LR test statistic
             - df: Degrees of freedom
@@ -465,7 +495,8 @@ def inefficiency_presence_test(
             - skewness: Skewness of OLS residuals
             - skewness_warning: Warning if skewness has wrong sign
 
-    References:
+    References
+    ----------
         Kodde, D. A., & Palm, F. C. (1986). Wald criteria for jointly testing
             equality and inequality restrictions. Econometrica, 1243-1248.
         Coelli, T. J. (1995). Estimators and hypothesis tests for a
@@ -481,6 +512,7 @@ def inefficiency_presence_test(
             f"LR statistic is negative ({lr_stat:.6f}). "
             "SFA model may have failed to converge properly.",
             UserWarning,
+            stacklevel=2,
         )
         lr_stat = 0
 
@@ -522,9 +554,9 @@ def inefficiency_presence_test(
 
     else:
         warnings.warn(
-            f"Unknown distribution '{distribution}'. "
-            "Using standard chi-square test with df=1.",
+            f"Unknown distribution '{distribution}'. Using standard chi-square test with df=1.",
             UserWarning,
+            stacklevel=2,
         )
         df = 1
         pvalue = 1 - stats.chi2.cdf(lr_stat, df=1)
@@ -583,14 +615,13 @@ def inefficiency_presence_test(
         "skewness": skewness,
         "skewness_warning": skewness_warning,
         "distribution": distribution,
-        "test_type": "mixed_chi_square" if distribution in ["half_normal", "exponential", "truncated_normal"] else "standard_chi_square",
+        "test_type": "mixed_chi_square"
+        if distribution in ["half_normal", "exponential", "truncated_normal"]
+        else "standard_chi_square",
     }
 
 
-def skewness_test(
-    residuals: np.ndarray,
-    frontier_type: str = "production"
-) -> Dict[str, any]:
+def skewness_test(residuals: np.ndarray, frontier_type: str = "production") -> dict[str, Any]:
     """Preliminary skewness test for frontier model specification.
 
     This is a diagnostic test, not a formal hypothesis test. It checks whether
@@ -599,18 +630,21 @@ def skewness_test(
     For production frontier: u reduces y, so ε = y - Xβ should be negatively skewed
     For cost frontier: u increases y, so ε = y - Xβ should be positively skewed
 
-    Parameters:
+    Parameters
+    ----------
         residuals: OLS residuals (y - Xβ)
         frontier_type: 'production' or 'cost'
 
-    Returns:
+    Returns
+    -------
         Dict with diagnostic results:
             - skewness: Sample skewness
             - expected_sign: Expected sign for frontier type
             - correct_sign: Boolean indicating if sign matches expectation
             - warning: Warning message if sign is incorrect
 
-    References:
+    References
+    ----------
         Coelli, T. J. (1995). Journal of Productivity Analysis, 6(4), 247-268.
     """
     skew_value = stats.skew(residuals)
@@ -658,7 +692,7 @@ def vuong_test(
     loglik2: np.ndarray,
     model1_name: str = "Model 1",
     model2_name: str = "Model 2",
-) -> Dict[str, any]:
+) -> dict[str, Any]:
     """Vuong (1989) test for non-nested model selection.
 
     Tests whether two non-nested models have significantly different
@@ -673,13 +707,15 @@ def vuong_test(
 
     Under H0: V ~ N(0, 1)
 
-    Parameters:
+    Parameters
+    ----------
         loglik1: Array of observation-level log-likelihoods for model 1
         loglik2: Array of observation-level log-likelihoods for model 2
         model1_name: Name of first model
         model2_name: Name of second model
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - statistic: Vuong test statistic
             - pvalue_two_sided: Two-sided p-value
@@ -688,11 +724,13 @@ def vuong_test(
             - conclusion: Which model is preferred (or 'equivalent')
             - interpretation: Detailed interpretation
 
-    References:
+    References
+    ----------
         Vuong, Q. H. (1989). Likelihood ratio tests for model selection and
             non-nested hypotheses. Econometrica, 307-333.
 
-    Notes:
+    Notes
+    -----
         - Requires observation-level log-likelihoods, not just total log-likelihood
         - Both models must be estimated on the same sample
         - Test assumes large N (asymptotic normality)
@@ -700,8 +738,7 @@ def vuong_test(
     # Check inputs
     if len(loglik1) != len(loglik2):
         raise ValueError(
-            f"Log-likelihood arrays must have same length. "
-            f"Got {len(loglik1)} and {len(loglik2)}"
+            f"Log-likelihood arrays must have same length. Got {len(loglik1)} and {len(loglik2)}"
         )
 
     n = len(loglik1)
@@ -711,6 +748,7 @@ def vuong_test(
             f"Vuong test requires large sample (N >> 30). N = {n} may be too small. "
             "Results may not be reliable.",
             UserWarning,
+            stacklevel=2,
         )
 
     # Compute log-likelihood ratios at observation level
@@ -729,7 +767,7 @@ def vuong_test(
     # P-values
     pvalue_two_sided = 2 * (1 - stats.norm.cdf(np.abs(vuong_stat)))
     pvalue_model1 = 1 - stats.norm.cdf(vuong_stat)  # P(V < v)
-    pvalue_model2 = stats.norm.cdf(vuong_stat)      # P(V > v)
+    pvalue_model2 = stats.norm.cdf(vuong_stat)  # P(V > v)
 
     # Decision (using 5% significance level)
     if pvalue_two_sided < 0.05:
@@ -770,7 +808,7 @@ def compare_nested_distributions(
     loglik_unrestricted: float,
     dist_restricted: str,
     dist_unrestricted: str,
-) -> Dict[str, any]:
+) -> dict[str, Any]:
     """Compare nested distributional specifications using LR test.
 
     For nested distributions (e.g., half-normal is nested in truncated-normal
@@ -780,13 +818,15 @@ def compare_nested_distributions(
         - half_normal ⊂ truncated_normal (H0: μ = 0)
         - exponential ⊂ gamma (H0: P = 1)
 
-    Parameters:
+    Parameters
+    ----------
         loglik_restricted: Log-likelihood of restricted model
         loglik_unrestricted: Log-likelihood of unrestricted model
         dist_restricted: Name of restricted distribution
         dist_unrestricted: Name of unrestricted distribution
 
-    Returns:
+    Returns
+    -------
         Dict with test results:
             - lr_statistic: LR test statistic
             - df: Degrees of freedom
@@ -794,17 +834,18 @@ def compare_nested_distributions(
             - conclusion: Which distribution is preferred
             - interpretation: Detailed interpretation
 
-    Notes:
+    Notes
+    -----
         - Half-normal vs truncated-normal: df=1, tests μ=0, uses mixed chi-square
         - Other nested pairs: standard chi-square distribution
     """
     # Determine df and test type
-    if (dist_restricted == "half_normal" and dist_unrestricted == "truncated_normal"):
+    if dist_restricted == "half_normal" and dist_unrestricted == "truncated_normal":
         # H0: μ = 0 (boundary parameter)
         # Use mixed chi-square: ½χ²(0) + ½χ²(1)
         df = 1
         use_mixed = True
-    elif (dist_restricted == "exponential" and dist_unrestricted == "gamma"):
+    elif dist_restricted == "exponential" and dist_unrestricted == "gamma":
         # H0: P = 1
         df = 1
         use_mixed = False
@@ -814,6 +855,7 @@ def compare_nested_distributions(
             f"'{dist_unrestricted}' may not be standard. "
             "Using df=1 and standard chi-square.",
             UserWarning,
+            stacklevel=2,
         )
         df = 1
         use_mixed = False
@@ -827,6 +869,7 @@ def compare_nested_distributions(
             f"LR statistic is negative ({lr_stat:.6f}). "
             "Unrestricted model should have higher log-likelihood.",
             UserWarning,
+            stacklevel=2,
         )
         lr_stat = 0
 

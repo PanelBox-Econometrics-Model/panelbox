@@ -17,14 +17,18 @@ References
        functions. Review of economics and statistics, 80(2), 218-230.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from scipy import stats
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class IRFResult:
@@ -83,12 +87,12 @@ class IRFResult:
     def __init__(
         self,
         irf_matrix: np.ndarray,
-        var_names: List[str],
+        var_names: list[str],
         periods: int,
         method: str,
-        shock_size: Union[str, float] = "one_std",
+        shock_size: str | float = "one_std",
         cumulative: bool = False,
-        ordering: Optional[List[str]] = None,
+        ordering: list[str] | None = None,
     ):
         self.irf_matrix = irf_matrix
         self.var_names = var_names
@@ -105,7 +109,7 @@ class IRFResult:
         self.ci_level = None
         self.bootstrap_dist = None
 
-    def __getitem__(self, key: Tuple[str, str]) -> np.ndarray:
+    def __getitem__(self, key: tuple[str, str]) -> np.ndarray:
         """
         Access IRF for a specific variable pair.
 
@@ -122,7 +126,7 @@ class IRFResult:
         Examples
         --------
         >>> irf = result.irf(periods=10)
-        >>> irf['gdp', 'inflation']  # Response of GDP to inflation shock
+        >>> irf["gdp", "inflation"]  # Response of GDP to inflation shock
         array([0.0, 0.05, 0.08, ...])
         """
         if not isinstance(key, tuple) or len(key) != 2:
@@ -133,17 +137,17 @@ class IRFResult:
         try:
             response_idx = self.var_names.index(response_var)
         except ValueError:
-            raise KeyError(f"Response variable '{response_var}' not found")
+            raise KeyError(f"Response variable '{response_var}' not found") from None
 
         try:
             impulse_idx = self.var_names.index(impulse_var)
         except ValueError:
-            raise KeyError(f"Impulse variable '{impulse_var}' not found")
+            raise KeyError(f"Impulse variable '{impulse_var}' not found") from None
 
         return self.irf_matrix[:, response_idx, impulse_idx]
 
     def to_dataframe(
-        self, impulse: Optional[str] = None, response: Optional[str] = None
+        self, impulse: str | None = None, response: str | None = None
     ) -> pd.DataFrame:
         """
         Convert IRFs to DataFrame format.
@@ -166,9 +170,9 @@ class IRFResult:
         >>> # Get all IRFs
         >>> df = irf.to_dataframe()
         >>> # Get IRFs for GDP shocks
-        >>> df_gdp = irf.to_dataframe(impulse='gdp')
+        >>> df_gdp = irf.to_dataframe(impulse="gdp")
         >>> # Get IRFs of inflation
-        >>> df_inf = irf.to_dataframe(response='inflation')
+        >>> df_inf = irf.to_dataframe(response="inflation")
         """
         horizons = np.arange(self.periods + 1)
 
@@ -201,7 +205,7 @@ class IRFResult:
                     data[f"{resp_var}←{imp_var}"] = self.irf_matrix[:, i, j]
             return pd.DataFrame(data)
 
-    def summary(self, horizons: Optional[List[int]] = None) -> str:
+    def summary(self, horizons: list[int] | None = None) -> str:
         """
         Generate summary table of IRFs at selected horizons.
 
@@ -254,12 +258,12 @@ class IRFResult:
 
     def plot(
         self,
-        impulse: Optional[str] = None,
-        response: Optional[str] = None,
-        variables: Optional[List[str]] = None,
+        impulse: str | None = None,
+        response: str | None = None,
+        variables: list[str] | None = None,
         ci: bool = True,
         backend: str = "matplotlib",
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: tuple[int, int] | None = None,
         theme: str = "academic",
         show: bool = True,
     ):
@@ -292,10 +296,10 @@ class IRFResult:
 
         Examples
         --------
-        >>> irf = result.irf(periods=20, ci_method='bootstrap')
+        >>> irf = result.irf(periods=20, ci_method="bootstrap")
         >>> irf.plot()
-        >>> irf.plot(impulse='gdp')
-        >>> irf.plot(response='inflation', backend='plotly')
+        >>> irf.plot(impulse="gdp")
+        >>> irf.plot(response="inflation", backend="plotly")
         """
         from panelbox.visualization.var_plots import plot_irf
 
@@ -320,10 +324,10 @@ class IRFResult:
 
 
 def compute_irf_cholesky(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     periods: int,
-    shock_size: Union[str, float] = "one_std",
+    shock_size: str | float = "one_std",
 ) -> np.ndarray:
     """
     Compute orthogonalized IRFs using Cholesky decomposition (recursive method).
@@ -367,6 +371,7 @@ def compute_irf_cholesky(
             "Residual covariance matrix is not positive definite. "
             "Adding small regularization term.",
             UserWarning,
+            stacklevel=2,
         )
         # Add small regularization
         Sigma_reg = Sigma + 1e-8 * np.eye(K)
@@ -441,7 +446,7 @@ def compute_irf_companion(
     return Phi
 
 
-def compute_phi_non_orthogonalized(A_matrices: List[np.ndarray], periods: int) -> np.ndarray:
+def compute_phi_non_orthogonalized(A_matrices: list[np.ndarray], periods: int) -> np.ndarray:
     """
     Compute non-orthogonalized MA coefficients Φ_h.
 
@@ -545,7 +550,7 @@ def compute_cumulative_irf(irf_matrix: np.ndarray) -> np.ndarray:
 
 
 def _bootstrap_irf_iteration(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     residuals: np.ndarray,
     periods: int,
@@ -645,14 +650,14 @@ def _bootstrap_irf_iteration(
 
 
 def compute_analytical_ci(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     cov_params: np.ndarray,
     periods: int,
     method: str = "cholesky",
     ci_level: float = 0.95,
     cumulative: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute analytical confidence intervals for IRFs using the delta method.
 
@@ -696,7 +701,7 @@ def compute_analytical_ci(
            Springer-Verlag, Section 3.7.
     """
     K = Sigma.shape[0]
-    p = len(A_matrices)
+    len(A_matrices)
 
     # Compute IRFs
     if method == "cholesky":
@@ -749,7 +754,7 @@ def compute_analytical_ci(
 
 
 def bootstrap_irf(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     residuals: np.ndarray,
     periods: int,
@@ -759,9 +764,9 @@ def bootstrap_irf(
     cumulative: bool = False,
     ci_method: str = "percentile",
     n_jobs: int = -1,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     verbose: bool = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute bootstrap confidence intervals for IRFs.
 
@@ -816,7 +821,7 @@ def bootstrap_irf(
 
     # Parallel bootstrap
     if verbose:
-        print(f"Running {n_bootstrap} bootstrap iterations...")
+        logger.info(f"Running {n_bootstrap} bootstrap iterations...")
 
     bootstrap_irfs = Parallel(n_jobs=n_jobs)(
         delayed(_bootstrap_irf_iteration)(

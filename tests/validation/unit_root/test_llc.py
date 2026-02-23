@@ -163,9 +163,9 @@ class TestLLCTest:
 
         result_str = str(result)
         assert "Levin-Lin-Chu Panel Unit Root Test" in result_str
-        assert f"Test statistic:" in result_str
-        assert f"P-value:" in result_str
-        assert f"Lags:" in result_str
+        assert "Test statistic:" in result_str
+        assert "P-value:" in result_str
+        assert "Lags:" in result_str
         assert "H0:" in result_str
         assert "H1:" in result_str
 
@@ -186,7 +186,7 @@ class TestLLCTest:
         assert result is not None
         assert result.n_entities > 0
         assert result.n_obs > 0
-        print(f"\nGrunfeld 'invest' LLC test:")
+        print("\nGrunfeld 'invest' LLC test:")
         print(f"  Statistic: {result.statistic:.4f}")
         print(f"  P-value: {result.pvalue:.4f}")
         print(f"  Conclusion: {result.conclusion}")
@@ -197,7 +197,7 @@ class TestLLCTest:
         result = llc.run()
 
         assert result is not None
-        print(f"\nGrunfeld 'value' LLC test:")
+        print("\nGrunfeld 'value' LLC test:")
         print(f"  Statistic: {result.statistic:.4f}")
         print(f"  P-value: {result.pvalue:.4f}")
         print(f"  Conclusion: {result.conclusion}")
@@ -208,7 +208,7 @@ class TestLLCTest:
         result = llc.run()
 
         assert result is not None
-        print(f"\nGrunfeld 'capital' LLC test:")
+        print("\nGrunfeld 'capital' LLC test:")
         print(f"  Statistic: {result.statistic:.4f}")
         print(f"  P-value: {result.pvalue:.4f}")
         print(f"  Conclusion: {result.conclusion}")

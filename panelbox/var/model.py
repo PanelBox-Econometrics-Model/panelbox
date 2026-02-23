@@ -4,11 +4,12 @@ Panel VAR model estimation.
 This module provides the main PanelVAR class for model estimation.
 """
 
-from typing import Dict, List, Optional
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from panelbox.var.data import PanelVARData
 from panelbox.var.inference import (
@@ -17,6 +18,8 @@ from panelbox.var.inference import (
     within_transformation,
 )
 from panelbox.var.result import LagOrderResult, PanelVARResult
+
+logger = logging.getLogger(__name__)
 
 
 class PanelVAR:
@@ -48,23 +51,19 @@ class PanelVAR:
     >>>
     >>> # Prepare data
     >>> data = PanelVARData(
-    ...     df,
-    ...     endog_vars=['gdp', 'inflation'],
-    ...     entity_col='country',
-    ...     time_col='year',
-    ...     lags=2
+    ...     df, endog_vars=["gdp", "inflation"], entity_col="country", time_col="year", lags=2
     ... )
     >>>
     >>> # Estimate
     >>> model = PanelVAR(data)
-    >>> results = model.fit(method='ols', cov_type='clustered')
+    >>> results = model.fit(method="ols", cov_type="clustered")
     >>> print(results.summary())
     >>>
     >>> # Check stability
     >>> print(f"Stable: {results.is_stable()}")
     >>>
     >>> # Granger causality
-    >>> test = results.test_granger_causality('gdp', 'inflation')
+    >>> test = results.test_granger_causality("gdp", "inflation")
     >>> print(test)
 
     Notes
@@ -154,10 +153,10 @@ class PanelVAR:
         Examples
         --------
         >>> # OLS with cluster-robust SE
-        >>> results = model.fit(method='ols', cov_type='clustered')
+        >>> results = model.fit(method="ols", cov_type="clustered")
         >>>
         >>> # OLS with Driscoll-Kraay SE
-        >>> results = model.fit(method='ols', cov_type='driscoll_kraay', max_lags=3)
+        >>> results = model.fit(method="ols", cov_type="driscoll_kraay", max_lags=3)
         """
         if method != "ols":
             raise NotImplementedError(f"Method '{method}' not implemented yet. Use method='ols'.")
@@ -303,7 +302,7 @@ class PanelVAR:
     def select_lag_order(
         self,
         max_lags: int = 8,
-        criteria: Optional[List[str]] = None,
+        criteria: list[str] | None = None,
         cov_type: str = "clustered",
         **cov_kwds,
     ) -> LagOrderResult:
@@ -351,12 +350,12 @@ class PanelVAR:
         >>> print(lag_results.summary())
         >>>
         >>> # Get BIC-selected lag
-        >>> optimal_p = lag_results.selected['BIC']
+        >>> optimal_p = lag_results.selected["BIC"]
         >>>
         >>> # Re-estimate with optimal lag
-        >>> data_optimal = PanelVARData(df, endog_vars=['y1', 'y2'],
-        ...                             entity_col='entity', time_col='time',
-        ...                             lags=optimal_p)
+        >>> data_optimal = PanelVARData(
+        ...     df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=optimal_p
+        ... )
         >>> model_optimal = PanelVAR(data_optimal)
         >>> results_optimal = model_optimal.fit()
         """
@@ -373,11 +372,11 @@ class PanelVAR:
                 f"This will result in loss of many observations. "
                 f"Consider reducing max_lags.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Store original data
         orig_df = self.data.data
-        orig_lags = self.data._lags
 
         # Test each lag order
         results_list = []
@@ -399,7 +398,7 @@ class PanelVAR:
                 # If we can't create data (e.g., too few observations), skip
                 import warnings
 
-                warnings.warn(f"Could not test p={p}: {e}", UserWarning)
+                warnings.warn(f"Could not test p={p}: {e}", UserWarning, stacklevel=2)
                 continue
 
             # Fit model

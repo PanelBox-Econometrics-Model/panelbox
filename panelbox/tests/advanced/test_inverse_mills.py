@@ -1,5 +1,7 @@
 """Tests for Inverse Mills Ratio utilities."""
 
+from __future__ import annotations
+
 import numpy as np
 import pytest
 
@@ -51,7 +53,7 @@ class TestSelectionEffect:
 
         result = test_selection_effect(imr_coefficient=0.5, imr_se=0.1)
 
-        assert result["reject"] == True
+        assert result["reject"]
         assert result["statistic"] > 0
         assert "selection bias detected" in result["interpretation"].lower()
 
@@ -61,7 +63,7 @@ class TestSelectionEffect:
 
         result = test_selection_effect(imr_coefficient=-0.5, imr_se=0.1)
 
-        assert result["reject"] == True
+        assert result["reject"]
         assert result["statistic"] < 0
         assert "selection bias detected" in result["interpretation"].lower()
 
@@ -71,7 +73,7 @@ class TestSelectionEffect:
 
         result = test_selection_effect(imr_coefficient=0.05, imr_se=0.1)
 
-        assert result["reject"] == False
+        assert not result["reject"]
         assert "no significant" in result["interpretation"].lower()
 
     def test_invalid_se(self):

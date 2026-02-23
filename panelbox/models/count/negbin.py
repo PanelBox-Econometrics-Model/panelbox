@@ -6,21 +6,24 @@ including pooled, fixed effects, and random effects specifications.
 The NB2 parameterization is used where Var(y) = mu + alpha * mu^2.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy import optimize, stats
-from scipy.special import digamma, gammaln, polygamma
+from scipy import optimize
+from scipy.special import digamma, gammaln
 
-from ...utils.data import check_panel_data
 from ...utils.statistics import (
-    compute_sandwich_covariance,
     compute_standard_errors,
     likelihood_ratio_test,
 )
 from ..base import NonlinearPanelModel, PanelModelResults
 from ..count.poisson import PooledPoisson
+
+logger = logging.getLogger(__name__)
 
 
 class NegativeBinomial(NonlinearPanelModel):
@@ -48,11 +51,11 @@ class NegativeBinomial(NonlinearPanelModel):
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Union[np.ndarray, pd.DataFrame],
-        entity_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        time_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        weights: Optional[Union[np.ndarray, pd.Series]] = None,
+        endog: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.DataFrame,
+        entity_id: np.ndarray | pd.Series | None = None,
+        time_id: np.ndarray | pd.Series | None = None,
+        weights: np.ndarray | pd.Series | None = None,
     ):
         """Initialize Negative Binomial model."""
         super().__init__(endog, exog, entity_id, time_id, weights)
@@ -213,11 +216,11 @@ class NegativeBinomial(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "NegativeBinomialResults":
+    ) -> NegativeBinomialResults:
         """
         Fit the Negative Binomial model.
 
@@ -274,8 +277,8 @@ class NegativeBinomial(NonlinearPanelModel):
 
     def predict(
         self,
-        params: Optional[np.ndarray] = None,
-        exog: Optional[np.ndarray] = None,
+        params: np.ndarray | None = None,
+        exog: np.ndarray | pd.DataFrame | None = None,
         which: str = "mean",
     ) -> np.ndarray:
         """
@@ -285,8 +288,9 @@ class NegativeBinomial(NonlinearPanelModel):
         ----------
         params : ndarray, optional
             Parameters to use for prediction
-        exog : ndarray, optional
-            Exogenous variables for prediction
+        exog : ndarray, pd.DataFrame, or None
+            Exogenous variables for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
         which : str
             Type of prediction ('mean' or 'linear')
 
@@ -297,6 +301,14 @@ class NegativeBinomial(NonlinearPanelModel):
         """
         if exog is None:
             exog = self.exog
+        elif isinstance(exog, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
 
         if params is None:
             raise ValueError("Parameters required for prediction")
@@ -314,9 +326,9 @@ class NegativeBinomial(NonlinearPanelModel):
 
     def marginal_effects(
         self,
-        result: Optional["NegativeBinomialResults"] = None,
+        result: NegativeBinomialResults | None = None,
         at: str = "overall",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Negative Binomial model.
@@ -346,8 +358,8 @@ class NegativeBinomial(NonlinearPanelModel):
         --------
         >>> model = NegativeBinomial(y, X, entity_id=firms)
         >>> result = model.fit()
-        >>> ame = model.marginal_effects(result, at='overall')
-        >>> mem = model.marginal_effects(result, at='means')
+        >>> ame = model.marginal_effects(result, at="overall")
+        >>> mem = model.marginal_effects(result, at="means")
         >>> print(ame.summary())
 
         See Also
@@ -370,8 +382,7 @@ class NegativeBinomial(NonlinearPanelModel):
             return compute_negbin_mem(result, varlist=varlist)
         else:
             raise ValueError(
-                f"Unknown 'at' value: {at}. "
-                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+                f"Unknown 'at' value: {at}. Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
             )
 
 
@@ -390,7 +401,39 @@ class NegativeBinomialResults(PanelModelResults):
         """Return coefficients excluding alpha."""
         return self.params[:-1]
 
-    def lr_test_poisson(self) -> Dict[str, Any]:
+    def predict(
+        self,
+        exog: np.ndarray | pd.DataFrame | None = None,
+        which: str = "mean",
+    ) -> np.ndarray:
+        """
+        Generate predictions using fitted parameters.
+
+        Parameters
+        ----------
+        exog : ndarray, pd.DataFrame, or None
+            Exogenous variables for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
+        which : str
+            Type of prediction ('mean' or 'linear')
+
+        Returns
+        -------
+        ndarray
+            Predictions
+        """
+        if exog is not None and isinstance(exog, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
+
+        return self.model.predict(params=self.params, exog=exog, which=which)
+
+    def lr_test_poisson(self) -> dict[str, Any]:
         """
         Likelihood ratio test: Poisson vs Negative Binomial.
 
@@ -438,7 +481,7 @@ Parameters:
 
         # LR test vs Poisson
         lr_test = self.lr_test_poisson()
-        summary_str += f"\nLR Test vs Poisson:\n"
+        summary_str += "\nLR Test vs Poisson:\n"
         summary_str += f"Statistic: {lr_test['statistic']:.4f}\n"
         summary_str += f"P-value: {lr_test['pvalue']:.4f}\n"
         summary_str += f"Conclusion: {lr_test['conclusion']}\n"
@@ -473,7 +516,9 @@ class FixedEffectsNegativeBinomial(NegativeBinomial):
         if n_entities > 100:
             import warnings
 
-            warnings.warn(f"Large number of entities ({n_entities}). " "Estimation may be slow.")
+            warnings.warn(
+                f"Large number of entities ({n_entities}). Estimation may be slow.", stacklevel=2
+            )
 
         # Add entity dummies to exog (excluding one for identification)
         entity_dummies = np.zeros((len(self.endog), n_entities - 1))

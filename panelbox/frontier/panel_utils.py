@@ -8,12 +8,16 @@ This module implements:
 4. Efficiency calculations for panel models
 """
 
-import warnings
-from typing import Any, Dict, Optional, Tuple
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 from scipy import stats
-from scipy.special import log_ndtr, ndtr
+from scipy.special import ndtr
+
+logger = logging.getLogger(__name__)
 
 
 def get_panel_starting_values(
@@ -22,12 +26,13 @@ def get_panel_starting_values(
     X: np.ndarray,
     entity_id: np.ndarray,
     time_id: np.ndarray,
-    Z: Optional[np.ndarray] = None,
+    Z: np.ndarray | None = None,
     sign: int = 1,
 ) -> np.ndarray:
     """Get starting values for panel SFA models.
 
-    Parameters:
+    Parameters
+    ----------
         model_type: One of 'pitt_lee', 'bc92', 'bc95', 'kumbhakar', 'lee_schmidt'
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -36,10 +41,11 @@ def get_panel_starting_values(
         Z: Inefficiency determinants for BC95 (n, m)
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Starting parameter vector θ₀
     """
-    k = X.shape[1]
+    X.shape[1]
 
     # Step 1: OLS for β and variance components
     beta_ols = np.linalg.lstsq(X, y, rcond=None)[0]
@@ -120,7 +126,7 @@ def get_panel_starting_values(
 
 def bc95_marginal_effects(
     delta: np.ndarray, Z: np.ndarray, sigma_u: float
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Compute marginal effects for BC95 inefficiency determinants.
 
     Marginal effect of z_j on E[u | Z]:
@@ -128,18 +134,20 @@ def bc95_marginal_effects(
 
     where μ = Z'δ and φ, Φ are standard normal pdf/cdf.
 
-    Parameters:
+    Parameters
+    ----------
         delta: Coefficients of inefficiency determinants (m,)
         Z: Inefficiency determinants (n, m)
         sigma_u: Standard deviation of inefficiency
 
-    Returns:
+    Returns
+    -------
         Dictionary with:
             'marginal_effects': Average marginal effects (m,)
             'marginal_effects_i': Individual marginal effects (n, m)
             'mills_ratio': Inverse mills ratio at each observation (n,)
     """
-    n, m = Z.shape
+    _n, _m = Z.shape
 
     # Compute μ = Z'δ
     mu = Z @ delta
@@ -171,7 +179,7 @@ def bc95_marginal_effects(
 
 def likelihood_ratio_test(
     loglik_restricted: float, loglik_unrestricted: float, df: int
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Likelihood ratio test for nested models.
 
     H0: Restrictions are valid (restricted model is true)
@@ -179,12 +187,14 @@ def likelihood_ratio_test(
 
     LR = 2 * (logL_unrestricted - logL_restricted) ~ χ²(df)
 
-    Parameters:
+    Parameters
+    ----------
         loglik_restricted: Log-likelihood of restricted model
         loglik_unrestricted: Log-likelihood of unrestricted model
         df: Degrees of freedom (number of restrictions)
 
-    Returns:
+    Returns
+    -------
         Dictionary with LR statistic, p-value, and df
     """
     LR = 2 * (loglik_unrestricted - loglik_restricted)
@@ -198,14 +208,16 @@ def likelihood_ratio_test(
     return {"LR_stat": LR, "p_value": p_value, "df": df, "reject_H0": p_value < 0.05}
 
 
-def lr_test_bc92_eta_constant(loglik_bc92: float, loglik_pitt_lee: float) -> Dict[str, float]:
+def lr_test_bc92_eta_constant(loglik_bc92: float, loglik_pitt_lee: float) -> dict[str, float]:
     """LR test for H0: η = 0 (efficiency is constant over time).
 
-    Parameters:
+    Parameters
+    ----------
         loglik_bc92: Log-likelihood of BC92 model with η estimated
         loglik_pitt_lee: Log-likelihood of Pitt-Lee model (η = 0)
 
-    Returns:
+    Returns
+    -------
         LR test results
     """
     return likelihood_ratio_test(
@@ -215,14 +227,16 @@ def lr_test_bc92_eta_constant(loglik_bc92: float, loglik_pitt_lee: float) -> Dic
     )
 
 
-def lr_test_kumbhakar_constant(loglik_kumbhakar: float, loglik_pitt_lee: float) -> Dict[str, float]:
+def lr_test_kumbhakar_constant(loglik_kumbhakar: float, loglik_pitt_lee: float) -> dict[str, float]:
     """LR test for H0: b = c = 0 (efficiency is constant over time).
 
-    Parameters:
+    Parameters
+    ----------
         loglik_kumbhakar: Log-likelihood of Kumbhakar model
         loglik_pitt_lee: Log-likelihood of Pitt-Lee model
 
-    Returns:
+    Returns
+    -------
         LR test results
     """
     return likelihood_ratio_test(
@@ -249,7 +263,8 @@ def compute_panel_efficiency_bc92(
 
     where u_{it} = exp[-η(t - T)] * u_i
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error (n,)
         entity_id: Entity identifiers (n,)
         time_id: Time identifiers (n,)
@@ -259,10 +274,11 @@ def compute_panel_efficiency_bc92(
         eta: Time decay parameter
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Technical efficiency (n,)
     """
-    n = len(epsilon)
+    len(epsilon)
     T_max = time_id.max()
 
     # Decay factors
@@ -271,7 +287,7 @@ def compute_panel_efficiency_bc92(
     # For truncated normal with time-varying component
     # This is an approximation using Jondrow et al. formula
     sigma_sq = sigma_v**2 + (decay * sigma_u) ** 2
-    sigma = np.sqrt(sigma_sq)
+    np.sqrt(sigma_sq)
 
     sigma_star_sq = (sigma_v**2 * (decay * sigma_u) ** 2) / sigma_sq
     sigma_star = np.sqrt(sigma_star_sq)
@@ -305,7 +321,8 @@ def compute_panel_efficiency_bc95(
 
     where u_i ~ N⁺(Z_i'δ, σ²_u)
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error (n,)
         Z: Inefficiency determinants (n, m)
         delta: Coefficients (m,)
@@ -313,7 +330,8 @@ def compute_panel_efficiency_bc95(
         sigma_u: Standard deviation of inefficiency
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Technical efficiency (n,)
     """
     # Compute μ_i = Z_i'δ
@@ -342,15 +360,17 @@ def compute_panel_efficiency_bc95(
 
 def validate_panel_structure(
     entity_id: np.ndarray, time_id: np.ndarray, min_T: int = 3
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Validate panel structure and provide warnings.
 
-    Parameters:
+    Parameters
+    ----------
         entity_id: Entity identifiers (n,)
         time_id: Time identifiers (n,)
         min_T: Minimum recommended time periods
 
-    Returns:
+    Returns
+    -------
         Dictionary with panel characteristics and warnings
     """
     unique_entities = np.unique(entity_id)
@@ -372,7 +392,7 @@ def validate_panel_structure(
     # Warnings
     warnings_list = []
 
-    if T < min_T:
+    if min_T > T:
         warnings_list.append(
             f"T = {T} is less than recommended minimum of {min_T}. "
             "Time-varying parameters may be poorly identified."

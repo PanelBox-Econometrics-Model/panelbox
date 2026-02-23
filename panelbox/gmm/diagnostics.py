@@ -1,5 +1,6 @@
 """
-GMM Diagnostic Tests
+GMM Diagnostic Tests.
+
 ====================
 
 Implements diagnostic tests for GMM estimation including:
@@ -36,16 +37,19 @@ Examples
 >>> print(diagnostics.summary())
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy import linalg, stats
+from scipy import linalg
 from scipy.stats import chi2
-from scipy.stats import f as f_dist
 
 from panelbox.gmm.results import TestResult
+
+logger = logging.getLogger(__name__)
 
 
 class GMMDiagnostics:
@@ -78,7 +82,7 @@ class GMMDiagnostics:
     Examples
     --------
     >>> diagnostics = GMMDiagnostics(model, results)
-    >>> c_stat = diagnostics.c_statistic(subset_instruments=['z1', 'z2'])
+    >>> c_stat = diagnostics.c_statistic(subset_instruments=["z1", "z2"])
     >>> weak_test = diagnostics.weak_instruments_test()
     >>> print(diagnostics.summary())
     """
@@ -112,8 +116,8 @@ class GMMDiagnostics:
 
     def c_statistic(
         self,
-        subset_indices: Optional[List[int]] = None,
-        subset_names: Optional[List[str]] = None,
+        subset_indices: list[int] | None = None,
+        subset_names: list[str] | None = None,
     ) -> TestResult:
         """
         Compute Difference-in-Sargan C-statistic.
@@ -153,7 +157,7 @@ class GMMDiagnostics:
         """
         if self.y is None or self.X is None or self.Z is None:
             raise RuntimeError(
-                "C-statistic requires access to data arrays. " "Model must have y, X, Z attributes."
+                "C-statistic requires access to data arrays. Model must have y, X, Z attributes."
             )
 
         # Determine subset of instruments to test
@@ -243,7 +247,7 @@ class GMMDiagnostics:
 
         return beta.flatten()
 
-    def weak_instruments_test(self) -> Dict[str, Union[float, str]]:
+    def weak_instruments_test(self) -> dict[str, float | str]:
         """
         Test for weak instruments.
 
@@ -277,7 +281,7 @@ class GMMDiagnostics:
         Examples
         --------
         >>> weak_test = diagnostics.weak_instruments_test()
-        >>> if weak_test['cragg_donald_f'] < 10:
+        >>> if weak_test["cragg_donald_f"] < 10:
         ...     print("Warning: Weak instruments detected")
         """
         if self.y is None or self.X is None or self.Z is None:
@@ -302,7 +306,7 @@ class GMMDiagnostics:
             warning_level = "CRITICAL"
         elif cd_f < critical_10pct:
             interpretation = (
-                f"Instruments moderately weak (F={cd_f:.2f}). " "Use caution in inference."
+                f"Instruments moderately weak (F={cd_f:.2f}). Use caution in inference."
             )
             warning_level = "WARNING"
         else:
@@ -361,7 +365,7 @@ class GMMDiagnostics:
             return max(0.0, float(F))
 
         except Exception:
-            warnings.warn("Could not compute Cragg-Donald F-statistic")
+            warnings.warn("Could not compute Cragg-Donald F-statistic", stacklevel=2)
             return np.nan
 
     def diagnostic_tests(self) -> pd.DataFrame:
@@ -403,7 +407,7 @@ class GMMDiagnostics:
                 }
             )
         except Exception as e:
-            warnings.warn(f"Weak instruments test failed: {e}")
+            warnings.warn(f"Weak instruments test failed: {e}", stacklevel=2)
 
         if not results:
             return pd.DataFrame()
@@ -448,7 +452,7 @@ class GMMDiagnostics:
             lines.append(f"  Critical (10%): {weak_test['critical_value_10pct']:.2f}")
             lines.append(f"  Result:         {weak_test['interpretation']}")
             lines.append("")
-        except Exception:
+        except Exception:  # noqa: S110 — weak instrument test may not be available
             pass
 
         lines.append("=" * 70)
@@ -457,9 +461,4 @@ class GMMDiagnostics:
 
     def __repr__(self) -> str:
         """String representation."""
-        return (
-            f"GMMDiagnostics("
-            f"n={self.n}, "
-            f"k={self.k}, "
-            f"n_instruments={self.n_instruments})"
-        )
+        return f"GMMDiagnostics(n={self.n}, k={self.k}, n_instruments={self.n_instruments})"

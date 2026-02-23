@@ -83,7 +83,7 @@ class TestGenerateHeteroskedasticPanel:
         assert (df["sigma"] >= 0).all()
 
     def test_sigma_correlated_with_x1(self):
-        """sigma = 0.5 * |x1|, so they should be perfectly correlated."""
+        """Sigma = 0.5 * |x1|, so they should be perfectly correlated."""
         df = generate_heteroskedastic_panel(seed=42)
         np.testing.assert_allclose(df["sigma"], 0.5 * df["x1"].abs(), rtol=1e-10)
 

@@ -13,10 +13,13 @@ References
        Panel Data (2nd ed.). MIT Press. Section 12.5.
 """
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
-from scipy import linalg
+
+logger = logging.getLogger(__name__)
 
 
 def murphy_topel_variance(
@@ -204,7 +207,7 @@ def heckman_two_step_variance(
     sigma: float,
     selected: np.ndarray,
     vcov_probit: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute Murphy-Topel corrected variance for Heckman two-step.
 
@@ -294,8 +297,8 @@ def bootstrap_two_step_variance(
     estimator_func,
     data,
     n_bootstrap: int = 500,
-    seed: Optional[int] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    seed: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Bootstrap variance estimation for two-step procedures.
 

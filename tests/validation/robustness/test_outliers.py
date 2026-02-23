@@ -410,32 +410,38 @@ class TestOutlierCountConsistency:
 class TestVerboseMessages:
     """Test verbose output messages."""
 
-    def test_verbose_iqr(self, mock_results, capsys):
+    def test_verbose_iqr(self, mock_results, caplog):
         """Test verbose output for IQR."""
+        import logging
+
         detector = OutlierDetector(mock_results, verbose=True)
-        detector.detect_outliers_univariate(method="iqr")
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.detect_outliers_univariate(method="iqr")
 
-        captured = capsys.readouterr()
-        assert "Detected" in captured.out
-        assert "IQR" in captured.out
+        assert "Detected" in caplog.text
+        assert "IQR" in caplog.text
 
-    def test_verbose_mahalanobis(self, mock_results, capsys):
+    def test_verbose_mahalanobis(self, mock_results, caplog):
         """Test verbose output for Mahalanobis."""
+        import logging
+
         detector = OutlierDetector(mock_results, verbose=True)
-        detector.detect_outliers_multivariate()
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.detect_outliers_multivariate()
 
-        captured = capsys.readouterr()
-        assert "Detected" in captured.out
-        assert "Mahalanobis" in captured.out
+        assert "Detected" in caplog.text
+        assert "Mahalanobis" in caplog.text
 
-    def test_verbose_leverage(self, mock_results, capsys):
+    def test_verbose_leverage(self, mock_results, caplog):
         """Test verbose output for leverage."""
-        detector = OutlierDetector(mock_results, verbose=True)
-        detector.detect_leverage_points()
+        import logging
 
-        captured = capsys.readouterr()
-        assert "Detected" in captured.out
-        assert "leverage" in captured.out
+        detector = OutlierDetector(mock_results, verbose=True)
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.detect_leverage_points()
+
+        assert "Detected" in caplog.text
+        assert "leverage" in caplog.text
 
 
 class TestLeverageDefaultThreshold:

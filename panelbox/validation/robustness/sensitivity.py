@@ -11,6 +11,9 @@ Author: PanelBox Development Team
 Date: 2026-01-22
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -29,6 +32,8 @@ except ImportError:
     Figure = None
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -401,10 +406,7 @@ class SensitivityAnalysis:
         Examples
         --------
         >>> sensitivity = pb.SensitivityAnalysis(results)
-        >>> subset_results = sensitivity.subset_sensitivity(
-        ...     n_subsamples=50,
-        ...     subsample_size=0.75
-        ... )
+        >>> subset_results = sensitivity.subset_sensitivity(n_subsamples=50, subsample_size=0.75)
         >>> print(subset_results.statistics)
         """
         if not (0 < subsample_size < 1):
@@ -508,7 +510,7 @@ class SensitivityAnalysis:
         reference_line: bool = True,
         confidence_band: bool = True,
         **kwargs,
-    ) -> Figure:
+    ) -> Figure:  # type: ignore[reportInvalidTypeForm]
         """
         Plot sensitivity analysis results.
 
@@ -544,7 +546,7 @@ class SensitivityAnalysis:
         """
         if not HAS_MATPLOTLIB:
             raise ImportError(
-                "Matplotlib is required for plotting. " "Install it with: pip install matplotlib"
+                "Matplotlib is required for plotting. Install it with: pip install matplotlib"
             )
 
         if params is None:
@@ -773,7 +775,7 @@ def dfbetas(
     Examples
     --------
     >>> dfbetas_stats = pb.dfbetas(results)
-    >>> influential = dfbetas_stats[dfbetas_stats.abs() > 2/np.sqrt(len(data))]
+    >>> influential = dfbetas_stats[dfbetas_stats.abs() > 2 / np.sqrt(len(data))]
     >>> print(influential)
     """
     # This is a placeholder for future implementation

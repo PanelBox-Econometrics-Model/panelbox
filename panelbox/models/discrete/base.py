@@ -7,9 +7,10 @@ including discrete choice and count data models.
 
 from __future__ import annotations
 
+import logging
 import warnings
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Union
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -19,8 +20,7 @@ from panelbox.core.base_model import PanelModel
 from panelbox.core.results import PanelResults
 from panelbox.optimization.numerical_grad import approx_gradient, approx_hessian
 
-if TYPE_CHECKING:
-    pass
+logger = logging.getLogger(__name__)
 
 
 class ConvergenceWarning(UserWarning):
@@ -117,12 +117,12 @@ class NonlinearPanelModel(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
         # Optimization results
-        self._optimization_result: Optional[optimize.OptimizeResult] = None
+        self._optimization_result: optimize.OptimizeResult | None = None
         self._optimization_history: list = []
 
     @abstractmethod
@@ -250,11 +250,11 @@ class NonlinearPanelModel(PanelModel):
                 )
 
             if verbose:
-                print(f"Gradient norm: {grad_norm:.6e}")
+                logger.debug(f"Gradient norm: {grad_norm:.6e}")
 
         except Exception as e:
             if verbose:
-                print(f"Could not compute gradient norm: {e}")
+                logger.debug(f"Could not compute gradient norm: {e}")
 
         # Check Hessian
         try:
@@ -264,8 +264,8 @@ class NonlinearPanelModel(PanelModel):
             # For maximum, Hessian should be negative definite
             if np.any(eigenvalues > 1e-10):
                 warnings.warn(
-                    f"Hessian is not negative definite (has positive eigenvalues). "
-                    f"Solution may be a saddle point or minimum instead of maximum.",
+                    "Hessian is not negative definite (has positive eigenvalues). "
+                    "Solution may be a saddle point or minimum instead of maximum.",
                     ConvergenceWarning,
                     stacklevel=2,
                 )
@@ -281,22 +281,22 @@ class NonlinearPanelModel(PanelModel):
                 )
 
             if verbose:
-                print(
+                logger.debug(
                     f"Hessian eigenvalues (min, max): {eigenvalues.min():.6e}, {eigenvalues.max():.6e}"
                 )
-                print(f"Hessian condition number: {cond:.6e}")
+                logger.debug(f"Hessian condition number: {cond:.6e}")
 
         except Exception as e:
             if verbose:
-                print(f"Could not compute Hessian diagnostics: {e}")
+                logger.debug(f"Could not compute Hessian diagnostics: {e}")
 
-    def fit(
+    def fit(  # noqa: C901
         self,
         method: Literal["bfgs", "newton", "trust-constr"] = "bfgs",
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         n_starts: int = 1,
-        bounds: Optional[Any] = None,
-        constraints: Optional[Any] = None,
+        bounds: Any | None = None,
+        constraints: Any | None = None,
         maxiter: int = 1000,
         verbose: bool = False,
         **kwargs,
@@ -355,10 +355,10 @@ class NonlinearPanelModel(PanelModel):
         >>> results = model.fit(n_starts=5)
         >>>
         >>> # Use Newton method with custom starting values
-        >>> results = model.fit(method='newton', start_params=beta0)
+        >>> results = model.fit(method="newton", start_params=beta0)
         >>>
         >>> # Constrained optimization
-        >>> results = model.fit(method='trust-constr', bounds=[(0, None), ...])
+        >>> results = model.fit(method="trust-constr", bounds=[(0, None), ...])
 
         See Also
         --------
@@ -372,14 +372,17 @@ class NonlinearPanelModel(PanelModel):
 
         # Objective function (negative log-likelihood for minimization)
         def neg_ll(params):
+            """Compute negative log-likelihood."""
             return -self._log_likelihood(params)
 
         # Negative score (for minimization)
         def neg_score(params):
+            """Compute negative score (gradient)."""
             return -self._score(params)
 
         # Negative Hessian (for minimization)
         def neg_hess(params):
+            """Compute negative Hessian matrix."""
             return -self._hessian(params)
 
         # Choose scipy method name
@@ -446,11 +449,11 @@ class NonlinearPanelModel(PanelModel):
                     best_result = result
 
                 if verbose and n_starts > 1:
-                    print(f"Start {i+1}/{n_starts}: LL = {ll:.4f}")
+                    logger.info(f"Start {i + 1}/{n_starts}: LL = {ll:.4f}")
 
             except Exception as e:
                 if verbose:
-                    print(f"Start {i+1}/{n_starts} failed: {e}")
+                    logger.warning(f"Start {i + 1}/{n_starts} failed: {e}")
                 continue
 
         if best_result is None:

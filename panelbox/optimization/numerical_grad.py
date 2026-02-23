@@ -19,18 +19,23 @@ References
        Unconstrained Optimization and Nonlinear Equations. SIAM.
 """
 
-from typing import Callable, Literal, Union
+from __future__ import annotations
+
+import logging
+from typing import Callable, Literal
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def approx_gradient(
     func: Callable[[np.ndarray], float],
     x: np.ndarray,
     method: Literal["central", "forward"] = "central",
-    epsilon: Union[float, str] = "auto",
+    epsilon: float | str = "auto",
 ) -> np.ndarray:
-    """
+    r"""
     Approximate gradient using finite differences.
 
     Parameters
@@ -88,7 +93,7 @@ def approx_gradient(
     >>> x = np.array([1.0, 2.0])
     >>>
     >>> # Numerical gradient
-    >>> grad_num = approx_gradient(f, x, method='central')
+    >>> grad_num = approx_gradient(f, x, method="central")
     >>>
     >>> # Analytical gradient: 2*A*x
     >>> grad_true = 2 * A @ x
@@ -154,9 +159,9 @@ def approx_hessian(
     func: Callable[[np.ndarray], float],
     x: np.ndarray,
     method: Literal["central", "forward"] = "central",
-    epsilon: Union[float, str] = "auto",
+    epsilon: float | str = "auto",
 ) -> np.ndarray:
-    """
+    r"""
     Approximate Hessian matrix using finite differences.
 
     Parameters

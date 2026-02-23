@@ -5,13 +5,17 @@ This module provides high-performance implementations using Numba JIT compilatio
 and sparse matrices for solving large-scale penalized quantile regression problems.
 """
 
+from __future__ import annotations
+
+import logging
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numba
 import numpy as np
 from scipy.optimize import minimize
-from scipy.sparse import csr_matrix, eye
+
+logger = logging.getLogger(__name__)
 
 
 class PenalizedQuantileOptimizer:
@@ -139,8 +143,8 @@ class PenalizedQuantileOptimizer:
     def optimize(
         self,
         method: str = "L-BFGS-B",
-        options: Optional[Dict] = None,
-        warm_start: Optional[np.ndarray] = None,
+        options: dict | None = None,
+        warm_start: np.ndarray | None = None,
     ) -> Any:
         """
         Optimize penalized QR objective.
@@ -186,8 +190,8 @@ class PenalizedQuantileOptimizer:
         return np.concatenate([beta_ols, alpha_init])
 
     def coordinate_descent(
-        self, max_iter: int = 100, tol: float = 1e-6, warm_start: Optional[np.ndarray] = None
-    ) -> Dict[str, Any]:
+        self, max_iter: int = 100, tol: float = 1e-6, warm_start: np.ndarray | None = None
+    ) -> dict[str, Any]:
         """
         Coordinate descent algorithm for penalized QR.
 
@@ -202,7 +206,7 @@ class PenalizedQuantileOptimizer:
             alpha = np.zeros(self.n_entities)
 
         converged = False
-        for iteration in range(max_iter):
+        for iteration in range(max_iter):  # noqa: B007 - used after loop
             params_old = np.concatenate([beta, alpha])
 
             # Update beta coordinates
@@ -296,9 +300,7 @@ def compute_check_loss_matrix(residuals: np.ndarray, tau_grid: np.ndarray) -> np
 
 @numba.jit(nopython=True, parallel=True)
 def compute_gradient_matrix(residuals: np.ndarray, tau_grid: np.ndarray) -> np.ndarray:
-    """
-    Compute gradients for multiple quantiles simultaneously.
-    """
+    """Compute gradients for multiple quantiles simultaneously."""
     n = len(residuals)
     m = len(tau_grid)
     gradients = np.zeros((n, m))
@@ -318,7 +320,7 @@ class PerformanceMonitor:
         self.timings = {}
         self.memory_usage = {}
 
-    def profile_method(self, method_name: str, data, formula: Optional[str], tau: float) -> Any:
+    def profile_method(self, method_name: str, data, formula: str | None, tau: float) -> Any:
         """Profile a specific QR method."""
         import tracemalloc
 
@@ -345,7 +347,7 @@ class PerformanceMonitor:
 
         # Collect metrics
         elapsed_time = time.time() - start_time
-        current_memory, peak_memory = tracemalloc.get_traced_memory()
+        _current_memory, peak_memory = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
         memory_used = (peak_memory - start_memory) / 1024 / 1024  # MB
@@ -359,13 +361,15 @@ class PerformanceMonitor:
         return result
 
     def compare_implementations(
-        self, data, formula: Optional[str], tau: float, methods: list = ["canay", "penalty"]
-    ) -> Dict:
+        self, data, formula: str | None, tau: float, methods: list = None
+    ) -> dict:
         """Compare different implementations."""
+        if methods is None:
+            methods = ["canay", "penalty"]
         results = {}
 
         for method in methods:
-            print(f"Profiling {method}...")
+            logger.info(f"Profiling {method}...")
             results[method] = self.profile_method(method, data, formula, tau)
 
         return results
@@ -379,10 +383,7 @@ class PerformanceMonitor:
 
         for method, metrics in self.timings.items():
             status = "✓" if metrics["converged"] else "✗"
-            print(
-                f"{method:<15} {metrics['time']:10.2f} "
-                f"{metrics['memory_mb']:12.1f} {status:>10}"
-            )
+            print(f"{method:<15} {metrics['time']:10.2f} {metrics['memory_mb']:12.1f} {status:>10}")
 
         # Find best
         if self.timings:
@@ -396,7 +397,7 @@ class PerformanceMonitor:
             # Speedup ratios
             if len(self.timings) > 1:
                 print("\nSpeedup Ratios:")
-                baseline = list(self.timings.keys())[0]
+                baseline = next(iter(self.timings.keys()))
                 baseline_time = self.timings[baseline]["time"]
                 for method in self.timings:
                     if method != baseline:
@@ -405,9 +406,7 @@ class PerformanceMonitor:
 
 
 class AdaptiveOptimizer:
-    """
-    Adaptive optimizer that chooses the best algorithm based on problem characteristics.
-    """
+    """Adaptive optimizer that chooses the best algorithm based on problem characteristics."""
 
     def __init__(self, X: np.ndarray, y: np.ndarray, entity_ids: np.ndarray):
         self.X = X
@@ -431,10 +430,10 @@ class AdaptiveOptimizer:
         # Condition number (approximate)
         try:
             self.condition_number = np.linalg.cond(self.X.T @ self.X)
-        except:
+        except Exception:
             self.condition_number = np.inf
 
-    def recommend_method(self) -> Tuple[str, Dict[str, Any]]:
+    def recommend_method(self) -> tuple[str, dict[str, Any]]:
         """
         Recommend the best optimization method based on problem characteristics.
 
@@ -465,14 +464,14 @@ class AdaptiveOptimizer:
 
     def print_analysis(self):
         """Print problem analysis."""
-        print("\nPROBLEM ANALYSIS")
-        print("=" * 50)
-        print(f"Problem size (n×p): {self.n} × {self.p} = {self.problem_size:.0f}")
-        print(f"Number of entities: {self.n_entities}")
-        print(f"Average T: {self.avg_T:.1f}")
-        print(f"Sparsity of X: {self.X_sparsity:.2%}")
-        print(f"Condition number: {self.condition_number:.2f}")
+        logger.info("PROBLEM ANALYSIS")
+        logger.info("=" * 50)
+        logger.info(f"Problem size (n*p): {self.n} * {self.p} = {self.problem_size:.0f}")
+        logger.info(f"Number of entities: {self.n_entities}")
+        logger.info(f"Average T: {self.avg_T:.1f}")
+        logger.info(f"Sparsity of X: {self.X_sparsity:.2%}")
+        logger.info(f"Condition number: {self.condition_number:.2f}")
 
         method, params = self.recommend_method()
-        print(f"\nRecommended method: {method}")
-        print(f"Parameters: {params}")
+        logger.info(f"Recommended method: {method}")
+        logger.info(f"Parameters: {params}")

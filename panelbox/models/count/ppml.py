@@ -13,14 +13,19 @@ Santos Silva, J.M.C., & Tenreyro, S. (2010). "On the Existence of the
     Economics Letters, 107(2), 310-312.
 """
 
+from __future__ import annotations
+
+import contextlib
+import logging
 import warnings
-from typing import Any, Dict, Literal, Optional
 
 import numpy as np
 import pandas as pd
 
 from ..base import PanelModelResults
 from .poisson import PoissonFixedEffects, PooledPoisson
+
+logger = logging.getLogger(__name__)
 
 
 class PPMLResult(PanelModelResults):
@@ -61,15 +66,13 @@ class PPMLResult(PanelModelResults):
         # Copy additional attributes
         for attr in dir(poisson_result):
             if not attr.startswith("_") and not hasattr(self, attr):
-                try:
+                with contextlib.suppress(AttributeError):
                     setattr(self, attr, getattr(poisson_result, attr))
-                except AttributeError:
-                    pass
 
         self.fixed_effects = fixed_effects
         self._original_result = poisson_result
 
-    def elasticity(self, variable: str) -> Dict[str, float]:
+    def elasticity(self, variable: str) -> dict[str, float]:
         """
         Compute elasticity for a variable.
 
@@ -99,7 +102,7 @@ class PPMLResult(PanelModelResults):
         --------
         >>> result = model.fit()
         >>> # For log(distance)
-        >>> result.elasticity('log_distance')
+        >>> result.elasticity("log_distance")
         {'coefficient': -1.2, 'se': 0.15, 'elasticity': -1.2}
         """
         if not hasattr(self.model, "exog_names"):
@@ -107,9 +110,7 @@ class PPMLResult(PanelModelResults):
 
         exog_names = self.model.exog_names
         if variable not in exog_names:
-            raise ValueError(
-                f"Variable '{variable}' not found in model. " f"Available: {exog_names}"
-            )
+            raise ValueError(f"Variable '{variable}' not found in model. Available: {exog_names}")
 
         var_idx = exog_names.index(variable)
         coef = self.params[var_idx]
@@ -147,7 +148,9 @@ class PPMLResult(PanelModelResults):
             DataFrame with elasticities for each variable
         """
         if not hasattr(self.model, "exog_names"):
-            warnings.warn("Model does not have exog_names. Using generic names.", UserWarning)
+            warnings.warn(
+                "Model does not have exog_names. Using generic names.", UserWarning, stacklevel=2
+            )
             exog_names = [f"x{i}" for i in range(len(self.params))]
         else:
             exog_names = self.model.exog_names
@@ -317,10 +320,10 @@ class PPML:
     >>> import pandas as pd
     >>> # df has: trade_flow, log_gdp_i, log_gdp_j, log_distance
     >>> model = PPML(
-    ...     endog=df['trade_flow'],
-    ...     exog=df[['log_gdp_i', 'log_gdp_j', 'log_distance']],
-    ...     entity_id=df['pair_id'],
-    ...     fixed_effects=True
+    ...     endog=df["trade_flow"],
+    ...     exog=df[["log_gdp_i", "log_gdp_j", "log_distance"]],
+    ...     entity_id=df["pair_id"],
+    ...     fixed_effects=True,
     ... )
     >>> result = model.fit()
     >>> print(result.elasticities())
@@ -370,7 +373,7 @@ class PPML:
         entity_id=None,
         time_id=None,
         fixed_effects: bool = True,
-        exog_names: Optional[list] = None,
+        exog_names: list | None = None,
     ):
         """
         Initialize PPML model.
@@ -396,18 +399,35 @@ class PPML:
         # Check for negative values
         if np.any(np.array(endog) < 0):
             raise ValueError(
-                "PPML requires non-negative dependent variable. " "Found negative values."
+                "PPML requires non-negative dependent variable. Found negative values."
             )
 
         # Create underlying Poisson model
-        if fixed_effects:
-            if entity_id is None:
-                raise ValueError("entity_id required for fixed effects PPML")
-            self.model = PoissonFixedEffects(
-                endog=endog, exog=exog, entity_id=entity_id, time_id=time_id
-            )
-        else:
-            self.model = PooledPoisson(endog=endog, exog=exog, entity_id=entity_id, time_id=time_id)
+        # PPML is a quasi-MLE: consistent for any non-negative dep var
+        # (Santos Silva & Tenreyro, 2006). We need to temporarily bypass
+        # the integer check in the Poisson classes.
+        _orig_check_pooled = PooledPoisson._check_count_data
+        _orig_check_fe = PoissonFixedEffects._check_count_data
+
+        def _noop(self):
+            return None
+
+        PooledPoisson._check_count_data = _noop
+        PoissonFixedEffects._check_count_data = _noop
+        try:
+            if fixed_effects:
+                if entity_id is None:
+                    raise ValueError("entity_id required for fixed effects PPML")
+                self.model = PoissonFixedEffects(
+                    endog=endog, exog=exog, entity_id=entity_id, time_id=time_id
+                )
+            else:
+                self.model = PooledPoisson(
+                    endog=endog, exog=exog, entity_id=entity_id, time_id=time_id
+                )
+        finally:
+            PooledPoisson._check_count_data = _orig_check_pooled
+            PoissonFixedEffects._check_count_data = _orig_check_fe
 
         # Add exog_names to model
         if exog_names is not None:
@@ -442,6 +462,7 @@ class PPML:
                 f"PPML requires cluster-robust SEs. Ignoring se_type='{se_type}' "
                 f"and using 'cluster'.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Fit underlying model
@@ -456,8 +477,9 @@ class PPML:
 
         Parameters
         ----------
-        X : array-like, optional
+        X : array-like, pd.DataFrame, or None
             New data for predictions. If None, uses training data.
+            If pd.DataFrame, extracts columns matching exog_names.
         **kwargs
             Additional arguments passed to underlying model
 
@@ -466,4 +488,18 @@ class PPML:
         array
             Predicted values
         """
+        if X is not None and isinstance(X, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.exog_names].values
+            elif hasattr(self.model, "exog_names") and self.model.exog_names:
+                missing = [c for c in self.model.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.model.exog_names].values
+            else:
+                X = X.values
+
         return self.model.predict(X=X, **kwargs)

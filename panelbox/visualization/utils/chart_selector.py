@@ -12,18 +12,23 @@ Features:
 - Usage examples for selected charts
 - Integration with chart registry
 
-Examples:
+Examples
+--------
     Interactive mode:
     >>> from panelbox.visualization.utils import suggest_chart
     >>> suggest_chart(interactive=True)
 
     Programmatic mode:
-    >>> charts = suggest_chart(purpose='residual_diagnostics', data_type='panel')
+    >>> charts = suggest_chart(purpose="residual_diagnostics", data_type="panel")
     >>> print(charts)
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import List, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,7 +39,7 @@ class ChartRecommendation:
     display_name: str
     chart_type: str  # Registry name
     description: str
-    use_cases: List[str]
+    use_cases: list[str]
     api_function: str
     code_example: str
     category: str
@@ -43,7 +48,7 @@ class ChartRecommendation:
         """String representation for display."""
         return f"""
 📊 {self.display_name}
-{'=' * 60}
+{"=" * 60}
 Registry Type: {self.chart_type}
 Category: {self.category}
 
@@ -51,7 +56,7 @@ Description:
   {self.description}
 
 Best for:
-{chr(10).join('  • ' + uc for uc in self.use_cases)}
+{chr(10).join("  • " + uc for uc in self.use_cases)}
 
 API Function: {self.api_function}
 
@@ -454,11 +459,11 @@ DECISION_TREE = {
 
 
 def suggest_chart(
-    purpose: Optional[str] = None,
-    data_type: Optional[str] = None,
+    purpose: str | None = None,
+    data_type: str | None = None,
     interactive: bool = False,
-    keywords: Optional[List[str]] = None,
-) -> Union[List[ChartRecommendation], ChartRecommendation]:
+    keywords: list[str] | None = None,
+) -> list[ChartRecommendation] | ChartRecommendation:
     """
     Suggest appropriate chart types based on analysis purpose.
 
@@ -485,12 +490,12 @@ def suggest_chart(
     >>> suggest_chart(interactive=True)
 
     Keyword search:
-    >>> charts = suggest_chart(keywords=['residual', 'normality'])
+    >>> charts = suggest_chart(keywords=["residual", "normality"])
     >>> for chart in charts:
     ...     print(chart)
 
     Direct purpose:
-    >>> chart = suggest_chart(purpose='residual_qq_plot')
+    >>> chart = suggest_chart(purpose="residual_qq_plot")
     >>> print(chart.code_example)
     """
     if interactive:
@@ -508,30 +513,30 @@ def suggest_chart(
 
 def _interactive_decision_tree() -> ChartRecommendation:
     """Run interactive CLI decision tree."""
-    print("\n" + "=" * 70)
-    print("📊 PanelBox Chart Selection Assistant")
-    print("=" * 70)
-    print("\nThis tool will help you choose the right chart for your analysis.\n")
+    logger.info("=" * 50)
+    logger.info("PanelBox Chart Selection Assistant")
+    logger.info("=" * 50)
+    logger.info("This tool will help you choose the right chart for your analysis.")
 
     current_node = "root"
 
     while current_node:
         node = DECISION_TREE[current_node]
-        print(f"\n{node['question']}\n")
+        logger.info(f"{node['question']}")
 
         for key, option in node["options"].items():
-            print(f"  [{key}] {option['label']}")
+            logger.info(f"  [{key}] {option['label']}")
 
-        print("\n  [q] Quit")
+        logger.info("  [q] Quit")
 
         choice = input("\nYour choice: ").strip().lower()
 
         if choice == "q":
-            print("\nExiting chart selector. Goodbye!")
+            logger.info("Exiting chart selector. Goodbye!")
             return None
 
         if choice not in node["options"]:
-            print("❌ Invalid choice. Please try again.")
+            logger.warning("Invalid choice. Please try again.")
             continue
 
         option = node["options"][choice]
@@ -541,13 +546,13 @@ def _interactive_decision_tree() -> ChartRecommendation:
             chart_key = option["recommend"]
             if chart_key in CHART_RECOMMENDATIONS:
                 recommendation = CHART_RECOMMENDATIONS[chart_key]
-                print("\n" + "=" * 70)
-                print("✅ RECOMMENDATION")
-                print("=" * 70)
-                print(recommendation)
+                logger.info("=" * 50)
+                logger.info("RECOMMENDATION")
+                logger.info("=" * 50)
+                logger.info(recommendation)
                 return recommendation
             else:
-                print(f"\n⚠️  Chart '{chart_key}' is being implemented.")
+                logger.warning(f"Chart '{chart_key}' is being implemented.")
                 return None
         else:
             # Continue to next node
@@ -556,7 +561,7 @@ def _interactive_decision_tree() -> ChartRecommendation:
     return None
 
 
-def _search_by_keywords(keywords: List[str]) -> List[ChartRecommendation]:
+def _search_by_keywords(keywords: list[str]) -> list[ChartRecommendation]:
     """Search charts by keywords."""
     keywords_lower = [kw.lower() for kw in keywords]
     results = []
@@ -578,7 +583,7 @@ def _search_by_keywords(keywords: List[str]) -> List[ChartRecommendation]:
     return results
 
 
-def list_all_charts(category: Optional[str] = None) -> List[ChartRecommendation]:
+def list_all_charts(category: str | None = None) -> list[ChartRecommendation]:
     """
     List all available charts, optionally filtered by category.
 
@@ -596,7 +601,7 @@ def list_all_charts(category: Optional[str] = None) -> List[ChartRecommendation]
     Examples
     --------
     >>> from panelbox.visualization.utils import list_all_charts
-    >>> panel_charts = list_all_charts(category='Panel-Specific')
+    >>> panel_charts = list_all_charts(category="Panel-Specific")
     >>> for chart in panel_charts:
     ...     print(f"- {chart.display_name}")
     """
@@ -605,7 +610,7 @@ def list_all_charts(category: Optional[str] = None) -> List[ChartRecommendation]
     return list(CHART_RECOMMENDATIONS.values())
 
 
-def get_categories() -> List[str]:
+def get_categories() -> list[str]:
     """
     Get list of all chart categories.
 
@@ -614,7 +619,7 @@ def get_categories() -> List[str]:
     list of str
         Unique category names
     """
-    return sorted(set(c.category for c in CHART_RECOMMENDATIONS.values()))
+    return sorted({c.category for c in CHART_RECOMMENDATIONS.values()})
 
 
 if __name__ == "__main__":

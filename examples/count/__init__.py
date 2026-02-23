@@ -1,5 +1,5 @@
 """
-PanelBox Count Models Tutorials
+PanelBox Count Models Tutorials.
 
 This module contains comprehensive tutorials for count data models including:
 - Poisson regression (pooled, FE, RE)
@@ -14,12 +14,13 @@ Example:
     To view available tutorials::
 
         from panelbox.examples import count
+
         print(count.list_tutorials())
 
     To access tutorial metadata::
 
         tutorials = count.TUTORIALS
-        print(tutorials['01']['name'])
+        print(tutorials["01"]["name"])
 """
 
 __version__ = "1.0.0"
@@ -203,7 +204,7 @@ def list_pathways():
     print("=" * 70)
     print()
 
-    for i, (key, pathway) in enumerate(LEARNING_PATHWAYS.items(), 1):
+    for i, (_key, pathway) in enumerate(LEARNING_PATHWAYS.items(), 1):
         print(f"{i}. {pathway['name']}")
         print(f"   Sequence: {' → '.join(pathway['sequence'])}")
         print(f"   Description: {pathway['description']}")
@@ -287,7 +288,7 @@ def verify_installation():
     Examples
     --------
     >>> results = verify_installation()
-    >>> if results['all_passed']:
+    >>> if results["all_passed"]:
     ...     print("Installation verified!")
     """
     results = {"all_passed": True, "directories": {}, "notebooks": {}, "datasets": {}, "utils": {}}
@@ -333,11 +334,11 @@ def verify_installation():
 
 
 __all__ = [
-    "TUTORIALS",
     "LEARNING_PATHWAYS",
-    "list_tutorials",
-    "list_pathways",
-    "get_tutorial_path",
+    "TUTORIALS",
     "get_data_path",
+    "get_tutorial_path",
+    "list_pathways",
+    "list_tutorials",
     "verify_installation",
 ]

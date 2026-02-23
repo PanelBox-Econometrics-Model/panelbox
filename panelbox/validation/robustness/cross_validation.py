@@ -13,6 +13,9 @@ Tashman, L. J. (2000). Out-of-sample tests of forecasting accuracy: an
     analysis and review. International Journal of Forecasting, 16(4), 437-450.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -21,6 +24,8 @@ import numpy as np
 import pandas as pd
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -119,17 +124,17 @@ class TimeSeriesCV:
     >>> import pandas as pd
     >>>
     >>> # Fit model
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "entity_id", "time")
     >>> results = fe.fit()
     >>>
     >>> # Expanding window CV
-    >>> cv = pb.TimeSeriesCV(results, method='expanding')
+    >>> cv = pb.TimeSeriesCV(results, method="expanding")
     >>> cv_results = cv.cross_validate()
     >>> print(f"Out-of-sample R²: {cv_results.metrics['r2_oos']:.3f}")
     >>>
     >>> # Rolling window CV
-    >>> cv_roll = pb.TimeSeriesCV(results, method='rolling', window_size=5)
+    >>> cv_roll = pb.TimeSeriesCV(results, method="rolling", window_size=5)
     >>> cv_results_roll = cv_roll.cross_validate()
     >>>
     >>> # Plot predictions
@@ -216,11 +221,11 @@ class TimeSeriesCV:
         - Rolling: n_periods - min_train_periods
         """
         if self.verbose:
-            print(f"Starting {self.method} window cross-validation...")
-            print(f"Total periods: {self.n_periods}")
-            print(f"Min train periods: {self.min_train_periods}")
+            logger.info(f"Starting {self.method} window cross-validation...")
+            logger.info(f"Total periods: {self.n_periods}")
+            logger.info(f"Min train periods: {self.min_train_periods}")
             if self.method == "rolling":
-                print(f"Window size: {self.window_size}")
+                logger.info(f"Window size: {self.window_size}")
 
         # Storage for predictions and metrics
         all_predictions = []
@@ -231,13 +236,13 @@ class TimeSeriesCV:
         n_folds = len(folds)
 
         if self.verbose:
-            print(f"Number of CV folds: {n_folds}")
-            print("")
+            logger.info(f"Number of CV folds: {n_folds}")
+            logger.info("")
 
         # Perform CV
         for fold_idx, (train_periods, test_period) in enumerate(folds, 1):
             if self.verbose:
-                print(
+                logger.info(
                     f"Fold {fold_idx}/{n_folds}: Training on {len(train_periods)} periods, "
                     f"testing on period {test_period}"
                 )
@@ -269,13 +274,13 @@ class TimeSeriesCV:
                 fold_metrics_list.append(fold_metrics)
 
                 if self.verbose:
-                    print(
+                    logger.info(
                         f"  Fold {fold_idx} R²: {fold_metrics['r2_oos']:.4f}, "
                         f"RMSE: {fold_metrics['rmse']:.4f}"
                     )
 
             except Exception as e:
-                warnings.warn(f"Fold {fold_idx} failed: {str(e)}")
+                warnings.warn(f"Fold {fold_idx} failed: {e!s}")
                 continue
 
         # Combine all predictions
@@ -304,9 +309,9 @@ class TimeSeriesCV:
         self.metrics_ = overall_metrics
 
         if self.verbose:
-            print("\nCross-Validation Complete!")
-            print(f"Overall Out-of-Sample R²: {overall_metrics['r2_oos']:.4f}")
-            print(f"Overall RMSE: {overall_metrics['rmse']:.4f}")
+            logger.info("Cross-Validation Complete!")
+            logger.info(f"Overall Out-of-Sample R²: {overall_metrics['r2_oos']:.4f}")
+            logger.info(f"Overall RMSE: {overall_metrics['rmse']:.4f}")
 
         return self.cv_results_
 
@@ -456,7 +461,7 @@ class TimeSeriesCV:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "matplotlib is required for plotting. " "Install with: pip install matplotlib"
+                "matplotlib is required for plotting. Install with: pip install matplotlib"
             )
 
         predictions = self.cv_results_.predictions
@@ -483,7 +488,7 @@ class TimeSeriesCV:
         ax1.set_ylabel("Predicted Values")
         ax1.set_title(
             f"Out-of-Sample Predictions: Actual vs Predicted\n"
-            f'R² = {self.cv_results_.metrics["r2_oos"]:.4f}'
+            f"R² = {self.cv_results_.metrics['r2_oos']:.4f}"
         )
         ax1.legend()
         ax1.grid(True, alpha=0.3)
@@ -524,7 +529,7 @@ class TimeSeriesCV:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
             if self.verbose:
-                print(f"Plot saved to {save_path}")
+                logger.info(f"Plot saved to {save_path}")
         else:
             plt.show()
 

@@ -4,8 +4,10 @@ Spatial Error Model (SEM) for panel data.
 GMM-based estimation with spatial instruments.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +16,8 @@ from scipy.optimize import minimize, minimize_scalar
 
 from .base_spatial import SpatialPanelModel
 from .spatial_lag import SpatialPanelResults
-from .spatial_weights import SpatialWeights
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialError(SpatialPanelModel):
@@ -102,7 +105,7 @@ class SpatialError(SpatialPanelModel):
             return self._fit_ml(effects, maxiter, verbose, **kwargs)
         else:
             raise NotImplementedError(
-                f"Combination effects='{effects}' and method='{method}' " "not yet implemented"
+                f"Combination effects='{effects}' and method='{method}' not yet implemented"
             )
 
     def _fit_gmm_fe(self, n_lags: int = 2, maxiter: int = 1000, verbose: bool = False, **kwargs):
@@ -126,7 +129,7 @@ class SpatialError(SpatialPanelModel):
             Estimation results
         """
         if verbose:
-            print("Estimating SEM-FE using GMM with spatial instruments")
+            logger.info("Estimating SEM-FE using GMM with spatial instruments")
 
         # Apply within transformation
         y_within = self._within_transformation(self.endog.values.reshape(-1, 1)).flatten()
@@ -136,26 +139,26 @@ class SpatialError(SpatialPanelModel):
         Z_list = [X_within]
         WkX = X_within.copy()
 
-        for lag in range(1, n_lags + 1):
+        for _lag in range(1, n_lags + 1):
             WkX = self._spatial_lag(WkX)
             Z_list.append(WkX)
 
         Z = np.hstack(Z_list)
 
         if verbose:
-            print(f"Instruments: X and {n_lags} spatial lag(s)")
-            print(f"Number of instruments: {Z.shape[1]}")
-            print(f"Number of parameters: {X_within.shape[1]}")
+            logger.info(f"Instruments: X and {n_lags} spatial lag(s)")
+            logger.info(f"Number of instruments: {Z.shape[1]}")
+            logger.info(f"Number of parameters: {X_within.shape[1]}")
 
         # Two-step GMM estimation
 
         # Step 1: Initial GMM with W = I
         if verbose:
-            print("\nStep 1: Initial GMM (W = I)")
+            logger.info("Step 1: Initial GMM (W = I)")
 
         # First-stage regression: project X onto Z
         ZtZ = Z.T @ Z
-        ZtX = Z.T @ X_within
+        Z.T @ X_within
         try:
             P_Z = Z @ inv(ZtZ) @ Z.T  # Projection matrix
             X_hat = P_Z @ X_within
@@ -186,12 +189,12 @@ class SpatialError(SpatialPanelModel):
         lambda_1 = np.clip(lambda_1, lambda_bounds[0], lambda_bounds[1])
 
         if verbose:
-            print(f"Initial β: {beta_1}")
-            print(f"Initial λ: {lambda_1:.4f}")
+            logger.debug(f"Initial β: {beta_1}")
+            logger.debug(f"Initial λ: {lambda_1:.4f}")
 
         # Step 2: Efficient GMM with optimal weighting matrix
         if verbose:
-            print("\nStep 2: Efficient GMM")
+            logger.info("Step 2: Efficient GMM")
 
         # Compute optimal weighting matrix
         # Ω = E[Z'uu'Z] ≈ Z'ûû'Z
@@ -202,7 +205,7 @@ class SpatialError(SpatialPanelModel):
             W_gmm = inv(Omega)
         except np.linalg.LinAlgError:
             W_gmm = np.linalg.pinv(Omega)
-            warnings.warn("Singular weighting matrix, using pseudo-inverse")
+            warnings.warn("Singular weighting matrix, using pseudo-inverse", stacklevel=2)
 
         # Two-step GMM estimator
         XtZWZ = X_within.T @ Z @ W_gmm @ Z.T
@@ -242,8 +245,8 @@ class SpatialError(SpatialPanelModel):
         lambda_hat = result.x
 
         if verbose:
-            print(f"Final β: {beta_2}")
-            print(f"Final λ: {lambda_hat:.6f}")
+            logger.debug(f"Final β: {beta_2}")
+            logger.debug(f"Final λ: {lambda_hat:.6f}")
 
         # Compute variance of final estimator
         sigma2_hat = ((u_2 - lambda_hat * Wu_2) ** 2).mean()
@@ -256,7 +259,7 @@ class SpatialError(SpatialPanelModel):
 
         # Parameter names
         if hasattr(self.exog, "columns"):
-            param_names = ["lambda"] + list(self.exog.columns)
+            param_names = ["lambda", *list(self.exog.columns)]
         else:
             param_names = ["lambda"] + [f"x{i}" for i in range(self.exog.shape[1])]
 
@@ -270,7 +273,7 @@ class SpatialError(SpatialPanelModel):
             df_model=len(params),
             df_resid=self.n_obs - len(params) - self.n_entities,
             method=f"GMM (spatial instruments, {n_lags} lags)",
-            effects=effects,
+            effects="fixed",
             resid=u_2,
             sigma2=sigma2_hat,
         )
@@ -363,13 +366,13 @@ class SpatialError(SpatialPanelModel):
             Estimation results
         """
         if verbose:
-            print("Estimating pooled SEM using GMM")
+            logger.info("Estimating pooled SEM using GMM")
 
         y = self.endog.values.flatten()
         X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
         # Add constant if not present; track whether we added one
-        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        _const_added = not np.any(np.all(X[0, :] == X, axis=0))
         if _const_added:
             X = np.column_stack([np.ones(len(y)), X])
 
@@ -377,7 +380,7 @@ class SpatialError(SpatialPanelModel):
         Z_list = [X]
         WkX = X.copy()
 
-        for lag in range(1, n_lags + 1):
+        for _lag in range(1, n_lags + 1):
             WkX = self._spatial_lag(WkX)
             Z_list.append(WkX)
 
@@ -393,7 +396,7 @@ class SpatialError(SpatialPanelModel):
 
         # Estimate λ
         Wu = self._spatial_lag(u_1.reshape(-1, 1)).flatten()
-        lambda_1 = (Wu @ u_1) / (Wu @ Wu)
+        (Wu @ u_1) / (Wu @ Wu)
 
         # Step 2 with optimal weights
         u_mat = u_1.reshape(-1, 1)
@@ -412,6 +415,7 @@ class SpatialError(SpatialPanelModel):
 
         # Optimize λ
         def neg_llf_lambda(lam):
+            """Compute the negative log-likelihood for lambda."""
             v = u_2 - lam * Wu_2
             sigma2 = (v @ v) / len(y)
             log_det = self._log_det_jacobian(lam)
@@ -436,12 +440,12 @@ class SpatialError(SpatialPanelModel):
         # Build param_names to match [lambda, beta...] where beta has X.shape[1] entries
         if _const_added:
             if hasattr(self.exog, "columns"):
-                param_names = ["lambda", "const"] + list(self.exog.columns)
+                param_names = ["lambda", "const", *list(self.exog.columns)]
             else:
                 param_names = ["lambda", "const"] + [f"x{i}" for i in range(self.exog.shape[1])]
         else:
             if hasattr(self.exog, "columns"):
-                param_names = ["lambda"] + list(self.exog.columns)
+                param_names = ["lambda", *list(self.exog.columns)]
             else:
                 param_names = ["lambda"] + [f"x{i}" for i in range(X.shape[1])]
 
@@ -483,7 +487,7 @@ class SpatialError(SpatialPanelModel):
             Estimation results
         """
         if verbose:
-            print(f"Estimating SEM-{effects.upper()} using ML")
+            logger.info(f"Estimating SEM-{effects.upper()} using ML")
 
         # Apply transformations
         if effects == "fixed":
@@ -530,7 +534,6 @@ class SpatialError(SpatialPanelModel):
         bounds = [lambda_bounds] + [(None, None)] * len(beta_init)
 
         # Optimization
-        from scipy.optimize import minimize
 
         result = minimize(
             neg_log_likelihood,
@@ -541,15 +544,15 @@ class SpatialError(SpatialPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         # Extract results
         lambda_hat = result.x[0]
         beta_hat = result.x[1:]
 
         if verbose:
-            print(f"λ: {lambda_hat:.6f}")
-            print(f"β: {beta_hat}")
+            logger.debug(f"λ: {lambda_hat:.6f}")
+            logger.debug(f"β: {beta_hat}")
 
         # Compute residuals and variance
         u = y - X @ beta_hat
@@ -559,9 +562,9 @@ class SpatialError(SpatialPanelModel):
 
         # Hessian for standard errors
         # Use numerical approximation
-        from scipy.optimize import approx_fprime
 
         def grad_func(p):
+            """Compute the gradient of the log-likelihood."""
             eps = 1e-8
             grad = np.zeros_like(p)
             for i in range(len(p)):
@@ -591,11 +594,11 @@ class SpatialError(SpatialPanelModel):
             cov_matrix = inv(hessian)
         except np.linalg.LinAlgError:
             cov_matrix = np.linalg.pinv(hessian)
-            warnings.warn("Singular Hessian, using pseudo-inverse")
+            warnings.warn("Singular Hessian, using pseudo-inverse", stacklevel=2)
 
         # Parameter names
         if hasattr(self.exog, "columns"):
-            param_names = ["lambda"] + list(self.exog.columns)
+            param_names = ["lambda", *list(self.exog.columns)]
         else:
             param_names = ["lambda"] + [f"x{i}" for i in range(X.shape[1])]
 
@@ -623,9 +626,9 @@ class SpatialError(SpatialPanelModel):
 
     def predict(
         self,
-        params: Optional[Dict[str, float]] = None,
-        exog: Optional[np.ndarray] = None,
-        effects: Optional[np.ndarray] = None,
+        params: dict[str, float] | None = None,
+        exog: np.ndarray | None = None,
+        effects: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Generate predictions from SEM model.
@@ -654,10 +657,7 @@ class SpatialError(SpatialPanelModel):
             params = self.results.params
 
         # Extract β (skip λ)
-        if isinstance(params, pd.Series):
-            beta = params.drop("lambda")
-        else:
-            beta = params[1:]
+        beta = params.drop("lambda") if isinstance(params, pd.Series) else params[1:]
 
         # Use provided or training exog
         if exog is None:

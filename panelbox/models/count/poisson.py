@@ -8,18 +8,23 @@ This module implements various Poisson regression models for panel data:
 - PoissonQML: Quasi-Maximum Likelihood (Wooldridge 1999)
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from itertools import combinations_with_replacement, permutations
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from scipy import optimize, stats
-from scipy.special import factorial, gammaln, loggamma
+from scipy.special import gammaln
 
-from ...utils.data import check_panel_data
 from ...utils.statistics import compute_sandwich_covariance
 from ..base import NonlinearPanelModel, PanelModelResults
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+logger = logging.getLogger(__name__)
 
 
 class PoissonFixedEffectsResults(PanelModelResults):
@@ -31,6 +36,41 @@ class PoissonFixedEffectsResults(PanelModelResults):
         self.llf = model.llf if hasattr(model, "llf") else None
         self.n_dropped = model.n_dropped if hasattr(model, "n_dropped") else 0
         self.dropped_entities = model.dropped_entities if hasattr(model, "dropped_entities") else []
+
+    def predict(
+        self,
+        X: np.ndarray | pd.DataFrame | None = None,
+        type: str = "response",
+        include_fe: bool = False,
+    ) -> np.ndarray:
+        """
+        Generate predictions using fitted parameters.
+
+        Parameters
+        ----------
+        X : array-like, pd.DataFrame, or None
+            Covariates for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
+        type : {'response', 'linear', 'rate'}
+            Type of prediction
+        include_fe : bool
+            Whether to include fixed effects
+
+        Returns
+        -------
+        ndarray
+            Predicted values
+        """
+        if X is not None and isinstance(X, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.exog_names].values
+            else:
+                X = X.values
+
+        return self.model.predict(X=X, type=type, include_fe=include_fe)
 
 
 class PooledPoisson(NonlinearPanelModel):
@@ -68,7 +108,7 @@ class PooledPoisson(NonlinearPanelModel):
     Examples
     --------
     >>> model = PooledPoisson(y, X, entity_id=firms)
-    >>> result = model.fit(se_type='cluster')
+    >>> result = model.fit(se_type="cluster")
     >>> print(result.summary())
 
     References
@@ -137,14 +177,17 @@ class PooledPoisson(NonlinearPanelModel):
 
         return H
 
-    def predict(self, X: Optional[np.ndarray] = None, type: str = "response") -> np.ndarray:
+    def predict(
+        self, X: np.ndarray | pd.DataFrame | None = None, type: str = "response"
+    ) -> np.ndarray:
         """
         Generate predictions.
 
         Parameters
         ----------
-        X : array-like, optional
-            Covariates for prediction. If None, uses estimation sample
+        X : array-like, pd.DataFrame, or None
+            Covariates for prediction. If None, uses estimation sample.
+            If pd.DataFrame, extracts columns matching exog_names.
         type : {'response', 'linear', 'rate'}
             Type of prediction:
             - 'response' or 'rate': Expected count λ = exp(X'β)
@@ -160,6 +203,14 @@ class PooledPoisson(NonlinearPanelModel):
 
         if X is None:
             X = self.exog
+        elif isinstance(X, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.exog_names].values
+            else:
+                X = X.values
 
         linear_pred = X @ self.params
 
@@ -196,7 +247,7 @@ class PooledPoisson(NonlinearPanelModel):
         else:
             return np.nan
 
-    def check_overdispersion(self, alpha: float = 0.05) -> Dict[str, Any]:
+    def check_overdispersion(self, alpha: float = 0.05) -> dict[str, Any]:
         """
         Test for overdispersion.
 
@@ -233,7 +284,7 @@ class PooledPoisson(NonlinearPanelModel):
         # OLS regression
         from scipy.stats import linregress
 
-        slope, intercept, r_value, p_value, std_err = linregress(mu_aux.flatten(), y_aux)
+        slope, _intercept, _r_value, p_value, std_err = linregress(mu_aux.flatten(), y_aux)
 
         result = {
             "overdispersion_index": self.overdispersion,
@@ -250,15 +301,16 @@ class PooledPoisson(NonlinearPanelModel):
                 f"Significant overdispersion detected (index={self.overdispersion:.2f}). "
                 "Consider using Negative Binomial model.",
                 UserWarning,
+                stacklevel=2,
             )
 
         return result
 
     def marginal_effects(
         self,
-        result: Optional[PanelModelResults] = None,
+        result: PanelModelResults | None = None,
         at: str = "overall",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Poisson model.
@@ -286,8 +338,8 @@ class PooledPoisson(NonlinearPanelModel):
         --------
         >>> model = PooledPoisson(y, X, entity_id=firms)
         >>> result = model.fit()
-        >>> ame = model.marginal_effects(result, at='overall')
-        >>> mem = model.marginal_effects(result, at='means')
+        >>> ame = model.marginal_effects(result, at="overall")
+        >>> mem = model.marginal_effects(result, at="means")
         >>> print(ame.summary())
 
         See Also
@@ -310,13 +362,12 @@ class PooledPoisson(NonlinearPanelModel):
             return compute_poisson_mem(result, varlist=varlist)
         else:
             raise ValueError(
-                f"Unknown 'at' value: {at}. "
-                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+                f"Unknown 'at' value: {at}. Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
             )
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         se_type: str = "cluster",
@@ -481,7 +532,7 @@ class PoissonFixedEffects(NonlinearPanelModel):
         self.n_dropped = len(self.dropped_entities)
 
         if self.n_dropped > 0:
-            print(f"Note: {self.n_dropped} entities dropped due to all-zero outcomes")
+            logger.info(f"{self.n_dropped} entities dropped due to all-zero outcomes")
 
         if len(self.kept_entities) == 0:
             raise ValueError("No entities with positive counts remaining")
@@ -520,7 +571,7 @@ class PoissonFixedEffects(NonlinearPanelModel):
                 llf += numerator - np.log(denominator)
             else:
                 # Numerical issues
-                warnings.warn(f"Numerical issues for entity {entity}")
+                warnings.warn(f"Numerical issues for entity {entity}", stacklevel=2)
 
         return llf
 
@@ -542,7 +593,7 @@ class PoissonFixedEffects(NonlinearPanelModel):
 
         return total
 
-    def _generate_compositions(self, n: int, k: int) -> List[Tuple[int, ...]]:
+    def _generate_compositions(self, n: int, k: int) -> Generator[tuple[int, ...], None, None]:
         """
         Generate all compositions of n into k non-negative parts.
 
@@ -555,7 +606,7 @@ class PoissonFixedEffects(NonlinearPanelModel):
         else:
             for i in range(n + 1):
                 for rest in self._generate_compositions(n - i, k - 1):
-                    yield (i,) + rest
+                    yield (i, *rest)
 
     def _dp_sequences(self, X_i: np.ndarray, params: np.ndarray, n_i: int, T_i: int) -> float:
         """
@@ -639,9 +690,9 @@ class PoissonFixedEffects(NonlinearPanelModel):
 
     def marginal_effects(
         self,
-        result: Optional[PanelModelResults] = None,
+        result: PanelModelResults | None = None,
         at: str = "overall",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Poisson Fixed Effects model.
@@ -669,8 +720,8 @@ class PoissonFixedEffects(NonlinearPanelModel):
         --------
         >>> model = PoissonFixedEffects(y, X, entity_id=firms)
         >>> result = model.fit()
-        >>> ame = model.marginal_effects(result, at='overall')
-        >>> mem = model.marginal_effects(result, at='means')
+        >>> ame = model.marginal_effects(result, at="overall")
+        >>> mem = model.marginal_effects(result, at="means")
         >>> print(ame.summary())
 
         See Also
@@ -693,20 +744,23 @@ class PoissonFixedEffects(NonlinearPanelModel):
             return compute_poisson_mem(result, varlist=varlist)
         else:
             raise ValueError(
-                f"Unknown 'at' value: {at}. "
-                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+                f"Unknown 'at' value: {at}. Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
             )
 
     def predict(
-        self, X: Optional[np.ndarray] = None, type: str = "response", include_fe: bool = False
+        self,
+        X: np.ndarray | pd.DataFrame | None = None,
+        type: str = "response",
+        include_fe: bool = False,
     ) -> np.ndarray:
         """
         Generate predictions.
 
         Parameters
         ----------
-        X : array-like, optional
-            Covariates for prediction
+        X : array-like, pd.DataFrame, or None
+            Covariates for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
         type : {'response', 'linear', 'rate'}
             Type of prediction
         include_fe : bool
@@ -727,6 +781,14 @@ class PoissonFixedEffects(NonlinearPanelModel):
 
         if X is None:
             X = self.exog
+        elif isinstance(X, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.exog_names].values
+            else:
+                X = X.values
 
         linear_pred = X @ self.params
 
@@ -735,6 +797,7 @@ class PoissonFixedEffects(NonlinearPanelModel):
                 "Fixed effects not directly available from conditional MLE. "
                 "Returning predictions without fixed effects.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if type in ["response", "rate"]:
@@ -746,11 +809,11 @@ class PoissonFixedEffects(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "PoissonFixedEffectsResults":
+    ) -> PoissonFixedEffectsResults:
         """
         Fit the Fixed Effects Poisson model using conditional MLE.
 
@@ -884,8 +947,8 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         return self._log_likelihood_gamma(params)
 
     def fit(
-        self, distribution: str = "gamma", start_params: Optional[np.ndarray] = None, **kwargs
-    ) -> "PanelResults":
+        self, distribution: str = "gamma", start_params: np.ndarray | None = None, **kwargs
+    ) -> PanelModelResults:
         """
         Fit Random Effects Poisson model.
 
@@ -990,13 +1053,13 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         log_theta = params[-1]
         theta = np.exp(log_theta)  # Variance of random effect
 
-        # Import quadrature if available
-        try:
-            from ...optimization.quadrature import gauss_hermite_quadrature
+        # Check if quadrature module is available
+        import importlib.util
 
+        if importlib.util.find_spec("panelbox.optimization.quadrature") is not None:
             n_quad = 20
-        except ImportError:
-            warnings.warn("Quadrature not available, using simple approximation")
+        else:
+            warnings.warn("Quadrature not available, using simple approximation", stacklevel=2)
             n_quad = 5
 
         llf = 0.0
@@ -1019,7 +1082,7 @@ class RandomEffectsPoisson(NonlinearPanelModel):
 
             entity_likelihood = 0.0
 
-            for q, (point, weight) in enumerate(zip(points, weights)):
+            for _q, (point, weight) in enumerate(zip(points, weights)):
                 alpha = np.exp(point)  # Random effect
 
                 # Poisson likelihood conditional on alpha
@@ -1046,9 +1109,9 @@ class RandomEffectsPoisson(NonlinearPanelModel):
 
     def marginal_effects(
         self,
-        result: Optional[PanelModelResults] = None,
+        result: PanelModelResults | None = None,
         at: str = "overall",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Random Effects Poisson model.
@@ -1076,8 +1139,8 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         --------
         >>> model = RandomEffectsPoisson(y, X, entity_id=firms)
         >>> result = model.fit()
-        >>> ame = model.marginal_effects(result, at='overall')
-        >>> mem = model.marginal_effects(result, at='means')
+        >>> ame = model.marginal_effects(result, at="overall")
+        >>> mem = model.marginal_effects(result, at="means")
         >>> print(ame.summary())
 
         See Also
@@ -1100,18 +1163,20 @@ class RandomEffectsPoisson(NonlinearPanelModel):
             return compute_poisson_mem(result, varlist=varlist)
         else:
             raise ValueError(
-                f"Unknown 'at' value: {at}. "
-                "Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
+                f"Unknown 'at' value: {at}. Use 'overall'/'mean' for AME or 'means'/'mem' for MEM."
             )
 
-    def predict(self, X: Optional[np.ndarray] = None, type: str = "response") -> np.ndarray:
+    def predict(
+        self, X: np.ndarray | pd.DataFrame | None = None, type: str = "response"
+    ) -> np.ndarray:
         """
         Generate predictions.
 
         Parameters
         ----------
-        X : array-like, optional
-            Covariates for prediction
+        X : array-like, pd.DataFrame, or None
+            Covariates for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
         type : {'response', 'linear'}
             Type of prediction
 
@@ -1125,6 +1190,14 @@ class RandomEffectsPoisson(NonlinearPanelModel):
 
         if X is None:
             X = self.exog
+        elif isinstance(X, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in X.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = X[self.exog_names].values
+            else:
+                X = X.values
 
         # Use only exogenous parameters (exclude theta)
         beta = self.params_exog if hasattr(self, "params_exog") else self.params[:-1]
@@ -1192,7 +1265,7 @@ class PoissonQML(PooledPoisson):
         super().__init__(endog, exog, entity_id, time_id)
         self.model_type = "Poisson QML (Wooldridge 1999)"
 
-    def fit(self, se_type: str = "robust", **kwargs) -> "PanelResults":
+    def fit(self, se_type: str = "robust", **kwargs) -> PanelModelResults:
         """
         Fit Poisson QML model.
 
@@ -1212,6 +1285,7 @@ class PoissonQML(PooledPoisson):
             warnings.warn(
                 f"QML requires robust standard errors. Switching from '{se_type}' to 'robust'.",
                 UserWarning,
+                stacklevel=2,
             )
             se_type = "robust"
 
@@ -1230,4 +1304,4 @@ class PoissonQML(PooledPoisson):
 
     def __repr__(self):
         """String representation."""
-        return f"PoissonQML(n_entities={self.n_entities}, " f"n_obs={self.n_obs}, k_vars={self.k})"
+        return f"PoissonQML(n_entities={self.n_entities}, n_obs={self.n_obs}, k_vars={self.k})"

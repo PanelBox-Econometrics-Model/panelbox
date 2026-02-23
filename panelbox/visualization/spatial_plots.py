@@ -1,18 +1,27 @@
-"""
-Spatial visualization utilities for panel data diagnostics.
-"""
+"""Spatial visualization utilities for panel data diagnostics."""
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    import geopandas as gpd
+    import matplotlib
+
+    from panelbox.effects.spatial_effects import SpatialEffectsResult
+
+logger = logging.getLogger(__name__)
 
 
 def create_moran_scatterplot(
     values: np.ndarray,
     W: np.ndarray,
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    ax: matplotlib.axes.Axes | None = None,
     title: str = "Moran Scatterplot",
     xlabel: str = "Standardized Values",
     ylabel: str = "Spatial Lag of Standardized Values",
@@ -21,7 +30,7 @@ def create_moran_scatterplot(
     show_regression: bool = True,
     show_quadrants: bool = True,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Create Moran scatterplot.
 
@@ -130,14 +139,14 @@ def create_moran_scatterplot(
 
 def create_lisa_cluster_map(
     lisa_results: pd.DataFrame,
-    gdf: Optional["gpd.GeoDataFrame"] = None,
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    gdf: gpd.GeoDataFrame | None = None,
+    ax: matplotlib.axes.Axes | None = None,
     title: str = "LISA Cluster Map",
     figsize: tuple = (12, 8),
-    color_map: Optional[Dict[str, str]] = None,
+    color_map: dict[str, str] | None = None,
     legend: bool = True,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Create LISA cluster map visualization.
 
@@ -201,7 +210,7 @@ def create_lisa_cluster_map(
             ax.set_axis_off()
 
         except Exception as e:
-            warnings.warn(f"Could not create map with geometries: {e}")
+            warnings.warn(f"Could not create map with geometries: {e}", stacklevel=2)
             # Fall back to bar plot
             _create_lisa_bar_plot(lisa_results, ax, color_map)
 
@@ -224,7 +233,7 @@ def create_lisa_cluster_map(
 
 
 def _create_lisa_bar_plot(
-    lisa_results: pd.DataFrame, ax: "matplotlib.axes.Axes", color_map: Dict[str, str]
+    lisa_results: pd.DataFrame, ax: matplotlib.axes.Axes, color_map: dict[str, str]
 ):
     """Helper to create bar plot for LISA results."""
     # Create bar plot colored by cluster type
@@ -232,7 +241,7 @@ def _create_lisa_bar_plot(
     Ii_values = lisa_results["Ii"].values
     colors = [color_map.get(ct, "#gray") for ct in lisa_results["cluster_type"]]
 
-    bars = ax.bar(range(len(entities)), Ii_values, color=colors)
+    ax.bar(range(len(entities)), Ii_values, color=colors)
 
     ax.set_xlabel("Entity")
     ax.set_ylabel("Local Moran I")
@@ -248,8 +257,8 @@ def _create_lisa_bar_plot(
 
 
 def plot_morans_i_by_period(
-    results: Union["MoranIByPeriodResult", pd.DataFrame],
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    results: Any | pd.DataFrame,
+    ax: matplotlib.axes.Axes | None = None,
     title: str = "Moran's I by Period",
     xlabel: str = "Time Period",
     ylabel: str = "Moran's I",
@@ -258,7 +267,7 @@ def plot_morans_i_by_period(
     show_significance: bool = True,
     alpha: float = 0.05,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Plot Moran's I values over time periods.
 
@@ -346,13 +355,13 @@ def plot_morans_i_by_period(
 
 def plot_spatial_weights_structure(
     W: np.ndarray,
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    ax: matplotlib.axes.Axes | None = None,
     title: str = "Spatial Weights Structure",
     figsize: tuple = (8, 8),
     cmap: str = "Blues",
     show_colorbar: bool = True,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Visualize spatial weights matrix structure.
 
@@ -408,11 +417,11 @@ def plot_spatial_weights_structure(
 
 
 def create_spatial_diagnostics_dashboard(
-    spatial_diagnostics: Dict[str, Any],
+    spatial_diagnostics: dict[str, Any],
     figsize: tuple = (16, 12),
     title: str = "Spatial Diagnostics Dashboard",
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Create comprehensive dashboard with all spatial diagnostics.
 
@@ -444,7 +453,7 @@ def create_spatial_diagnostics_dashboard(
     # 1. Moran's I result (text)
     ax1 = fig.add_subplot(gs[0, 0])
     morans_result = spatial_diagnostics["morans_i"]
-    text = f"Global Moran's I\n\n"
+    text = "Global Moran's I\n\n"
     text += f"Statistic: {morans_result.statistic:.4f}\n"
     text += f"P-value: {morans_result.pvalue:.4f}\n"
     text += f"Expected: {morans_result.additional_info['expected_value']:.4f}\n"
@@ -536,8 +545,8 @@ def create_spatial_diagnostics_dashboard(
     # 5. Spatial weights structure
     ax5 = fig.add_subplot(gs[1, 2])
     W = spatial_diagnostics["W"]
-    im = ax5.imshow(W[:20, :20], cmap="Blues", aspect="equal")  # Show subset if large
-    ax5.set_title(f'Spatial Weights ({"subset " if W.shape[0] > 20 else ""}N={W.shape[0]})')
+    ax5.imshow(W[:20, :20], cmap="Blues", aspect="equal")  # Show subset if large
+    ax5.set_title(f"Spatial Weights ({'subset ' if W.shape[0] > 20 else ''}N={W.shape[0]})")
     ax5.set_xlabel("Unit j")
     ax5.set_ylabel("Unit i")
 
@@ -563,14 +572,14 @@ def create_spatial_diagnostics_dashboard(
 
 
 def plot_spatial_effects(
-    effects_result: "SpatialEffectsResult",
+    effects_result: SpatialEffectsResult,
     figsize: tuple = (12, 6),
     title: str = "Spatial Effects Decomposition",
     show_ci: bool = True,
-    colors: Optional[Dict[str, str]] = None,
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    colors: dict[str, str] | None = None,
+    ax: matplotlib.axes.Axes | None = None,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Create bar plot of spatial effects (direct, indirect, total).
 
@@ -627,7 +636,7 @@ def plot_spatial_effects(
     bars_total = ax.bar(x + width, total_vals, width, label="Total", color=colors["total"])
 
     # Add error bars if requested
-    if show_ci and "direct_se" in list(effects_result.effects.values())[0]:
+    if show_ci and "direct_se" in next(iter(effects_result.effects.values())):
         direct_se = np.array([effects_result.effects[v]["direct_se"] for v in variables])
         indirect_se = np.array([effects_result.effects[v]["indirect_se"] for v in variables])
         total_se = np.array([effects_result.effects[v]["total_se"] for v in variables])
@@ -677,6 +686,7 @@ def plot_spatial_effects(
     if n_vars <= 6:
 
         def autolabel(bars, values):
+            """Attach text labels above each bar in a bar chart."""
             for bar, val in zip(bars, values):
                 height = bar.get_height()
                 ax.annotate(
@@ -698,14 +708,14 @@ def plot_spatial_effects(
 
 
 def plot_direct_vs_indirect(
-    effects_result: "SpatialEffectsResult",
+    effects_result: SpatialEffectsResult,
     figsize: tuple = (8, 8),
     title: str = "Direct vs Indirect Effects",
     show_diagonal: bool = True,
     show_labels: bool = True,
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    ax: matplotlib.axes.Axes | None = None,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Create scatter plot of direct vs indirect effects.
 
@@ -808,15 +818,15 @@ def plot_direct_vs_indirect(
 
 
 def plot_effects_comparison(
-    effects_results: List["SpatialEffectsResult"],
-    model_names: List[str],
-    variables: Optional[List[str]] = None,
+    effects_results: list[SpatialEffectsResult],
+    model_names: list[str],
+    variables: list[str] | None = None,
     effect_type: str = "total",
     figsize: tuple = (12, 6),
     title: str = "Model Comparison: Spatial Effects",
-    ax: Optional["matplotlib.axes.Axes"] = None,
+    ax: matplotlib.axes.Axes | None = None,
     **kwargs,
-) -> "matplotlib.figure.Figure":
+) -> matplotlib.figure.Figure:
     """
     Compare effects across multiple spatial models.
 
@@ -876,7 +886,7 @@ def plot_effects_comparison(
         values = [result.effects[v][effect_type] for v in variables]
 
         # Add error bars if available
-        if f"{effect_type}_se" in list(result.effects.values())[0]:
+        if f"{effect_type}_se" in next(iter(result.effects.values())):
             errors = [result.effects[v][f"{effect_type}_se"] * 1.96 for v in variables]
             ax.bar(
                 x + i * width - width * n_models / 2 + width / 2,

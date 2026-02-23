@@ -4,8 +4,13 @@ LaTeX Exporter for PanelBox Reports.
 Exports validation and regression results to LaTeX format for academic papers.
 """
 
+from __future__ import annotations
+
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class LaTeXExporter:
@@ -28,9 +33,9 @@ class LaTeXExporter:
     --------
     >>> from panelbox.report.exporters import LaTeXExporter
     >>>
-    >>> exporter = LaTeXExporter(table_style='booktabs')
+    >>> exporter = LaTeXExporter(table_style="booktabs")
     >>> latex = exporter.export_validation_tests(tests)
-    >>> exporter.save(latex, 'validation_table.tex')
+    >>> exporter.save(latex, "validation_table.tex")
     """
 
     def __init__(
@@ -52,7 +57,7 @@ class LaTeXExporter:
 
     def export_validation_tests(
         self,
-        tests: List[Dict[str, Any]],
+        tests: list[dict[str, Any]],
         caption: str = "Validation Test Results",
         label: str = "tab:validation",
     ) -> str:
@@ -76,9 +81,7 @@ class LaTeXExporter:
         Examples
         --------
         >>> latex = exporter.export_validation_tests(
-        ...     tests,
-        ...     caption="Panel Data Validation Tests",
-        ...     label="tab:validation"
+        ...     tests, caption="Panel Data Validation Tests", label="tab:validation"
         ... )
         """
         lines = []
@@ -161,8 +164,8 @@ class LaTeXExporter:
 
     def export_regression_table(
         self,
-        coefficients: List[Dict[str, Any]],
-        model_info: Dict[str, Any],
+        coefficients: list[dict[str, Any]],
+        model_info: dict[str, Any],
         caption: str = "Regression Results",
         label: str = "tab:regression",
     ) -> str:
@@ -188,9 +191,7 @@ class LaTeXExporter:
         Examples
         --------
         >>> latex = exporter.export_regression_table(
-        ...     coefficients=coefs,
-        ...     model_info=info,
-        ...     caption="Fixed Effects Regression"
+        ...     coefficients=coefs, model_info=info, caption="Fixed Effects Regression"
         ... )
         """
         lines = []
@@ -272,7 +273,7 @@ class LaTeXExporter:
 
     def export_summary_stats(
         self,
-        stats: List[Dict[str, Any]],
+        stats: list[dict[str, Any]],
         caption: str = "Summary Statistics",
         label: str = "tab:summary",
     ) -> str:
@@ -295,10 +296,7 @@ class LaTeXExporter:
 
         Examples
         --------
-        >>> latex = exporter.export_summary_stats(
-        ...     stats,
-        ...     caption="Descriptive Statistics"
-        ... )
+        >>> latex = exporter.export_summary_stats(stats, caption="Descriptive Statistics")
         """
         lines = []
 
@@ -351,7 +349,7 @@ class LaTeXExporter:
     def save(
         self,
         latex_content: str,
-        output_path: Union[str, Path],
+        output_path: str | Path,
         overwrite: bool = False,
         add_preamble: bool = False,
     ) -> Path:
@@ -376,16 +374,16 @@ class LaTeXExporter:
 
         Examples
         --------
-        >>> exporter.save(latex, 'table.tex')
+        >>> exporter.save(latex, "table.tex")
         >>> # With preamble for standalone compilation
-        >>> exporter.save(latex, 'table.tex', add_preamble=True)
+        >>> exporter.save(latex, "table.tex", add_preamble=True)
         """
         output_path = Path(output_path)
 
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. " "Use overwrite=True to replace."
+                f"File already exists: {output_path}. Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -500,7 +498,5 @@ class LaTeXExporter:
     def __repr__(self) -> str:
         """String representation."""
         return (
-            f"LaTeXExporter("
-            f"table_style='{self.table_style}', "
-            f"float_format='{self.float_format}')"
+            f"LaTeXExporter(table_style='{self.table_style}', float_format='{self.float_format}')"
         )

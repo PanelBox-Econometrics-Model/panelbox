@@ -5,6 +5,8 @@ This module provides helper utilities for the PanelBox visualization system,
 including chart selection assistance, theme management, and performance tools.
 """
 
+from __future__ import annotations
+
 from .chart_selector import (
     CHART_RECOMMENDATIONS,
     ChartRecommendation,
@@ -22,17 +24,17 @@ from .theme_loader import (
 )
 
 __all__ = [
+    "CHART_RECOMMENDATIONS",
     # Chart Selection
     "ChartRecommendation",
-    "suggest_chart",
-    "list_all_charts",
+    "create_theme_template",
     "get_categories",
-    "CHART_RECOMMENDATIONS",
+    "get_theme_colors",
+    "list_all_charts",
+    "list_builtin_themes",
     # Theme Management
     "load_theme",
-    "save_theme",
     "merge_themes",
-    "create_theme_template",
-    "list_builtin_themes",
-    "get_theme_colors",
+    "save_theme",
+    "suggest_chart",
 ]

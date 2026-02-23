@@ -1,5 +1,6 @@
 """
-Instrument Generation for GMM
+Instrument Generation for GMM.
+
 ==============================
 
 Tools for generating and managing instrument matrices for GMM estimation.
@@ -15,12 +16,17 @@ References
        and System GMM in Stata." Stata Journal, 9(1), 86-136.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, cast
+from typing import cast
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class InstrumentStyle(Enum):
@@ -59,8 +65,8 @@ class InstrumentSet:
     """
 
     Z: np.ndarray
-    variable_names: List[str] = field(default_factory=list)
-    instrument_names: List[str] = field(default_factory=list)
+    variable_names: list[str] = field(default_factory=list)
+    instrument_names: list[str] = field(default_factory=list)
     equation: str = "diff"
     style: str = "gmm"
     collapsed: bool = False
@@ -113,14 +119,14 @@ class InstrumentBuilder:
 
     Examples
     --------
-    >>> builder = InstrumentBuilder(data, id_var='id', time_var='year')
+    >>> builder = InstrumentBuilder(data, id_var="id", time_var="year")
     >>> # IV-style instruments
-    >>> Z_iv = builder.create_iv_style_instruments('x', min_lag=2, max_lag=4)
+    >>> Z_iv = builder.create_iv_style_instruments("x", min_lag=2, max_lag=4)
     >>> # GMM-style instruments
-    >>> Z_gmm = builder.create_gmm_style_instruments('y', min_lag=2, max_lag=99)
+    >>> Z_gmm = builder.create_gmm_style_instruments("y", min_lag=2, max_lag=99)
     >>> # Collapsed GMM-style
     >>> Z_collapsed = builder.create_gmm_style_instruments(
-    ...     'y', min_lag=2, max_lag=99, collapse=True
+    ...     "y", min_lag=2, max_lag=99, collapse=True
     ... )
     """
 
@@ -182,7 +188,7 @@ class InstrumentBuilder:
         Examples
         --------
         >>> # gmm(x, lag(2 4)) in IV-style creates 3 columns: x_{t-2}, x_{t-3}, x_{t-4}
-        >>> Z = builder.create_iv_style_instruments('x', min_lag=2, max_lag=4)
+        >>> Z = builder.create_iv_style_instruments("x", min_lag=2, max_lag=4)
 
         Notes
         -----
@@ -240,7 +246,7 @@ class InstrumentBuilder:
         self,
         var: str,
         min_lag: int,
-        max_lag: Optional[int] = None,
+        max_lag: int | None = None,
         equation: str = "diff",
         collapse: bool = False,
     ) -> InstrumentSet:
@@ -271,10 +277,10 @@ class InstrumentBuilder:
         Examples
         --------
         >>> # Without collapse: Creates many columns (one per time*lag)
-        >>> Z = builder.create_gmm_style_instruments('x', min_lag=2, max_lag=99)
+        >>> Z = builder.create_gmm_style_instruments("x", min_lag=2, max_lag=99)
         >>> # With collapse: Creates one column per lag
         >>> Z_collapsed = builder.create_gmm_style_instruments(
-        ...     'x', min_lag=2, max_lag=99, collapse=True
+        ...     "x", min_lag=2, max_lag=99, collapse=True
         ... )
 
         Notes
@@ -290,7 +296,7 @@ class InstrumentBuilder:
             return self._create_gmm_standard(var, min_lag, max_lag, equation)
 
     def _create_gmm_standard(
-        self, var: str, min_lag: int, max_lag: Optional[int], equation: str
+        self, var: str, min_lag: int, max_lag: int | None, equation: str
     ) -> InstrumentSet:
         """Create GMM-style instruments without collapse."""
         var_data = self.data[var].values
@@ -358,7 +364,7 @@ class InstrumentBuilder:
 
     def _analyze_lag_availability(
         self, var: str, min_lag: int, max_lag: int, min_coverage: float = 0.10
-    ) -> List[int]:
+    ) -> list[int]:
         """
         Analyze which lags have sufficient data coverage.
 
@@ -411,7 +417,7 @@ class InstrumentBuilder:
         return valid_lags
 
     def _create_gmm_collapsed(
-        self, var: str, min_lag: int, max_lag: Optional[int], equation: str
+        self, var: str, min_lag: int, max_lag: int | None, equation: str
     ) -> InstrumentSet:
         """
         Create collapsed GMM-style instruments.
@@ -447,8 +453,9 @@ class InstrumentBuilder:
 
             warnings.warn(
                 f"No lags for variable '{var}' meet the 10% coverage threshold. "
-                f"Using lags {min_lag} and {min(min_lag+1, max_lag)} anyway.",
+                f"Using lags {min_lag} and {min(min_lag + 1, max_lag)} anyway.",
                 UserWarning,
+                stacklevel=2,
             )
             possible_lags = [min_lag]
             if min_lag + 1 <= max_lag:
@@ -510,8 +517,8 @@ class InstrumentBuilder:
 
         Examples
         --------
-        >>> Z_gmm = builder.create_gmm_style_instruments('y', 2, 99, collapse=True)
-        >>> Z_iv = builder.create_iv_style_instruments('x', 2, 4)
+        >>> Z_gmm = builder.create_gmm_style_instruments("y", 2, 99, collapse=True)
+        >>> Z_iv = builder.create_iv_style_instruments("x", 2, 4)
         >>> Z_combined = builder.combine_instruments(Z_gmm, Z_iv)
         """
         if not instrument_sets:
@@ -552,7 +559,7 @@ class InstrumentBuilder:
 
         Examples
         --------
-        >>> Z = builder.create_gmm_style_instruments('y', 2, 99)
+        >>> Z = builder.create_gmm_style_instruments("y", 2, 99)
         >>> analysis = builder.instrument_count_analysis(Z)
         >>> print(analysis)
         """
@@ -574,7 +581,7 @@ class InstrumentBuilder:
         else:
             analysis["Warning"] = "OK"
 
-        return cast(pd.DataFrame, pd.DataFrame([analysis]).T)
+        return cast("pd.DataFrame", pd.DataFrame([analysis]).T)
 
     def get_valid_obs_mask(self, Z: InstrumentSet) -> np.ndarray:
         """

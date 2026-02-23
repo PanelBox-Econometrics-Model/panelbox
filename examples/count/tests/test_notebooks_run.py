@@ -39,7 +39,7 @@ class TestNotebookStructure:
         ]
 
         for notebook in expected_notebooks:
-            notebook_path = NOTEBOOKS_DIR / notebook
+            NOTEBOOKS_DIR / notebook
             # For now, just check if the path would be valid
             # Actual notebooks will be created later
             assert isinstance(notebook, str)
@@ -59,7 +59,7 @@ class TestNotebookValidation:
     def test_notebooks_are_valid_json(self, notebook_files):
         """Test that notebook files contain valid JSON."""
         for notebook_path in notebook_files:
-            with open(notebook_path, "r", encoding="utf-8") as f:
+            with open(notebook_path, encoding="utf-8") as f:
                 try:
                     nb_content = json.load(f)
                     assert isinstance(nb_content, dict)
@@ -70,7 +70,7 @@ class TestNotebookValidation:
     def test_notebooks_have_metadata(self, notebook_files):
         """Test that notebooks have required metadata."""
         for notebook_path in notebook_files:
-            with open(notebook_path, "r", encoding="utf-8") as f:
+            with open(notebook_path, encoding="utf-8") as f:
                 nb_content = json.load(f)
                 assert "metadata" in nb_content
                 assert "nbformat" in nb_content

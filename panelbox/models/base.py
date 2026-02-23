@@ -5,12 +5,15 @@ This module provides the base classes that all panel models inherit from,
 including linear and nonlinear specifications.
 """
 
+from __future__ import annotations
+
+import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 
+from ..core.serialization import SerializableMixin
 from ..utils.data import check_panel_data, get_panel_info
 from ..utils.statistics import (
     compute_confidence_intervals,
@@ -18,6 +21,8 @@ from ..utils.statistics import (
     compute_standard_errors,
     compute_t_statistics,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PanelModel(ABC):
@@ -43,11 +48,11 @@ class PanelModel(ABC):
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Union[np.ndarray, pd.DataFrame],
-        entity_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        time_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        weights: Optional[Union[np.ndarray, pd.Series]] = None,
+        endog: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.DataFrame,
+        entity_id: np.ndarray | pd.Series | None = None,
+        time_id: np.ndarray | pd.Series | None = None,
+        weights: np.ndarray | pd.Series | None = None,
     ):
         """Initialize panel model."""
         # Validate and process data
@@ -242,7 +247,7 @@ class NonlinearPanelModel(PanelModel):
         return PanelModelResults(self, self.params, self.vcov)
 
 
-class PanelModelResults:
+class PanelModelResults(SerializableMixin):
     """
     Results container for panel model estimation.
 
@@ -264,6 +269,12 @@ class PanelModelResults:
         self.model = model
         self.params = params
         self.vcov = vcov
+
+        # Store variable names for DataFrame prediction
+        self.exog_names = getattr(model, "exog_names", None)
+        if self.exog_names is None and hasattr(model, "exog"):
+            if hasattr(model.exog, "columns"):
+                self.exog_names = list(model.exog.columns)
 
         # Compute standard errors and test statistics
         self.se = compute_standard_errors(vcov)
@@ -299,18 +310,34 @@ Parameter Estimates:
 
         return summary
 
-    def predict(self, exog: Optional[np.ndarray] = None, **kwargs) -> np.ndarray:
+    def predict(
+        self, exog: np.ndarray | pd.DataFrame | None = None, **kwargs
+    ) -> np.ndarray:
         """
         Generate predictions using fitted parameters.
 
         Parameters
         ----------
-        exog : ndarray, optional
-            Exogenous variables for prediction
+        exog : ndarray, pd.DataFrame, or None
+            Exogenous variables for prediction.
+            If None, uses training data.
+            If pd.DataFrame, extracts columns matching exog_names.
 
         Returns
         -------
         ndarray
             Predictions
         """
-        return self.model.predict(self.params, exog, **kwargs)
+        if exog is not None and isinstance(exog, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
+
+        if exog is not None:
+            return self.model.predict(exog, **kwargs)
+        else:
+            return self.model.predict(**kwargs)

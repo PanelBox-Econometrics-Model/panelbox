@@ -1,21 +1,20 @@
 """
-Diagnostic Visualization Utilities
+Diagnostic Visualization Utilities.
 
 This module provides diagnostic plotting functions for panel models.
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from scipy import stats
 
 
 def residual_plot(
-    result: object, figsize: Tuple[int, int] = (12, 5)
-) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes]]:
+    result: object, figsize: tuple[int, int] = (12, 5)
+) -> tuple[plt.Figure, tuple[plt.Axes, plt.Axes]]:
     """
     Create residual diagnostic plots.
 
@@ -69,7 +68,7 @@ def residual_plot(
 
 
 def qq_plot(
-    result: object, ax: Optional[plt.Axes] = None, figsize: Tuple[int, int] = (8, 8)
+    result: object, ax: Optional[plt.Axes] = None, figsize: tuple[int, int] = (8, 8)
 ) -> plt.Axes:
     """
     Create Q-Q plot for residuals.
@@ -93,7 +92,7 @@ def qq_plot(
     >>> qq_plot(fe_result)
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     residuals = result.resids
     stats.probplot(residuals, dist="norm", plot=ax)
@@ -103,7 +102,7 @@ def qq_plot(
     return ax
 
 
-def leverage_plot(result: object, figsize: Tuple[int, int] = (10, 6)) -> plt.Axes:
+def leverage_plot(result: object, figsize: tuple[int, int] = (10, 6)) -> plt.Axes:
     """
     Create leverage plot (if available from model).
 
@@ -123,7 +122,7 @@ def leverage_plot(result: object, figsize: Tuple[int, int] = (10, 6)) -> plt.Axe
     --------
     >>> leverage_plot(pooled_result)
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    _fig, ax = plt.subplots(figsize=figsize)
 
     # This is a placeholder - actual implementation depends on PanelBox API
     # for computing leverage/influence statistics
@@ -146,7 +145,7 @@ def leverage_plot(result: object, figsize: Tuple[int, int] = (10, 6)) -> plt.Axe
 
 
 def partial_residual_plot(
-    data: pd.DataFrame, result: object, variable: str, figsize: Tuple[int, int] = (8, 6)
+    data: pd.DataFrame, result: object, variable: str, figsize: tuple[int, int] = (8, 6)
 ) -> plt.Axes:
     """
     Create partial residual plot for a specific variable.
@@ -169,9 +168,9 @@ def partial_residual_plot(
 
     Examples
     --------
-    >>> partial_residual_plot(data, fe_result, 'capital')
+    >>> partial_residual_plot(data, fe_result, "capital")
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    _fig, ax = plt.subplots(figsize=figsize)
 
     # Compute partial residuals
     beta = result.params[variable]

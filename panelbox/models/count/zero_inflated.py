@@ -23,8 +23,10 @@ Hall, D. B. (2000). "Zero-inflated Poisson and binomial regression with random
     effects: a case study." Biometrics, 56(4), 1030-1039.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -32,12 +34,14 @@ from scipy import stats
 from scipy.optimize import minimize
 from scipy.special import gammaln
 
+from panelbox.core.serialization import SerializableMixin
+
+logger = logging.getLogger(__name__)
+
 
 def _to_array(data):
     """Convert input data to numpy array."""
-    if isinstance(data, pd.DataFrame):
-        return data.values.astype(float)
-    elif isinstance(data, pd.Series):
+    if isinstance(data, (pd.DataFrame, pd.Series)):
         return data.values.astype(float)
     elif isinstance(data, np.ndarray):
         return data.astype(float)
@@ -70,11 +74,11 @@ class ZeroInflatedPoisson:
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series],
-        exog_count: Union[np.ndarray, pd.DataFrame],
-        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        exog_count_names: Optional[list] = None,
-        exog_inflate_names: Optional[list] = None,
+        endog: np.ndarray | pd.Series,
+        exog_count: np.ndarray | pd.DataFrame,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
+        exog_count_names: list | None = None,
+        exog_inflate_names: list | None = None,
     ):
         """Initialize ZIP model."""
         # Convert to arrays
@@ -116,7 +120,7 @@ class ZeroInflatedPoisson:
         if np.any(self.endog < 0):
             raise ValueError("Count data must be non-negative")
         if not np.allclose(self.endog, self.endog.astype(int)):
-            warnings.warn("Count data contains non-integer values")
+            warnings.warn("Count data contains non-integer values", stacklevel=2)
 
     def _neg_log_likelihood(self, params: np.ndarray) -> float:
         """
@@ -232,11 +236,11 @@ class ZeroInflatedPoisson:
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "ZeroInflatedPoissonResult":
+    ) -> ZeroInflatedPoissonResult:
         """
         Estimate ZIP model parameters.
 
@@ -283,7 +287,7 @@ class ZeroInflatedPoisson:
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         # Store log-likelihood for the fitted model
         self.llf = -result.fun
@@ -299,8 +303,8 @@ class ZeroInflatedPoisson:
     def predict(
         self,
         params: np.ndarray,
-        exog_count: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        exog_count: np.ndarray | pd.DataFrame | None = None,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
         which: str = "mean",
     ) -> np.ndarray:
         """
@@ -327,15 +331,9 @@ class ZeroInflatedPoisson:
         np.ndarray
             Predictions
         """
-        if exog_count is None:
-            exog_c = self.exog
-        else:
-            exog_c = _to_array(exog_count)
+        exog_c = self.exog if exog_count is None else _to_array(exog_count)
 
-        if exog_inflate is None:
-            exog_i = self.exog_inflate
-        else:
-            exog_i = _to_array(exog_inflate)
+        exog_i = self.exog_inflate if exog_inflate is None else _to_array(exog_inflate)
 
         # Split parameters
         beta = params[: self.n_count_params]
@@ -361,7 +359,7 @@ class ZeroInflatedPoisson:
             raise ValueError(f"Unknown prediction type: {which}")
 
 
-class ZeroInflatedPoissonResult:
+class ZeroInflatedPoissonResult(SerializableMixin):
     """Results class for Zero-Inflated Poisson model."""
 
     def __init__(self, model, params, llf, converged, iterations):
@@ -373,6 +371,10 @@ class ZeroInflatedPoissonResult:
         self.iterations = iterations
         self.n_obs = model.n_obs
 
+        # Store variable names for DataFrame prediction
+        self.exog_count_names = getattr(model, "exog_count_names", None)
+        self.exog_inflate_names = getattr(model, "exog_inflate_names", None)
+
         # Split parameters
         self.params_count = params[: model.n_count_params]
         self.params_inflate = params[model.n_count_params :]
@@ -382,6 +384,51 @@ class ZeroInflatedPoissonResult:
 
         # Compute fit statistics
         self._compute_fit_statistics()
+
+    def predict(
+        self,
+        exog_count: np.ndarray | pd.DataFrame | None = None,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
+        which: str = "mean",
+    ) -> np.ndarray:
+        """
+        Predict using fitted model.
+
+        Parameters
+        ----------
+        exog_count : array-like, pd.DataFrame, or None
+            Count model data. If pd.DataFrame, extracts columns matching names.
+        exog_inflate : array-like, pd.DataFrame, or None
+            Inflation model data. If pd.DataFrame, extracts columns matching names.
+        which : str
+            What to predict (see ZeroInflatedPoisson.predict)
+
+        Returns
+        -------
+        np.ndarray
+            Predictions
+        """
+        if exog_count is not None and isinstance(exog_count, pd.DataFrame):
+            if self.exog_count_names is not None:
+                missing = [c for c in self.exog_count_names if c not in exog_count.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in count data: {missing}")
+                exog_count = exog_count[self.exog_count_names].values
+            else:
+                exog_count = exog_count.values
+
+        if exog_inflate is not None and isinstance(exog_inflate, pd.DataFrame):
+            if self.exog_inflate_names is not None:
+                missing = [c for c in self.exog_inflate_names if c not in exog_inflate.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in inflate data: {missing}")
+                exog_inflate = exog_inflate[self.exog_inflate_names].values
+            else:
+                exog_inflate = exog_inflate.values
+
+        return self.model.predict(
+            self.params, exog_count=exog_count, exog_inflate=exog_inflate, which=which
+        )
 
     def _compute_standard_errors(self):
         """Compute standard errors via numerical Hessian."""
@@ -395,6 +442,7 @@ class ZeroInflatedPoissonResult:
             for i in range(n_params):
 
                 def grad_i(params, idx=i):
+                    """Compute individual-level gradient contributions."""
                     return self.model._gradient(params)[idx]
 
                 hess[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -413,7 +461,7 @@ class ZeroInflatedPoissonResult:
             self.bse_inflate = self.bse[self.model.n_count_params :]
 
         except Exception as e:
-            warnings.warn(f"Could not compute standard errors: {e}")
+            warnings.warn(f"Could not compute standard errors: {e}", stacklevel=2)
             self.bse = np.full(len(self.params), np.nan)
             self.bse_count = np.full(self.model.n_count_params, np.nan)
             self.bse_inflate = np.full(self.model.n_inflate_params, np.nan)
@@ -479,7 +527,7 @@ class ZeroInflatedPoissonResult:
             self._poisson_llf = poisson_model.llf
 
         except Exception as e:
-            warnings.warn(f"Could not compute Vuong test: {e}")
+            warnings.warn(f"Could not compute Vuong test: {e}", stacklevel=2)
             self.vuong_stat = np.nan
             self.vuong_pvalue = np.nan
 
@@ -550,7 +598,7 @@ class ZeroInflatedPoissonResult:
                 )
             else:
                 summary.append(
-                    f"{name:<20} {self.params_count[i]:<12.4f} " f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                    f"{name:<20} {self.params_count[i]:<12.4f} {'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("")
@@ -572,8 +620,7 @@ class ZeroInflatedPoissonResult:
                 )
             else:
                 summary.append(
-                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
-                    f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} {'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("=" * 70)
@@ -606,11 +653,11 @@ class ZeroInflatedNegativeBinomial:
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series],
-        exog_count: Union[np.ndarray, pd.DataFrame],
-        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        exog_count_names: Optional[list] = None,
-        exog_inflate_names: Optional[list] = None,
+        endog: np.ndarray | pd.Series,
+        exog_count: np.ndarray | pd.DataFrame,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
+        exog_count_names: list | None = None,
+        exog_inflate_names: list | None = None,
     ):
         """Initialize ZINB model."""
         # Convert to arrays
@@ -706,11 +753,11 @@ class ZeroInflatedNegativeBinomial:
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "L-BFGS-B",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "ZeroInflatedNegativeBinomialResult":
+    ) -> ZeroInflatedNegativeBinomialResult:
         """
         Estimate ZINB model parameters.
 
@@ -747,7 +794,7 @@ class ZeroInflatedNegativeBinomial:
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         self.llf = -result.fun
 
@@ -762,8 +809,8 @@ class ZeroInflatedNegativeBinomial:
     def predict(
         self,
         params: np.ndarray,
-        exog_count: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        exog_inflate: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        exog_count: np.ndarray | pd.DataFrame | None = None,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
         which: str = "mean",
     ) -> np.ndarray:
         """
@@ -790,15 +837,9 @@ class ZeroInflatedNegativeBinomial:
         np.ndarray
             Predictions
         """
-        if exog_count is None:
-            exog_c = self.exog
-        else:
-            exog_c = _to_array(exog_count)
+        exog_c = self.exog if exog_count is None else _to_array(exog_count)
 
-        if exog_inflate is None:
-            exog_i = self.exog_inflate
-        else:
-            exog_i = _to_array(exog_inflate)
+        exog_i = self.exog_inflate if exog_inflate is None else _to_array(exog_inflate)
 
         # Split parameters
         beta = params[: self.n_count_params]
@@ -830,7 +871,7 @@ class ZeroInflatedNegativeBinomial:
             raise ValueError(f"Unknown prediction type: {which}")
 
 
-class ZeroInflatedNegativeBinomialResult:
+class ZeroInflatedNegativeBinomialResult(SerializableMixin):
     """Results class for Zero-Inflated Negative Binomial model."""
 
     def __init__(self, model, params, llf, converged, iterations):
@@ -841,6 +882,10 @@ class ZeroInflatedNegativeBinomialResult:
         self.converged = converged
         self.iterations = iterations
         self.n_obs = model.n_obs
+
+        # Store variable names for DataFrame prediction
+        self.exog_count_names = getattr(model, "exog_count_names", None)
+        self.exog_inflate_names = getattr(model, "exog_inflate_names", None)
 
         # Split parameters
         self.params_count = params[: model.n_count_params]
@@ -856,6 +901,51 @@ class ZeroInflatedNegativeBinomialResult:
         # Compute fit statistics
         self._compute_fit_statistics()
 
+    def predict(
+        self,
+        exog_count: np.ndarray | pd.DataFrame | None = None,
+        exog_inflate: np.ndarray | pd.DataFrame | None = None,
+        which: str = "mean",
+    ) -> np.ndarray:
+        """
+        Predict using fitted model.
+
+        Parameters
+        ----------
+        exog_count : array-like, pd.DataFrame, or None
+            Count model data. If pd.DataFrame, extracts columns matching names.
+        exog_inflate : array-like, pd.DataFrame, or None
+            Inflation model data. If pd.DataFrame, extracts columns matching names.
+        which : str
+            What to predict (see ZeroInflatedNegativeBinomial.predict)
+
+        Returns
+        -------
+        np.ndarray
+            Predictions
+        """
+        if exog_count is not None and isinstance(exog_count, pd.DataFrame):
+            if self.exog_count_names is not None:
+                missing = [c for c in self.exog_count_names if c not in exog_count.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in count data: {missing}")
+                exog_count = exog_count[self.exog_count_names].values
+            else:
+                exog_count = exog_count.values
+
+        if exog_inflate is not None and isinstance(exog_inflate, pd.DataFrame):
+            if self.exog_inflate_names is not None:
+                missing = [c for c in self.exog_inflate_names if c not in exog_inflate.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in inflate data: {missing}")
+                exog_inflate = exog_inflate[self.exog_inflate_names].values
+            else:
+                exog_inflate = exog_inflate.values
+
+        return self.model.predict(
+            self.params, exog_count=exog_count, exog_inflate=exog_inflate, which=which
+        )
+
     def _compute_standard_errors(self):
         """Compute standard errors via numerical Hessian."""
         try:
@@ -868,6 +958,7 @@ class ZeroInflatedNegativeBinomialResult:
             for i in range(n_params):
 
                 def grad_func(params, idx=i):
+                    """Compute the gradient of the log-likelihood."""
                     # Numerical gradient of neg log-likelihood w.r.t. all params
                     g = approx_fprime(params, self.model._neg_log_likelihood, eps)
                     return g[idx]
@@ -889,7 +980,7 @@ class ZeroInflatedNegativeBinomialResult:
             self.bse_alpha = self.bse[-1]
 
         except Exception as e:
-            warnings.warn(f"Could not compute standard errors: {e}")
+            warnings.warn(f"Could not compute standard errors: {e}", stacklevel=2)
             self.bse = np.full(len(self.params), np.nan)
             self.bse_count = np.full(self.model.n_count_params, np.nan)
             self.bse_inflate = np.full(self.model.n_inflate_params, np.nan)
@@ -965,7 +1056,7 @@ class ZeroInflatedNegativeBinomialResult:
                 )
             else:
                 summary.append(
-                    f"{name:<20} {self.params_count[i]:<12.4f} " f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                    f"{name:<20} {self.params_count[i]:<12.4f} {'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("")
@@ -987,8 +1078,7 @@ class ZeroInflatedNegativeBinomialResult:
                 )
             else:
                 summary.append(
-                    f"{name:<20} {self.params_inflate[i]:<12.4f} "
-                    f"{'NA':<12} {'NA':<10} {'NA':<10}"
+                    f"{name:<20} {self.params_inflate[i]:<12.4f} {'NA':<12} {'NA':<10} {'NA':<10}"
                 )
 
         summary.append("=" * 70)

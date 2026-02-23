@@ -6,18 +6,20 @@ including Poisson and Negative Binomial models. Provides Average Marginal
 Effects (AME) and Marginal Effects at Means (MEM).
 """
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
-from scipy.stats import norm
 
-from panelbox.marginal_effects.delta_method import delta_method_se, numerical_gradient
+from panelbox.marginal_effects.delta_method import delta_method_se
 from panelbox.marginal_effects.discrete_me import MarginalEffectsResult
 
+logger = logging.getLogger(__name__)
 
-def compute_poisson_ame(result, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+
+def compute_poisson_ame(result, varlist: list[str] | None = None) -> MarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME) for Poisson models.
 
@@ -118,7 +120,7 @@ def compute_poisson_ame(result, varlist: Optional[List[str]] = None) -> Marginal
     ):
         cov_matrix = cov_matrix[: len(params_beta), : len(params_beta)]
 
-    for var in ame.keys():
+    for var in ame:
         gradient = ame_gradients[var]
         se_results = delta_method_se(gradient, cov_matrix)
         std_errors[var] = (
@@ -159,7 +161,7 @@ def _compute_ame_gradient_poisson(
     np.ndarray
         Gradient vector (K,)
     """
-    n_obs, n_params = X.shape
+    _n_obs, n_params = X.shape
     gradient = np.zeros(n_params)
 
     beta_k = params[var_idx]
@@ -175,7 +177,7 @@ def _compute_ame_gradient_poisson(
     return gradient
 
 
-def compute_poisson_mem(result, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+def compute_poisson_mem(result, varlist: list[str] | None = None) -> MarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM) for Poisson models.
 
@@ -277,7 +279,7 @@ def compute_poisson_mem(result, varlist: Optional[List[str]] = None) -> Marginal
     ):
         cov_matrix = cov_matrix[: len(params_beta), : len(params_beta)]
 
-    for var in mem.keys():
+    for var in mem:
         gradient = mem_gradients[var]
         se_results = delta_method_se(gradient, cov_matrix)
         std_errors[var] = (
@@ -337,7 +339,7 @@ def _compute_mem_gradient_poisson(
     return gradient
 
 
-def compute_negbin_ame(result, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+def compute_negbin_ame(result, varlist: list[str] | None = None) -> MarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME) for Negative Binomial models.
 
@@ -385,7 +387,7 @@ def compute_negbin_ame(result, varlist: Optional[List[str]] = None) -> MarginalE
     return compute_poisson_ame(result, varlist=varlist)
 
 
-def compute_negbin_mem(result, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+def compute_negbin_mem(result, varlist: list[str] | None = None) -> MarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM) for Negative Binomial models.
 

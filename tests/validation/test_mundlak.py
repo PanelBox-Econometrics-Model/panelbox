@@ -224,7 +224,6 @@ class TestMundlak:
 
     def test_missing_data_error(self, clean_panel_data):
         """Test ValueError when data/formula not available (line 114)."""
-        from unittest.mock import Mock
 
         re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = re.fit()
@@ -266,12 +265,14 @@ class TestMundlak:
         test = MundlakTest(results)
 
         # Mock PooledOLS.fit to raise an exception
-        with patch(
-            "panelbox.models.static.pooled_ols.PooledOLS.fit",
-            side_effect=RuntimeError("Test error"),
+        with (
+            patch(
+                "panelbox.models.static.pooled_ols.PooledOLS.fit",
+                side_effect=RuntimeError("Test error"),
+            ),
+            pytest.raises(ValueError, match="Failed to estimate augmented model"),
         ):
-            with pytest.raises(ValueError, match="Failed to estimate augmented model"):
-                test.run()
+            test.run()
 
     def test_vcov_singular_matrix_handling(self, clean_panel_data):
         """Test handling of singular vcov matrix (lines 206-207)."""
@@ -302,7 +303,6 @@ class TestMundlak:
 
     def test_get_data_full_missing_model(self, clean_panel_data):
         """Test _get_data_full when model reference missing (line 273)."""
-        from unittest.mock import Mock
 
         re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = re.fit()
@@ -331,7 +331,6 @@ class TestMundlak:
 
     def test_get_data_full_missing_formula(self, clean_panel_data):
         """Test _get_data_full when formula missing (line 295)."""
-        from unittest.mock import Mock
 
         re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = re.fit()
@@ -346,7 +345,7 @@ class TestMundlak:
 
     def test_get_data_full_exception_handling(self, clean_panel_data):
         """Test _get_data_full exception handling (lines 315-316)."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = re.fit()
@@ -373,7 +372,7 @@ class TestMundlak:
 
     def test_get_data_legacy_exception_handling(self, clean_panel_data):
         """Test _get_data exception handling (lines 350-351)."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = re.fit()

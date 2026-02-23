@@ -15,9 +15,6 @@ Functions:
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from scipy import stats
 
 
 def plot_rootogram(observed, expected, breaks=None, ax=None, **kwargs):
@@ -48,9 +45,9 @@ def plot_rootogram(observed, expected, breaks=None, ax=None, **kwargs):
     Examples
     --------
     >>> from panelbox.models.count import PooledPoisson
-    >>> model = PooledPoisson.from_formula('y ~ x', data=df)
+    >>> model = PooledPoisson.from_formula("y ~ x", data=df)
     >>> result = model.fit()
-    >>> plot_rootogram(df['y'], result.predict())
+    >>> plot_rootogram(df["y"], result.predict())
 
     Notes
     -----
@@ -58,7 +55,7 @@ def plot_rootogram(observed, expected, breaks=None, ax=None, **kwargs):
     around zero. Systematic patterns indicate misspecification.
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
 
     observed = np.asarray(observed)
     expected = np.asarray(expected)
@@ -119,7 +116,7 @@ def plot_variance_mean(data, y_col, group_cols=None, ax=None):
     Underdispersion: points below 45-degree line.
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(8, 6))
+        _fig, ax = plt.subplots(figsize=(8, 6))
 
     if group_cols is None:
         # Use rolling window or bins
@@ -171,7 +168,7 @@ def plot_marginal_effects(me_result, var_name=None, ax=None):
     ax : matplotlib axis
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
 
     # Extract marginal effects and CIs
     summary = me_result.summary_frame()
@@ -220,7 +217,7 @@ def plot_irr_forest(results_dict, ax=None):
     ax : matplotlib axis
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 8))
+        _fig, ax = plt.subplots(figsize=(10, 8))
 
     vars_list = list(results_dict.keys())
     y_pos = np.arange(len(vars_list))
@@ -269,7 +266,7 @@ def compare_models_plot(models_dict, metric="aic", ax=None):
     ax : matplotlib axis
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
 
     model_names = list(models_dict.keys())
 
@@ -330,7 +327,7 @@ def plot_panel_trends(data, id_col, time_col, y_col, n_ids=10, ax=None):
     ax : matplotlib axis
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        _fig, ax = plt.subplots(figsize=(12, 6))
 
     # Sample random IDs
     unique_ids = data[id_col].unique()
@@ -373,7 +370,7 @@ def plot_zero_inflation(data, y_col, group_col=None, ax=None):
     ax : matplotlib axis
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
 
     if group_col is None:
         # Overall distribution

@@ -4,11 +4,16 @@ Template Manager for PanelBox Reports.
 Manages loading, caching, and rendering of Jinja2 templates.
 """
 
+from __future__ import annotations
+
 import datetime
+import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+
+logger = logging.getLogger(__name__)
 
 
 class TemplateManager:
@@ -34,11 +39,11 @@ class TemplateManager:
     Examples
     --------
     >>> manager = TemplateManager()
-    >>> template = manager.get_template('validation/interactive/index.html')
+    >>> template = manager.get_template("validation/interactive/index.html")
     >>> html = template.render(context)
     """
 
-    def __init__(self, template_dir: Optional[Path] = None, enable_cache: bool = True):
+    def __init__(self, template_dir: Path | None = None, enable_cache: bool = True):
         """Initialize Template Manager."""
         # Determine template directory
         if template_dir is None:
@@ -53,7 +58,7 @@ class TemplateManager:
 
         self.template_dir = template_dir
         self.enable_cache = enable_cache
-        self.template_cache: Dict[str, Template] = {}
+        self.template_cache: dict[str, Template] = {}
 
         # Create Jinja2 environment
         self.env = Environment(
@@ -103,8 +108,8 @@ class TemplateManager:
 
         Examples
         --------
-        >>> template = manager.get_template('validation/interactive/index.html')
-        >>> html = template.render({'title': 'My Report'})
+        >>> template = manager.get_template("validation/interactive/index.html")
+        >>> html = template.render({"title": "My Report"})
         """
         # Check cache first
         if self.enable_cache and template_path in self.template_cache:
@@ -119,7 +124,7 @@ class TemplateManager:
 
         return template
 
-    def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
+    def render_template(self, template_path: str, context: dict[str, Any]) -> str:
         """
         Load and render a template with context.
 
@@ -138,14 +143,13 @@ class TemplateManager:
         Examples
         --------
         >>> html = manager.render_template(
-        ...     'validation/interactive/index.html',
-        ...     {'title': 'Report', 'data': {...}}
+        ...     "validation/interactive/index.html", {"title": "Report", "data": {...}}
         ... )
         """
         template = self.get_template(template_path)
         return template.render(**context)
 
-    def render_string(self, template_string: str, context: Dict[str, Any]) -> str:
+    def render_string(self, template_string: str, context: dict[str, Any]) -> str:
         """
         Render a template from string.
 
@@ -163,10 +167,7 @@ class TemplateManager:
 
         Examples
         --------
-        >>> html = manager.render_string(
-        ...     '<h1>{{ title }}</h1>',
-        ...     {'title': 'Hello'}
-        ... )
+        >>> html = manager.render_string("<h1>{{ title }}</h1>", {"title": "Hello"})
         """
         template = self.env.from_string(template_string)
         return template.render(**context)
@@ -313,7 +314,7 @@ class TemplateManager:
 
         Examples
         --------
-        >>> manager.template_exists('validation/interactive/index.html')
+        >>> manager.template_exists("validation/interactive/index.html")
         True
         """
         full_path = self.template_dir / template_path

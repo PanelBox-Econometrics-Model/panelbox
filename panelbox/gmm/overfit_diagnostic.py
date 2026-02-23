@@ -1,5 +1,6 @@
 """
-GMM Overfit Diagnostic
+GMM Overfit Diagnostic.
+
 ======================
 
 Diagnostics for detecting instrument proliferation and overfitting in GMM
@@ -27,13 +28,16 @@ References
        126(1), 25-51.
 """
 
-import warnings
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
 
 from panelbox.gmm.results import GMMResults
+
+logger = logging.getLogger(__name__)
 
 
 class GMMOverfitDiagnostic:
@@ -58,7 +62,7 @@ class GMMOverfitDiagnostic:
     Examples
     --------
     >>> from panelbox.gmm import DifferenceGMM, GMMOverfitDiagnostic
-    >>> model = DifferenceGMM(data=df, dep_var='y', lags=1, exog_vars=['x'])
+    >>> model = DifferenceGMM(data=df, dep_var="y", lags=1, exog_vars=["x"])
     >>> results = model.fit()
     >>> diag = GMMOverfitDiagnostic(model, results)
     >>> print(diag.summary())
@@ -177,7 +181,7 @@ class GMMOverfitDiagnostic:
             "recommendation": recommendation,
         }
 
-    def instrument_sensitivity(self, max_lag_range: Optional[List[int]] = None) -> pd.DataFrame:
+    def instrument_sensitivity(self, max_lag_range: list[int] | None = None) -> pd.DataFrame:
         """
         Re-estimate with varying gmm_max_lag to assess sensitivity.
 
@@ -218,7 +222,7 @@ class GMMOverfitDiagnostic:
                         "ar2_pval": new_results.ar2_test.pvalue,
                     }
                 )
-            except Exception as e:
+            except Exception:
                 rows.append(
                     {
                         "gmm_max_lag": max_lag,
@@ -236,10 +240,7 @@ class GMMOverfitDiagnostic:
         if len(valid_coefs) >= 2:
             coef_range = valid_coefs.max() - valid_coefs.min()
             mean_coef = valid_coefs.mean()
-            if mean_coef != 0:
-                relative_range = abs(coef_range / mean_coef)
-            else:
-                relative_range = float("inf")
+            relative_range = abs(coef_range / mean_coef) if mean_coef != 0 else float("inf")
 
             if relative_range <= 0.10:
                 df.attrs["signal"] = self.GREEN
@@ -256,7 +257,9 @@ class GMMOverfitDiagnostic:
 
     def coefficient_bounds_test(self) -> dict:
         """
-        Nickell (1981) bounds test: GMM AR coefficient should lie between
+        Nickell (1981) bounds test.
+
+        GMM AR coefficient should lie between
         OLS (upward biased) and FE/Within (downward biased) estimates.
 
         If the GMM estimate falls outside these bounds, it suggests overfitting
@@ -290,7 +293,7 @@ class GMMOverfitDiagnostic:
         data = data.dropna(subset=[lag_name])
 
         # Regressors: lag + exogenous vars
-        regressor_names = [lag_name] + list(self.model.exog_vars)
+        regressor_names = [lag_name, *list(self.model.exog_vars)]
         y = data[dep_var].values
         X = data[regressor_names].values
 
@@ -449,10 +452,7 @@ class GMMOverfitDiagnostic:
         max_dev = max(abs(c - full_coef) for c in valid_coefs)
 
         # Relative max deviation
-        if abs(full_coef) > 1e-10:
-            rel_dev = max_dev / abs(full_coef)
-        else:
-            rel_dev = float("inf")
+        rel_dev = max_dev / abs(full_coef) if abs(full_coef) > 1e-10 else float("inf")
 
         if rel_dev <= 0.15:
             signal = self.GREEN
@@ -589,7 +589,7 @@ class GMMOverfitDiagnostic:
             "details": details,
         }
 
-    def summary(self, run_jackknife: bool = True) -> str:
+    def summary(self, run_jackknife: bool = True) -> str:  # noqa: C901
         """
         Generate comprehensive overfitting diagnostic report.
 
@@ -637,13 +637,13 @@ class GMMOverfitDiagnostic:
                 ni = int(row["n_instruments"]) if row["n_instruments"] is not None else "?"
                 ac = f"{row['ar_coef']:.4f}" if row["ar_coef"] is not None else "N/A"
                 hp = f"{row['hansen_j_pval']:.4f}" if row["hansen_j_pval"] is not None else "N/A"
-                lines.append(f"   max_lag={ml}  instruments={ni}  " f"AR_coef={ac}  Hansen_p={hp}")
+                lines.append(f"   max_lag={ml}  instruments={ni}  AR_coef={ac}  Hansen_p={hp}")
             if rel_range is not None:
                 lines.append(f"   Coefficient range: {rel_range:.1%} of mean")
             lines.append("")
         except Exception as e:
             signals.append(self.YELLOW)
-            lines.append(f"2. Instrument Sensitivity  [YELLOW]")
+            lines.append("2. Instrument Sensitivity  [YELLOW]")
             lines.append(f"   Could not run: {e}")
             lines.append("")
 

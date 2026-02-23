@@ -10,13 +10,16 @@ Key features:
 - Natural handling of fixed effects
 - Allows extrapolation beyond observed quantiles
 
-References:
+References
+----------
     Machado, J. A., & Santos Silva, J. M. C. (2019).
     Quantiles via moments. Journal of Econometrics, 213(1), 145-173.
 """
 
-import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -24,6 +27,8 @@ from scipy import stats
 from scipy.special import digamma
 
 from .base import QuantilePanelModel, QuantilePanelResult
+
+logger = logging.getLogger(__name__)
 
 
 class LocationScale(QuantilePanelModel):
@@ -64,9 +69,9 @@ class LocationScale(QuantilePanelModel):
     def __init__(
         self,
         data,
-        formula: Optional[str] = None,
-        tau: Union[float, np.ndarray] = 0.5,
-        distribution: Union[str, callable] = "normal",
+        formula: str | None = None,
+        tau: float | np.ndarray = 0.5,
+        distribution: str | Callable = "normal",
         fixed_effects: bool = False,
         df_t: float = 5,
     ):
@@ -100,7 +105,7 @@ class LocationScale(QuantilePanelModel):
 
     def fit(
         self, robust_scale: bool = True, verbose: bool = False, **kwargs
-    ) -> "LocationScaleResult":
+    ) -> LocationScaleResult:
         """
         Estimate location and scale parameters via method of moments.
 
@@ -119,30 +124,30 @@ class LocationScale(QuantilePanelModel):
             Fitted model results
         """
         if verbose:
-            print("Location-Scale Quantile Regression (MSS 2019)")
-            print("=" * 50)
+            logger.info("Location-Scale Quantile Regression (MSS 2019)")
+            logger.info("=" * 50)
 
         # Step 1: Estimate location (conditional mean)
         if verbose:
-            print("\nStep 1: Estimating location parameters...")
+            logger.info("Step 1: Estimating location parameters...")
 
         self._estimate_location()
 
         if verbose:
-            print(f"  Location R²: {self.location_result_.r_squared:.4f}")
+            logger.info(f"  Location R²: {self.location_result_.rsquared:.4f}")
 
         # Step 2: Estimate scale (conditional variance)
         if verbose:
-            print("\nStep 2: Estimating scale parameters...")
+            logger.info("Step 2: Estimating scale parameters...")
 
         self._estimate_scale(robust=robust_scale)
 
         if verbose:
-            print(f"  Scale R²: {self.scale_result_.r_squared:.4f}")
+            logger.info(f"  Scale R²: {self.scale_result_.rsquared:.4f}")
 
         # Step 3: Compute quantile coefficients for requested τ
         if verbose:
-            print(f"\nStep 3: Computing quantile coefficients for τ = {self.tau}")
+            logger.info(f"Step 3: Computing quantile coefficients for τ = {self.tau}")
 
         results = {}
         for tau in self.tau:
@@ -160,7 +165,7 @@ class LocationScale(QuantilePanelModel):
             )
 
         if verbose:
-            print("\nEstimation complete!")
+            logger.info("Estimation complete!")
 
         return LocationScaleResult(
             model=self,
@@ -356,8 +361,8 @@ class LocationScale(QuantilePanelModel):
         q_tau = self._get_quantile_function(tau)
 
         # Get covariance matrices from two-step estimation
-        var_alpha = self.location_result_.cov_params
-        var_gamma = self.scale_result_.cov_params * 4  # Adjust for γ = 2×(scale params)
+        var_alpha = np.asarray(self.location_result_.cov_params)
+        var_gamma = np.asarray(self.scale_result_.cov_params) * 4  # Adjust for γ = 2×(scale params)
 
         # For simplicity, assume independence between steps
         # (More complex: account for correlation)
@@ -376,8 +381,8 @@ class LocationScale(QuantilePanelModel):
 
     def predict_quantiles(
         self,
-        X: Optional[np.ndarray] = None,
-        tau: Optional[Union[float, np.ndarray]] = None,
+        X: np.ndarray | None = None,
+        tau: float | np.ndarray | None = None,
         ci: bool = True,
         alpha: float = 0.05,
     ) -> pd.DataFrame:
@@ -407,7 +412,7 @@ class LocationScale(QuantilePanelModel):
         if tau is None:
             tau = self.tau
 
-        tau = np.atleast_1d(tau)
+        tau_arr: np.ndarray = np.atleast_1d(tau)
 
         # Compute location and scale for X
         location = X @ self.location_params_
@@ -416,34 +421,36 @@ class LocationScale(QuantilePanelModel):
 
         predictions = pd.DataFrame(index=range(len(X)))
 
-        for t in tau:
+        for t in tau_arr:
             q_t = self._get_quantile_function(t)
 
             # Predicted quantile
             pred = location + scale * q_t
-            predictions[f"q{int(t*100)}"] = pred
+            predictions[f"q{int(t * 100)}"] = pred
 
             if ci:
                 # Approximate CI via delta method
                 # This is simplified - full version would be more complex
-                se_location = np.sqrt(np.diag(X @ self.location_result_.cov_params @ X.T))
-                se_scale = np.sqrt(np.diag(X @ self.scale_result_.cov_params @ X.T))
+                se_location = np.sqrt(
+                    np.diag(X @ np.asarray(self.location_result_.cov_params) @ X.T)
+                )
+                se_scale = np.sqrt(np.diag(X @ np.asarray(self.scale_result_.cov_params) @ X.T))
 
                 # Approximate combined SE
                 se_combined = np.sqrt(se_location**2 + (q_t * scale * se_scale) ** 2)
 
                 z_alpha = stats.norm.ppf(1 - alpha / 2)
-                predictions[f"q{int(t*100)}_lower"] = pred - z_alpha * se_combined
-                predictions[f"q{int(t*100)}_upper"] = pred + z_alpha * se_combined
+                predictions[f"q{int(t * 100)}_lower"] = pred - z_alpha * se_combined
+                predictions[f"q{int(t * 100)}_upper"] = pred + z_alpha * se_combined
 
         return predictions
 
     def predict_density(
         self,
-        X: Optional[np.ndarray] = None,
-        y_grid: Optional[np.ndarray] = None,
+        X: np.ndarray | None = None,
+        y_grid: np.ndarray | None = None,
         n_points: int = 100,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Predict complete conditional density.
 
@@ -495,7 +502,7 @@ class LocationScale(QuantilePanelModel):
 
         return y_grid, density.squeeze()
 
-    def test_normality(self, tau_grid: Optional[np.ndarray] = None) -> "NormalityTestResult":
+    def test_normality(self, tau_grid: np.ndarray | None = None) -> NormalityTestResult:
         """
         Test if normal distribution is appropriate.
 
@@ -595,7 +602,7 @@ class LocationScaleResult(QuantilePanelResult):
         """Scale (variance) parameters."""
         return self.model.scale_params_
 
-    def summary(self, tau: Optional[float] = None):
+    def summary(self, tau: float | None = None):
         """Extended summary for location-scale model."""
         print("\n" + "=" * 60)
         print("LOCATION-SCALE QUANTILE REGRESSION (MSS 2019)")
@@ -606,17 +613,17 @@ class LocationScaleResult(QuantilePanelResult):
 
         print("\nLocation Model (Conditional Mean):")
         print("-" * 40)
-        print(f"R²: {self.location_result.r_squared:.4f}")
+        print(f"R²: {self.location_result.rsquared:.4f}")
         for i, param in enumerate(self.location_result.params):
-            se = np.sqrt(self.location_result.cov_params[i, i])
-            print(f"  α{i+1}: {param:8.4f} ({se:.4f})")
+            se = np.sqrt(self.location_result.cov_params.values[i, i])
+            print(f"  α{i + 1}: {param:8.4f} ({se:.4f})")
 
         print("\nScale Model (Log Conditional Variance):")
         print("-" * 40)
-        print(f"R²: {self.scale_result.r_squared:.4f}")
+        print(f"R²: {self.scale_result.rsquared:.4f}")
         for i, param in enumerate(self.model.scale_params_):
-            se = np.sqrt(self.scale_result.cov_params[i, i] * 4)
-            print(f"  γ{i+1}: {param:8.4f} ({se:.4f})")
+            se = np.sqrt(self.scale_result.cov_params.values[i, i] * 4)
+            print(f"  γ{i + 1}: {param:8.4f} ({se:.4f})")
 
         print("\nImplied Quantile Coefficients:")
         print("-" * 40)
@@ -624,7 +631,7 @@ class LocationScaleResult(QuantilePanelResult):
         if tau is None:
             tau_list = sorted(self.results.keys())
         else:
-            tau_list = [tau] if np.isscalar(tau) else tau
+            tau_list = [tau] if isinstance(tau, (int, float)) else list(tau)
 
         # Table header
         print(f"{'Coef':<8}", end="")
@@ -635,7 +642,7 @@ class LocationScaleResult(QuantilePanelResult):
 
         # Coefficients for each tau
         for i in range(len(self.location_result.params)):
-            print(f"β{i+1:<7}", end="")
+            print(f"β{i + 1:<7}", end="")
             for t in tau_list:
                 coef = self.results[t].params[i]
                 print(f"{coef:7.3f} ", end="")
@@ -649,7 +656,7 @@ class LocationScaleResult(QuantilePanelResult):
 
         # Location effects
         params = self.location_result.params
-        se = np.sqrt(np.diag(self.location_result.cov_params))
+        se = np.sqrt(np.diag(np.asarray(self.location_result.cov_params)))
 
         x = range(len(params))
         ax1.bar(x, params, yerr=1.96 * se, capsize=5, alpha=0.7)
@@ -657,20 +664,20 @@ class LocationScaleResult(QuantilePanelResult):
         ax1.set_ylabel("Location Effect (α)")
         ax1.set_title("Location Parameters (Conditional Mean)")
         ax1.set_xticks(x)
-        ax1.set_xticklabels([f"X{i+1}" for i in x])
+        ax1.set_xticklabels([f"X{i + 1}" for i in x])
         ax1.axhline(0, color="black", linewidth=0.5)
         ax1.grid(True, alpha=0.3)
 
         # Scale effects
         params = self.model.scale_params_
-        se = np.sqrt(np.diag(self.scale_result.cov_params * 4))
+        se = np.sqrt(np.diag(np.asarray(self.scale_result.cov_params) * 4))
 
         ax2.bar(x, params, yerr=1.96 * se, capsize=5, alpha=0.7, color="orange")
         ax2.set_xlabel("Variable")
         ax2.set_ylabel("Scale Effect (γ)")
         ax2.set_title("Scale Parameters (Log Conditional Variance)")
         ax2.set_xticks(x)
-        ax2.set_xticklabels([f"X{i+1}" for i in x])
+        ax2.set_xticklabels([f"X{i + 1}" for i in x])
         ax2.axhline(0, color="black", linewidth=0.5)
         ax2.grid(True, alpha=0.3)
 
@@ -713,7 +720,7 @@ class LocationScaleResult(QuantilePanelResult):
         ax1.axhline(alpha, color="red", linestyle="--", label="Location (α)")
         ax1.fill_between(tau_grid, alpha, beta_tau, alpha=0.3)
         ax1.set_xlabel("Quantile (τ)")
-        ax1.set_ylabel(f"Coefficient for Variable {var_idx+1}")
+        ax1.set_ylabel(f"Coefficient for Variable {var_idx + 1}")
         ax1.set_title("Quantile Coefficient Decomposition")
         ax1.legend()
         ax1.grid(True, alpha=0.3)
@@ -755,10 +762,10 @@ class NormalityTestResult:
         """Print test summary."""
         print("\nNormality Test Results")
         print("=" * 40)
-        print(f"Kolmogorov-Smirnov test:")
+        print("Kolmogorov-Smirnov test:")
         print(f"  Statistic: {self.ks_stat:.4f}")
         print(f"  P-value:   {self.ks_pval:.4f}")
-        print(f"\nJarque-Bera test:")
+        print("\nJarque-Bera test:")
         print(f"  Statistic: {self.jb_stat:.4f}")
         print(f"  P-value:   {self.jb_pval:.4f}")
 

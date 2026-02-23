@@ -4,9 +4,14 @@ Data transformer for residual diagnostics.
 Converts model results into the data format expected by residual diagnostic charts.
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class ResidualDataTransformer:
@@ -21,7 +26,7 @@ class ResidualDataTransformer:
     >>> from panelbox import FixedEffects
     >>> from panelbox.visualization.transformers import ResidualDataTransformer
     >>>
-    >>> model = FixedEffects('y ~ x1 + x2', data, ...)
+    >>> model = FixedEffects("y ~ x1 + x2", data, ...)
     >>> results = model.fit()
     >>>
     >>> transformer = ResidualDataTransformer()
@@ -31,7 +36,7 @@ class ResidualDataTransformer:
     >>> charts = create_residual_diagnostics(residual_data)
     """
 
-    def transform(self, results: Any) -> Dict[str, Any]:
+    def transform(self, results: Any) -> dict[str, Any]:
         """
         Transform model results to residual diagnostic data.
 
@@ -159,7 +164,7 @@ class ResidualDataTransformer:
 
         return residuals / np.sqrt(scale)
 
-    def _compute_leverage(self, results: Any) -> Optional[np.ndarray]:
+    def _compute_leverage(self, results: Any) -> np.ndarray | None:
         """
         Compute or extract leverage (hat) values.
 
@@ -179,7 +184,7 @@ class ResidualDataTransformer:
                 influence = results.get_influence()
                 if hasattr(influence, "hat_matrix_diag"):
                     return np.asarray(influence.hat_matrix_diag)
-            except Exception:
+            except Exception:  # noqa: S110 — fallback to manual computation
                 pass
 
         # Try to compute from model matrix
@@ -191,14 +196,14 @@ class ResidualDataTransformer:
                 XtX_inv = np.linalg.inv(X.T @ X)
                 leverage = np.sum((X @ XtX_inv) * X, axis=1)
                 return leverage
-            except Exception:
+            except Exception:  # noqa: S110 — leverage computation may fail for singular matrices
                 pass
 
         return None
 
     def _compute_cooks_distance(
-        self, results: Any, standardized_residuals: np.ndarray, leverage: Optional[np.ndarray]
-    ) -> Optional[np.ndarray]:
+        self, results: Any, standardized_residuals: np.ndarray, leverage: np.ndarray | None
+    ) -> np.ndarray | None:
         """
         Compute Cook's distance.
 
@@ -226,7 +231,7 @@ class ResidualDataTransformer:
                 if hasattr(influence, "cooks_distance"):
                     cooks_d, _ = influence.cooks_distance
                     return np.asarray(cooks_d)
-            except Exception:
+            except Exception:  # noqa: S110 — fallback to manual Cook's D computation
                 pass
 
         # Compute manually
@@ -239,7 +244,7 @@ class ResidualDataTransformer:
 
         return cooks_d
 
-    def _extract_time_index(self, results: Any) -> Optional[np.ndarray]:
+    def _extract_time_index(self, results: Any) -> np.ndarray | None:
         """
         Extract time index from results.
 
@@ -261,7 +266,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(1).values
-                    except Exception:
+                    except Exception:  # noqa: S110 — fallback to alternative time index extraction
                         pass
 
         # Try from original data
@@ -270,7 +275,7 @@ class ResidualDataTransformer:
 
         return None
 
-    def _extract_entity_id(self, results: Any) -> Optional[np.ndarray]:
+    def _extract_entity_id(self, results: Any) -> np.ndarray | None:
         """
         Extract entity identifiers from results.
 
@@ -292,7 +297,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(0).values
-                    except Exception:
+                    except Exception:  # noqa: S110 — fallback to alternative entity index extraction
                         pass
 
         # Try from original data
@@ -301,7 +306,7 @@ class ResidualDataTransformer:
 
         return None
 
-    def _extract_model_info(self, results: Any) -> Dict[str, Any]:
+    def _extract_model_info(self, results: Any) -> dict[str, Any]:
         """
         Extract model metadata.
 
@@ -340,7 +345,7 @@ class ResidualDataTransformer:
 
         return info
 
-    def prepare_qq_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_qq_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data specifically for Q-Q plot.
 
@@ -363,7 +368,7 @@ class ResidualDataTransformer:
             "confidence_level": 0.95,
         }
 
-    def prepare_residual_fitted_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_residual_fitted_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data for residuals vs fitted plot.
 
@@ -382,7 +387,7 @@ class ResidualDataTransformer:
 
         return {"fitted": fitted, "residuals": residuals, "add_lowess": True, "add_reference": True}
 
-    def prepare_scale_location_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_scale_location_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data for scale-location plot.
 
@@ -401,7 +406,7 @@ class ResidualDataTransformer:
 
         return {"fitted": fitted, "residuals": residuals, "add_lowess": True}
 
-    def prepare_leverage_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_leverage_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data for residuals vs leverage plot.
 
@@ -434,7 +439,7 @@ class ResidualDataTransformer:
 
         return data
 
-    def prepare_timeseries_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_timeseries_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data for residual time series plot.
 
@@ -462,7 +467,7 @@ class ResidualDataTransformer:
 
         return data
 
-    def prepare_distribution_data(self, results: Any) -> Dict[str, Any]:
+    def prepare_distribution_data(self, results: Any) -> dict[str, Any]:
         """
         Prepare data for residual distribution plot.
 

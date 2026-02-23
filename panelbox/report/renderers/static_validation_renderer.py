@@ -4,10 +4,13 @@ Static Validation Renderer.
 Generates static charts for validation reports using Matplotlib.
 """
 
+from __future__ import annotations
+
 import base64
+import logging
 import warnings
 from io import BytesIO
-from typing import Any, Dict, Tuple
+from typing import Any
 
 try:
     import matplotlib
@@ -21,8 +24,11 @@ except ImportError:
     MATPLOTLIB_AVAILABLE = False
     warnings.warn(
         "Matplotlib not available. Static charts will not be generated. "
-        "Install with: pip install matplotlib"
+        "Install with: pip install matplotlib",
+        stacklevel=2,
     )
+
+logger = logging.getLogger(__name__)
 
 
 class StaticValidationRenderer:
@@ -52,7 +58,7 @@ class StaticValidationRenderer:
 
     def __init__(
         self,
-        figure_size: Tuple[int, int] = (10, 6),
+        figure_size: tuple[int, int] = (10, 6),
         dpi: int = 150,
         style: str = "seaborn-v0_8-darkgrid",
     ):
@@ -74,7 +80,7 @@ class StaticValidationRenderer:
             # Fallback to default if style not available
             plt.style.use("default")
 
-    def render_validation_charts(self, validation_data: Dict[str, Any]) -> Dict[str, str]:
+    def render_validation_charts(self, validation_data: dict[str, Any]) -> dict[str, str]:
         """
         Render all validation charts as base64 PNG images.
 
@@ -91,7 +97,7 @@ class StaticValidationRenderer:
         Examples
         --------
         >>> charts = renderer.render_validation_charts(validation_data)
-        >>> overview_img = charts['test_overview']
+        >>> overview_img = charts["test_overview"]
         >>> # Use in HTML: <img src="{{overview_img}}">
         """
         charts = {}
@@ -111,7 +117,7 @@ class StaticValidationRenderer:
 
         return charts
 
-    def _render_test_overview(self, data: Dict[str, Any]) -> str:
+    def _render_test_overview(self, data: dict[str, Any]) -> str:
         """
         Render test overview bar chart.
 
@@ -150,7 +156,7 @@ class StaticValidationRenderer:
 
         return self._fig_to_base64(fig)
 
-    def _render_pvalue_distribution(self, data: Dict[str, Any]) -> str:
+    def _render_pvalue_distribution(self, data: dict[str, Any]) -> str:
         """
         Render p-value distribution chart.
 
@@ -202,7 +208,7 @@ class StaticValidationRenderer:
 
         return self._fig_to_base64(fig)
 
-    def _render_test_statistics(self, data: Dict[str, Any]) -> str:
+    def _render_test_statistics(self, data: dict[str, Any]) -> str:
         """
         Render test statistics scatter plot.
 
@@ -245,7 +251,7 @@ class StaticValidationRenderer:
 
         return self._fig_to_base64(fig)
 
-    def render_summary_chart(self, summary: Dict[str, Any]) -> str:
+    def render_summary_chart(self, summary: dict[str, Any]) -> str:
         """
         Render summary pie chart.
 
@@ -273,7 +279,7 @@ class StaticValidationRenderer:
         colors = ["#10b981", "#ef4444"]
         explode = (0.05, 0.05)
 
-        wedges, texts, autotexts = ax.pie(
+        _wedges, texts, autotexts = ax.pie(
             sizes,
             explode=explode,
             labels=labels,
@@ -294,7 +300,7 @@ class StaticValidationRenderer:
             autotext.set_fontweight("bold")
 
         ax.set_title(
-            f'Test Results Summary\n({summary["total_tests"]} total tests)',
+            f"Test Results Summary\n({summary['total_tests']} total tests)",
             fontsize=14,
             fontweight="bold",
             pad=20,

@@ -5,8 +5,11 @@ This module provides results classes for storing, computing, and displaying
 results from Maximum Likelihood Estimation of nonlinear panel models.
 """
 
+from __future__ import annotations
+
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -16,11 +19,10 @@ from scipy.optimize import OptimizeResult
 from panelbox.core.results import PanelResults
 from panelbox.standard_errors.mle import (
     bootstrap_mle,
-    cluster_robust_mle,
     compute_mle_standard_errors,
-    delta_method,
-    sandwich_estimator,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class NonlinearPanelResults(PanelResults):
@@ -60,7 +62,7 @@ class NonlinearPanelResults(PanelResults):
         converged: bool,
         n_iter: int,
         se_type: str = "cluster",
-        opt_result: Optional[OptimizeResult] = None,
+        opt_result: OptimizeResult | None = None,
     ):
         # Store MLE-specific attributes
         self.llf = llf
@@ -126,7 +128,7 @@ class NonlinearPanelResults(PanelResults):
         Examples
         --------
         >>> # Original estimation
-        >>> model = FixedEffectsLogit.from_formula('y ~ x1 + x2', data=data)
+        >>> model = FixedEffectsLogit.from_formula("y ~ x1 + x2", data=data)
         >>> result = model.fit()
         >>>
         >>> # Compute bootstrap SEs
@@ -136,6 +138,7 @@ class NonlinearPanelResults(PanelResults):
 
         # Define estimation function for bootstrap
         def estimate_func(y, X):
+            """Run estimation and return optimization result."""
             # Create a temporary model with bootstrap data
             temp_model = self.model.__class__(
                 endog=y,
@@ -147,7 +150,7 @@ class NonlinearPanelResults(PanelResults):
             return temp_result.params.values
 
         # Get bootstrap covariance
-        boot_result = bootstrap_mle(
+        bootstrap_mle(
             estimate_func=estimate_func,
             y=self.model.endog,
             X=self.model.exog,
@@ -227,7 +230,7 @@ class NonlinearPanelResults(PanelResults):
             raise ValueError(f"Unknown pseudo-R² method: {method}")
 
     def predict(
-        self, exog: Optional[np.ndarray] = None, type: Literal["linear", "prob", "class"] = "prob"
+        self, exog: np.ndarray | None = None, type: Literal["linear", "prob", "class"] = "prob"
     ) -> np.ndarray:
         """
         Generate predictions from the fitted model.
@@ -298,7 +301,7 @@ class NonlinearPanelResults(PanelResults):
             cm, index=["Actual=0", "Actual=1"], columns=["Predicted=0", "Predicted=1"]
         )
 
-    def classification_metrics(self, threshold: float = 0.5) -> Dict[str, float]:
+    def classification_metrics(self, threshold: float = 0.5) -> dict[str, float]:
         """
         Compute classification metrics for binary models.
 
@@ -338,7 +341,7 @@ class NonlinearPanelResults(PanelResults):
             "auc_roc": roc_auc_score(y_true, y_prob) if y_true.var() > 0 else np.nan,
         }
 
-    def hosmer_lemeshow_test(self, n_groups: int = 10) -> Dict[str, float]:
+    def hosmer_lemeshow_test(self, n_groups: int = 10) -> dict[str, float]:
         """
         Hosmer-Lemeshow goodness-of-fit test for binary models.
 
@@ -389,7 +392,7 @@ class NonlinearPanelResults(PanelResults):
 
         return {"statistic": chi2_stat, "p_value": p_value, "df": df}
 
-    def link_test(self) -> Dict[str, float]:
+    def link_test(self) -> dict[str, float]:
         """
         Link test for model specification.
 
@@ -469,7 +472,7 @@ class NonlinearPanelResults(PanelResults):
         """HTML representation for Jupyter notebooks."""
         return self.summary().to_html()
 
-    def to_html(self, filepath: Optional[Union[str, Path]] = None, **kwargs) -> str:
+    def to_html(self, filepath: str | Path | None = None, **kwargs) -> str:
         """
         Generate HTML report using PanelBox report system.
 
@@ -529,7 +532,7 @@ class NonlinearPanelResults(PanelResults):
 
     def to_latex(
         self,
-        filepath: Optional[Union[str, Path]] = None,
+        filepath: str | Path | None = None,
         caption: str = "Model Results",
         label: str = "tab:results",
     ) -> str:

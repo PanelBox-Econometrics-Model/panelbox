@@ -4,10 +4,14 @@ Asset Manager for PanelBox Reports.
 Manages collection, minification, and embedding of assets (CSS, JS, images).
 """
 
+from __future__ import annotations
+
 import base64
+import logging
 import mimetypes
 from pathlib import Path
-from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class AssetManager:
@@ -36,11 +40,11 @@ class AssetManager:
     Examples
     --------
     >>> manager = AssetManager()
-    >>> css = manager.get_css('base_styles.css')
-    >>> js = manager.get_js('tab-navigation.js')
+    >>> css = manager.get_css("base_styles.css")
+    >>> js = manager.get_js("tab-navigation.js")
     """
 
-    def __init__(self, asset_dir: Optional[Path] = None, minify: bool = False):
+    def __init__(self, asset_dir: Path | None = None, minify: bool = False):
         """Initialize Asset Manager."""
         # Determine asset directory
         if asset_dir is None:
@@ -55,7 +59,7 @@ class AssetManager:
 
         self.asset_dir = asset_dir
         self.minify = minify
-        self.asset_cache: Dict[str, str] = {}
+        self.asset_cache: dict[str, str] = {}
 
     def get_css(self, css_path: str) -> str:
         """
@@ -74,8 +78,8 @@ class AssetManager:
 
         Examples
         --------
-        >>> css = manager.get_css('base_styles.css')
-        >>> css = manager.get_css('components/buttons.css')
+        >>> css = manager.get_css("base_styles.css")
+        >>> css = manager.get_css("components/buttons.css")
         """
         cache_key = f"css:{css_path}"
 
@@ -112,8 +116,8 @@ class AssetManager:
 
         Examples
         --------
-        >>> js = manager.get_js('tab-navigation.js')
-        >>> js = manager.get_js('components/charts.js')
+        >>> js = manager.get_js("tab-navigation.js")
+        >>> js = manager.get_js("components/charts.js")
         """
         cache_key = f"js:{js_path}"
 
@@ -149,7 +153,7 @@ class AssetManager:
 
         Examples
         --------
-        >>> data_uri = manager.get_image_base64('images/logo.png')
+        >>> data_uri = manager.get_image_base64("images/logo.png")
         >>> # Returns: 'data:image/png;base64,iVBORw0KG...'
         """
         cache_key = f"img:{image_path}"
@@ -179,7 +183,7 @@ class AssetManager:
         self.asset_cache[cache_key] = data_uri
         return data_uri
 
-    def collect_css(self, css_files: List[str]) -> str:
+    def collect_css(self, css_files: list[str]) -> str:
         """
         Collect multiple CSS files into one string.
 
@@ -195,11 +199,9 @@ class AssetManager:
 
         Examples
         --------
-        >>> css = manager.collect_css([
-        ...     'base_styles.css',
-        ...     'report_components.css',
-        ...     'components/tables.css'
-        ... ])
+        >>> css = manager.collect_css(
+        ...     ["base_styles.css", "report_components.css", "components/tables.css"]
+        ... )
         """
         css_parts = []
 
@@ -210,12 +212,12 @@ class AssetManager:
                 css_parts.append(content)
                 css_parts.append("\n\n")
             except FileNotFoundError as e:
-                print(f"Warning: {e}")
+                logger.warning(f"{e}")
                 continue
 
         return "".join(css_parts)
 
-    def collect_js(self, js_files: List[str]) -> str:
+    def collect_js(self, js_files: list[str]) -> str:
         """
         Collect multiple JavaScript files into one string.
 
@@ -231,10 +233,7 @@ class AssetManager:
 
         Examples
         --------
-        >>> js = manager.collect_js([
-        ...     'utils.js',
-        ...     'tab-navigation.js'
-        ... ])
+        >>> js = manager.collect_js(["utils.js", "tab-navigation.js"])
         """
         js_parts = []
 
@@ -245,7 +244,7 @@ class AssetManager:
                 js_parts.append(content)
                 js_parts.append("\n\n")
             except FileNotFoundError as e:
-                print(f"Warning: {e}")
+                logger.warning(f"{e}")
                 continue
 
         return "".join(js_parts)
@@ -273,7 +272,7 @@ class AssetManager:
 
         # Use CDN link for now
         # In production, you might want to embed the full library
-        return '<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" ' 'charset="utf-8"></script>'
+        return '<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>'
 
     def _minify_css(self, css: str) -> str:
         """
@@ -344,7 +343,7 @@ class AssetManager:
         """Clear asset cache."""
         self.asset_cache.clear()
 
-    def list_assets(self, asset_type: str = "all") -> Dict[str, List[str]]:
+    def list_assets(self, asset_type: str = "all") -> dict[str, list[str]]:
         """
         List available assets.
 
@@ -361,7 +360,7 @@ class AssetManager:
         Examples
         --------
         >>> assets = manager.list_assets()
-        >>> print(assets['css'])
+        >>> print(assets["css"])
         ['base_styles.css', 'report_components.css', ...]
         """
         assets = {}

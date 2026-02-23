@@ -17,23 +17,19 @@ Generate a validation report:
 >>> from panelbox.report import ReportManager
 >>> report_mgr = ReportManager()
 >>> html = report_mgr.generate_validation_report(
-...     validation_data={'tests': [...], 'model_info': {...}},
-...     title='Panel Validation Report'
+...     validation_data={"tests": [...], "model_info": {...}}, title="Panel Validation Report"
 ... )
->>> report_mgr.save_report(html, 'validation_report.html')
+>>> report_mgr.save_report(html, "validation_report.html")
 
 Custom report generation:
 
->>> context = {
-...     'report_title': 'Custom Analysis',
-...     'data': {...}
-... }
+>>> context = {"report_title": "Custom Analysis", "data": {...}}
 >>> html = report_mgr.generate_report(
-...     report_type='custom',
-...     template='custom/report.html',
-...     context=context
+...     report_type="custom", template="custom/report.html", context=context
 ... )
 """
+
+from __future__ import annotations
 
 from .asset_manager import AssetManager
 from .css_manager import CSSLayer, CSSManager
@@ -45,13 +41,13 @@ from .template_manager import TemplateManager
 from .validation_transformer import ValidationTransformer
 
 __all__ = [
-    "ReportManager",
-    "TemplateManager",
     "AssetManager",
-    "CSSManager",
     "CSSLayer",
-    "ValidationTransformer",
+    "CSSManager",
     "HTMLExporter",
     "LaTeXExporter",
     "MarkdownExporter",
+    "ReportManager",
+    "TemplateManager",
+    "ValidationTransformer",
 ]

@@ -1,9 +1,12 @@
 """
-Tests for Bias-Corrected GMM Estimator
+Tests for Bias-Corrected GMM Estimator.
+
 ========================================
 
 Test suite for Hahn-Kuersteiner (2002) bias correction implementation.
 """
+
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -333,7 +336,7 @@ class TestBiasCorrectedGMM:
         bc_errors = []
         gmm_errors = []
 
-        for sim in range(n_sims):
+        for _sim in range(n_sims):
             # Generate data
             data_list = []
             for i in range(n):
@@ -357,16 +360,12 @@ class TestBiasCorrectedGMM:
             try:
                 # Bias-corrected GMM
                 bc_model = BiasCorrectedGMM(data=data, dep_var="y", lags=[1], exog_vars=["x"])
-                id_var = ("entity",)
-                time_var = ("time",)
                 bc_results = bc_model.fit(time_dummies=False, verbose=False)
 
                 # Standard GMM
                 gmm_model = DifferenceGMM(
                     data=data, dep_var="y", lags=[1], exog_vars=["x"], time_dummies=False
                 )
-                id_var = ("entity",)
-                time_var = ("time",)
                 gmm_results = gmm_model.fit()
 
                 # Find lag parameter
@@ -380,8 +379,7 @@ class TestBiasCorrectedGMM:
 
                     bc_errors.append(bc_rho - true_rho)
                     gmm_errors.append(gmm_rho - true_rho)
-            except Exception:
-                # Skip failed simulations
+            except Exception:  # noqa: S110 — skip failed Monte Carlo simulations
                 pass
 
         if len(bc_errors) >= 30 and len(gmm_errors) >= 30:
@@ -391,9 +389,9 @@ class TestBiasCorrectedGMM:
 
             # Bias-corrected should have smaller absolute bias on average
             # (may not be exactly zero due to finite sample)
-            assert (
-                abs(bc_bias) <= abs(gmm_bias) * 1.2
-            ), f"BC bias {bc_bias:.4f} not smaller than GMM bias {gmm_bias:.4f}"
+            assert abs(bc_bias) <= abs(gmm_bias) * 1.2, (
+                f"BC bias {bc_bias:.4f} not smaller than GMM bias {gmm_bias:.4f}"
+            )
 
 
 class TestBiasCorrectedGMMIntegration:

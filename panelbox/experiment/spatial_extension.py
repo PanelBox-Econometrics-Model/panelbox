@@ -5,19 +5,23 @@ This module extends PanelExperiment with spatial econometrics capabilities,
 including spatial model estimation, diagnostics, and effects decomposition.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from panelbox.core.spatial_weights import SpatialWeights
 from panelbox.diagnostics.spatial_tests import LocalMoranI, MoranIPanelTest, run_lm_tests
 from panelbox.effects.spatial_effects import compute_spatial_effects
 from panelbox.models.spatial.gns import GeneralNestingSpatial
-from panelbox.models.spatial.sar import SpatialLag
-from panelbox.models.spatial.sdm import SpatialDurbin
-from panelbox.models.spatial.sem import SpatialError
+from panelbox.models.spatial.spatial_durbin import SpatialDurbin
+from panelbox.models.spatial.spatial_error import SpatialError
+from panelbox.models.spatial.spatial_lag import SpatialLag
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialPanelExperiment:
@@ -43,7 +47,7 @@ class SpatialPanelExperiment:
     def add_spatial_model(
         self,
         model_name: str,
-        W: Union[np.ndarray, SpatialWeights],
+        W: np.ndarray | SpatialWeights,
         model_type: str = "sar",
         effects: str = "fixed",
         **kwargs,
@@ -76,11 +80,11 @@ class SpatialPanelExperiment:
         Examples
         --------
         >>> # Create spatial weights
-        >>> W = SpatialWeights.from_contiguity(gdf, criterion='queen')
+        >>> W = SpatialWeights.from_contiguity(gdf, criterion="queen")
         >>>
         >>> # Add spatial models
-        >>> experiment.add_spatial_model('SAR-FE', W, 'sar', effects='fixed')
-        >>> experiment.add_spatial_model('SDM-FE', W, 'sdm', effects='fixed')
+        >>> experiment.add_spatial_model("SAR-FE", W, "sar", effects="fixed")
+        >>> experiment.add_spatial_model("SDM-FE", W, "sdm", effects="fixed")
         >>>
         >>> # Compare with non-spatial models
         >>> comparison = experiment.compare_models()
@@ -129,10 +133,10 @@ class SpatialPanelExperiment:
 
     def run_spatial_diagnostics(
         self,
-        W: Union[np.ndarray, SpatialWeights],
-        model_name: Optional[str] = None,
-        tests: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        W: np.ndarray | SpatialWeights,
+        model_name: str | None = None,
+        tests: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Run spatial diagnostic tests.
 
@@ -161,11 +165,11 @@ class SpatialPanelExperiment:
         Examples
         --------
         >>> # Estimate baseline OLS
-        >>> experiment.fit_model('pooled_ols', name='ols')
+        >>> experiment.fit_model("pooled_ols", name="ols")
         >>>
         >>> # Run spatial diagnostics
         >>> W = SpatialWeights.from_contiguity(gdf)
-        >>> diagnostics = experiment.run_spatial_diagnostics(W, 'ols')
+        >>> diagnostics = experiment.run_spatial_diagnostics(W, "ols")
         >>>
         >>> print(f"Moran's I: {diagnostics['moran']['statistic']:.4f}")
         >>> print(f"P-value: {diagnostics['moran']['pvalue']:.4f}")
@@ -256,7 +260,7 @@ class SpatialPanelExperiment:
         return results
 
     def compare_spatial_models(
-        self, model_names: Optional[List[str]] = None, include_non_spatial: bool = True
+        self, model_names: list[str] | None = None, include_non_spatial: bool = True
     ) -> pd.DataFrame:
         """
         Compare multiple spatial models.
@@ -282,14 +286,14 @@ class SpatialPanelExperiment:
         Examples
         --------
         >>> # Fit models
-        >>> experiment.fit_model('pooled_ols', name='OLS')
-        >>> experiment.add_spatial_model('SAR', W, 'sar')
-        >>> experiment.add_spatial_model('SEM', W, 'sem')
-        >>> experiment.add_spatial_model('SDM', W, 'sdm')
+        >>> experiment.fit_model("pooled_ols", name="OLS")
+        >>> experiment.add_spatial_model("SAR", W, "sar")
+        >>> experiment.add_spatial_model("SEM", W, "sem")
+        >>> experiment.add_spatial_model("SDM", W, "sdm")
         >>>
         >>> # Compare
         >>> comparison = experiment.compare_spatial_models()
-        >>> print(comparison[['AIC', 'BIC', 'rho', 'lambda']])
+        >>> print(comparison[["AIC", "BIC", "rho", "lambda"]])
         """
         if model_names is None:
             model_names = self.list_models()
@@ -346,9 +350,9 @@ class SpatialPanelExperiment:
         return comparison_df
 
     def decompose_spatial_effects(
-        self, model_name: str, variables: Optional[List[str]] = None
-    ) -> Dict[str, pd.DataFrame]:
-        """
+        self, model_name: str, variables: list[str] | None = None
+    ) -> dict[str, pd.DataFrame]:
+        r"""
         Decompose spatial effects for SDM or GNS models.
 
         Parameters
@@ -368,17 +372,17 @@ class SpatialPanelExperiment:
 
         Examples
         --------
-        >>> experiment.add_spatial_model('SDM', W, 'sdm')
-        >>> effects = experiment.decompose_spatial_effects('SDM')
+        >>> experiment.add_spatial_model("SDM", W, "sdm")
+        >>> effects = experiment.decompose_spatial_effects("SDM")
         >>>
         >>> print("Direct Effects:")
-        >>> print(effects['direct'])
+        >>> print(effects["direct"])
         >>>
         >>> print("\\nIndirect Effects (Spillovers):")
-        >>> print(effects['indirect'])
+        >>> print(effects["indirect"])
         >>>
         >>> print("\\nTotal Effects:")
-        >>> print(effects['total'])
+        >>> print(effects["total"])
         """
         model = self.get_model(model_name)
         metadata = self._model_metadata.get(model_name, {})
@@ -422,9 +426,7 @@ class SpatialPanelExperiment:
         Examples
         --------
         >>> experiment.generate_spatial_report(
-        ...     'spatial_analysis.html',
-        ...     include_diagnostics=True,
-        ...     include_effects=True
+        ...     "spatial_analysis.html", include_diagnostics=True, include_effects=True
         ... )
         """
         from panelbox.reporting.spatial_report import SpatialReportGenerator
@@ -437,7 +439,7 @@ class SpatialPanelExperiment:
             include_maps=include_maps,
         )
 
-    def _get_spatial_model_recommendation(self, lm_results: Dict) -> str:
+    def _get_spatial_model_recommendation(self, lm_results: dict) -> str:
         """
         Get model recommendation based on LM tests.
 

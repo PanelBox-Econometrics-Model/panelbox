@@ -10,12 +10,17 @@ The J-test compares non-nested models by testing whether fitted values from one
 model have explanatory power when added to the other model.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -39,8 +44,8 @@ class JTestResult:
         Direction of test performed ('forward', 'reverse', 'both')
     """
 
-    forward: Optional[Dict[str, float]]
-    reverse: Optional[Dict[str, float]]
+    forward: dict[str, float] | None
+    reverse: dict[str, float] | None
     model1_name: str
     model2_name: str
     direction: str
@@ -188,8 +193,8 @@ def j_test(
     result1,
     result2,
     direction: Literal["forward", "reverse", "both"] = "both",
-    model1_name: Optional[str] = None,
-    model2_name: Optional[str] = None,
+    model1_name: str | None = None,
+    model2_name: str | None = None,
 ) -> JTestResult:
     """
     Perform Davidson-MacKinnon J-test for non-nested model comparison.
@@ -243,13 +248,13 @@ def j_test(
     Examples
     --------
     >>> # Compare two production function specifications
-    >>> model1 = PooledOLS(df, 'output', ['labor', 'capital'])
+    >>> model1 = PooledOLS(df, "output", ["labor", "capital"])
     >>> result1 = model1.fit()
     >>>
-    >>> model2 = PooledOLS(df, 'output', ['labor', 'capital', 'tech'])
+    >>> model2 = PooledOLS(df, "output", ["labor", "capital", "tech"])
     >>> result2 = model2.fit()
     >>>
-    >>> jtest = j_test(result1, result2, model1_name='Basic', model2_name='With Tech')
+    >>> jtest = j_test(result1, result2, model1_name="Basic", model2_name="With Tech")
     >>> print(jtest.interpretation())
     >>> print(jtest.summary())
 
@@ -317,18 +322,17 @@ def _validate_results(result1, result2):
             "Models appear to have different dependent variables. "
             "J-test requires comparing models with the same dependent variable.",
             UserWarning,
+            stacklevel=2,
         )
 
 
-def _perform_forward_test(result1, result2) -> Dict[str, float]:
+def _perform_forward_test(result1, result2) -> dict[str, float]:
     """
     Perform forward J-test: Test if Model 2's fitted values improve Model 1.
 
     Augmented regression: y = X₁'β + α·ŷ₂ + ε
     H0: α = 0
     """
-    from scipy import stats
-
     # Get data
     y = result1.model.endog
     X1 = result1.model.exog
@@ -344,7 +348,6 @@ def _perform_forward_test(result1, result2) -> Dict[str, float]:
     # Estimate augmented model with OLS
     # Use cluster-robust SEs if panel data
     from statsmodels.regression.linear_model import OLS
-    from statsmodels.tools import add_constant
 
     augmented_model = OLS(y, X_augmented)
 
@@ -378,15 +381,13 @@ def _perform_forward_test(result1, result2) -> Dict[str, float]:
     return {"statistic": t_stat, "pvalue": p_value, "alpha_coef": alpha_coef, "alpha_se": alpha_se}
 
 
-def _perform_reverse_test(result1, result2) -> Dict[str, float]:
+def _perform_reverse_test(result1, result2) -> dict[str, float]:
     """
     Perform reverse J-test: Test if Model 1's fitted values improve Model 2.
 
     Augmented regression: y = X₂'β + γ·ŷ₁ + ε
     H0: γ = 0
     """
-    from scipy import stats
-
     # Get data
     y = result2.model.endog
     X2 = result2.model.exog

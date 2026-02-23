@@ -18,12 +18,16 @@ Hsiang, S.M. (2010). "Temperatures and cyclones strongly associated with
     PNAS, 107(35), 15367-15372.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialHAC:
@@ -69,7 +73,6 @@ class SpatialHAC:
         temporal_kernel: str = "bartlett",
     ):
         """Initialize Spatial HAC estimator."""
-
         self.distance_matrix = distance_matrix
         self.spatial_cutoff = spatial_cutoff
         self.temporal_cutoff = temporal_cutoff
@@ -142,7 +145,7 @@ class SpatialHAC:
 
         return weight
 
-    def _temporal_kernel_weight(self, lag: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+    def _temporal_kernel_weight(self, lag: int | np.ndarray) -> float | np.ndarray:
         """
         Compute temporal kernel weights.
 
@@ -229,7 +232,7 @@ class SpatialHAC:
         T = len(times)
 
         if n_obs != N * T:
-            warnings.warn(f"Unbalanced panel detected: {n_obs} obs != {N} × {T}")
+            warnings.warn(f"Unbalanced panel detected: {n_obs} obs != {N} × {T}", stacklevel=2)
 
         # Create mapping from entity/time to observation index
         obs_map = {}
@@ -289,7 +292,7 @@ class SpatialHAC:
         try:
             XtX_inv = np.linalg.inv(XtX)
         except np.linalg.LinAlgError:
-            warnings.warn("X'X is singular, using pseudo-inverse")
+            warnings.warn("X'X is singular, using pseudo-inverse", stacklevel=2)
             XtX_inv = np.linalg.pinv(XtX)
 
         # Compute sandwich
@@ -448,7 +451,7 @@ class DriscollKraayComparison:
     def compare(
         spatial_hac_se: np.ndarray,
         driscoll_kraay_se: np.ndarray,
-        param_names: Optional[list] = None,
+        param_names: list | None = None,
     ) -> pd.DataFrame:
         """
         Compare Spatial HAC and Driscoll-Kraay standard errors.

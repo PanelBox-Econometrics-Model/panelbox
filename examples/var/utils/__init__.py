@@ -43,32 +43,32 @@ from .visualization_helpers import (
 )
 
 __all__ = [
-    # Data generators
-    "generate_macro_panel",
+    "check_stability",
+    "companion_matrix",
+    "forecast_evaluation",
+    "generate_dynamic_panel",
     "generate_energy_panel",
     "generate_finance_panel",
-    "generate_monetary_policy_panel",
-    "generate_trade_panel",
-    "generate_ppp_panel",
     "generate_interest_parity_panel",
-    "generate_dynamic_panel",
+    # Data generators
+    "generate_macro_panel",
+    "generate_monetary_policy_panel",
+    "generate_ppp_panel",
+    "generate_trade_panel",
+    "granger_causality_summary",
+    "model_comparison_table",
+    "plot_coefficient_heatmap",
+    "plot_fevd_stacked",
+    "plot_forecast_fan",
+    "plot_irf_comparison",
     # Visualization
     "plot_irf_grid",
-    "plot_irf_comparison",
-    "plot_fevd_stacked",
-    "plot_coefficient_heatmap",
     "plot_stability_diagram",
-    "plot_forecast_fan",
-    "set_academic_style",
-    # VAR simulation
-    "simulate_var",
-    "check_stability",
-    "simulate_panel_var",
-    "companion_matrix",
-    "theoretical_irf",
     # Diagnostics
     "residual_diagnostics",
-    "model_comparison_table",
-    "forecast_evaluation",
-    "granger_causality_summary",
+    "set_academic_style",
+    "simulate_panel_var",
+    # VAR simulation
+    "simulate_var",
+    "theoretical_irf",
 ]

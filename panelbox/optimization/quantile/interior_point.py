@@ -15,11 +15,11 @@ achieving convergence in typically 10-20 iterations regardless of sample size.
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+import logging
 
 import numpy as np
-from scipy import sparse
-from scipy.sparse.linalg import spsolve
+
+logger = logging.getLogger(__name__)
 
 
 def frisch_newton_qr(
@@ -29,7 +29,7 @@ def frisch_newton_qr(
     max_iter: int = 100,
     tol: float = 1e-8,
     verbose: bool = False,
-) -> Tuple[np.ndarray, dict]:
+) -> tuple[np.ndarray, dict]:
     """
     Solve quantile regression using the Frisch-Newton interior point method.
 
@@ -153,7 +153,7 @@ def frisch_newton_qr(
         grad_norm = np.linalg.norm(X.T @ (-tau + (residuals_new < 0).astype(float)))
 
         if verbose:
-            print(f"Iteration {iteration}: obj={obj_new:.6f}, grad_norm={grad_norm:.6e}")
+            logger.info(f"Iteration {iteration}: obj={obj_new:.6f}, grad_norm={grad_norm:.6e}")
 
         obj_values.append(obj_new)
 
@@ -161,7 +161,7 @@ def frisch_newton_qr(
         if grad_norm < tol:
             converged = True
             if verbose:
-                print(f"Converged after {iteration + 1} iterations")
+                logger.info(f"Converged after {iteration + 1} iterations")
             break
 
         # Also check for lack of objective improvement
@@ -170,7 +170,9 @@ def frisch_newton_qr(
             if recent_improvement < tol * abs(obj_values[-1]):
                 converged = True
                 if verbose:
-                    print(f"Converged due to small improvement after {iteration + 1} iterations")
+                    logger.info(
+                        f"Converged due to small improvement after {iteration + 1} iterations"
+                    )
                 break
 
         # Update parameters and dual variables
@@ -212,7 +214,7 @@ def frisch_newton_qr(
         except np.linalg.LinAlgError:
             pass
 
-    except Exception:
+    except Exception:  # noqa: S110 — graceful fallback if interior point method fails
         pass
 
     info = {
@@ -229,11 +231,11 @@ def smooth_qr(
     y: np.ndarray,
     X: np.ndarray,
     tau: float = 0.5,
-    params_init: Optional[np.ndarray] = None,
-    bandwidth: Optional[float] = None,
+    params_init: np.ndarray | None = None,
+    bandwidth: float | None = None,
     maxiter: int = 1000,
     tol: float = 1e-6,
-) -> Tuple[np.ndarray, bool]:
+) -> tuple[np.ndarray, bool]:
     """
     Solve quantile regression using smooth approximation.
 
@@ -272,12 +274,9 @@ def smooth_qr(
 
     This allows using standard gradient-based optimization.
     """
-    n, p = X.shape
+    n, _p = X.shape
 
-    if params_init is None:
-        params = np.linalg.lstsq(X, y, rcond=None)[0]
-    else:
-        params = params_init.copy()
+    params = np.linalg.lstsq(X, y, rcond=None)[0] if params_init is None else params_init.copy()
 
     if bandwidth is None:
         # Data-driven bandwidth selection

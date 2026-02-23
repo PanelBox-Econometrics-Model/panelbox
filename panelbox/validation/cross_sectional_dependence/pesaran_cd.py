@@ -12,6 +12,7 @@ Stata command: xtcd
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,6 +25,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class PesaranCDTest(ValidationTest):
@@ -105,8 +108,7 @@ class PesaranCDTest(ValidationTest):
 
     1. **Include time fixed effects** to control for common shocks:
        ```python
-       fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year",
-                           time_effects=True)
+       fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year", time_effects=True)
        ```
 
     2. **Use Driscoll-Kraay standard errors** (robust to cross-sectional
@@ -208,7 +210,7 @@ class PesaranCDTest(ValidationTest):
     ...       f"{(1 - result_te.statistic/result.statistic)*100:.1f}%")
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Pesaran CD test.
 

@@ -15,8 +15,8 @@ from .data_generators import (
 )
 
 __all__ = [
-    "generate_panel_data",
-    "generate_heteroskedastic_panel",
     "generate_autocorrelated_panel",
+    "generate_heteroskedastic_panel",
+    "generate_panel_data",
     "generate_spatial_panel",
 ]

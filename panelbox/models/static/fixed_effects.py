@@ -5,7 +5,9 @@ This module provides the Fixed Effects estimator which removes entity-specific
 (and optionally time-specific) fixed effects through demeaning.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -20,17 +22,14 @@ from panelbox.standard_errors import (
     robust_covariance,
     twoway_cluster,
 )
-from panelbox.standard_errors.clustered import ClusteredCovarianceResult
-from panelbox.standard_errors.driscoll_kraay import DriscollKraayResult
-from panelbox.standard_errors.newey_west import NeweyWestResult
-from panelbox.standard_errors.pcse import PCSEResult
-from panelbox.standard_errors.robust import RobustCovarianceResult
 from panelbox.utils.matrix_ops import (
     compute_ols,
     compute_panel_rsquared,
     compute_vcov_nonrobust,
     demean_matrix,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class FixedEffects(PanelModel):
@@ -97,17 +96,12 @@ class FixedEffects(PanelModel):
     >>>
     >>> # One-way fixed effects (entity only)
     >>> model = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
-    >>> results = model.fit(cov_type='clustered')
+    >>> results = model.fit(cov_type="clustered")
     >>> print(results.summary())
     >>>
     >>> # Two-way fixed effects (entity + time)
     >>> model_twoway = pb.FixedEffects(
-    ...     "invest ~ value + capital",
-    ...     data,
-    ...     "firm",
-    ...     "year",
-    ...     entity_effects=True,
-    ...     time_effects=True
+    ...     "invest ~ value + capital", data, "firm", "year", entity_effects=True, time_effects=True
     ... )
     >>> results_twoway = model_twoway.fit()
     >>>
@@ -176,7 +170,7 @@ class FixedEffects(PanelModel):
         time_col: str,
         entity_effects: bool = True,
         time_effects: bool = False,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
@@ -190,8 +184,93 @@ class FixedEffects(PanelModel):
             )
 
         # Fixed effects (computed after fitting)
-        self.entity_fe: Optional[pd.Series] = None
-        self.time_fe: Optional[pd.Series] = None
+        self.entity_fe: pd.Series | None = None
+        self.time_fe: pd.Series | None = None
+
+    def _apply_demeaning(
+        self,
+        y_orig: np.ndarray,
+        X_orig: np.ndarray,
+        entities: np.ndarray,
+        times: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Apply the within transformation (demeaning) based on effect type."""
+        if self.entity_effects and self.time_effects:
+            y = self._demean_both(y_orig.reshape(-1, 1), entities, times).ravel()
+            X = self._demean_both(X_orig, entities, times)
+        elif self.entity_effects:
+            y = demean_matrix(y_orig.reshape(-1, 1), entities).ravel()
+            X = demean_matrix(X_orig, entities)
+        else:
+            y = demean_matrix(y_orig.reshape(-1, 1), times).ravel()
+            X = demean_matrix(X_orig, times)
+        return y, X
+
+    def _extract_group_fe(
+        self,
+        overall_resid: np.ndarray,
+        group_ids: np.ndarray,
+        prior_fe_array: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, float, np.ndarray]:
+        """Extract centered fixed effects for one grouping dimension.
+
+        Returns (fe_array, centered_values, fe_mean, unique_groups).
+        """
+        unique_groups = np.unique(group_ids)
+        residual = overall_resid - prior_fe_array
+        fe_values = np.array([residual[group_ids == g].mean() for g in unique_groups])
+        fe_mean = fe_values.mean()
+        fe_centered = fe_values - fe_mean
+        fe_array = np.zeros(len(overall_resid))
+        for i, g in enumerate(unique_groups):
+            fe_array[group_ids == g] = fe_centered[i]
+        return fe_array, fe_centered, fe_mean, unique_groups
+
+    def _compute_fe_vcov(
+        self,
+        cov_type: str,
+        X: np.ndarray,
+        resid_demeaned: np.ndarray,
+        df_resid: int,
+        entities: np.ndarray,
+        times: np.ndarray,
+        **cov_kwds,
+    ) -> np.ndarray:
+        """Compute covariance matrix for the fixed effects estimator."""
+        cov_type_lower = cov_type.lower()
+
+        if cov_type_lower == "nonrobust":
+            return compute_vcov_nonrobust(X, resid_demeaned, df_resid)
+
+        if cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
+            return robust_covariance(X, resid_demeaned, method=method).cov_matrix
+
+        if cov_type_lower == "clustered":
+            return cluster_by_entity(X, resid_demeaned, entities, df_correction=True).cov_matrix
+
+        if cov_type_lower == "twoway":
+            return twoway_cluster(X, resid_demeaned, entities, times, df_correction=True).cov_matrix
+
+        if cov_type_lower == "driscoll_kraay":
+            max_lags = cov_kwds.get("max_lags")
+            kernel = cov_kwds.get("kernel", "bartlett")
+            return driscoll_kraay(
+                X, resid_demeaned, times, max_lags=max_lags, kernel=kernel
+            ).cov_matrix
+
+        if cov_type_lower == "newey_west":
+            max_lags = cov_kwds.get("max_lags")
+            kernel = cov_kwds.get("kernel", "bartlett")
+            return newey_west(X, resid_demeaned, max_lags=max_lags, kernel=kernel).cov_matrix
+
+        if cov_type_lower == "pcse":
+            return pcse(X, resid_demeaned, entities, times).cov_matrix
+
+        raise ValueError(
+            f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', 'hc2', 'hc3', "
+            f"'clustered', 'twoway', 'driscoll_kraay', 'newey_west', 'pcse', got '{cov_type}'"
+        )
 
     def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
@@ -223,26 +302,26 @@ class FixedEffects(PanelModel):
         Examples
         --------
         >>> # Classical standard errors
-        >>> results = model.fit(cov_type='nonrobust')
+        >>> results = model.fit(cov_type="nonrobust")
 
         >>> # Heteroskedasticity-robust
-        >>> results = model.fit(cov_type='robust')
-        >>> results = model.fit(cov_type='hc3')
+        >>> results = model.fit(cov_type="robust")
+        >>> results = model.fit(cov_type="hc3")
 
         >>> # Cluster-robust by entity
-        >>> results = model.fit(cov_type='clustered')
+        >>> results = model.fit(cov_type="clustered")
 
         >>> # Two-way clustering
-        >>> results = model.fit(cov_type='twoway')
+        >>> results = model.fit(cov_type="twoway")
 
         >>> # Driscoll-Kraay (for spatial/temporal dependence)
-        >>> results = model.fit(cov_type='driscoll_kraay', max_lags=3)
+        >>> results = model.fit(cov_type="driscoll_kraay", max_lags=3)
 
         >>> # Newey-West HAC
-        >>> results = model.fit(cov_type='newey_west', max_lags=4)
+        >>> results = model.fit(cov_type="newey_west", max_lags=4)
 
         >>> # Panel-Corrected SE (requires T > N)
-        >>> results = model.fit(cov_type='pcse')
+        >>> results = model.fit(cov_type="pcse")
         """
         # Build design matrices
         y_orig, X_orig = self.formula_parser.build_design_matrices(
@@ -255,7 +334,6 @@ class FixedEffects(PanelModel):
         # Remove intercept from variable names (FE absorbs it)
         if "Intercept" in var_names:
             var_names = [v for v in var_names if v != "Intercept"]
-            # Remove intercept column from X
             X_orig = X_orig[:, 1:]
 
         # Get entity and time identifiers as arrays
@@ -269,26 +347,13 @@ class FixedEffects(PanelModel):
         self._times = times
 
         # Apply within transformation (demeaning)
-        if self.entity_effects and self.time_effects:
-            # Two-way demeaning
-            y = self._demean_both(y_orig.reshape(-1, 1), entities, times).ravel()
-            X = self._demean_both(X_orig, entities, times)
-        elif self.entity_effects:
-            # Entity demeaning only
-            y = demean_matrix(y_orig.reshape(-1, 1), entities).ravel()
-            X = demean_matrix(X_orig, entities)
-        else:  # time_effects only
-            # Time demeaning only
-            y = demean_matrix(y_orig.reshape(-1, 1), times).ravel()
-            X = demean_matrix(X_orig, times)
+        y, X = self._apply_demeaning(y_orig, X_orig, entities, times)
 
         # Estimate coefficients on demeaned data
-        beta, resid_demeaned, fitted_demeaned = compute_ols(y, X, self.weights)
+        beta, resid_demeaned, _fitted_demeaned = compute_ols(y, X, self.weights)
 
         # Compute fitted values from slopes only
         fitted_from_slopes = (X_orig @ beta).ravel()
-
-        # Compute overall residual (contains fixed effects)
         overall_resid = y_orig - fitted_from_slopes
 
         # Extract fixed effects
@@ -296,49 +361,20 @@ class FixedEffects(PanelModel):
         time_fe_array = np.zeros(len(y_orig))
         entity_fe_mean = 0.0
         time_fe_mean = 0.0
+        entity_fe_values_centered = None
+        unique_entities = np.unique(entities)
+        time_fe_values_centered = None
+        unique_times = np.unique(times)
 
         if self.entity_effects:
-            # Entity fixed effects: mean residual by entity
-            unique_entities = np.unique(entities)
-            entity_fe_values = []
-            for entity in unique_entities:
-                mask = entities == entity
-                entity_mean_resid = overall_resid[mask].mean()
-                entity_fe_values.append(entity_mean_resid)
-
-            # Store mean for intercept adjustment
-            entity_fe_values = np.array(entity_fe_values)
-            entity_fe_mean = entity_fe_values.mean()
-
-            # Center fixed effects (identification constraint: mean = 0)
-            entity_fe_values_centered = entity_fe_values - entity_fe_mean
-
-            for i, entity in enumerate(unique_entities):
-                mask = entities == entity
-                entity_fe_array[mask] = entity_fe_values_centered[i]
+            entity_fe_array, entity_fe_values_centered, entity_fe_mean, unique_entities = (
+                self._extract_group_fe(overall_resid, entities, np.zeros(len(y_orig)))
+            )
 
         if self.time_effects:
-            # Time fixed effects: mean residual by time (after removing entity FE if present)
-            resid_for_time = (
-                overall_resid - entity_fe_array if self.entity_effects else overall_resid
+            time_fe_array, time_fe_values_centered, time_fe_mean, unique_times = (
+                self._extract_group_fe(overall_resid, times, entity_fe_array)
             )
-            unique_times = np.unique(times)
-            time_fe_values = []
-            for time_val in unique_times:
-                mask = times == time_val
-                time_mean_resid = resid_for_time[mask].mean()
-                time_fe_values.append(time_mean_resid)
-
-            # Store mean for intercept adjustment
-            time_fe_values = np.array(time_fe_values)
-            time_fe_mean = time_fe_values.mean()
-
-            # Center fixed effects (identification constraint: mean = 0)
-            time_fe_values_centered = time_fe_values - time_fe_mean
-
-            for i, time_val in enumerate(unique_times):
-                mask = times == time_val
-                time_fe_array[mask] = time_fe_values_centered[i]
 
         # Intercept term (accumulated from centered FE means)
         intercept = entity_fe_mean + time_fe_mean
@@ -350,25 +386,11 @@ class FixedEffects(PanelModel):
         # Degrees of freedom
         n = len(y_orig)
         k = X.shape[1]
-
-        # Account for absorbed fixed effects
-        if self.entity_effects:
-            n_fe_entity = self.data.n_entities
-        else:
-            n_fe_entity = 0
-
-        if self.time_effects:
-            n_fe_time = len(np.unique(times))
-        else:
-            n_fe_time = 0
-
-        # df_model: number of slopes (excludes fixed effects and intercept)
+        n_fe_entity = self.data.n_entities if self.entity_effects else 0
+        n_fe_time = len(unique_times) if self.time_effects else 0
         df_model = k
-
-        # df_resid: n - k - n_fixed_effects
         df_resid = n - k - n_fe_entity - n_fe_time
 
-        # Ensure df_resid is positive
         if df_resid <= 0:
             raise ValueError(
                 f"Insufficient degrees of freedom: df_resid = {df_resid}. "
@@ -376,60 +398,9 @@ class FixedEffects(PanelModel):
             )
 
         # Compute covariance matrix (on demeaned data)
-        cov_type_lower = cov_type.lower()
-
-        # Type annotation for result variable to handle different covariance result types
-        result: Union[
-            RobustCovarianceResult,
-            ClusteredCovarianceResult,
-            DriscollKraayResult,
-            NeweyWestResult,
-            PCSEResult,
-        ]
-
-        if cov_type_lower == "nonrobust":
-            vcov = compute_vcov_nonrobust(X, resid_demeaned, df_resid)
-
-        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
-            # Map 'robust' to 'hc1' (default robust method)
-            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
-            result = robust_covariance(X, resid_demeaned, method=method)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "clustered":
-            # Default: cluster by entity
-            result = cluster_by_entity(X, resid_demeaned, entities, df_correction=True)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "twoway":
-            # Two-way clustering: entity and time
-            result = twoway_cluster(X, resid_demeaned, entities, times, df_correction=True)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "driscoll_kraay":
-            # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get("max_lags", None)
-            kernel = cov_kwds.get("kernel", "bartlett")
-            result = driscoll_kraay(X, resid_demeaned, times, max_lags=max_lags, kernel=kernel)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "newey_west":
-            # Newey-West HAC
-            max_lags = cov_kwds.get("max_lags", None)
-            kernel = cov_kwds.get("kernel", "bartlett")
-            result = newey_west(X, resid_demeaned, max_lags=max_lags, kernel=kernel)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "pcse":
-            # Panel-Corrected Standard Errors
-            result = pcse(X, resid_demeaned, entities, times)
-            vcov = result.cov_matrix
-
-        else:
-            raise ValueError(
-                f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', 'hc2', 'hc3', "
-                f"'clustered', 'twoway', 'driscoll_kraay', 'newey_west', 'pcse', got '{cov_type}'"
-            )
+        vcov = self._compute_fe_vcov(
+            cov_type, X, resid_demeaned, df_resid, entities, times, **cov_kwds
+        )
 
         # Standard errors
         std_errors = np.sqrt(np.diag(vcov))
@@ -466,7 +437,6 @@ class FixedEffects(PanelModel):
             "time_effects": self.time_effects,
         }
 
-        # Data information
         data_info = {
             "nobs": n,
             "n_entities": self.data.n_entities,
@@ -479,16 +449,14 @@ class FixedEffects(PanelModel):
             "time_index": times.ravel() if hasattr(times, "ravel") else times,
         }
 
-        # R-squared dictionary
         rsquared_dict = {
-            "rsquared": rsquared_within,  # For FE, R² = within R²
+            "rsquared": rsquared_within,
             "rsquared_adj": rsquared_adj,
             "rsquared_within": rsquared_within,
             "rsquared_between": rsquared_between,
             "rsquared_overall": rsquared_overall,
         }
 
-        # Create results object
         results = PanelResults(
             params=params,
             std_errors=std_errors_series,
@@ -499,11 +467,27 @@ class FixedEffects(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
 
+        # Store fixed effects info on results for predict(newdata)
+        results._entity_fe = (
+            pd.Series(entity_fe_values_centered, index=unique_entities, name="entity_fe")
+            if self.entity_effects
+            else None
+        )
+        results._time_fe = (
+            pd.Series(time_fe_values_centered, index=unique_times, name="time_fe")
+            if self.time_effects
+            else None
+        )
+        results._entity_col = self.data.entity_col
+        results._time_col = self.data.time_col
+        results._entity_effects = self.entity_effects
+        results._time_effects = self.time_effects
+        results._intercept = intercept
+
         # Compute F-statistic for testing Fixed Effects vs Pooled OLS
-        # H0: α₁ = α₂ = ... = αₙ (all entity effects are equal, pooled OLS is adequate)
-        # H1: At least one αᵢ differs (need Fixed Effects)
         if self.entity_effects:
             f_stat, f_pval = self._compute_f_test_pooled_vs_fe(
                 y_orig, X_orig, resid, n_fe_entity, k, n
@@ -582,10 +566,7 @@ class FixedEffects(PanelModel):
 
         # Fit Pooled OLS to get SSR
         # Add intercept if not present
-        if not np.allclose(X[:, 0], 1):
-            X_pooled = np.column_stack([np.ones(n), X])
-        else:
-            X_pooled = X
+        X_pooled = np.column_stack([np.ones(n), X]) if not np.allclose(X[:, 0], 1) else X
 
         # OLS: β = (X'X)^(-1) X'y
         beta_pooled = np.linalg.lstsq(X_pooled, y, rcond=None)[0]

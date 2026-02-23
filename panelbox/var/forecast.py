@@ -5,11 +5,12 @@ This module provides classes and functions for generating h-step-ahead forecasts
 from Panel VAR models, including confidence intervals via bootstrap or analytical methods.
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 try:
     import plotly.graph_objects as go
@@ -24,6 +25,8 @@ try:
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
+
+logger = logging.getLogger(__name__)
 
 
 class ForecastResult:
@@ -73,14 +76,14 @@ class ForecastResult:
     def __init__(
         self,
         forecasts: np.ndarray,
-        ci_lower: Optional[np.ndarray] = None,
-        ci_upper: Optional[np.ndarray] = None,
-        endog_names: Optional[List[str]] = None,
-        entity_names: Optional[List[str]] = None,
-        horizon: Optional[int] = None,
+        ci_lower: np.ndarray | None = None,
+        ci_upper: np.ndarray | None = None,
+        endog_names: list[str] | None = None,
+        entity_names: list[str] | None = None,
+        horizon: int | None = None,
         ci_level: float = 0.95,
         method: str = "iterative",
-        ci_method: Optional[str] = None,
+        ci_method: str | None = None,
     ):
         self.forecasts = forecasts
         self.ci_lower = ci_lower
@@ -117,8 +120,8 @@ class ForecastResult:
         if len(self.entity_names) != self.N:
             raise ValueError(f"len(entity_names)={len(self.entity_names)} != N={self.N}")
 
-    def to_dataframe(
-        self, entity: Optional[Union[int, str]] = None, variable: Optional[str] = None
+    def to_dataframe(  # noqa: C901
+        self, entity: int | str | None = None, variable: str | None = None
     ) -> pd.DataFrame:
         """
         Convert forecasts to DataFrame.
@@ -203,9 +206,9 @@ class ForecastResult:
 
     def plot(
         self,
-        entity: Union[int, str],
+        entity: int | str,
         variable: str,
-        actual: Optional[np.ndarray] = None,
+        actual: np.ndarray | None = None,
         backend: str = "plotly",
         show: bool = True,
         **kwargs,
@@ -271,7 +274,7 @@ class ForecastResult:
         variable: str,
         var_idx: int,
         entity_idx: int,
-        actual: Optional[np.ndarray],
+        actual: np.ndarray | None,
         show: bool,
         **kwargs,
     ):
@@ -287,7 +290,7 @@ class ForecastResult:
                 y=fcst,
                 mode="lines+markers",
                 name="Forecast",
-                line=dict(color="blue", dash="dash"),
+                line={"color": "blue", "dash": "dash"},
             )
         )
 
@@ -302,8 +305,8 @@ class ForecastResult:
                     x=horizons,
                     y=ci_upper,
                     mode="lines",
-                    name=f"{int(self.ci_level*100)}% CI Upper",
-                    line=dict(color="lightblue", width=1),
+                    name=f"{int(self.ci_level * 100)}% CI Upper",
+                    line={"color": "lightblue", "width": 1},
                     showlegend=True,
                 )
             )
@@ -314,8 +317,8 @@ class ForecastResult:
                     x=horizons,
                     y=ci_lower,
                     mode="lines",
-                    name=f"{int(self.ci_level*100)}% CI Lower",
-                    line=dict(color="lightblue", width=1),
+                    name=f"{int(self.ci_level * 100)}% CI Lower",
+                    line={"color": "lightblue", "width": 1},
                     fill="tonexty",
                     fillcolor="rgba(173, 216, 230, 0.3)",
                     showlegend=True,
@@ -331,7 +334,7 @@ class ForecastResult:
                     y=actual_subset,
                     mode="lines+markers",
                     name="Actual",
-                    line=dict(color="black"),
+                    line={"color": "black"},
                 )
             )
 
@@ -355,9 +358,9 @@ class ForecastResult:
         variable: str,
         var_idx: int,
         entity_idx: int,
-        actual: Optional[np.ndarray],
+        actual: np.ndarray | None,
         show: bool,
-        figsize: Tuple[int, int] = (10, 6),
+        figsize: tuple[int, int] = (10, 6),
         **kwargs,
     ):
         """Plot using Matplotlib."""
@@ -378,7 +381,7 @@ class ForecastResult:
                 ci_upper,
                 alpha=0.3,
                 color="lightblue",
-                label=f"{int(self.ci_level*100)}% CI",
+                label=f"{int(self.ci_level * 100)}% CI",
             )
 
         # Actual values if provided
@@ -404,7 +407,7 @@ class ForecastResult:
         return fig
 
     def evaluate(
-        self, actual: Union[np.ndarray, pd.DataFrame], entity: Optional[Union[int, str]] = None
+        self, actual: np.ndarray | pd.DataFrame, entity: int | str | None = None
     ) -> pd.DataFrame:
         """
         Evaluate forecast accuracy against actual values.

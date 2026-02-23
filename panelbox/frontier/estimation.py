@@ -5,12 +5,16 @@ This module implements MLE estimation with various optimization algorithms
 and convergence diagnostics.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Callable, Dict, Optional
+from typing import Callable
 
 import numpy as np
-from scipy.linalg import inv
 from scipy.optimize import minimize
+
+logger = logging.getLogger(__name__)
 
 from .data import FrontierType
 from .likelihoods import (
@@ -26,9 +30,9 @@ from .result import SFResult
 from .starting_values import check_starting_values, get_starting_values
 
 
-def estimate_mle(
+def estimate_mle(  # noqa: C901
     model,
-    start_params: Optional[np.ndarray] = None,
+    start_params: np.ndarray | None = None,
     optimizer: str = "L-BFGS-B",
     maxiter: int = 1000,
     tol: float = 1e-8,
@@ -38,7 +42,8 @@ def estimate_mle(
 ) -> SFResult:
     """Estimate stochastic frontier model via maximum likelihood.
 
-    Parameters:
+    Parameters
+    ----------
         model: StochasticFrontier model instance
         start_params: Initial parameter values (computed if None)
         optimizer: Optimization algorithm ('L-BFGS-B', 'Newton-CG', 'BFGS')
@@ -48,10 +53,12 @@ def estimate_mle(
         verbose: Print optimization progress
         **kwargs: Additional optimizer arguments
 
-    Returns:
+    Returns
+    -------
         SFResult with estimation results
 
-    Raises:
+    Raises
+    ------
         RuntimeError: If optimization fails critically
     """
     # Special handling for CSS model (distribution-free)
@@ -138,11 +145,13 @@ def estimate_mle(
             )
 
             if verbose:
-                print("Starting values for Wang (2002) model:")
-                print(f"  β: {ols_beta}")
-                print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
-                print(f"  δ (location): {start_params[X.shape[1]+1:X.shape[1]+1+Z.shape[1]]}")
-                print(f"  γ (scale): {start_params[X.shape[1]+1+Z.shape[1]:]}")
+                logger.info("Starting values for Wang (2002) model:")
+                logger.info(f"  β: {ols_beta}")
+                logger.info(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+                logger.info(
+                    f"  δ (location): {start_params[X.shape[1] + 1 : X.shape[1] + 1 + Z.shape[1]]}"
+                )
+                logger.info(f"  γ (scale): {start_params[X.shape[1] + 1 + Z.shape[1] :]}")
         else:
             start_params = get_starting_values(
                 y=y,
@@ -155,22 +164,24 @@ def estimate_mle(
             )
 
             if verbose:
-                print("Starting values computed via method of moments")
-                print(f"  β: {start_params[:X.shape[1]]}")
-                print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
-                print(f"  ln(σ²_u): {start_params[X.shape[1]+1]:.4f}")
+                logger.info("Starting values computed via method of moments")
+                logger.info(f"  β: {start_params[: X.shape[1]]}")
+                logger.info(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+                logger.info(f"  ln(σ²_u): {start_params[X.shape[1] + 1]:.4f}")
 
             # Check starting values (skip for Wang as it has different structure)
             sv_check = check_starting_values(start_params, y, X, likelihood_func, sign)
 
             if not sv_check["valid"]:
                 warnings.warn(
-                    f"Starting values may be poor: {sv_check}. " "Consider using grid_search=True.",
+                    f"Starting values may be poor: {sv_check}. Consider using grid_search=True.",
                     UserWarning,
+                    stacklevel=2,
                 )
 
     # Negative log-likelihood for minimization
     def neg_loglik(theta):
+        """Compute negative log-likelihood for the frontier model."""
         try:
             if is_wang:
                 # Wang (2002) requires Z and W
@@ -187,6 +198,7 @@ def estimate_mle(
 
     # Gradient (if available)
     def neg_gradient(theta):
+        """Compute negative gradient of the log-likelihood."""
         if gradient_func is None:
             return None
         try:
@@ -280,21 +292,22 @@ def estimate_mle(
             # Accept the result if log-likelihood is finite
             converged = True
             if verbose:
-                print("Note: Optimization reported ABNORMAL but log-likelihood is valid.")
-                print("This usually means starting values were very close to optimum.")
+                logger.info("Optimization reported ABNORMAL but log-likelihood is valid.")
+                logger.info("This usually means starting values were very close to optimum.")
         else:
             warnings.warn(
                 f"Optimization did not converge: {result.message}. "
                 f"Try different starting values or optimizer.",
                 UserWarning,
+                stacklevel=2,
             )
 
     if verbose:
-        print(f"\nOptimization complete:")
-        print(f"  Converged: {converged}")
-        print(f"  Iterations: {result.nit}")
-        print(f"  Function evaluations: {result.nfev}")
-        print(f"  Log-likelihood: {loglik_value:.4f}")
+        logger.info("Optimization complete:")
+        logger.info(f"  Converged: {converged}")
+        logger.info(f"  Iterations: {result.nit}")
+        logger.info(f"  Function evaluations: {result.nfev}")
+        logger.info(f"  Log-likelihood: {loglik_value:.4f}")
 
     # Transform parameters back to natural scale for reporting
     params_transformed, param_names = _transform_parameters(
@@ -344,7 +357,7 @@ def _get_likelihood_function(dist: str, is_wang: bool = False) -> Callable:
     return likelihood_map[dist]
 
 
-def _get_gradient_function(dist: str) -> Optional[Callable]:
+def _get_gradient_function(dist: str) -> Callable | None:
     """Get gradient function for distribution (if available)."""
     gradient_map = {
         "half_normal": gradient_half_normal,
@@ -376,7 +389,8 @@ def _transform_parameters(
         [β, σ²_v, σ²_u, ...]  (standard models)
         [β, σ²_v, δ, γ]       (Wang 2002 - no σ²_u since it varies)
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector in estimation space
         n_exog: Number of exogenous variables
         n_ineff_vars: Number of inefficiency variables (BC95)
@@ -386,7 +400,8 @@ def _transform_parameters(
         is_wang: Whether this is Wang (2002) model
         hetero_var_names: Names of heteroscedasticity variables (Wang 2002)
 
-    Returns:
+    Returns
+    -------
         Tuple of (transformed_params, param_names)
     """
     # Extract components
@@ -400,7 +415,7 @@ def _transform_parameters(
         # Wang (2002): [β, ln(σ²_v), δ, γ]
         # No σ²_u since it varies by observation
         params = np.concatenate([beta, [sigma_v_sq]])
-        names = exog_names + ["sigma_v_sq"]
+        names = [*exog_names, "sigma_v_sq"]
 
         # Location parameters (δ)
         idx = n_exog + 1
@@ -423,7 +438,7 @@ def _transform_parameters(
 
     # Build parameter vector
     params = np.concatenate([beta, [sigma_v_sq], [sigma_u_sq]])
-    names = exog_names + ["sigma_v_sq", "sigma_u_sq"]
+    names = [*exog_names, "sigma_v_sq", "sigma_u_sq"]
 
     # Additional parameters
     idx = n_exog + 2
@@ -456,13 +471,15 @@ def _compute_hessian(
 ) -> np.ndarray:
     """Compute Hessian matrix at parameter vector.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector
         func: Function to compute Hessian of
         method: 'numerical' or 'analytical'
         epsilon: Step size for numerical differentiation
 
-    Returns:
+    Returns
+    -------
         Hessian matrix (k x k)
     """
     if method != "numerical":
@@ -515,8 +532,9 @@ def _compute_hessian(
     # Check for numerical issues
     if not np.all(np.isfinite(hessian)):
         warnings.warn(
-            "Hessian contains non-finite values. " "Standard errors may not be reliable.",
+            "Hessian contains non-finite values. Standard errors may not be reliable.",
             UserWarning,
+            stacklevel=2,
         )
         return None
 
@@ -526,15 +544,16 @@ def _compute_hessian(
 def _estimate_css_model(model, verbose: bool = False):
     """Estimate CSS model using distribution-free approach.
 
-    Parameters:
+    Parameters
+    ----------
         model: StochasticFrontier model instance with model_type=CSS
         verbose: Print estimation progress
 
-    Returns:
+    Returns
+    -------
         SFResult with CSS estimation results
     """
     from .css import estimate_css_model
-    from .data import ModelType
     from .result import SFResult
 
     # Extract entity and time indices (need integer coding 0, 1, ..., N-1)
@@ -562,10 +581,10 @@ def _estimate_css_model(model, verbose: bool = False):
     X_no_const = model.X[:, 1:] if model.X.shape[1] > len(model.exog) else model.X
 
     if verbose:
-        print(f"Estimating CSS model with time_trend='{model.css_time_trend}'")
-        print(f"  N = {len(entity_unique)} entities")
-        print(f"  T = {len(time_unique)} periods")
-        print(f"  n = {len(model.y)} observations")
+        logger.info(f"Estimating CSS model with time_trend='{model.css_time_trend}'")
+        logger.info(f"  N = {len(entity_unique)} entities")
+        logger.info(f"  T = {len(time_unique)} periods")
+        logger.info(f"  n = {len(model.y)} observations")
 
     # Estimate CSS model
     css_result = estimate_css_model(
@@ -578,9 +597,9 @@ def _estimate_css_model(model, verbose: bool = False):
     )
 
     if verbose:
-        print(f"  R² = {css_result.r_squared:.4f}")
-        print(f"  σ_v = {css_result.sigma_v:.4f}")
-        print(f"  Mean efficiency = {np.mean(css_result.efficiency_it):.4f}")
+        logger.info(f"  R² = {css_result.r_squared:.4f}")
+        logger.info(f"  σ_v = {css_result.sigma_v:.4f}")
+        logger.info(f"  Mean efficiency = {np.mean(css_result.efficiency_it):.4f}")
 
     # Create SFResult wrapper
     # CSS does not use MLE, so loglik=None
@@ -605,7 +624,7 @@ def _estimate_css_model(model, verbose: bool = False):
 
 def _estimate_bc92_model(
     model,
-    start_params: Optional[np.ndarray] = None,
+    start_params: np.ndarray | None = None,
     optimizer: str = "L-BFGS-B",
     maxiter: int = 1000,
     tol: float = 1e-8,
@@ -615,7 +634,8 @@ def _estimate_bc92_model(
 ) -> SFResult:
     """Estimate BC92 model with time-decay inefficiency.
 
-    Parameters:
+    Parameters
+    ----------
         model: StochasticFrontier model instance with model_type=BC92
         start_params: Initial parameter values
         optimizer: Optimization algorithm
@@ -625,7 +645,8 @@ def _estimate_bc92_model(
         verbose: Print estimation progress
         **kwargs: Additional optimizer arguments
 
-    Returns:
+    Returns
+    -------
         SFResult with BC92 estimation results
     """
     from .panel_likelihoods import loglik_bc92
@@ -681,14 +702,15 @@ def _estimate_bc92_model(
         )
 
         if verbose:
-            print("Starting values for BC92:")
-            print(f"  β: {ols_beta}")
-            print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
-            print(f"  ln(σ²_u): {start_params[X.shape[1]+1]:.4f}")
-            print(f"  η: {start_params[X.shape[1]+2]:.4f}")
+            logger.info("Starting values for BC92:")
+            logger.info(f"  β: {ols_beta}")
+            logger.info(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+            logger.info(f"  ln(σ²_u): {start_params[X.shape[1] + 1]:.4f}")
+            logger.info(f"  η: {start_params[X.shape[1] + 2]:.4f}")
 
     # Negative log-likelihood for minimization
     def neg_loglik(theta):
+        """Compute negative log-likelihood for the frontier model."""
         try:
             ll = loglik_bc92(
                 theta,
@@ -746,13 +768,14 @@ def _estimate_bc92_model(
             f"BC92 optimization did not converge: {result.message}. "
             f"Try different starting values or optimizer.",
             UserWarning,
+            stacklevel=2,
         )
 
     if verbose:
-        print(f"\nBC92 Optimization complete:")
-        print(f"  Converged: {converged}")
-        print(f"  Iterations: {result.nit}")
-        print(f"  Log-likelihood: {loglik_value:.4f}")
+        logger.info("BC92 Optimization complete:")
+        logger.info(f"  Converged: {converged}")
+        logger.info(f"  Iterations: {result.nit}")
+        logger.info(f"  Log-likelihood: {loglik_value:.4f}")
 
     # Transform parameters
     params_transformed, param_names = _transform_bc92_parameters(
@@ -799,12 +822,14 @@ def _transform_bc92_parameters(
 ) -> tuple:
     """Transform BC92 parameters from estimation space to natural scale.
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), η]
         n_exog: Number of exogenous variables
         exog_names: Names of exogenous variables
 
-    Returns:
+    Returns
+    -------
         Tuple of (transformed_params, param_names)
     """
     # Extract components
@@ -819,14 +844,14 @@ def _transform_bc92_parameters(
 
     # Build parameter vector
     params = np.concatenate([beta, [sigma_v_sq], [sigma_u_sq], [eta]])
-    names = exog_names + ["sigma_v_sq", "sigma_u_sq", "eta"]
+    names = [*exog_names, "sigma_v_sq", "sigma_u_sq", "eta"]
 
     return params, names
 
 
 def _estimate_kumbhakar_1990_model(
     model,
-    start_params: Optional[np.ndarray] = None,
+    start_params: np.ndarray | None = None,
     optimizer: str = "L-BFGS-B",
     maxiter: int = 1000,
     tol: float = 1e-8,
@@ -839,7 +864,8 @@ def _estimate_kumbhakar_1990_model(
     Model: u_it = B(t) * u_i
            B(t) = 1 / [1 + exp(b*t + c*t²)]
 
-    Parameters:
+    Parameters
+    ----------
         model: StochasticFrontier model instance with model_type=KUMBHAKAR_1990
         start_params: Initial parameter values
         optimizer: Optimization algorithm
@@ -849,7 +875,8 @@ def _estimate_kumbhakar_1990_model(
         verbose: Print estimation progress
         **kwargs: Additional optimizer arguments
 
-    Returns:
+    Returns
+    -------
         PanelSFResult with Kumbhakar estimation results
     """
     from .panel_likelihoods import loglik_kumbhakar_1990
@@ -907,16 +934,17 @@ def _estimate_kumbhakar_1990_model(
         )
 
         if verbose:
-            print("Starting values for Kumbhakar (1990):")
-            print(f"  β: {ols_beta}")
-            print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
-            print(f"  ln(σ²_u): {start_params[X.shape[1]+1]:.4f}")
-            print(f"  μ: {start_params[X.shape[1]+2]:.4f}")
-            print(f"  b: {start_params[X.shape[1]+3]:.4f}")
-            print(f"  c: {start_params[X.shape[1]+4]:.4f}")
+            logger.info("Starting values for Kumbhakar (1990):")
+            logger.info(f"  β: {ols_beta}")
+            logger.info(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+            logger.info(f"  ln(σ²_u): {start_params[X.shape[1] + 1]:.4f}")
+            logger.info(f"  μ: {start_params[X.shape[1] + 2]:.4f}")
+            logger.info(f"  b: {start_params[X.shape[1] + 3]:.4f}")
+            logger.info(f"  c: {start_params[X.shape[1] + 4]:.4f}")
 
     # Negative log-likelihood for minimization
     def neg_loglik(theta):
+        """Compute negative log-likelihood for the frontier model."""
         try:
             ll = loglik_kumbhakar_1990(
                 theta,
@@ -978,13 +1006,14 @@ def _estimate_kumbhakar_1990_model(
             f"Kumbhakar (1990) optimization did not converge: {result.message}. "
             f"Try different starting values or optimizer.",
             UserWarning,
+            stacklevel=2,
         )
 
     if verbose:
-        print(f"\nKumbhakar (1990) Optimization complete:")
-        print(f"  Converged: {converged}")
-        print(f"  Iterations: {result.nit}")
-        print(f"  Log-likelihood: {loglik_value:.4f}")
+        logger.info("Kumbhakar (1990) Optimization complete:")
+        logger.info(f"  Converged: {converged}")
+        logger.info(f"  Iterations: {result.nit}")
+        logger.info(f"  Log-likelihood: {loglik_value:.4f}")
 
     # Transform parameters
     params_transformed, param_names = _transform_kumbhakar_parameters(
@@ -1030,12 +1059,14 @@ def _transform_kumbhakar_parameters(
 ) -> tuple:
     """Transform Kumbhakar parameters from estimation space to natural scale.
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), μ, b, c]
         n_exog: Number of exogenous variables
         exog_names: Names of exogenous variables
 
-    Returns:
+    Returns
+    -------
         Tuple of (transformed_params, param_names)
     """
     # Extract components
@@ -1052,14 +1083,14 @@ def _transform_kumbhakar_parameters(
 
     # Build parameter vector
     params = np.concatenate([beta, [sigma_v_sq], [sigma_u_sq], [mu], [b], [c]])
-    names = exog_names + ["sigma_v_sq", "sigma_u_sq", "mu", "b", "c"]
+    names = [*exog_names, "sigma_v_sq", "sigma_u_sq", "mu", "b", "c"]
 
     return params, names
 
 
 def _estimate_lee_schmidt_1993_model(
     model,
-    start_params: Optional[np.ndarray] = None,
+    start_params: np.ndarray | None = None,
     optimizer: str = "L-BFGS-B",
     maxiter: int = 1000,
     tol: float = 1e-8,
@@ -1072,7 +1103,8 @@ def _estimate_lee_schmidt_1993_model(
     Model: u_it = δ_t * u_i
            δ_T = 1 (normalization)
 
-    Parameters:
+    Parameters
+    ----------
         model: StochasticFrontier model instance with model_type=LEE_SCHMIDT_1993
         start_params: Initial parameter values
         optimizer: Optimization algorithm
@@ -1082,7 +1114,8 @@ def _estimate_lee_schmidt_1993_model(
         verbose: Print estimation progress
         **kwargs: Additional optimizer arguments
 
-    Returns:
+    Returns
+    -------
         PanelSFResult with Lee-Schmidt estimation results
     """
     from .panel_likelihoods import loglik_lee_schmidt_1993
@@ -1143,15 +1176,16 @@ def _estimate_lee_schmidt_1993_model(
         )
 
         if verbose:
-            print("Starting values for Lee-Schmidt (1993):")
-            print(f"  β: {ols_beta}")
-            print(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
-            print(f"  ln(σ²_u): {start_params[X.shape[1]+1]:.4f}")
-            print(f"  μ: {start_params[X.shape[1]+2]:.4f}")
-            print(f"  δ_t (T-1 params): {start_params[X.shape[1]+3:]}")
+            logger.info("Starting values for Lee-Schmidt (1993):")
+            logger.info(f"  β: {ols_beta}")
+            logger.info(f"  ln(σ²_v): {start_params[X.shape[1]]:.4f}")
+            logger.info(f"  ln(σ²_u): {start_params[X.shape[1] + 1]:.4f}")
+            logger.info(f"  μ: {start_params[X.shape[1] + 2]:.4f}")
+            logger.info(f"  δ_t (T-1 params): {start_params[X.shape[1] + 3 :]}")
 
     # Negative log-likelihood for minimization
     def neg_loglik(theta):
+        """Compute negative log-likelihood for the frontier model."""
         try:
             ll = loglik_lee_schmidt_1993(
                 theta,
@@ -1212,13 +1246,14 @@ def _estimate_lee_schmidt_1993_model(
             f"Lee-Schmidt (1993) optimization did not converge: {result.message}. "
             f"Try different starting values or optimizer.",
             UserWarning,
+            stacklevel=2,
         )
 
     if verbose:
-        print(f"\nLee-Schmidt (1993) Optimization complete:")
-        print(f"  Converged: {converged}")
-        print(f"  Iterations: {result.nit}")
-        print(f"  Log-likelihood: {loglik_value:.4f}")
+        logger.info("Lee-Schmidt (1993) Optimization complete:")
+        logger.info(f"  Converged: {converged}")
+        logger.info(f"  Iterations: {result.nit}")
+        logger.info(f"  Log-likelihood: {loglik_value:.4f}")
 
     # Transform parameters
     params_transformed, param_names = _transform_lee_schmidt_parameters(
@@ -1267,13 +1302,15 @@ def _transform_lee_schmidt_parameters(
 ) -> tuple:
     """Transform Lee-Schmidt parameters from estimation space to natural scale.
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), μ, δ_1, ..., δ_{T-1}]
         n_exog: Number of exogenous variables
         exog_names: Names of exogenous variables
         n_periods: Number of time periods
 
-    Returns:
+    Returns
+    -------
         Tuple of (transformed_params, param_names)
     """
     # Extract components
@@ -1291,8 +1328,8 @@ def _transform_lee_schmidt_parameters(
     params = np.concatenate([beta, [sigma_v_sq], [sigma_u_sq], [mu], delta_t_params, [1.0]])
 
     # Build names
-    names = exog_names + ["sigma_v_sq", "sigma_u_sq", "mu"]
-    names.extend([f"delta_t{t+1}" for t in range(n_periods - 1)])
+    names = [*exog_names, "sigma_v_sq", "sigma_u_sq", "mu"]
+    names.extend([f"delta_t{t + 1}" for t in range(n_periods - 1)])
     names.append(f"delta_t{n_periods}")  # Normalized to 1
 
     return params, names

@@ -1,13 +1,14 @@
-"""
-Spatial weight matrix infrastructure integrated with PySAL.
-"""
+"""Spatial weight matrix infrastructure integrated with PySAL."""
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Optional, Tuple, Union
 
 import numpy as np
-import pandas as pd
 from scipy.sparse import csr_matrix, issparse
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialWeights:
@@ -30,7 +31,7 @@ class SpatialWeights:
     """
 
     def __init__(
-        self, matrix: Union[np.ndarray, csr_matrix], normalized: bool = False, validate: bool = True
+        self, matrix: np.ndarray | csr_matrix, normalized: bool = False, validate: bool = True
     ):
         """
         Initialize spatial weight matrix.
@@ -64,17 +65,14 @@ class SpatialWeights:
     def _validate(self):
         """Validate W matrix properties."""
         # Check square
-        if self.matrix.shape[0] != self.matrix.shape[1]:
+        if self.matrix.shape[0] != self.matrix.shape[1]:  # type: ignore[index]
             raise ValueError("W must be square")
 
         # Check diagonal (should be zero)
-        if self.sparse:
-            diag = self.matrix.diagonal()
-        else:
-            diag = np.diag(self.matrix)
+        diag = self.matrix.diagonal() if self.sparse else np.diag(self.matrix)
 
         if not np.allclose(diag, 0):
-            warnings.warn("W has non-zero diagonal; setting to zero")
+            warnings.warn("W has non-zero diagonal; setting to zero", stacklevel=2)
             if self.sparse:
                 self.matrix.setdiag(0)
             else:
@@ -109,8 +107,8 @@ class SpatialWeights:
             from libpysal.weights import Queen, Rook
         except ImportError:
             raise ImportError(
-                "libpysal required for contiguity weights. " "Install with: pip install libpysal"
-            )
+                "libpysal required for contiguity weights. Install with: pip install libpysal"
+            ) from None
 
         if criterion.lower() == "queen":
             w = Queen.from_dataframe(gdf)
@@ -149,7 +147,7 @@ class SpatialWeights:
         try:
             from libpysal.weights import DistanceBand
         except ImportError:
-            raise ImportError("libpysal required for distance weights")
+            raise ImportError("libpysal required for distance weights") from None
 
         w = DistanceBand(coords, threshold=threshold, p=p, binary=binary)
         matrix = w.full()[0]
@@ -175,14 +173,14 @@ class SpatialWeights:
         try:
             from libpysal.weights import KNN
         except ImportError:
-            raise ImportError("libpysal required for k-NN weights")
+            raise ImportError("libpysal required for k-NN weights") from None
 
         w = KNN.from_array(coords, k=k)
         matrix = w.full()[0]
         return cls(matrix, **kwargs)
 
     @classmethod
-    def from_matrix(cls, array: Union[np.ndarray, list]):
+    def from_matrix(cls, array: np.ndarray | list):
         """
         Create W from numpy array or list.
 
@@ -197,7 +195,7 @@ class SpatialWeights:
         """
         return cls(np.asarray(array))
 
-    def standardize(self, method: str = "row") -> "SpatialWeights":
+    def standardize(self, method: str = "row") -> SpatialWeights:
         """
         Normalize spatial weight matrix.
 
@@ -250,7 +248,7 @@ class SpatialWeights:
             # Convert to dense for eigenvalue computation
             # (only for small matrices)
             if self.n > 1000:
-                warnings.warn("Computing eigenvalues for large sparse matrix")
+                warnings.warn("Computing eigenvalues for large sparse matrix", stacklevel=2)
             self._eigenvalues = np.linalg.eigvals(self.to_dense())
         else:
             self._eigenvalues = np.linalg.eigvals(self.matrix)
@@ -315,7 +313,7 @@ class SpatialWeights:
         """
         return self.matrix @ x
 
-    def get_bounds(self) -> Tuple[float, float]:
+    def get_bounds(self) -> tuple[float, float]:
         """
         Get bounds for spatial coefficient.
 
@@ -332,15 +330,9 @@ class SpatialWeights:
         lambda_max = np.max(eigenvalues)
 
         # Compute bounds
-        if lambda_min < 0:
-            rho_min = 1.0 / lambda_min
-        else:
-            rho_min = -0.99
+        rho_min = 1.0 / lambda_min if lambda_min < 0 else -0.99
 
-        if lambda_max > 0:
-            rho_max = 1.0 / lambda_max
-        else:
-            rho_max = 0.99
+        rho_max = 1.0 / lambda_max if lambda_max > 0 else 0.99
 
         # Clip for stability
         rho_min = max(rho_min, -0.99)
@@ -351,7 +343,7 @@ class SpatialWeights:
     def plot(
         self,
         gdf=None,
-        figsize: Tuple[float, float] = (10, 8),
+        figsize: tuple[float, float] = (10, 8),
         backend: str = "matplotlib",
         **kwargs,
     ):
@@ -370,7 +362,7 @@ class SpatialWeights:
         if backend == "matplotlib":
             import matplotlib.pyplot as plt
 
-            fig, ax = plt.subplots(figsize=figsize)
+            _fig, ax = plt.subplots(figsize=figsize)
 
             if gdf is not None:
                 gdf.plot(ax=ax, edgecolor="black", facecolor="lightgray")
@@ -381,10 +373,7 @@ class SpatialWeights:
                 # Draw edges
                 for i in range(self.n):
                     for j in range(self.n):
-                        if self.sparse:
-                            weight = self.matrix[i, j]
-                        else:
-                            weight = self.matrix[i, j]
+                        weight = self.matrix[i, j] if self.sparse else self.matrix[i, j]
 
                         if weight > 0:
                             ax.plot(
@@ -399,8 +388,6 @@ class SpatialWeights:
             plt.show()
 
         elif backend == "plotly":
-            import plotly.graph_objects as go
-
             # Implementation for plotly
             raise NotImplementedError("Plotly backend not yet implemented")
 
@@ -418,8 +405,8 @@ class SpatialWeights:
 
     def summary(self):
         """Print summary statistics."""
-        print(f"Spatial Weight Matrix Summary")
-        print(f"{'='*40}")
+        print("Spatial Weight Matrix Summary")
+        print(f"{'=' * 40}")
         print(f"Number of units:     {self.n}")
         print(f"Normalized:         {self.normalized}")
         print(f"Sparse:             {self.sparse}")
@@ -428,7 +415,7 @@ class SpatialWeights:
         print(f"Sum of w^2 (s2):     {self.s2:.4f}")
 
         if self.normalized:
-            print(f"Row sums:           All = 1.0")
+            print("Row sums:           All = 1.0")
         else:
             if self.sparse:
                 row_sums = np.asarray(self.matrix.sum(axis=1)).flatten()
@@ -437,9 +424,6 @@ class SpatialWeights:
             print(f"Row sums:           [{row_sums.min():.2f}, {row_sums.max():.2f}]")
 
         # Connectivity
-        if self.sparse:
-            n_edges = self.matrix.nnz
-        else:
-            n_edges = np.count_nonzero(self.matrix)
+        n_edges = self.matrix.nnz if self.sparse else np.count_nonzero(self.matrix)
         print(f"Number of edges:     {n_edges}")
         print(f"Density:            {n_edges / (self.n * self.n):.4f}")

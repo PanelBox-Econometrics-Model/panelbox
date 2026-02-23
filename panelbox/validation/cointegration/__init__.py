@@ -7,7 +7,9 @@ This module provides tests for cointegration in panel data, including:
 - Westerlund tests
 """
 
+from __future__ import annotations
+
 from panelbox.validation.cointegration.kao import KaoTest, KaoTestResult
 from panelbox.validation.cointegration.pedroni import PedroniTest, PedroniTestResult
 
-__all__ = ["PedroniTest", "PedroniTestResult", "KaoTest", "KaoTestResult"]
+__all__ = ["KaoTest", "KaoTestResult", "PedroniTest", "PedroniTestResult"]

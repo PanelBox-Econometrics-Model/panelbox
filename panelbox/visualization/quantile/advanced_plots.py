@@ -5,14 +5,17 @@ This module provides professional-quality plots for quantile regression results,
 including coefficient paths, fan charts, spaghetti plots, and more.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from matplotlib import cm
-from scipy.interpolate import griddata, interp1d
+from scipy.interpolate import interp1d
+
+logger = logging.getLogger(__name__)
 
 
 class QuantileVisualizer:
@@ -33,13 +36,13 @@ class QuantileVisualizer:
 
     Examples
     --------
-    >>> viz = QuantileVisualizer(style='academic')
-    >>> fig = viz.coefficient_path(result, var_names=['education', 'experience'])
-    >>> viz.save_all(result, output_dir='figures/')
+    >>> viz = QuantileVisualizer(style="academic")
+    >>> fig = viz.coefficient_path(result, var_names=["education", "experience"])
+    >>> viz.save_all(result, output_dir="figures/")
     """
 
     def __init__(
-        self, style: str = "academic", dpi: int = 300, figsize: Optional[Tuple[float, float]] = None
+        self, style: str = "academic", dpi: int = 300, figsize: tuple[float, float] | None = None
     ):
         """Initialize visualizer with specified style and settings."""
         self.style = style
@@ -96,14 +99,14 @@ class QuantileVisualizer:
                 plt.style.use("default")
             plt.rcParams["figure.dpi"] = self.dpi
 
-    def coefficient_path(
+    def coefficient_path(  # noqa: C901
         self,
         result,
-        var_names: Optional[List[str]] = None,
+        var_names: list[str] | None = None,
         uniform_bands: bool = True,
-        comparison: Optional[Dict] = None,
-        colors: Optional[List] = None,
-        figsize: Optional[Tuple[float, float]] = None,
+        comparison: dict | None = None,
+        colors: list | None = None,
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Create coefficient path plot across quantiles.
@@ -132,7 +135,7 @@ class QuantileVisualizer:
 
         Examples
         --------
-        >>> fig = viz.coefficient_path(result, var_names=['education', 'age'])
+        >>> fig = viz.coefficient_path(result, var_names=["education", "age"])
         >>> plt.show()
         """
         # Get variable names and coefficients
@@ -290,11 +293,11 @@ class QuantileVisualizer:
         self,
         result,
         X_forecast: np.ndarray,
-        time_index: Optional[np.ndarray] = None,
-        tau_list: Optional[List[float]] = None,
-        colors: Optional[Union[str, List]] = None,
+        time_index: np.ndarray | None = None,
+        tau_list: list[float] | None = None,
+        colors: str | list | None = None,
         alpha_gradient: bool = True,
-        figsize: Optional[Tuple[float, float]] = None,
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Create fan chart for quantile predictions.
@@ -331,10 +334,7 @@ class QuantileVisualizer:
             time_index = np.arange(len(X_forecast))
 
         # Ensure median is included
-        if 0.5 not in tau_list:
-            tau_list = sorted(tau_list + [0.5])
-        else:
-            tau_list = sorted(tau_list)
+        tau_list = sorted([*tau_list, 0.5]) if 0.5 not in tau_list else sorted(tau_list)
 
         # Compute predictions
         predictions = {}
@@ -343,14 +343,11 @@ class QuantileVisualizer:
                 res = result.results[tau]
             else:
                 # Need to fit for this quantile
-                warnings.warn(f"Quantile {tau} not found in results, skipping")
+                warnings.warn(f"Quantile {tau} not found in results, skipping", stacklevel=2)
                 continue
 
             # Get parameters
-            if hasattr(res, "params"):
-                params = res.params
-            else:
-                params = res
+            params = res.params if hasattr(res, "params") else res
 
             # Make predictions
             if X_forecast.ndim == 1:
@@ -370,10 +367,7 @@ class QuantileVisualizer:
         if colors is None:
             colors = "Blues"
 
-        if isinstance(colors, str):
-            cmap = plt.get_cmap(colors)
-        else:
-            cmap = colors
+        cmap = plt.get_cmap(colors) if isinstance(colors, str) else colors
 
         # Find pairs of quantiles (symmetric around median)
         median_idx = tau_list.index(0.5) if 0.5 in tau_list else len(tau_list) // 2
@@ -385,10 +379,7 @@ class QuantileVisualizer:
             if tau_lower not in predictions or tau_upper not in predictions:
                 continue
 
-            if alpha_gradient:
-                alpha = 0.2 + 0.5 * (i / max(len(lower_taus), 1))
-            else:
-                alpha = 0.3
+            alpha = 0.2 + 0.5 * (i / max(len(lower_taus), 1)) if alpha_gradient else 0.3
 
             if isinstance(cmap, str):
                 color = plt.get_cmap(cmap)(0.5 + 0.4 * (i / max(len(lower_taus), 1)))
@@ -401,7 +392,7 @@ class QuantileVisualizer:
                 predictions[tau_upper],
                 alpha=alpha,
                 color=color,
-                label=f"{int(tau_lower*100)}-{int(tau_upper*100)}%",
+                label=f"{int(tau_lower * 100)}-{int(tau_upper * 100)}%",
             )
 
         # Plot median
@@ -422,19 +413,19 @@ class QuantileVisualizer:
             if tau in predictions:
                 y_pos = predictions[tau][-1]
                 ax.text(
-                    time_index[-1], y_pos, f"{int(tau*100)}%", fontsize=8, ha="left", va="center"
+                    time_index[-1], y_pos, f"{int(tau * 100)}%", fontsize=8, ha="left", va="center"
                 )
 
         return fig
 
-    def conditional_density(
+    def conditional_density(  # noqa: C901
         self,
         result,
-        X_values: Union[np.ndarray, Dict],
-        y_grid: Optional[np.ndarray] = None,
+        X_values: np.ndarray | dict,
+        y_grid: np.ndarray | None = None,
         method: str = "kernel",
-        bandwidth: Union[str, float] = "silverman",
-        figsize: Optional[Tuple[float, float]] = None,
+        bandwidth: str | float = "silverman",
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Estimate and plot conditional density from quantiles.
@@ -490,10 +481,7 @@ class QuantileVisualizer:
             for tau in tau_dense:
                 if tau in result.results:
                     res = result.results[tau]
-                    if hasattr(res, "params"):
-                        params = res.params
-                    else:
-                        params = res
+                    params = res.params if hasattr(res, "params") else res
                 else:
                     # Interpolate each coefficient
                     coef_interp = []
@@ -510,10 +498,7 @@ class QuantileVisualizer:
 
                 # Compute prediction
                 if isinstance(X, np.ndarray):
-                    if X.ndim == 1:
-                        X_use = X
-                    else:
-                        X_use = X[0] if X.shape[0] > 0 else X
+                    X_use = X if X.ndim == 1 else X[0] if X.shape[0] > 0 else X
                 else:
                     X_use = np.array(X)
 
@@ -539,7 +524,6 @@ class QuantileVisualizer:
         colors = sns.color_palette("husl", len(X_values))
 
         for (label, quantiles), color in zip(quantile_functions.items(), colors):
-
             if method == "kernel":
                 # Kernel density from quantile function
                 try:
@@ -553,19 +537,19 @@ class QuantileVisualizer:
 
                     density = kde(y_grid)[0]
                 except Exception as e:
-                    warnings.warn(f"KDE failed: {e}, using interpolation instead")
+                    warnings.warn(f"KDE failed: {e}, using interpolation instead", stacklevel=2)
                     # Fallback to interpolation
                     density = np.gradient(tau_dense, np.interp(y_grid, quantiles, tau_dense))
                     density = np.abs(density)
                     if density.sum() > 0:
-                        density = density / np.trapz(density, y_grid)
+                        density = density / np.trapezoid(density, y_grid)
 
             else:  # interpolation
                 # Numerical derivative of quantile function
                 density = np.gradient(tau_dense, np.interp(y_grid, quantiles, tau_dense))
                 density = np.abs(density)
                 if density.sum() > 0:
-                    density = density / np.trapz(density, y_grid)
+                    density = density / np.trapezoid(density, y_grid)
 
             ax.plot(y_grid, density, color=color, linewidth=2.5, label=label)
             ax.fill_between(y_grid, 0, density, color=color, alpha=0.2)
@@ -579,13 +563,13 @@ class QuantileVisualizer:
 
         return fig
 
-    def spaghetti_plot(
+    def spaghetti_plot(  # noqa: C901
         self,
         result,
         sample_size: int = 100,
-        highlight_quantiles: List[float] = None,
+        highlight_quantiles: list[float] = None,
         individual_alpha: float = 0.1,
-        figsize: Optional[Tuple[float, float]] = None,
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Spaghetti plot showing individual quantile curves.
@@ -616,16 +600,12 @@ class QuantileVisualizer:
         # Get model information
         if hasattr(result, "model") and hasattr(result.model, "n_entities"):
             n_entities = result.model.n_entities
-            entity_ids = (
-                result.model.entity_ids
-                if hasattr(result.model, "entity_ids")
-                else range(n_entities)
-            )
+            (result.model.entity_ids if hasattr(result.model, "entity_ids") else range(n_entities))
             X_data = result.model.X if hasattr(result.model, "X") else None
         else:
             # Generate synthetic data for demonstration
             n_entities = min(sample_size, 100)
-            entity_ids = range(n_entities)
+            range(n_entities)
             X_data = None
 
         # Sample individuals
@@ -648,7 +628,7 @@ class QuantileVisualizer:
                 X_entity = X_data[entity_mask].mean(axis=0) if entity_mask.any() else X_data[0]
             else:
                 # Use random variation for demonstration
-                first_result = result.results[list(result.results.keys())[0]]
+                first_result = result.results[next(iter(result.results.keys()))]
                 n_params = (
                     len(first_result.params)
                     if hasattr(first_result, "params")
@@ -714,7 +694,7 @@ class QuantileVisualizer:
                     entity_mask = result.model.entity_ids == entity_id
                     X_entity = X_data[entity_mask].mean(axis=0) if entity_mask.any() else X_data[0]
                 else:
-                    first_result = result.results[list(result.results.keys())[0]]
+                    first_result = result.results[next(iter(result.results.keys()))]
                     n_params = (
                         len(first_result.params)
                         if hasattr(first_result, "params")
@@ -787,8 +767,8 @@ class QuantileVisualizer:
         return fig
 
     def _compute_uniform_bands(
-        self, result, var_idx: int, tau_list: List[float], alpha: float = 0.05
-    ) -> Tuple[List[float], List[float]]:
+        self, result, var_idx: int, tau_list: list[float], alpha: float = 0.05
+    ) -> tuple[list[float], list[float]]:
         """
         Compute uniform confidence bands.
 
@@ -829,7 +809,7 @@ class QuantileVisualizer:
 
         return lower, upper
 
-    def save_all(self, result, output_dir: str, formats: List[str] = None, **kwargs) -> None:
+    def save_all(self, result, output_dir: str, formats: list[str] = None, **kwargs) -> None:
         """
         Generate and save all standard plots.
 
@@ -862,7 +842,7 @@ class QuantileVisualizer:
                 )
             plt.close(fig)
         except Exception as e:
-            warnings.warn(f"Could not generate coefficient path: {e}")
+            warnings.warn(f"Could not generate coefficient path: {e}", stacklevel=2)
 
         # Fan chart if we have forecast data
         try:
@@ -880,7 +860,7 @@ class QuantileVisualizer:
                     )
                 plt.close(fig)
         except Exception as e:
-            warnings.warn(f"Could not generate fan chart: {e}")
+            warnings.warn(f"Could not generate fan chart: {e}", stacklevel=2)
 
         # Spaghetti plot
         try:
@@ -893,7 +873,7 @@ class QuantileVisualizer:
                 )
             plt.close(fig)
         except Exception as e:
-            warnings.warn(f"Could not generate spaghetti plot: {e}")
+            warnings.warn(f"Could not generate spaghetti plot: {e}", stacklevel=2)
 
         plt.close("all")
-        print(f"All plots saved to {output_dir}")
+        logger.info(f"All plots saved to {output_dir}")

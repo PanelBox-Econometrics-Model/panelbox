@@ -6,10 +6,12 @@ particularly spatial models where effects can be separated into direct, indirect
 and total components.
 """
 
+from __future__ import annotations
+
 from panelbox.effects.spatial_effects import (
     SpatialEffectsResult,
     compute_spatial_effects,
     spatial_impact_matrix,
 )
 
-__all__ = ["compute_spatial_effects", "SpatialEffectsResult", "spatial_impact_matrix"]
+__all__ = ["SpatialEffectsResult", "compute_spatial_effects", "spatial_impact_matrix"]

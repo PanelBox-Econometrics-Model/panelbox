@@ -1,5 +1,6 @@
 """
-Panel Data Datasets
+Panel Data Datasets.
+
 ===================
 
 This module provides access to example panel datasets commonly used
@@ -24,6 +25,8 @@ Examples
 >>> pb.list_datasets()
 """
 
+from __future__ import annotations
+
 from .load import get_dataset_info, list_datasets, load_abdata, load_grunfeld
 
-__all__ = ["load_grunfeld", "load_abdata", "list_datasets", "get_dataset_info"]
+__all__ = ["get_dataset_info", "list_datasets", "load_abdata", "load_grunfeld"]

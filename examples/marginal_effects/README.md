@@ -47,18 +47,15 @@ marginal_effects/
 
 ## Setup
 
-### 1. Install PanelBox (development version)
+### 1. Install PanelBox
 
 ```bash
-pip install -e /home/guhaase/projetos/panelbox
+pip install panelbox
 ```
 
 ### 2. Import convention inside notebooks
 
 ```python
-import sys
-sys.path.insert(0, '/home/guhaase/projetos/panelbox')
-
 import panelbox as pb
 from panelbox.marginal_effects import (
     compute_ame,

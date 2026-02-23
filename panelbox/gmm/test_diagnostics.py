@@ -1,9 +1,12 @@
 """
-Tests for GMM Diagnostic Tests
+Tests for GMM Diagnostic Tests.
+
 ================================
 
 Test suite for GMM diagnostics implementation.
 """
+
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -18,9 +21,7 @@ class TestGMMDiagnostics:
 
     @pytest.fixture
     def simple_iv_model(self):
-        """
-        Create a simple fitted IV model for testing diagnostics.
-        """
+        """Create a simple fitted IV model for testing diagnostics."""
         np.random.seed(42)
         n = 500
 
@@ -190,9 +191,7 @@ class TestGMMDiagnostics:
             assert weak_test["cragg_donald_f"] < 20
             assert weak_test["warning_level"] in ["CRITICAL", "WARNING"]
 
-        except Exception:
-            # Model may not converge with very weak instruments
-            # This is expected behavior
+        except Exception:  # noqa: S110 — model may not converge with very weak instruments
             pass
 
     def test_diagnostic_tests_summary(self, simple_iv_model):
@@ -316,10 +315,10 @@ class TestGMMDiagnosticsIntegration:
         # Generate 5 instruments for 1 endogenous regressor
         instruments = {}
         for i in range(5):
-            instruments[f"z{i+1}"] = np.random.normal(0, 1, n)
+            instruments[f"z{i + 1}"] = np.random.normal(0, 1, n)
 
         v = np.random.normal(0, 1, n)
-        x = 0.5 + sum(0.5 * instruments[f"z{i+1}"] for i in range(5)) / 5 + v
+        x = 0.5 + sum(0.5 * instruments[f"z{i + 1}"] for i in range(5)) / 5 + v
 
         epsilon = np.random.normal(0, 1, n) + 0.5 * v
         y = 1.0 + 2.0 * x + epsilon

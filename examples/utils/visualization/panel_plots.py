@@ -1,15 +1,14 @@
 """
-Panel Data Visualization Utilities
+Panel Data Visualization Utilities.
 
 This module provides plotting functions for panel data analysis.
 """
 
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 
 def spaghetti_plot(
@@ -50,15 +49,13 @@ def spaghetti_plot(
     --------
     >>> import pandas as pd
     >>> from utils.visualization.panel_plots import spaghetti_plot
-    >>> data = pd.DataFrame({
-    ...     'firm': [1, 1, 2, 2],
-    ...     'year': [2000, 2001, 2000, 2001],
-    ...     'sales': [100, 120, 80, 95]
-    ... })
-    >>> spaghetti_plot(data, 'firm', 'year', 'sales')
+    >>> data = pd.DataFrame(
+    ...     {"firm": [1, 1, 2, 2], "year": [2000, 2001, 2000, 2001], "sales": [100, 120, 80, 95]}
+    ... )
+    >>> spaghetti_plot(data, "firm", "year", "sales")
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
 
     entities = data[entity_col].unique()
     if sample_entities is not None and sample_entities < len(entities):
@@ -73,7 +70,7 @@ def spaghetti_plot(
 
     ax.set_xlabel(time_col.capitalize())
     ax.set_ylabel(y_col.replace("_", " ").capitalize())
-    ax.set_title(f'{y_col.replace("_", " ").capitalize()} Trajectories Over Time')
+    ax.set_title(f"{y_col.replace('_', ' ').capitalize()} Trajectories Over Time")
     ax.grid(True, alpha=0.3)
 
     return ax
@@ -85,8 +82,8 @@ def within_between_scatter(
     time_col: str,
     x_col: str,
     y_col: str,
-    figsize: Tuple[int, int] = (14, 5),
-) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes]]:
+    figsize: tuple[int, int] = (14, 5),
+) -> tuple[plt.Figure, tuple[plt.Axes, plt.Axes]]:
     """
     Create within and between variation scatter plots.
 
@@ -114,7 +111,7 @@ def within_between_scatter(
 
     Examples
     --------
-    >>> fig, axes = within_between_scatter(data, 'firm', 'year', 'capital', 'invest')
+    >>> fig, axes = within_between_scatter(data, "firm", "year", "capital", "invest")
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
@@ -144,7 +141,7 @@ def within_between_scatter(
 
 
 def variance_decomposition_plot(
-    data: pd.DataFrame, entity_col: str, variables: List[str], figsize: Tuple[int, int] = (10, 6)
+    data: pd.DataFrame, entity_col: str, variables: list[str], figsize: tuple[int, int] = (10, 6)
 ) -> plt.Axes:
     """
     Plot variance decomposition (within vs between) for multiple variables.
@@ -167,7 +164,7 @@ def variance_decomposition_plot(
 
     Examples
     --------
-    >>> variance_decomposition_plot(data, 'firm', ['invest', 'value', 'capital'])
+    >>> variance_decomposition_plot(data, "firm", ["invest", "value", "capital"])
     """
     decomposition = {}
 
@@ -184,7 +181,7 @@ def variance_decomposition_plot(
 
     df_decomp = pd.DataFrame(decomposition).T
 
-    fig, ax = plt.subplots(figsize=figsize)
+    _fig, ax = plt.subplots(figsize=figsize)
     df_decomp.plot(kind="barh", stacked=True, ax=ax, color=["#2ecc71", "#3498db"])
     ax.set_xlabel("Percentage of Total Variance")
     ax.set_ylabel("Variables")

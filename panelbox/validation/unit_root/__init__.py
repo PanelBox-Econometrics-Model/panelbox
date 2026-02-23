@@ -9,8 +9,10 @@ including:
 - Hadri test
 """
 
+from __future__ import annotations
+
 from panelbox.validation.unit_root.fisher import FisherTest, FisherTestResult
 from panelbox.validation.unit_root.ips import IPSTest, IPSTestResult
 from panelbox.validation.unit_root.llc import LLCTest, LLCTestResult
 
-__all__ = ["LLCTest", "LLCTestResult", "IPSTest", "IPSTestResult", "FisherTest", "FisherTestResult"]
+__all__ = ["FisherTest", "FisherTestResult", "IPSTest", "IPSTestResult", "LLCTest", "LLCTestResult"]

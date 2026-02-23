@@ -5,7 +5,9 @@ This module provides the Between estimator which regresses on group means,
 capturing variation between entities rather than within entities.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -20,12 +22,9 @@ from panelbox.standard_errors import (
     robust_covariance,
     twoway_cluster,
 )
-from panelbox.standard_errors.clustered import ClusteredCovarianceResult
-from panelbox.standard_errors.driscoll_kraay import DriscollKraayResult
-from panelbox.standard_errors.newey_west import NeweyWestResult
-from panelbox.standard_errors.pcse import PCSEResult
-from panelbox.standard_errors.robust import RobustCovarianceResult
 from panelbox.utils.matrix_ops import compute_ols, compute_vcov_nonrobust
+
+logger = logging.getLogger(__name__)
 
 
 class BetweenEstimator(PanelModel):
@@ -78,7 +77,7 @@ class BetweenEstimator(PanelModel):
     >>>
     >>> # Between estimator
     >>> be = pb.BetweenEstimator("invest ~ value + capital", data, "firm", "year")
-    >>> results = be.fit(cov_type='robust')
+    >>> results = be.fit(cov_type="robust")
     >>> print(results.summary())
     >>>
     >>> # Compare with Fixed Effects (within)
@@ -182,12 +181,91 @@ class BetweenEstimator(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
         # Entity means (computed after fitting)
-        self.entity_means: Optional[pd.DataFrame] = None
+        self.entity_means: pd.DataFrame | None = None
+
+    def _compute_between_vcov(
+        self,
+        cov_type: str,
+        X_between: np.ndarray,
+        resid: np.ndarray,
+        df_resid: int,
+        unique_entities: np.ndarray,
+        **cov_kwds,
+    ) -> np.ndarray:
+        """Compute covariance matrix for the between estimator."""
+        cov_type_lower = cov_type.lower()
+
+        if cov_type_lower == "nonrobust":
+            return compute_vcov_nonrobust(X_between, resid, df_resid)
+
+        if cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
+            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
+            return robust_covariance(X_between, resid, method=method).cov_matrix
+
+        if cov_type_lower == "clustered":
+            return self._compute_clustered_vcov(X_between, resid, cov_kwds)
+
+        if cov_type_lower == "twoway":
+            return self._compute_twoway_vcov(X_between, resid, unique_entities, cov_kwds)
+
+        if cov_type_lower == "driscoll_kraay":
+            max_lags = cov_kwds.get("max_lags")
+            kernel = cov_kwds.get("kernel", "bartlett")
+            return driscoll_kraay(
+                X_between, resid, unique_entities, max_lags=max_lags, kernel=kernel
+            ).cov_matrix
+
+        if cov_type_lower == "newey_west":
+            max_lags = cov_kwds.get("max_lags")
+            kernel = cov_kwds.get("kernel", "bartlett")
+            return newey_west(X_between, resid, max_lags=max_lags, kernel=kernel).cov_matrix
+
+        if cov_type_lower == "pcse":
+            return pcse(X_between, resid, unique_entities, unique_entities).cov_matrix
+
+        raise ValueError(
+            f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', 'hc2', 'hc3', "
+            f"'clustered', 'twoway', 'driscoll_kraay', 'newey_west', 'pcse', got '{cov_type}'"
+        )
+
+    def _compute_clustered_vcov(
+        self, X_between: np.ndarray, resid: np.ndarray, cov_kwds: dict
+    ) -> np.ndarray:
+        """Compute clustered covariance for the between estimator."""
+        cluster_col = cov_kwds.get("cluster_col")
+        if cluster_col is None:
+            return robust_covariance(X_between, resid, method="HC1").cov_matrix
+        if cluster_col not in self.entity_means.columns:
+            raise ValueError(f"cluster_col '{cluster_col}' not found in entity means")
+        cluster_ids = self.entity_means[cluster_col].values
+        return cluster_by_entity(X_between, resid, cluster_ids, df_correction=True).cov_matrix
+
+    def _compute_twoway_vcov(
+        self,
+        X_between: np.ndarray,
+        resid: np.ndarray,
+        unique_entities: np.ndarray,
+        cov_kwds: dict,
+    ) -> np.ndarray:
+        """Compute two-way clustered covariance for the between estimator."""
+        cluster_col1 = cov_kwds.get("cluster_col1", "entity")
+        cluster_col2 = cov_kwds.get("cluster_col2")
+        if cluster_col2 is None:
+            raise ValueError("twoway clustering requires cluster_col2 in cov_kwds")
+        cluster_ids1 = (
+            self.entity_means[cluster_col1].values
+            if cluster_col1 in self.entity_means.columns
+            else unique_entities
+        )
+        cluster_ids2 = self.entity_means[cluster_col2].values
+        return twoway_cluster(
+            X_between, resid, cluster_ids1, cluster_ids2, df_correction=True
+        ).cov_matrix
 
     def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
@@ -219,17 +297,17 @@ class BetweenEstimator(PanelModel):
         Examples
         --------
         >>> # Classical standard errors
-        >>> results = model.fit(cov_type='nonrobust')
+        >>> results = model.fit(cov_type="nonrobust")
 
         >>> # Heteroskedasticity-robust
-        >>> results = model.fit(cov_type='robust')
-        >>> results = model.fit(cov_type='hc3')
+        >>> results = model.fit(cov_type="robust")
+        >>> results = model.fit(cov_type="hc3")
 
         >>> # Cluster-robust
-        >>> results = model.fit(cov_type='clustered')
+        >>> results = model.fit(cov_type="clustered")
 
         >>> # Driscoll-Kraay
-        >>> results = model.fit(cov_type='driscoll_kraay', max_lags=3)
+        >>> results = model.fit(cov_type="driscoll_kraay", max_lags=3)
         """
         # Build design matrices from original data
         y_orig, X_orig = self.formula_parser.build_design_matrices(
@@ -239,9 +317,8 @@ class BetweenEstimator(PanelModel):
         # Get variable names
         var_names = self.formula_parser.get_variable_names(self.data.data)
 
-        # Get entity and time identifiers
+        # Get entity identifiers
         entities = self.data.data[self.data.entity_col].values
-        self.data.data[self.data.time_col].values
 
         # Compute entity means (between transformation)
         unique_entities = np.unique(entities)
@@ -268,12 +345,7 @@ class BetweenEstimator(PanelModel):
         # Add independent variable means (excluding intercept)
         for j, var_name in enumerate(var_names):
             if var_name != "Intercept":
-                # Find the corresponding column in X_orig
-                # var_names includes 'Intercept' if present, so adjust index
-                if "Intercept" in var_names:
-                    X_col_idx = j
-                else:
-                    X_col_idx = j
+                X_col_idx = j if "Intercept" in var_names else j
                 entity_means_dict[var_name] = X_between[:, X_col_idx]
 
         self.entity_means = pd.DataFrame(entity_means_dict)
@@ -282,11 +354,10 @@ class BetweenEstimator(PanelModel):
         beta, resid, fitted = compute_ols(y_between, X_between, self.weights)
 
         # Degrees of freedom
-        n = n_entities  # Number of entity-level observations
-        df_model = k - 1 if "Intercept" in var_names else k  # Slopes only
+        n = n_entities
+        df_model = k - 1 if "Intercept" in var_names else k
         df_resid = n - k
 
-        # Ensure df_resid is positive
         if df_resid <= 0:
             raise ValueError(
                 f"Insufficient degrees of freedom: df_resid = {df_resid}. "
@@ -294,93 +365,9 @@ class BetweenEstimator(PanelModel):
             )
 
         # Compute covariance matrix
-        cov_type_lower = cov_type.lower()
-
-        # Type annotation for result variable to handle different covariance result types
-        result: Union[
-            RobustCovarianceResult,
-            ClusteredCovarianceResult,
-            DriscollKraayResult,
-            NeweyWestResult,
-            PCSEResult,
-        ]
-
-        if cov_type_lower == "nonrobust":
-            vcov = compute_vcov_nonrobust(X_between, resid, df_resid)
-
-        elif cov_type_lower in ["robust", "hc0", "hc1", "hc2", "hc3"]:
-            # Map 'robust' to 'hc1'
-            method = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
-            result = robust_covariance(X_between, resid, method=method)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "clustered":
-            # For between estimator, clustering is less common but supported
-            # Default: cluster by entity (though each entity appears once)
-            # Could cluster by another grouping variable if specified
-            cluster_col = cov_kwds.get("cluster_col", None)
-            if cluster_col is None:
-                # Each entity is its own cluster - equivalent to robust
-                result = robust_covariance(X_between, resid, method="HC1")
-            else:
-                # Use custom clustering variable from entity_means
-                if cluster_col not in self.entity_means.columns:
-                    raise ValueError(f"cluster_col '{cluster_col}' not found in entity means")
-                cluster_ids = self.entity_means[cluster_col].values
-                result = cluster_by_entity(X_between, resid, cluster_ids, df_correction=True)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "twoway":
-            # Two-way clustering at entity level
-            # This is unusual for between estimator but technically possible
-            # Would need entity-level time groupings
-            cluster_col1 = cov_kwds.get("cluster_col1", "entity")
-            cluster_col2 = cov_kwds.get("cluster_col2", None)
-
-            if cluster_col2 is None:
-                raise ValueError("twoway clustering requires cluster_col2 in cov_kwds")
-
-            cluster_ids1 = (
-                self.entity_means[cluster_col1].values
-                if cluster_col1 in self.entity_means.columns
-                else unique_entities
-            )
-            cluster_ids2 = self.entity_means[cluster_col2].values
-
-            result = twoway_cluster(
-                X_between, resid, cluster_ids1, cluster_ids2, df_correction=True
-            )
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "driscoll_kraay":
-            # Driscoll-Kraay at entity level
-            # Use entity index as "time" dimension
-            max_lags = cov_kwds.get("max_lags", None)
-            kernel = cov_kwds.get("kernel", "bartlett")
-            result = driscoll_kraay(
-                X_between, resid, unique_entities, max_lags=max_lags, kernel=kernel
-            )
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "newey_west":
-            # Newey-West HAC
-            max_lags = cov_kwds.get("max_lags", None)
-            kernel = cov_kwds.get("kernel", "bartlett")
-            result = newey_west(X_between, resid, max_lags=max_lags, kernel=kernel)
-            vcov = result.cov_matrix
-
-        elif cov_type_lower == "pcse":
-            # Panel-Corrected Standard Errors
-            # For between estimator, each entity appears once
-            # PCSE is less meaningful but technically computable
-            result = pcse(X_between, resid, unique_entities, unique_entities)
-            vcov = result.cov_matrix
-
-        else:
-            raise ValueError(
-                f"cov_type must be one of: 'nonrobust', 'robust', 'hc0', 'hc1', 'hc2', 'hc3', "
-                f"'clustered', 'twoway', 'driscoll_kraay', 'newey_west', 'pcse', got '{cov_type}'"
-            )
+        vcov = self._compute_between_vcov(
+            cov_type, X_between, resid, df_resid, unique_entities, **cov_kwds
+        )
 
         # Standard errors
         std_errors = np.sqrt(np.diag(vcov))
@@ -464,7 +451,37 @@ class BetweenEstimator(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
+
+        # Store entity column name for predict(newdata)
+        results._entity_col = self.data.entity_col
+
+        # Override predict() to compute group means before prediction
+        _results = results  # capture for closure
+
+        def _between_predict(newdata=None):
+            if newdata is None:
+                return _results.fittedvalues
+
+            parser = _results._formula_parser
+            if parser is None:
+                from panelbox.core.formula_parser import FormulaParser
+
+                parser = FormulaParser(_results.formula).parse()
+
+            x_vars = parser.regressors
+
+            # Compute group means
+            X_means = newdata.groupby(_results._entity_col)[x_vars].mean()
+
+            # Add intercept column if formula has intercept
+            if parser.has_intercept:
+                X_means.insert(0, "Intercept", 1.0)
+
+            return X_means.values @ _results.params.values
+
+        results.predict = _between_predict
 
         # Store results and update state
         self._results = results

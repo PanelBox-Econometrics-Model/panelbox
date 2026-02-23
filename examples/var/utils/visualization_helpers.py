@@ -18,9 +18,6 @@ Functions:
 - set_academic_style: Configure matplotlib for publication quality
 """
 
-from typing import List, Optional, Tuple
-
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -82,10 +79,8 @@ def plot_irf_grid(irf_result, variables=None, figsize=None, save_path=None):
     # Filter variables if requested
     if variables is not None:
         var_indices = [var_names.index(v) for v in variables]
-        plot_names = variables
     else:
         var_indices = list(range(len(var_names)))
-        plot_names = var_names
 
     K = len(var_indices)
 
@@ -366,7 +361,7 @@ def plot_coefficient_heatmap(results, lag=1, save_path=None):
         ax=ax,
     )
 
-    ax.set_xlabel("Cause (column variable at t-{})".format(lag), fontsize=12)
+    ax.set_xlabel(f"Cause (column variable at t-{lag})", fontsize=12)
     ax.set_ylabel("Effect (row equation)", fontsize=12)
     ax.set_title(f"VAR Coefficient Matrix A$_{lag}$ (Lag {lag})", fontsize=14, fontweight="bold")
 
@@ -433,7 +428,7 @@ def plot_stability_diagram(results, save_path=None):
             zorder=5,
             edgecolors="darkgreen",
             linewidth=1.2,
-            label=f"Stable (|z| < 1)",
+            label="Stable (|z| < 1)",
             marker="o",
         )
 
@@ -447,7 +442,7 @@ def plot_stability_diagram(results, save_path=None):
             zorder=5,
             edgecolors="darkred",
             linewidth=1.5,
-            label=f"Unstable (|z| >= 1)",
+            label="Unstable (|z| >= 1)",
             marker="X",
         )
 
@@ -459,8 +454,8 @@ def plot_stability_diagram(results, save_path=None):
         xy=(max_eig.real, max_eig.imag),
         xytext=(max_eig.real + 0.15, max_eig.imag + 0.15),
         fontsize=10,
-        arrowprops=dict(arrowstyle="->", color="gray", lw=1.2),
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", edgecolor="gray", alpha=0.9),
+        arrowprops={"arrowstyle": "->", "color": "gray", "lw": 1.2},
+        bbox={"boxstyle": "round,pad=0.3", "facecolor": "lightyellow", "edgecolor": "gray", "alpha": 0.9},
     )
 
     # Axes styling
@@ -570,7 +565,6 @@ def plot_forecast_fan(forecast_result, entity, variable, actual=None, save_path=
     )
 
     # Confidence intervals
-    has_ci = False
     try:
         if forecast_result.ci_lower is not None and forecast_result.ci_upper is not None:
             ci_lower = forecast_result.ci_lower
@@ -596,7 +590,6 @@ def plot_forecast_fan(forecast_result, entity, variable, actual=None, save_path=
             # Boundary lines
             ax.plot(horizons, ci_lo, color="#2166ac", linewidth=0.8, linestyle=":", alpha=0.6)
             ax.plot(horizons, ci_hi, color="#2166ac", linewidth=0.8, linestyle=":", alpha=0.6)
-            has_ci = True
     except (AttributeError, IndexError):
         pass
 

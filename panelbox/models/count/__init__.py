@@ -20,13 +20,16 @@ Key Features:
 - Automatic detection of overdispersion with warnings
 - Comprehensive marginal effects calculation
 
-References:
+References
+----------
 - Hausman, J., Hall, B. H., & Griliches, Z. (1984). "Econometric models for count
   data with an application to the patents-R&D relationship."
 - Wooldridge, J. M. (1999). "Distribution-free estimation of some nonlinear
   panel data models."
 - Cameron, A. C., & Trivedi, P. K. (2013). "Regression analysis of count data."
 """
+
+from __future__ import annotations
 
 from .negbin import FixedEffectsNegativeBinomial, NegativeBinomial
 from .poisson import PoissonFixedEffects, PoissonQML, PooledPoisson, RandomEffectsPoisson
@@ -39,20 +42,20 @@ from .zero_inflated import (
 )
 
 __all__ = [
-    # Poisson models
-    "PooledPoisson",
-    "PoissonFixedEffects",
-    "RandomEffectsPoisson",
-    "PoissonQML",
     # PPML (Gravity models)
     "PPML",
-    "PPMLResult",
+    "FixedEffectsNegativeBinomial",
     # Negative Binomial models
     "NegativeBinomial",
-    "FixedEffectsNegativeBinomial",
+    "PPMLResult",
+    "PoissonFixedEffects",
+    "PoissonQML",
+    # Poisson models
+    "PooledPoisson",
+    "RandomEffectsPoisson",
+    "ZeroInflatedNegativeBinomial",
+    "ZeroInflatedNegativeBinomialResult",
     # Zero-Inflated models
     "ZeroInflatedPoisson",
     "ZeroInflatedPoissonResult",
-    "ZeroInflatedNegativeBinomial",
-    "ZeroInflatedNegativeBinomialResult",
 ]

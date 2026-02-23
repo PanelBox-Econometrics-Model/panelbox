@@ -1,5 +1,5 @@
 """
-Discrete Choice Models - Utilities
+Discrete Choice Models - Utilities.
 
 Part of the PanelBox tutorial series on discrete choice econometrics.
 
@@ -14,7 +14,7 @@ Example:
     >>> from discrete.utils.visualization_helpers import plot_link_functions
     >>>
     >>> data = generate_labor_data(n_individuals=1000, n_periods=5)
-    >>> plot_link_functions(compare=['logit', 'probit', 'lpm'])
+    >>> plot_link_functions(compare=["logit", "probit", "lpm"])
 """
 
 __all__ = ["data_generators", "visualization_helpers"]

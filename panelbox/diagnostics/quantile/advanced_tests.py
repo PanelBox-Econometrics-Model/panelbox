@@ -6,13 +6,18 @@ for quantile regression models, including the Khmaladze test, He-Zhu test,
 outlier detection, and influence diagnostics.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 from scipy import stats
 from scipy.linalg import lstsq
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,8 +29,8 @@ class DiagnosticResult:
     p_value: float
     status: str  # 'pass', 'warning', 'fail'
     message: str
-    recommendation: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    recommendation: str | None = None
+    details: dict[str, Any] | None = None
 
 
 class AdvancedDiagnostics:
@@ -65,7 +70,7 @@ class AdvancedDiagnostics:
             self.X = None
             self.y = None
 
-    def run_all_diagnostics(self, tau: Optional[float] = None) -> "DiagnosticReport":
+    def run_all_diagnostics(self, tau: float | None = None) -> DiagnosticReport:
         """
         Run complete diagnostic battery.
 
@@ -80,7 +85,7 @@ class AdvancedDiagnostics:
             Comprehensive diagnostic report
         """
         if tau is None:
-            tau = 0.5 if 0.5 in self.result.results else list(self.result.results.keys())[0]
+            tau = 0.5 if 0.5 in self.result.results else next(iter(self.result.results.keys()))
 
         # Clear previous diagnostics
         self.diagnostics = []
@@ -89,32 +94,32 @@ class AdvancedDiagnostics:
         try:
             self.test_specification(tau)
         except Exception as e:
-            warnings.warn(f"Specification test failed: {e}")
+            warnings.warn(f"Specification test failed: {e}", stacklevel=2)
 
         try:
             self.test_heteroscedasticity(tau)
         except Exception as e:
-            warnings.warn(f"Heteroscedasticity test failed: {e}")
+            warnings.warn(f"Heteroscedasticity test failed: {e}", stacklevel=2)
 
         try:
             self.test_outliers(tau)
         except Exception as e:
-            warnings.warn(f"Outlier test failed: {e}")
+            warnings.warn(f"Outlier test failed: {e}", stacklevel=2)
 
         try:
             self.test_influence(tau)
         except Exception as e:
-            warnings.warn(f"Influence test failed: {e}")
+            warnings.warn(f"Influence test failed: {e}", stacklevel=2)
 
         try:
             self.test_convergence(tau)
         except Exception as e:
-            warnings.warn(f"Convergence test failed: {e}")
+            warnings.warn(f"Convergence test failed: {e}", stacklevel=2)
 
         try:
             self.test_monotonicity()
         except Exception as e:
-            warnings.warn(f"Monotonicity test failed: {e}")
+            warnings.warn(f"Monotonicity test failed: {e}", stacklevel=2)
 
         # Generate report
         return self._generate_report()
@@ -142,10 +147,7 @@ class AdvancedDiagnostics:
         res_tau = self.result.results[tau]
 
         # Get parameters
-        if hasattr(res_tau, "params"):
-            params = res_tau.params
-        else:
-            params = res_tau
+        params = res_tau.params if hasattr(res_tau, "params") else res_tau
 
         # Compute residuals
         predictions = (
@@ -222,10 +224,7 @@ class AdvancedDiagnostics:
         res_tau = self.result.results[tau]
 
         # Get parameters
-        if hasattr(res_tau, "params"):
-            params = res_tau.params
-        else:
-            params = res_tau
+        params = res_tau.params if hasattr(res_tau, "params") else res_tau
 
         # Compute residuals
         predictions = (
@@ -239,7 +238,7 @@ class AdvancedDiagnostics:
 
         # OLS regression using scipy
         try:
-            beta_aux, _, _, _ = lstsq(self.X, abs_resid)
+            beta_aux, _, _, _ = lstsq(self.X, abs_resid)  # type: ignore[misc]
             fitted_aux = self.X @ beta_aux
 
             # R-squared of auxiliary regression
@@ -322,10 +321,7 @@ class AdvancedDiagnostics:
         res_tau = self.result.results[tau]
 
         # Get parameters
-        if hasattr(res_tau, "params"):
-            params = res_tau.params
-        else:
-            params = res_tau
+        params = res_tau.params if hasattr(res_tau, "params") else res_tau
 
         # Compute residuals
         predictions = (
@@ -417,25 +413,22 @@ class AdvancedDiagnostics:
         n, p = self.X.shape
 
         # Get parameters
-        if hasattr(res_tau, "params"):
-            beta_full = res_tau.params
-        else:
-            beta_full = res_tau
+        beta_full = res_tau.params if hasattr(res_tau, "params") else res_tau
 
         # For efficiency, sample a subset of observations
         sample_size = min(100, n)
         if n > sample_size:
-            sample_idx = np.random.choice(n, sample_size, replace=False)
+            np.random.choice(n, sample_size, replace=False)
         else:
-            sample_idx = np.arange(n)
+            np.arange(n)
 
         # Simplified influence measure based on leverage and residuals
         # Compute hat matrix diagonal (leverage)
         try:
             # Use QR decomposition for numerical stability
-            Q, R = np.linalg.qr(self.X)
+            Q, _R = np.linalg.qr(self.X)
             H_diag = np.sum(Q**2, axis=1)
-        except:
+        except Exception:
             H_diag = np.ones(n) / n
 
         # Compute residuals
@@ -448,10 +441,7 @@ class AdvancedDiagnostics:
 
         # Standardize residuals
         resid_std = np.std(residuals)
-        if resid_std > 0:
-            std_resid = residuals / resid_std
-        else:
-            std_resid = residuals
+        std_resid = residuals / resid_std if resid_std > 0 else residuals
 
         # Cook's D approximation for quantile regression
         cooks_d = (std_resid**2 * H_diag) / (p * (1 - H_diag + 1e-10))
@@ -497,9 +487,7 @@ class AdvancedDiagnostics:
         )
 
     def test_convergence(self, tau: float):
-        """
-        Test numerical convergence and stability.
-        """
+        """Test numerical convergence and stability."""
         res_tau = self.result.results[tau]
 
         # Check if model converged
@@ -512,10 +500,7 @@ class AdvancedDiagnostics:
 
         if gradient_norm is None and self.X is not None and self.y is not None:
             # Compute approximate gradient
-            if hasattr(res_tau, "params"):
-                params = res_tau.params
-            else:
-                params = res_tau
+            params = res_tau.params if hasattr(res_tau, "params") else res_tau
 
             predictions = (
                 self.X @ params
@@ -543,7 +528,7 @@ class AdvancedDiagnostics:
         else:
             if converged:
                 status = "pass"
-                message = f"Model converged"
+                message = "Model converged"
                 recommendation = None
             else:
                 status = "fail"
@@ -567,9 +552,7 @@ class AdvancedDiagnostics:
         )
 
     def test_monotonicity(self):
-        """
-        Test if quantile curves are monotonic (non-crossing).
-        """
+        """Test if quantile curves are monotonic (non-crossing)."""
         tau_list = sorted(self.result.results.keys())
 
         if len(tau_list) < 2:
@@ -591,20 +574,14 @@ class AdvancedDiagnostics:
         else:
             # Use unit vector for testing
             first_result = self.result.results[tau_list[0]]
-            if hasattr(first_result, "params"):
-                n_params = len(first_result.params)
-            else:
-                n_params = 1
+            n_params = len(first_result.params) if hasattr(first_result, "params") else 1
             X_mean = np.ones(n_params)
 
         # Get predictions at mean X
         predictions = []
         for tau in tau_list:
             res = self.result.results[tau]
-            if hasattr(res, "params"):
-                params = res.params
-            else:
-                params = res
+            params = res.params if hasattr(res, "params") else res
 
             pred = X_mean @ params if len(params) == len(X_mean) else X_mean[: len(params)] @ params
             predictions.append(pred)
@@ -644,10 +621,8 @@ class AdvancedDiagnostics:
             )
         )
 
-    def _generate_report(self) -> "DiagnosticReport":
-        """
-        Generate comprehensive diagnostic report.
-        """
+    def _generate_report(self) -> DiagnosticReport:
+        """Generate comprehensive diagnostic report."""
         report = DiagnosticReport(self.diagnostics)
 
         if self.verbose:
@@ -657,18 +632,14 @@ class AdvancedDiagnostics:
 
 
 class DiagnosticReport:
-    """
-    Comprehensive diagnostic report with traffic light system.
-    """
+    """Comprehensive diagnostic report with traffic light system."""
 
-    def __init__(self, diagnostics: List[DiagnosticResult]):
+    def __init__(self, diagnostics: list[DiagnosticResult]):
         self.diagnostics = diagnostics
         self._compute_health_score()
 
     def _compute_health_score(self):
-        """
-        Compute overall model health score.
-        """
+        """Compute overall model health score."""
         scores = {"pass": 1.0, "warning": 0.5, "fail": 0.0}
 
         if not self.diagnostics:
@@ -687,9 +658,7 @@ class DiagnosticReport:
             self.health_status = "poor"
 
     def print_summary(self):
-        """
-        Print formatted diagnostic summary with colors.
-        """
+        """Print formatted diagnostic summary with colors."""
         # Colors for terminal output (ANSI escape codes)
         colors = {
             "pass": "\033[92m✓\033[0m",  # Green
@@ -736,10 +705,8 @@ class DiagnosticReport:
 
         print("\n" + "=" * 70)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert report to dictionary format.
-        """
+    def to_dict(self) -> dict[str, Any]:
+        """Convert report to dictionary format."""
         return {
             "health_score": self.health_score,
             "health_status": self.health_status,
@@ -758,9 +725,7 @@ class DiagnosticReport:
         }
 
     def to_html(self) -> str:
-        """
-        Generate HTML report.
-        """
+        """Generate HTML report."""
         # Health score background colors
         bg_colors = {"good": "#d4edda", "fair": "#fff3cd", "poor": "#f8d7da"}
 
@@ -775,7 +740,7 @@ class DiagnosticReport:
         <h2>Quantile Regression Diagnostics</h2>
 
         <div class="health-score" style="padding: 15px;
-             background-color: {bg_colors.get(self.health_status, '#f8f9fa')};
+             background-color: {bg_colors.get(self.health_status, "#f8f9fa")};
              border-radius: 5px; margin-bottom: 20px;">
             <h3 style="margin: 0;">Overall Health: {self.health_status.upper()}</h3>
             <p style="margin: 5px 0;">Score: {self.health_score:.1%}</p>

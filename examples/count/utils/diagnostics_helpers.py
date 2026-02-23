@@ -15,7 +15,6 @@ Functions:
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.special import gammaln
 
 
 def compute_overdispersion_index(y, fitted_values):
@@ -36,7 +35,7 @@ def compute_overdispersion_index(y, fitted_values):
 
     Examples
     --------
-    >>> index = compute_overdispersion_index(data['y'], result.predict())
+    >>> index = compute_overdispersion_index(data["y"], result.predict())
     >>> print(f"Overdispersion index: {index:.3f}")
 
     Notes
@@ -94,7 +93,7 @@ def overdispersion_test(result, verbose=True):
     # OLS regression
     from scipy.stats import linregress
 
-    slope, intercept, r_value, p_value, std_err = linregress(aux_x, aux_y)
+    slope, _intercept, _r_value, _p_value, std_err = linregress(aux_x, aux_y)
 
     # Test statistic
     t_stat = slope / std_err
@@ -121,8 +120,8 @@ def overdispersion_test(result, verbose=True):
         print("=" * 60)
         print("Overdispersion Test (Cameron-Trivedi)")
         print("=" * 60)
-        print(f"H0: alpha = 0 (Poisson)")
-        print(f"H1: alpha > 0 (Negative Binomial)")
+        print("H0: alpha = 0 (Poisson)")
+        print("H1: alpha > 0 (Negative Binomial)")
         print()
         print(f"Alpha estimate: {slope:.4f}")
         print(f"Std. Error:     {std_err:.4f}")
@@ -393,8 +392,8 @@ def hausman_test_summary(fe_result, re_result, verbose=True):
         print("=" * 60)
         print("Hausman Specification Test (FE vs RE)")
         print("=" * 60)
-        print(f"H0: Random Effects is consistent and efficient")
-        print(f"H1: Fixed Effects is consistent, RE is inconsistent")
+        print("H0: Random Effects is consistent and efficient")
+        print("H1: Fixed Effects is consistent, RE is inconsistent")
         print()
         print(f"Chi-squared statistic: {hausman_stat:.4f}")
         print(f"Degrees of freedom:    {len(common_vars)}")

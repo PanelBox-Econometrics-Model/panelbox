@@ -16,12 +16,14 @@ References
        Cambridge University Press.
 """
 
-from typing import Callable, Literal, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Callable, Literal
 
 import numpy as np
-from scipy import stats
 
-from panelbox.standard_errors.clustered import cluster_by_entity
+logger = logging.getLogger(__name__)
 
 
 class MLECovarianceResult:
@@ -154,7 +156,7 @@ def sandwich_estimator(
     >>> scores = np.random.randn(n, k) * 0.1
     >>>
     >>> # Robust covariance
-    >>> result = sandwich_estimator(H, scores, method='robust')
+    >>> result = sandwich_estimator(H, scores, method="robust")
     >>> print(result.std_errors)
 
     See Also
@@ -411,7 +413,7 @@ def compute_mle_standard_errors(
     model,
     params: np.ndarray,
     se_type: str = "cluster",
-    entity_id: Optional[np.ndarray] = None,
+    entity_id: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Compute standard errors for MLE models.
@@ -474,7 +476,7 @@ def bootstrap_mle(
     y: np.ndarray,
     X: np.ndarray,
     n_bootstrap: int = 999,
-    cluster_ids: Optional[np.ndarray] = None,
+    cluster_ids: np.ndarray | None = None,
     seed: int = 42,
 ) -> MLECovarianceResult:
     """
@@ -544,6 +546,7 @@ def bootstrap_mle(
     ...     def neg_ll(beta):
     ...         eta = X @ beta
     ...         return -np.sum(y * eta - np.log1p(np.exp(eta)))
+    ...
     ...     result = minimize(neg_ll, np.zeros(X.shape[1]))
     ...     return result.x
     >>>
@@ -573,7 +576,7 @@ def bootstrap_mle(
 
             try:
                 bootstrap_estimates[b] = estimate_func(y_boot, X_boot)
-            except:
+            except Exception:
                 # If estimation fails, use NaN
                 bootstrap_estimates[b] = np.nan
 
@@ -597,7 +600,7 @@ def bootstrap_mle(
 
             try:
                 bootstrap_estimates[b] = estimate_func(y_boot, X_boot)
-            except:
+            except Exception:
                 bootstrap_estimates[b] = np.nan
 
     # Remove failed replications
@@ -608,8 +611,9 @@ def bootstrap_mle(
         import warnings
 
         warnings.warn(
-            f"More than 50% of bootstrap replications failed. " f"Results may be unreliable.",
+            "More than 50% of bootstrap replications failed. Results may be unreliable.",
             UserWarning,
+            stacklevel=2,
         )
 
     # Compute covariance from bootstrap estimates

@@ -1,8 +1,6 @@
 """Tests for Heckman selection model."""
 
-import numpy as np
-import pandas as pd
-import pytest
+from __future__ import annotations
 
 
 class TestPanelHeckman:

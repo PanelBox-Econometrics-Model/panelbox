@@ -9,7 +9,6 @@ Functions:
 """
 
 import os
-from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -289,7 +288,7 @@ def model_comparison_table(results_list, model_names, criteria=None):
     """
     if len(results_list) != len(model_names):
         raise ValueError(
-            f"Length mismatch: {len(results_list)} results vs " f"{len(model_names)} model names."
+            f"Length mismatch: {len(results_list)} results vs {len(model_names)} model names."
         )
 
     all_criteria = ["aic", "bic", "hqic", "loglik"]
@@ -298,7 +297,7 @@ def model_comparison_table(results_list, model_names, criteria=None):
     else:
         invalid = [c for c in criteria if c not in all_criteria]
         if invalid:
-            raise ValueError(f"Unknown criteria: {invalid}. " f"Valid options: {all_criteria}")
+            raise ValueError(f"Unknown criteria: {invalid}. Valid options: {all_criteria}")
 
     # Column-name mapping (lowercase attr -> display label)
     label_map = {"aic": "AIC", "bic": "BIC", "hqic": "HQIC", "loglik": "LogLik"}
@@ -479,7 +478,7 @@ def granger_causality_summary(results, significance=0.05):
                 gc = results.granger_causality(cause=cause_name, effect=effect_name)
                 wald_stat = float(gc.wald_stat)
                 p_value = float(gc.p_value)
-            except Exception as exc:
+            except Exception:
                 # Record the failure but do not crash
                 wald_stat = np.nan
                 p_value = np.nan

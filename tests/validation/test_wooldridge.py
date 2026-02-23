@@ -148,9 +148,6 @@ class TestWooldridgeAR:
         """Test error when no valid observations after differencing."""
         # Create panel with all constant residuals (would lead to no variance)
         # This is a contrived case to trigger line 243
-        import pandas as pd
-
-        from panelbox.core.results import PanelResults
 
         # Create minimal result object with problematic residuals structure
         # that would fail differencing
@@ -169,9 +166,6 @@ class TestWooldridgeAR:
 
     def test_missing_entity_time_index(self, balanced_panel_data):
         """Test error when results lack entity_index and time_index."""
-        import pandas as pd
-
-        from panelbox.core.results import PanelResults
 
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()

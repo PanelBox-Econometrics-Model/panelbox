@@ -16,7 +16,7 @@ Date: 2026-02-16
 Version: 1.0.0
 """
 
-from typing import Callable, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ def generate_heteroskedastic_data(
     hetero_type: str = "multiplicative",
     hetero_strength: float = 1.0,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     """
     Generate cross-sectional data with heteroskedasticity.
 
@@ -93,7 +93,7 @@ def generate_heteroskedastic_data(
     y = y_mean + errors
 
     # Create DataFrame
-    data = pd.DataFrame(X, columns=[f"X{i+1}" for i in range(k)])
+    data = pd.DataFrame(X, columns=[f"X{i + 1}" for i in range(k)])
     data.insert(0, "y", y)
 
     params = {
@@ -115,7 +115,7 @@ def generate_autocorrelated_panel(
     rho: float = 0.7,
     include_fixed_effects: bool = True,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     """
     Generate panel data with AR(1) autocorrelated errors.
 
@@ -177,7 +177,7 @@ def generate_autocorrelated_panel(
         y = y_mean + errors
 
         # Create entity DataFrame
-        entity_df = pd.DataFrame(X_entity, columns=[f"X{i+1}" for i in range(k)])
+        entity_df = pd.DataFrame(X_entity, columns=[f"X{i + 1}" for i in range(k)])
         entity_df["entity"] = entity_id
         entity_df["time"] = np.arange(1, n_time + 1)
         entity_df["y"] = y
@@ -186,7 +186,7 @@ def generate_autocorrelated_panel(
 
     # Combine all entities
     data = pd.concat(data_list, ignore_index=True)
-    data = data[["entity", "time", "y"] + [f"X{i+1}" for i in range(k)]]
+    data = data[["entity", "time", "y"] + [f"X{i + 1}" for i in range(k)]]
 
     params = {
         "intercept": intercept,
@@ -208,7 +208,7 @@ def generate_spatial_panel(
     spatial_decay: float = 0.3,
     spatial_range: float = 5.0,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     """
     Generate panel data with spatial correlation.
 
@@ -293,7 +293,7 @@ def generate_spatial_panel(
         y = y_mean + spatial_errors
 
         # Create time period DataFrame
-        time_df = pd.DataFrame(X_t, columns=[f"X{i+1}" for i in range(k)])
+        time_df = pd.DataFrame(X_t, columns=[f"X{i + 1}" for i in range(k)])
         time_df["entity"] = np.arange(1, n_entities + 1)
         time_df["time"] = t
         time_df["y"] = y
@@ -304,7 +304,9 @@ def generate_spatial_panel(
 
     # Combine all time periods
     data = pd.concat(data_list, ignore_index=True)
-    data = data[["entity", "time", "y"] + [f"X{i+1}" for i in range(k)] + ["latitude", "longitude"]]
+    data = data[
+        ["entity", "time", "y"] + [f"X{i + 1}" for i in range(k)] + ["latitude", "longitude"]
+    ]
 
     params = {
         "intercept": intercept,
@@ -327,7 +329,7 @@ def generate_clustered_data(
     k: int = 2,
     within_cluster_corr: float = 0.5,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     """
     Generate cross-sectional data with clustered errors.
 
@@ -397,7 +399,7 @@ def generate_clustered_data(
         y = y_mean + errors
 
         # Create cluster DataFrame
-        cluster_df = pd.DataFrame(X_cluster, columns=[f"X{i+1}" for i in range(k)])
+        cluster_df = pd.DataFrame(X_cluster, columns=[f"X{i + 1}" for i in range(k)])
         cluster_df["cluster_id"] = cluster_id
         cluster_df["y"] = y
 
@@ -405,7 +407,7 @@ def generate_clustered_data(
 
     # Combine all clusters
     data = pd.concat(data_list, ignore_index=True)
-    data = data[["cluster_id", "y"] + [f"X{i+1}" for i in range(k)]]
+    data = data[["cluster_id", "y"] + [f"X{i + 1}" for i in range(k)]]
 
     params = {
         "intercept": intercept,
@@ -428,7 +430,7 @@ def generate_panel_with_effects(
     include_entity_fe: bool = True,
     include_time_fe: bool = True,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     """
     Generate panel data with entity and/or time fixed effects.
 
@@ -499,13 +501,13 @@ def generate_panel_with_effects(
             # Create observation
             obs = {"entity": entity_id, "time": t, "y": y}
             for i in range(k):
-                obs[f"X{i+1}"] = X_it[i]
+                obs[f"X{i + 1}"] = X_it[i]
 
             data_list.append(obs)
 
     # Create DataFrame
     data = pd.DataFrame(data_list)
-    data = data[["entity", "time", "y"] + [f"X{i+1}" for i in range(k)]]
+    data = data[["entity", "time", "y"] + [f"X{i + 1}" for i in range(k)]]
 
     params = {
         "intercept": intercept,
@@ -522,9 +524,9 @@ def generate_panel_with_effects(
 
 # Export all functions
 __all__ = [
-    "generate_heteroskedastic_data",
     "generate_autocorrelated_panel",
-    "generate_spatial_panel",
     "generate_clustered_data",
+    "generate_heteroskedastic_data",
     "generate_panel_with_effects",
+    "generate_spatial_panel",
 ]

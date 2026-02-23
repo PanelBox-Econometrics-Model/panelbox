@@ -18,14 +18,13 @@ Date: 2026-02-16
 Version: 1.0.0
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.lines import Line2D
-from matplotlib.patches import Rectangle
 
 # Set default plotting style
 sns.set_style("whitegrid")
@@ -45,7 +44,7 @@ def plot_residuals(
     ylabel: str = "Residuals",
     alpha: float = 0.5,
     add_lowess: bool = True,
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
     ax: Optional[plt.Axes] = None,
 ) -> plt.Figure:
     """
@@ -115,7 +114,7 @@ def plot_acf_pacf(
     data: Union[np.ndarray, pd.Series],
     lags: int = 20,
     title: str = "ACF and PACF",
-    figsize: Tuple[int, int] = (14, 5),
+    figsize: tuple[int, int] = (14, 5),
     alpha: float = 0.05,
 ) -> plt.Figure:
     """
@@ -203,11 +202,11 @@ def plot_acf_pacf(
 
 def plot_se_comparison(
     coef_name: str,
-    estimates: Dict[str, float],
-    std_errors: Dict[str, float],
-    methods: Optional[List[str]] = None,
+    estimates: dict[str, float],
+    std_errors: dict[str, float],
+    methods: Optional[list[str]] = None,
     title: Optional[str] = None,
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
     orientation: str = "horizontal",
 ) -> plt.Figure:
     """
@@ -322,7 +321,7 @@ def plot_quantile_process(
     coef_name: str = "Coefficient",
     ols_estimate: Optional[float] = None,
     title: Optional[str] = None,
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
 ) -> plt.Figure:
     """
     Plot coefficient estimates across quantiles (quantile process plot).
@@ -401,7 +400,7 @@ def plot_spatial_kernel(
     kernel_type: str = "Bartlett",
     bandwidth: Optional[float] = None,
     title: Optional[str] = None,
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
 ) -> plt.Figure:
     """
     Plot kernel weights vs distance for spatial HAC standard errors.
@@ -464,14 +463,14 @@ def plot_spatial_kernel(
 
 
 def plot_forest_ci(
-    variables: List[str],
-    estimates: List[float],
-    ci_lower: List[float],
-    ci_upper: List[float],
-    groups: Optional[List[str]] = None,
+    variables: list[str],
+    estimates: list[float],
+    ci_lower: list[float],
+    ci_upper: list[float],
+    groups: Optional[list[str]] = None,
     title: str = "Forest Plot with Confidence Intervals",
     xlabel: str = "Estimate",
-    figsize: Tuple[int, int] = (10, 8),
+    figsize: tuple[int, int] = (10, 8),
     reference_line: float = 0.0,
 ) -> plt.Figure:
     """
@@ -584,7 +583,7 @@ def plot_heteroskedasticity_test(
     fitted: np.ndarray,
     squared_residuals: np.ndarray,
     title: str = "Heteroskedasticity Diagnostic",
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
 ) -> plt.Figure:
     """
     Plot squared residuals vs fitted values to visualize heteroskedasticity.
@@ -635,11 +634,11 @@ def plot_heteroskedasticity_test(
 
 # Export all functions
 __all__ = [
-    "plot_residuals",
     "plot_acf_pacf",
-    "plot_se_comparison",
-    "plot_quantile_process",
-    "plot_spatial_kernel",
     "plot_forest_ci",
     "plot_heteroskedasticity_test",
+    "plot_quantile_process",
+    "plot_residuals",
+    "plot_se_comparison",
+    "plot_spatial_kernel",
 ]

@@ -8,6 +8,8 @@ This package provides numerical optimization tools including:
 - Constrained optimization
 """
 
+from __future__ import annotations
+
 from panelbox.optimization.numerical_grad import approx_gradient, approx_hessian
 
 __all__ = [

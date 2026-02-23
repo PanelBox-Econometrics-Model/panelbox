@@ -12,15 +12,19 @@ References
        Conditional Mean Independence Assumptions." Journal of Econometrics, 68(1), 115-132.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import stats
 
+logger = logging.getLogger(__name__)
+
 
 def compute_imr(
     linear_pred: np.ndarray,
-    selected: Optional[np.ndarray] = None,
+    selected: np.ndarray | None = None,
     clip_bounds: tuple[float, float] = (1e-10, 1 - 1e-10),
 ) -> np.ndarray:
     """
@@ -174,7 +178,7 @@ def test_selection_effect(
     Examples
     --------
     >>> result = test_selection_effect(imr_coefficient=0.523, imr_se=0.145)
-    >>> print(result['interpretation'])
+    >>> print(result["interpretation"])
     Selection bias detected (ρ ≠ 0, p=0.0003)
     """
     # t-statistic for H0: θ = 0

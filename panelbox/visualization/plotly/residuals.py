@@ -5,7 +5,10 @@ This module provides interactive Plotly charts for visualizing
 residual diagnostics from panel data models.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -13,6 +16,8 @@ from scipy import stats
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("residual_qq_plot")
@@ -38,7 +43,7 @@ class QQPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = QQPlot()
-    >>> chart.create(data={'residuals': model.resid})
+    >>> chart.create(data={"residuals": model.resid})
     >>> html = chart.to_html()
 
     Notes
@@ -48,7 +53,7 @@ class QQPlot(PlotlyChartBase):
     - Confidence bands help assess significance of deviations
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate Q-Q plot data."""
         super()._validate_data(data)
 
@@ -59,7 +64,7 @@ class QQPlot(PlotlyChartBase):
         if len(residuals) == 0:
             raise ValueError("Residuals array cannot be empty")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("standardized", True)
@@ -67,7 +72,7 @@ class QQPlot(PlotlyChartBase):
         processed.setdefault("confidence_level", 0.95)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create Q-Q plot."""
         residuals = np.asarray(data["residuals"])
         standardized = data["standardized"]
@@ -95,7 +100,7 @@ class QQPlot(PlotlyChartBase):
                 y=sorted_resid,
                 mode="markers",
                 name="Residuals",
-                marker=dict(color=self.theme.color_scheme[0], size=6, opacity=0.6),
+                marker={"color": self.theme.color_scheme[0], "size": 6, "opacity": 0.6},
                 hovertemplate=(
                     "<b>Theoretical Quantile:</b> %{x:.3f}<br>"
                     "<b>Sample Quantile:</b> %{y:.3f}<br>"
@@ -114,7 +119,7 @@ class QQPlot(PlotlyChartBase):
                 y=[line_min, line_max],
                 mode="lines",
                 name="Normal Distribution",
-                line=dict(color="red", width=2, dash="dash"),
+                line={"color": "red", "width": 2, "dash": "dash"},
                 hovertemplate="<b>Perfect Normal</b><extra></extra>",
             )
         )
@@ -136,8 +141,8 @@ class QQPlot(PlotlyChartBase):
                     x=theoretical_quantiles,
                     y=upper_band,
                     mode="lines",
-                    name=f"{confidence_level*100:.0f}% Confidence",
-                    line=dict(color="rgba(128, 128, 128, 0.3)", width=1),
+                    name=f"{confidence_level * 100:.0f}% Confidence",
+                    line={"color": "rgba(128, 128, 128, 0.3)", "width": 1},
                     showlegend=True,
                     hoverinfo="skip",
                 )
@@ -149,7 +154,7 @@ class QQPlot(PlotlyChartBase):
                     y=lower_band,
                     mode="lines",
                     name="",
-                    line=dict(color="rgba(128, 128, 128, 0.3)", width=1),
+                    line={"color": "rgba(128, 128, 128, 0.3)", "width": 1},
                     fill="tonexty",
                     fillcolor="rgba(128, 128, 128, 0.1)",
                     showlegend=False,
@@ -190,10 +195,7 @@ class ResidualVsFittedPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = ResidualVsFittedPlot()
-    >>> chart.create(data={
-    ...     'fitted': model.fittedvalues,
-    ...     'residuals': model.resid
-    ... })
+    >>> chart.create(data={"fitted": model.fittedvalues, "residuals": model.resid})
 
     Notes
     -----
@@ -202,7 +204,7 @@ class ResidualVsFittedPlot(PlotlyChartBase):
     - Curved pattern suggests non-linearity
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate residual vs fitted data."""
         super()._validate_data(data)
 
@@ -217,14 +219,14 @@ class ResidualVsFittedPlot(PlotlyChartBase):
         if len(fitted) != len(residuals):
             raise ValueError("fitted and residuals must have same length")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("add_lowess", True)
         processed.setdefault("add_reference", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create residual vs fitted plot."""
         fitted = np.asarray(data["fitted"])
         residuals = np.asarray(data["residuals"])
@@ -240,9 +242,9 @@ class ResidualVsFittedPlot(PlotlyChartBase):
                 y=residuals,
                 mode="markers",
                 name="Residuals",
-                marker=dict(color=self.theme.color_scheme[0], size=6, opacity=0.6),
+                marker={"color": self.theme.color_scheme[0], "size": 6, "opacity": 0.6},
                 hovertemplate=(
-                    "<b>Fitted:</b> %{x:.3f}<br>" "<b>Residual:</b> %{y:.3f}<br>" "<extra></extra>"
+                    "<b>Fitted:</b> %{x:.3f}<br><b>Residual:</b> %{y:.3f}<br><extra></extra>"
                 ),
             )
         )
@@ -272,7 +274,7 @@ class ResidualVsFittedPlot(PlotlyChartBase):
                         y=smoothed[:, 1],
                         mode="lines",
                         name="LOWESS Smooth",
-                        line=dict(color="blue", width=2),
+                        line={"color": "blue", "width": 2},
                         hovertemplate="<b>Smoothed Trend</b><extra></extra>",
                     )
                 )
@@ -313,10 +315,7 @@ class ScaleLocationPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = ScaleLocationPlot()
-    >>> chart.create(data={
-    ...     'fitted': model.fittedvalues,
-    ...     'residuals': model.resid
-    ... })
+    >>> chart.create(data={"fitted": model.fittedvalues, "residuals": model.resid})
 
     Notes
     -----
@@ -324,7 +323,7 @@ class ScaleLocationPlot(PlotlyChartBase):
     - Upward/downward trend indicates heteroskedasticity
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate scale-location data."""
         super()._validate_data(data)
 
@@ -333,13 +332,13 @@ class ScaleLocationPlot(PlotlyChartBase):
             if field not in data:
                 raise ValueError(f"Scale-location data must contain '{field}'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("add_lowess", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create scale-location plot."""
         fitted = np.asarray(data["fitted"])
         residuals = np.asarray(data["residuals"])
@@ -360,7 +359,7 @@ class ScaleLocationPlot(PlotlyChartBase):
                 y=sqrt_abs_std_resid,
                 mode="markers",
                 name="Residuals",
-                marker=dict(color=self.theme.color_scheme[0], size=6, opacity=0.6),
+                marker={"color": self.theme.color_scheme[0], "size": 6, "opacity": 0.6},
                 hovertemplate=(
                     "<b>Fitted:</b> %{x:.3f}<br>"
                     "<b>√|Std. Residual|:</b> %{y:.3f}<br>"
@@ -382,7 +381,7 @@ class ScaleLocationPlot(PlotlyChartBase):
                         y=smoothed[:, 1],
                         mode="lines",
                         name="LOWESS Smooth",
-                        line=dict(color="red", width=2),
+                        line={"color": "red", "width": 2},
                         hovertemplate="<b>Smoothed Trend</b><extra></extra>",
                     )
                 )
@@ -423,11 +422,13 @@ class ResidualVsLeveragePlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = ResidualVsLeveragePlot()
-    >>> chart.create(data={
-    ...     'residuals': std_residuals,
-    ...     'leverage': leverage_values,
-    ...     'cooks_d': cooks_distance
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "residuals": std_residuals,
+    ...         "leverage": leverage_values,
+    ...         "cooks_d": cooks_distance,
+    ...     }
+    ... )
 
     Notes
     -----
@@ -436,7 +437,7 @@ class ResidualVsLeveragePlot(PlotlyChartBase):
     - Cook's distance > 1.0 strongly suggests influential point
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate leverage data."""
         super()._validate_data(data)
 
@@ -445,13 +446,13 @@ class ResidualVsLeveragePlot(PlotlyChartBase):
             if field not in data:
                 raise ValueError(f"Leverage plot data must contain '{field}'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("show_contours", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create residuals vs leverage plot."""
         residuals = np.asarray(data["residuals"])
         leverage = np.asarray(data["leverage"])
@@ -477,14 +478,14 @@ class ResidualVsLeveragePlot(PlotlyChartBase):
             "y": residuals,
             "mode": "markers",
             "name": "Observations",
-            "marker": dict(
-                size=6,
-                opacity=0.6,
-                color=colors,
-                colorscale="Reds" if cooks_d is not None else None,
-                showscale=cooks_d is not None,
-                colorbar=dict(title=colorbar_title) if cooks_d is not None else None,
-            ),
+            "marker": {
+                "size": 6,
+                "opacity": 0.6,
+                "color": colors,
+                "colorscale": "Reds" if cooks_d is not None else None,
+                "showscale": cooks_d is not None,
+                "colorbar": {"title": colorbar_title} if cooks_d is not None else None,
+            },
             "hovertemplate": (
                 "<b>Leverage:</b> %{x:.3f}<br>"
                 "<b>Std. Residual:</b> %{y:.3f}<br>"
@@ -514,16 +515,18 @@ class ResidualVsLeveragePlot(PlotlyChartBase):
                 resid_contour = np.where(np.isfinite(resid_contour), resid_contour, np.nan)
 
                 # Add positive and negative contours
-                for sign, name_suffix in [(1, ""), (-1, "")]:
+                for sign, _name_suffix in [(1, ""), (-1, "")]:
                     fig.add_trace(
                         go.Scatter(
                             x=lev_range,
                             y=sign * resid_contour,
                             mode="lines",
                             name=f"Cook's D = {d_level}" if sign == 1 else "",
-                            line=dict(
-                                color="red" if d_level == 0.5 else "darkred", width=1, dash="dash"
-                            ),
+                            line={
+                                "color": "red" if d_level == 0.5 else "darkred",
+                                "width": 1,
+                                "dash": "dash",
+                            },
                             showlegend=(sign == 1),
                             hoverinfo="skip",
                         )
@@ -562,10 +565,7 @@ class ResidualTimeSeriesPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = ResidualTimeSeriesPlot()
-    >>> chart.create(data={
-    ...     'residuals': model.resid,
-    ...     'time_index': dates
-    ... })
+    >>> chart.create(data={"residuals": model.resid, "time_index": dates})
 
     Notes
     -----
@@ -574,14 +574,14 @@ class ResidualTimeSeriesPlot(PlotlyChartBase):
     - Points outside ±2σ bands may be outliers
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate time series data."""
         super()._validate_data(data)
 
         if "residuals" not in data:
             raise ValueError("Time series data must contain 'residuals'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         residuals = np.asarray(processed["residuals"])
@@ -592,7 +592,7 @@ class ResidualTimeSeriesPlot(PlotlyChartBase):
         processed.setdefault("add_bands", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create residual time series plot."""
         residuals = np.asarray(data["residuals"])
         time_index = np.asarray(data["time_index"])
@@ -607,11 +607,9 @@ class ResidualTimeSeriesPlot(PlotlyChartBase):
                 y=residuals,
                 mode="lines+markers",
                 name="Residuals",
-                line=dict(color=self.theme.color_scheme[0], width=1),
-                marker=dict(size=4, opacity=0.6),
-                hovertemplate=(
-                    "<b>Time:</b> %{x}<br>" "<b>Residual:</b> %{y:.3f}<br>" "<extra></extra>"
-                ),
+                line={"color": self.theme.color_scheme[0], "width": 1},
+                marker={"size": 4, "opacity": 0.6},
+                hovertemplate=("<b>Time:</b> %{x}<br><b>Residual:</b> %{y:.3f}<br><extra></extra>"),
             )
         )
 
@@ -673,7 +671,7 @@ class ResidualDistributionPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = ResidualDistributionPlot()
-    >>> chart.create(data={'residuals': model.resid})
+    >>> chart.create(data={"residuals": model.resid})
 
     Notes
     -----
@@ -682,14 +680,14 @@ class ResidualDistributionPlot(PlotlyChartBase):
     - Heavy tails suggest outliers or non-normal errors
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate distribution data."""
         super()._validate_data(data)
 
         if "residuals" not in data:
             raise ValueError("Distribution data must contain 'residuals'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("bins", "auto")
@@ -697,7 +695,7 @@ class ResidualDistributionPlot(PlotlyChartBase):
         processed.setdefault("show_normal", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create residual distribution plot."""
         residuals = np.asarray(data["residuals"])
         bins = data["bins"]
@@ -733,7 +731,7 @@ class ResidualDistributionPlot(PlotlyChartBase):
                         y=kde_values,
                         mode="lines",
                         name="KDE",
-                        line=dict(color="blue", width=2),
+                        line={"color": "blue", "width": 2},
                         hovertemplate="<b>Density:</b> %{y:.4f}<extra></extra>",
                     )
                 )
@@ -753,7 +751,7 @@ class ResidualDistributionPlot(PlotlyChartBase):
                     y=normal_pdf,
                     mode="lines",
                     name="Normal Distribution",
-                    line=dict(color="red", width=2, dash="dash"),
+                    line={"color": "red", "width": 2, "dash": "dash"},
                     hovertemplate="<b>Normal PDF:</b> %{y:.4f}<extra></extra>",
                 )
             )
@@ -794,11 +792,7 @@ class PartialRegressionPlot(PlotlyChartBase):
     Examples
     --------
     >>> chart = PartialRegressionPlot()
-    >>> chart.create(data={
-    ...     'y_resid': y_residuals,
-    ...     'x_resid': x_residuals,
-    ...     'variable_name': 'GDP'
-    ... })
+    >>> chart.create(data={"y_resid": y_residuals, "x_resid": x_residuals, "variable_name": "GDP"})
 
     Notes
     -----
@@ -807,7 +801,7 @@ class PartialRegressionPlot(PlotlyChartBase):
     - Used for assessing individual variable contribution
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate partial regression data."""
         super()._validate_data(data)
 
@@ -816,7 +810,7 @@ class PartialRegressionPlot(PlotlyChartBase):
             if field not in data:
                 raise ValueError(f"Partial regression data must contain '{field}'")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("variable_name", "X")
@@ -824,7 +818,7 @@ class PartialRegressionPlot(PlotlyChartBase):
         processed.setdefault("add_confidence", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create partial regression plot."""
         y_resid = np.asarray(data["y_resid"])
         x_resid = np.asarray(data["x_resid"])
@@ -841,7 +835,7 @@ class PartialRegressionPlot(PlotlyChartBase):
                 y=y_resid,
                 mode="markers",
                 name="Observations",
-                marker=dict(color=self.theme.color_scheme[0], size=6, opacity=0.6),
+                marker={"color": self.theme.color_scheme[0], "size": 6, "opacity": 0.6},
                 hovertemplate=(
                     f"<b>{variable_name} Residual:</b> %{{x:.3f}}<br>"
                     "<b>y Residual:</b> %{y:.3f}<br>"
@@ -865,7 +859,7 @@ class PartialRegressionPlot(PlotlyChartBase):
                     y=y_fit,
                     mode="lines",
                     name="Regression Line",
-                    line=dict(color="red", width=2),
+                    line={"color": "red", "width": 2},
                     hovertemplate=f"<b>Slope:</b> {slope:.4f}<extra></extra>",
                 )
             )
@@ -897,7 +891,7 @@ class PartialRegressionPlot(PlotlyChartBase):
                         y=y_fit + margin,
                         mode="lines",
                         name="95% CI",
-                        line=dict(color="rgba(128, 128, 128, 0.3)", width=1),
+                        line={"color": "rgba(128, 128, 128, 0.3)", "width": 1},
                         showlegend=True,
                         hoverinfo="skip",
                     )
@@ -909,7 +903,7 @@ class PartialRegressionPlot(PlotlyChartBase):
                         y=y_fit - margin,
                         mode="lines",
                         name="",
-                        line=dict(color="rgba(128, 128, 128, 0.3)", width=1),
+                        line={"color": "rgba(128, 128, 128, 0.3)", "width": 1},
                         fill="tonexty",
                         fillcolor="rgba(128, 128, 128, 0.1)",
                         showlegend=False,

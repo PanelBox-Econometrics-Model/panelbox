@@ -9,12 +9,17 @@ Reference:
     cointegration in panel data. Journal of econometrics, 90(1), 1-44.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -109,7 +114,7 @@ class KaoTest:
     >>> data = pb.load_grunfeld()
     >>>
     >>> # Test cointegration between invest and value
-    >>> kao = pb.KaoTest(data, 'invest', ['value'], 'firm', 'year')
+    >>> kao = pb.KaoTest(data, "invest", ["value"], "firm", "year")
     >>> result = kao.run()
     >>> print(result)
 

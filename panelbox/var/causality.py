@@ -15,14 +15,18 @@ References
   in heterogeneous panels". Economic Modelling, 29(4), 1450-1460.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-from panelbox.var.inference import WaldTestResult, wald_test
+from panelbox.var.inference import wald_test
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,7 +62,7 @@ class GrangerCausalityResult:
     f_stat: float
     df: int
     p_value: float
-    p_value_f: Optional[float] = None
+    p_value_f: float | None = None
     conclusion: str = ""
     lags_tested: int = 0
     hypothesis: str = ""
@@ -200,19 +204,16 @@ class DumitrescuHurlinResult:
         lines.append(f"Recommended: Use {self.recommended_stat}")
 
         # Conclusion based on recommended statistic
-        if self.recommended_stat == "Z_tilde":
-            pval = self.Z_tilde_pvalue
-        else:
-            pval = self.Z_bar_pvalue
+        pval = self.Z_tilde_pvalue if self.recommended_stat == "Z_tilde" else self.Z_bar_pvalue
 
         if pval < 0.01:
-            conclusion = f"Rejects H0 at 1%: Granger causality detected (***)"
+            conclusion = "Rejects H0 at 1%: Granger causality detected (***)"
         elif pval < 0.05:
-            conclusion = f"Rejects H0 at 5%: Granger causality detected (**)"
+            conclusion = "Rejects H0 at 5%: Granger causality detected (**)"
         elif pval < 0.10:
-            conclusion = f"Rejects H0 at 10%: Granger causality detected (*)"
+            conclusion = "Rejects H0 at 10%: Granger causality detected (*)"
         else:
-            conclusion = f"Fails to reject H0: No evidence of Granger causality"
+            conclusion = "Fails to reject H0: No evidence of Granger causality"
 
         lines.append("")
         lines.append(f"Conclusion: {conclusion}")
@@ -318,7 +319,7 @@ class DumitrescuHurlinResult:
                     y=[0, y_max * 1.1],
                     mode="lines",
                     name=f"Critical value (5%): {critical_value:.2f}",
-                    line=dict(color="red", dash="dash", width=2),
+                    line={"color": "red", "dash": "dash", "width": 2},
                 )
             )
 
@@ -329,7 +330,7 @@ class DumitrescuHurlinResult:
                     y=[0, y_max * 1.1],
                     mode="lines",
                     name=f"W̄ = {self.W_bar:.2f}",
-                    line=dict(color="green", width=2),
+                    line={"color": "green", "width": 2},
                 )
             )
 
@@ -396,7 +397,7 @@ class InstantaneousCausalityResult:
         lines.append("=" * 70)
         lines.append("Instantaneous Causality Test")
         lines.append("=" * 70)
-        lines.append(f"Null Hypothesis: No contemporaneous correlation")
+        lines.append("Null Hypothesis: No contemporaneous correlation")
         lines.append("")
         lines.append(f"Variable 1:  {self.var1}")
         lines.append(f"Variable 2:  {self.var2}")
@@ -408,13 +409,13 @@ class InstantaneousCausalityResult:
         lines.append("")
 
         if self.p_value < 0.01:
-            conclusion = f"Rejects H0 at 1%: Significant contemporaneous correlation (***)"
+            conclusion = "Rejects H0 at 1%: Significant contemporaneous correlation (***)"
         elif self.p_value < 0.05:
-            conclusion = f"Rejects H0 at 5%: Significant contemporaneous correlation (**)"
+            conclusion = "Rejects H0 at 5%: Significant contemporaneous correlation (**)"
         elif self.p_value < 0.10:
-            conclusion = f"Rejects H0 at 10%: Significant contemporaneous correlation (*)"
+            conclusion = "Rejects H0 at 10%: Significant contemporaneous correlation (*)"
         else:
-            conclusion = f"Fails to reject H0: No significant contemporaneous correlation"
+            conclusion = "Fails to reject H0: No significant contemporaneous correlation"
 
         lines.append(f"Conclusion: {conclusion}")
         lines.append("=" * 70)
@@ -430,7 +431,7 @@ class InstantaneousCausalityResult:
 
 
 def construct_granger_restriction_matrix(
-    exog_names: List[str], causing_var: str, lags: int
+    exog_names: list[str], causing_var: str, lags: int
 ) -> np.ndarray:
     """
     Construct restriction matrix for Granger causality test.
@@ -469,7 +470,7 @@ def construct_granger_restriction_matrix(
             raise ValueError(
                 f"Lag {lag} of variable '{causing_var}' not found in regressors. "
                 f"Expected '{lag_name}' in {exog_names}"
-            )
+            ) from None
 
     return R
 
@@ -477,11 +478,11 @@ def construct_granger_restriction_matrix(
 def granger_causality_wald(
     params: np.ndarray,
     cov_params: np.ndarray,
-    exog_names: List[str],
+    exog_names: list[str],
     causing_var: str,
     caused_var: str,
     lags: int,
-    n_obs: Optional[int] = None,
+    n_obs: int | None = None,
 ) -> GrangerCausalityResult:
     """
     Perform Granger causality test via Wald test.
@@ -544,7 +545,7 @@ def granger_causality_wald(
     )
 
 
-def dumitrescu_hurlin_moments(T: int, p: int, K: int) -> Tuple[float, float]:
+def dumitrescu_hurlin_moments(T: int, p: int, K: int) -> tuple[float, float]:
     """
     Compute exact moments for Dumitrescu-Hurlin test.
 
@@ -654,7 +655,7 @@ def dumitrescu_hurlin_test(
         raise ValueError(f"Variables '{cause}' and/or '{effect}' not found in data")
 
     if entity_col not in data.columns or time_col not in data.columns:
-        raise ValueError(f"Entity or time column not found in data")
+        raise ValueError("Entity or time column not found in data")
 
     # Get entities
     entities = data[entity_col].unique()
@@ -681,7 +682,7 @@ def dumitrescu_hurlin_test(
         # Check sufficient observations
         if T_i <= lags + 1:
             raise ValueError(
-                f"Entity {entity_id} has insufficient observations: " f"T={T_i}, need > {lags + 1}"
+                f"Entity {entity_id} has insufficient observations: T={T_i}, need > {lags + 1}"
             )
 
         # Construct lagged data for individual regression
@@ -690,7 +691,7 @@ def dumitrescu_hurlin_test(
         x = entity_data[cause].values
 
         # Create lag matrix
-        n = len(y)
+        len(y)
         X_lags = []
 
         # Add lags of y (effect variable)
@@ -717,8 +718,8 @@ def dumitrescu_hurlin_test(
             residuals = y_reg - X_reg @ beta_i
             sigma2 = np.sum(residuals**2) / (len(y_reg) - len(beta_i))
             cov_beta_i = sigma2 * np.linalg.inv(X_reg.T @ X_reg)
-        except np.linalg.LinAlgError:
-            raise ValueError(f"Singular matrix for entity {entity_id}")
+        except np.linalg.LinAlgError as err:
+            raise ValueError(f"Singular matrix for entity {entity_id}") from err
 
         # Construct restriction matrix for Granger test
         # We want to test if all lags of x (cause) are zero
@@ -765,10 +766,7 @@ def dumitrescu_hurlin_test(
         Z_bar_pvalue = np.nan
 
     # Decide which statistic to recommend
-    if T_avg < 10:
-        recommended = "Z_tilde"
-    else:
-        recommended = "Z_bar"
+    recommended = "Z_tilde" if T_avg < 10 else "Z_bar"
 
     return DumitrescuHurlinResult(
         cause=cause,
@@ -833,10 +831,7 @@ def instantaneous_causality(
         lr_stat = np.inf
 
     # P-value from χ²(1)
-    if np.isfinite(lr_stat):
-        p_value = 1 - stats.chi2.cdf(lr_stat, df=1)
-    else:
-        p_value = 0.0
+    p_value = 1 - stats.chi2.cdf(lr_stat, df=1) if np.isfinite(lr_stat) else 0.0
 
     return InstantaneousCausalityResult(
         var1=var1, var2=var2, correlation=correlation, lr_stat=lr_stat, p_value=p_value, n_obs=n_obs
@@ -886,7 +881,7 @@ def granger_causality_matrix(result, significance_level: float = 0.05) -> pd.Dat
     return df
 
 
-def instantaneous_causality_matrix(result) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def instantaneous_causality_matrix(result) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute instantaneous causality matrix for all variable pairs.
 
@@ -917,7 +912,6 @@ def instantaneous_causality_matrix(result) -> Tuple[pd.DataFrame, pd.DataFrame]:
     corr_matrix = np.corrcoef(residuals, rowvar=False)
 
     # Compute p-values
-    n_obs = result.n_obs
     pvalue_matrix = np.full((K, K), np.nan)
 
     for i in range(K):
@@ -936,11 +930,11 @@ def instantaneous_causality_matrix(result) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 def panel_granger_causality(
     data: pd.DataFrame,
-    variables: List[str],
+    variables: list[str],
     lags: int,
     entity_col: str = "entity",
     time_col: str = "time",
-) -> Dict[str, List[Tuple[str, "DumitrescuHurlinResult"]]]:
+) -> dict[str, list[tuple[str, DumitrescuHurlinResult]]]:
     """
     Test pairwise Granger causality for all variable pairs.
 
@@ -965,13 +959,9 @@ def panel_granger_causality(
 
     Examples
     --------
-    >>> result = panel_granger_causality(
-    ...     data=df,
-    ...     variables=['y1', 'y2', 'y3'],
-    ...     lags=1
-    ... )
+    >>> result = panel_granger_causality(data=df, variables=["y1", "y2", "y3"], lags=1)
     >>> # result['y1'] contains causes of y1
-    >>> for cause, test_result in result['y1']:
+    >>> for cause, test_result in result["y1"]:
     ...     print(f"{cause} -> y1: p={test_result.Z_bar_pvalue:.4f}")
     """
     results = {}
@@ -1001,7 +991,7 @@ def panel_granger_causality(
 
 def panel_granger_causality_matrix(
     data: pd.DataFrame,
-    variables: List[str],
+    variables: list[str],
     lags: int,
     entity_col: str = "entity",
     time_col: str = "time",
@@ -1031,11 +1021,7 @@ def panel_granger_causality_matrix(
 
     Examples
     --------
-    >>> matrix = panel_granger_causality_matrix(
-    ...     data=df,
-    ...     variables=['y1', 'y2', 'y3'],
-    ...     lags=1
-    ... )
+    >>> matrix = panel_granger_causality_matrix(data=df, variables=["y1", "y2", "y3"], lags=1)
     >>> # matrix[0, 1] is p-value for y2 -> y1
     >>> # matrix[1, 0] is p-value for y1 -> y2
     """

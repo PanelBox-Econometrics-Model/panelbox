@@ -5,27 +5,32 @@ This module provides a unified function to run multiple panel unit root tests
 and compare results.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Literal
 
 import pandas as pd
 
-from .breitung import BreitungResult, breitung_test
-from .hadri import HadriResult, hadri_test
+from .breitung import breitung_test
+from .hadri import hadri_test
 
 try:
-    from ...validation.unit_root.ips import IPSTestResult, ips_test
+    from ...validation.unit_root.ips import ips_test
 
     HAS_IPS = True
 except ImportError:
     HAS_IPS = False
 
 try:
-    from ...validation.unit_root.llc import LLCTestResult, llc_test
+    from ...validation.unit_root.llc import llc_test
 
     HAS_LLC = True
 except ImportError:
     HAS_LLC = False
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -54,7 +59,7 @@ class PanelUnitRootResult:
         Provide interpretation of combined results.
     """
 
-    results: Dict[str, Any]
+    results: dict[str, Any]
     variable: str
     n_entities: int
     n_time: int
@@ -88,10 +93,7 @@ class PanelUnitRootResult:
             result = self.results[test_name]
 
             # Format H0 based on test
-            if test_name == "hadri":
-                h0 = "Stationarity"
-            else:
-                h0 = "Unit root"
+            h0 = "Stationarity" if test_name == "hadri" else "Unit root"
 
             # Get statistic and p-value
             statistic = result.statistic
@@ -150,13 +152,13 @@ class PanelUnitRootResult:
         # Check stationarity tests (Hadri)
         if stationarity_tests:
             n_reject_stat = sum(stationarity_tests)
-            n_total_stat = len(stationarity_tests)
+            len(stationarity_tests)
 
             if n_reject_stat == 0:
-                lines.append(f"  - Stationarity test(s) fail to reject H0")
+                lines.append("  - Stationarity test(s) fail to reject H0")
                 lines.append("    → Evidence consistent with stationarity")
             else:
-                lines.append(f"  - Stationarity test(s) reject H0")
+                lines.append("  - Stationarity test(s) reject H0")
                 lines.append("    → Evidence of unit root")
 
         # Overall recommendation
@@ -164,7 +166,7 @@ class PanelUnitRootResult:
         lines.append("Overall recommendation:")
 
         # Simple majority rule
-        total_tests = len(self.tests_run)
+        len(self.tests_run)
         total_rejections = sum(
             1 for name in self.tests_run if (name != "hadri" and self.results[name].reject)
         )
@@ -198,7 +200,7 @@ def panel_unit_root_test(
     variable: str,
     entity_col: str = "entity",
     time_col: str = "time",
-    test: Union[str, list] = "all",
+    test: str | list = "all",
     trend: Literal["c", "ct"] = "c",
     alpha: float = 0.05,
     **kwargs,
@@ -271,15 +273,15 @@ def panel_unit_root_test(
     >>> for i in range(10):
     ...     y = np.random.randn(100).cumsum()
     ...     for t, val in enumerate(y):
-    ...         data.append({'entity': i, 'time': t, 'y': val})
+    ...         data.append({"entity": i, "time": t, "y": val})
     >>> df = pd.DataFrame(data)
     >>>
     >>> # Run all available tests
-    >>> result = panel_unit_root_test(df, 'y', test='all', trend='c')
+    >>> result = panel_unit_root_test(df, "y", test="all", trend="c")
     >>> print(result.summary_table())
     >>>
     >>> # Run specific tests
-    >>> result = panel_unit_root_test(df, 'y', test=['hadri', 'breitung'])
+    >>> result = panel_unit_root_test(df, "y", test=["hadri", "breitung"])
     >>> print(result.interpretation())
     """
     # Determine which tests to run

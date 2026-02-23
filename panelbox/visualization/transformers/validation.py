@@ -4,7 +4,12 @@ Data transformer for validation reports.
 Converts ValidationReport objects into the data format expected by validation charts.
 """
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationDataTransformer:
@@ -27,7 +32,7 @@ class ValidationDataTransformer:
     >>> charts = create_validation_charts(data)
     """
 
-    def transform(self, validation_report: Any) -> Dict[str, Any]:
+    def transform(self, validation_report: Any) -> dict[str, Any]:
         """
         Transform ValidationReport to chart data format.
 
@@ -69,7 +74,7 @@ class ValidationDataTransformer:
             "model_info": model_info,
         }
 
-    def _extract_tests(self, validation_report: Any) -> List[Dict[str, Any]]:
+    def _extract_tests(self, validation_report: Any) -> list[dict[str, Any]]:
         """
         Extract individual test results.
 
@@ -107,7 +112,7 @@ class ValidationDataTransformer:
 
         return tests
 
-    def _format_test_result(self, name: str, result: Any, category: str) -> Dict[str, Any]:
+    def _format_test_result(self, name: str, result: Any, category: str) -> dict[str, Any]:
         """
         Format a single test result into standardized dictionary.
 
@@ -145,7 +150,7 @@ class ValidationDataTransformer:
 
         return test_dict
 
-    def _group_by_category(self, tests: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_category(self, tests: list[dict]) -> dict[str, list[dict]]:
         """
         Group tests by category.
 
@@ -169,7 +174,7 @@ class ValidationDataTransformer:
 
         return categories
 
-    def _compute_summary(self, tests: List[Dict]) -> Dict[str, Any]:
+    def _compute_summary(self, tests: list[dict]) -> dict[str, Any]:
         """
         Compute summary statistics.
 
@@ -193,7 +198,7 @@ class ValidationDataTransformer:
 
         return {"total_tests": total, "passed": passed, "failed": failed, "pass_rate": pass_rate}
 
-    def _extract_model_info(self, validation_report: Any) -> Dict[str, Any]:
+    def _extract_model_info(self, validation_report: Any) -> dict[str, Any]:
         """
         Extract model information.
 

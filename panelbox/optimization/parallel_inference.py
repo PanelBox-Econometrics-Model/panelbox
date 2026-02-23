@@ -4,13 +4,18 @@ Parallel inference methods for spatial panel models.
 Implements multiprocessing for permutation tests and bootstrap inference.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from functools import partial
 from multiprocessing import Pool, cpu_count
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class ParallelPermutationTest:
@@ -25,7 +30,7 @@ class ParallelPermutationTest:
         test_statistic: Callable,
         n_permutations: int = 999,
         n_jobs: int = -1,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize parallel permutation test.
@@ -47,8 +52,8 @@ class ParallelPermutationTest:
         self.seed = seed
 
     def run(
-        self, data: np.ndarray, W: np.ndarray, observed_stat: Optional[float] = None, **kwargs
-    ) -> Dict[str, Any]:
+        self, data: np.ndarray, W: np.ndarray, observed_stat: float | None = None, **kwargs
+    ) -> dict[str, Any]:
         """
         Run parallel permutation test.
 
@@ -73,7 +78,7 @@ class ParallelPermutationTest:
             observed_stat = self.test_statistic(data, W, **kwargs)
 
         # Setup for parallel computation
-        n_entities = len(np.unique(kwargs.get("entity_ids", range(len(data)))))
+        len(np.unique(kwargs.get("entity_ids", range(len(data)))))
 
         # Divide permutations across workers
         perms_per_worker = self.n_permutations // self.n_jobs
@@ -109,7 +114,7 @@ class ParallelPermutationTest:
         }
 
     @staticmethod
-    def _worker_permutations(test_statistic: Callable, work_package: Tuple) -> np.ndarray:
+    def _worker_permutations(test_statistic: Callable, work_package: tuple) -> np.ndarray:
         """
         Worker function for parallel permutation computation.
 
@@ -125,7 +130,7 @@ class ParallelPermutationTest:
         permuted_stats : np.ndarray
             Array of permuted test statistics
         """
-        start_idx, n_perms, data, W, kwargs, seed = work_package
+        _start_idx, n_perms, data, W, kwargs, seed = work_package
 
         # Set random seed for this worker
         if seed is not None:
@@ -171,7 +176,7 @@ class ParallelBootstrap:
         n_bootstrap: int = 1000,
         n_jobs: int = -1,
         bootstrap_type: str = "pairs",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         Initialize parallel bootstrap.
@@ -203,7 +208,7 @@ class ParallelBootstrap:
         entity_col: str,
         time_col: str,
         **model_kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run parallel bootstrap.
 
@@ -283,7 +288,7 @@ class ParallelBootstrap:
         }
 
     @staticmethod
-    def _worker_bootstrap(estimator: Callable, work_package: Tuple) -> np.ndarray:
+    def _worker_bootstrap(estimator: Callable, work_package: tuple) -> np.ndarray:
         """
         Worker function for bootstrap computation.
 
@@ -314,7 +319,7 @@ class ParallelBootstrap:
             # Generate bootstrap sample
             if bootstrap_type == "pairs":
                 # Bootstrap entity-time pairs
-                sampled_entities = np.random.choice(
+                sampled_entities: np.ndarray = np.random.choice(
                     data[entity_col].unique(), n_entities, replace=True
                 )
                 boot_data = pd.concat(
@@ -337,7 +342,9 @@ class ParallelBootstrap:
 
             elif bootstrap_type == "block":
                 # Block bootstrap by time
-                sampled_times = np.random.choice(data[time_col].unique(), n_time, replace=True)
+                sampled_times: np.ndarray = np.random.choice(
+                    data[time_col].unique(), n_time, replace=True
+                )
                 boot_data = pd.concat(
                     [data[data[time_col] == t].copy() for t in sampled_times], ignore_index=True
                 )
@@ -354,7 +361,7 @@ class ParallelBootstrap:
                 param_results.append(list(params.values()))
             except Exception as e:
                 # Handle estimation failure
-                warnings.warn(f"Bootstrap estimation failed: {e}")
+                warnings.warn(f"Bootstrap estimation failed: {e}", stacklevel=2)
                 param_results.append(
                     [np.nan] * len(param_results[0]) if param_results else [np.nan]
                 )
@@ -427,7 +434,7 @@ class ParallelSpatialHAC:
         return weights
 
     @staticmethod
-    def _compute_chunk(chunk_info: Tuple) -> np.ndarray:
+    def _compute_chunk(chunk_info: tuple) -> np.ndarray:
         """
         Compute a chunk of the spatial weight matrix.
 
@@ -470,13 +477,13 @@ class ParallelSpatialHAC:
 
 def parallel_grid_search(
     model_class,
-    param_grid: Dict[str, List],
+    param_grid: dict[str, list],
     data: pd.DataFrame,
     W: np.ndarray,
     n_jobs: int = -1,
     scoring: str = "aic",
     **model_kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Parallel grid search for spatial model hyperparameters.
 
@@ -534,7 +541,7 @@ def parallel_grid_search(
     return best_result
 
 
-def _evaluate_params(work_package: Tuple) -> Dict[str, Any]:
+def _evaluate_params(work_package: tuple) -> dict[str, Any]:
     """
     Evaluate a single parameter combination.
 

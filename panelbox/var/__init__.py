@@ -24,15 +24,15 @@ Examples
 >>> # Prepare data
 >>> data = PanelVARData(
 ...     df,
-...     endog_vars=['gdp', 'inflation', 'interest_rate'],
-...     entity_col='country',
-...     time_col='year',
-...     lags=2
+...     endog_vars=["gdp", "inflation", "interest_rate"],
+...     entity_col="country",
+...     time_col="year",
+...     lags=2,
 ... )
 >>>
 >>> # Estimate Panel VAR
 >>> model = PanelVAR(data)
->>> results = model.fit(method='ols', cov_type='clustered')
+>>> results = model.fit(method="ols", cov_type="clustered")
 >>> print(results.summary())
 >>>
 >>> # Select optimal lag order
@@ -50,6 +50,8 @@ References
        autoregression in Stata. The Stata Journal, 16(3), 778-804.
 """
 
+from __future__ import annotations
+
 from panelbox.var.causality_network import plot_causality_network
 from panelbox.var.data import PanelVARData
 from panelbox.var.forecast import ForecastResult
@@ -64,15 +66,15 @@ from panelbox.var.vecm import (
 )
 
 __all__ = [
-    "PanelVARData",
-    "PanelVAR",
-    "PanelVARResult",
+    "CointegrationRankTest",
     "ForecastResult",
     "LagOrderResult",
-    "plot_causality_network",
-    "CointegrationRankTest",
+    "PanelVAR",
+    "PanelVARData",
+    "PanelVARResult",
     "PanelVECM",
     "PanelVECMResult",
     "RankSelectionResult",
     "RankTestResult",
+    "plot_causality_network",
 ]

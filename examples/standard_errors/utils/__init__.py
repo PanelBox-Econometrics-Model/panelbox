@@ -1,5 +1,5 @@
 """
-Standard Errors Tutorial Utilities
+Standard Errors Tutorial Utilities.
 ===================================
 
 Utility functions for standard errors and robust inference tutorials.
@@ -45,7 +45,7 @@ __license__ = "MIT"
 from . import data_generators, diagnostics, plotting
 
 __all__ = [
-    "plotting",
-    "diagnostics",
     "data_generators",
+    "diagnostics",
+    "plotting",
 ]

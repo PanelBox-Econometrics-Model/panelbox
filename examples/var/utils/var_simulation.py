@@ -9,13 +9,13 @@ Functions:
 - theoretical_irf: Compute theoretical (population) IRF for known DGP
 """
 
-from typing import List, Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
 
-def companion_matrix(A_matrices: List[np.ndarray]) -> np.ndarray:
+def companion_matrix(A_matrices: list[np.ndarray]) -> np.ndarray:
     """
     Construct the companion matrix from a list of A matrices.
 
@@ -70,7 +70,7 @@ def companion_matrix(A_matrices: List[np.ndarray]) -> np.ndarray:
     return C
 
 
-def check_stability(A_matrices: List[np.ndarray]) -> dict:
+def check_stability(A_matrices: list[np.ndarray]) -> dict:
     """
     Check VAR stability by computing eigenvalues of companion matrix.
 
@@ -105,7 +105,7 @@ def check_stability(A_matrices: List[np.ndarray]) -> dict:
 
 
 def simulate_var(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     n_obs: int = 200,
     burn_in: int = 50,
@@ -191,7 +191,7 @@ def simulate_var(
 
 
 def simulate_panel_var(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     n_entities: int,
     n_periods: int,
@@ -269,7 +269,7 @@ def simulate_panel_var(
 
 
 def theoretical_irf(
-    A_matrices: List[np.ndarray], Sigma: np.ndarray, periods: int = 20, method: str = "cholesky"
+    A_matrices: list[np.ndarray], Sigma: np.ndarray, periods: int = 20, method: str = "cholesky"
 ) -> np.ndarray:
     """
     Compute theoretical (population) IRF for known DGP.

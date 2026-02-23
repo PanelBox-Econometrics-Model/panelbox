@@ -5,7 +5,6 @@ Tests the ModifiedWaldTest which detects groupwise heteroskedasticity
 in Fixed Effects panel models.
 """
 
-import numpy as np
 import pytest
 
 from panelbox.models.static.fixed_effects import FixedEffects

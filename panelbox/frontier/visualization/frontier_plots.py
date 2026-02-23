@@ -8,10 +8,14 @@ This module provides visualization functions for:
 - Partial frontier plots (fixing other inputs)
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
-import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def _get_X_df(result):
@@ -27,13 +31,14 @@ def plot_frontier_2d(
     input_var: str,
     backend: str = "plotly",
     show_distance: bool = False,
-    n_observations: Optional[int] = None,
-    title: Optional[str] = None,
+    n_observations: int | None = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot 2D frontier with one input variable.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object with fitted model
         input_var: Name of input variable to plot on x-axis
         backend: 'plotly' for interactive or 'matplotlib' for static
@@ -42,16 +47,14 @@ def plot_frontier_2d(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
         >>> fig = plot_frontier_2d(
-        ...     result,
-        ...     input_var='log_labor',
-        ...     show_distance=True,
-        ...     n_observations=100
+        ...     result, input_var="log_labor", show_distance=True, n_observations=100
         ... )
         >>> fig.show()
     """
@@ -96,15 +99,14 @@ def plot_frontier_2d(
     sort_idx = np.argsort(x_values)
     x_sorted = x_values[sort_idx]
     y_frontier_sorted = y_frontier[sort_idx]
-    y_obs_sorted = y_sample[sort_idx]
-    eff_sorted = eff_sample[sort_idx]
+    y_sample[sort_idx]
+    eff_sample[sort_idx]
 
     if title is None:
         frontier_type = "Production" if result.model.frontier_type.value == "production" else "Cost"
         title = f"{frontier_type} Frontier: {input_var}"
 
     if backend == "plotly":
-        import plotly.express as px
         import plotly.graph_objects as go
 
         fig = go.Figure()
@@ -115,7 +117,7 @@ def plot_frontier_2d(
                 x=x_sorted,
                 y=y_frontier_sorted,
                 mode="lines",
-                line=dict(color="red", width=3),
+                line={"color": "red", "width": 3},
                 name="Frontier",
                 hovertemplate="<b>Frontier</b><br>%{x:.4f}<br>Output: %{y:.4f}<extra></extra>",
             )
@@ -127,14 +129,14 @@ def plot_frontier_2d(
                 x=x_values,
                 y=y_sample,
                 mode="markers",
-                marker=dict(
-                    size=8,
-                    color=eff_sample,
-                    colorscale="RdYlGn",
-                    showscale=True,
-                    colorbar=dict(title="Efficiency"),
-                    line=dict(color="black", width=1),
-                ),
+                marker={
+                    "size": 8,
+                    "color": eff_sample,
+                    "colorscale": "RdYlGn",
+                    "showscale": True,
+                    "colorbar": {"title": "Efficiency"},
+                    "line": {"color": "black", "width": 1},
+                },
                 name="Observations",
                 hovertemplate="<b>Observation</b><br>%{x:.4f}<br>Output: %{y:.4f}<br>Efficiency: %{marker.color:.4f}<extra></extra>",
             )
@@ -148,7 +150,7 @@ def plot_frontier_2d(
                         x=[x_values[i], x_values[i]],
                         y=[y_sample[i], y_frontier[i]],
                         mode="lines",
-                        line=dict(color="gray", width=1, dash="dot"),
+                        line={"color": "gray", "width": 1, "dash": "dot"},
                         showlegend=False,
                         hoverinfo="skip",
                     )
@@ -175,7 +177,7 @@ def plot_frontier_2d(
         # Color mapping for efficiency
         norm = Normalize(vmin=eff_sample.min(), vmax=eff_sample.max())
         cmap = cm.get_cmap("RdYlGn")
-        colors = [cmap(norm(e)) for e in eff_sample]
+        [cmap(norm(e)) for e in eff_sample]
 
         # Observations
         scatter = ax.scatter(
@@ -223,15 +225,16 @@ def plot_frontier_2d(
 
 def plot_frontier_3d(
     result,
-    input_vars: List[str],
+    input_vars: list[str],
     backend: str = "plotly",
     n_grid: int = 30,
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot 3D frontier surface with two input variables.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object with fitted model
         input_vars: List of two input variable names for x and y axes
         backend: 'plotly' for interactive or 'matplotlib' for static
@@ -239,16 +242,13 @@ def plot_frontier_3d(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
-        >>> fig = plot_frontier_3d(
-        ...     result,
-        ...     input_vars=['log_labor', 'log_capital'],
-        ...     n_grid=30
-        ... )
+        >>> fig = plot_frontier_3d(result, input_vars=["log_labor", "log_capital"], n_grid=30)
         >>> fig.show()
     """
     if len(input_vars) != 2:
@@ -327,14 +327,14 @@ def plot_frontier_3d(
                 y=x2_obs,
                 z=y_obs,
                 mode="markers",
-                marker=dict(
-                    size=5,
-                    color=eff_values,
-                    colorscale="RdYlGn",
-                    showscale=True,
-                    colorbar=dict(title="Efficiency"),
-                    line=dict(color="black", width=0.5),
-                ),
+                marker={
+                    "size": 5,
+                    "color": eff_values,
+                    "colorscale": "RdYlGn",
+                    "showscale": True,
+                    "colorbar": {"title": "Efficiency"},
+                    "line": {"color": "black", "width": 0.5},
+                },
                 name="Observations",
                 hovertemplate=f"<b>Observation</b><br>{input_vars[0]}: %{{x:.4f}}<br>{input_vars[1]}: %{{y:.4f}}<br>Output: %{{z:.4f}}<extra></extra>",
             )
@@ -342,7 +342,11 @@ def plot_frontier_3d(
 
         fig.update_layout(
             title=title,
-            scene=dict(xaxis_title=input_vars[0], yaxis_title=input_vars[1], zaxis_title="Output"),
+            scene={
+                "xaxis_title": input_vars[0],
+                "yaxis_title": input_vars[1],
+                "zaxis_title": "Output",
+            },
             **kwargs,
         )
 
@@ -350,7 +354,6 @@ def plot_frontier_3d(
 
     elif backend == "matplotlib":
         import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
 
         fig = plt.figure(figsize=kwargs.get("figsize", (12, 8)))
         ax = fig.add_subplot(111, projection="3d")
@@ -388,16 +391,17 @@ def plot_frontier_3d(
 
 def plot_frontier_contour(
     result,
-    input_vars: List[str],
+    input_vars: list[str],
     backend: str = "plotly",
     n_grid: int = 50,
     levels: int = 20,
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot contour plot of frontier with two inputs.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object with fitted model
         input_vars: List of two input variable names
         backend: 'plotly' for interactive or 'matplotlib' for static
@@ -406,23 +410,19 @@ def plot_frontier_contour(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
-        >>> fig = plot_frontier_contour(
-        ...     result,
-        ...     input_vars=['log_labor', 'log_capital'],
-        ...     levels=20
-        ... )
+        >>> fig = plot_frontier_contour(result, input_vars=["log_labor", "log_capital"], levels=20)
         >>> fig.show()
     """
     if len(input_vars) != 2:
         raise ValueError("Must provide exactly 2 input variables for contour plot")
 
     X_df = _get_X_df(result)
-    y = result.model.y
 
     for var in input_vars:
         if var not in X_df.columns:
@@ -477,12 +477,12 @@ def plot_frontier_contour(
                 y=x2_range,
                 z=Y_grid,
                 colorscale="Reds",
-                contours=dict(
-                    start=Y_grid.min(),
-                    end=Y_grid.max(),
-                    size=(Y_grid.max() - Y_grid.min()) / levels,
-                ),
-                colorbar=dict(title="Output"),
+                contours={
+                    "start": Y_grid.min(),
+                    "end": Y_grid.max(),
+                    "size": (Y_grid.max() - Y_grid.min()) / levels,
+                },
+                colorbar={"title": "Output"},
                 name="Frontier",
             )
         )
@@ -493,14 +493,14 @@ def plot_frontier_contour(
                 x=x1_obs,
                 y=x2_obs,
                 mode="markers",
-                marker=dict(
-                    size=8,
-                    color=eff_values,
-                    colorscale="RdYlGn",
-                    showscale=True,
-                    colorbar=dict(title="Efficiency", x=1.15),
-                    line=dict(color="black", width=1),
-                ),
+                marker={
+                    "size": 8,
+                    "color": eff_values,
+                    "colorscale": "RdYlGn",
+                    "showscale": True,
+                    "colorbar": {"title": "Efficiency", "x": 1.15},
+                    "line": {"color": "black", "width": 1},
+                },
                 name="Observations",
             )
         )
@@ -555,14 +555,15 @@ def plot_frontier_contour(
 def plot_frontier_partial(
     result,
     input_var: str,
-    fix_others_at: Union[str, Dict[str, float]] = "mean",
+    fix_others_at: str | dict[str, float] = "mean",
     backend: str = "plotly",
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot partial frontier fixing other inputs at specified values.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object with fitted model
         input_var: Name of input variable to vary
         fix_others_at: How to fix other inputs
@@ -573,22 +574,19 @@ def plot_frontier_partial(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
         >>> # Fix other inputs at mean
-        >>> fig = plot_frontier_partial(
-        ...     result,
-        ...     input_var='log_labor',
-        ...     fix_others_at='mean'
-        ... )
+        >>> fig = plot_frontier_partial(result, input_var="log_labor", fix_others_at="mean")
         >>> # Specify fixed values
         >>> fig = plot_frontier_partial(
         ...     result,
-        ...     input_var='log_labor',
-        ...     fix_others_at={'log_capital': 5.0, 'log_materials': 3.5}
+        ...     input_var="log_labor",
+        ...     fix_others_at={"log_capital": 5.0, "log_materials": 3.5},
         ... )
         >>> fig.show()
     """
@@ -659,7 +657,7 @@ def plot_frontier_partial(
                 x=x_range,
                 y=y_frontier,
                 mode="lines",
-                line=dict(color="red", width=3),
+                line={"color": "red", "width": 3},
                 name="Partial Frontier",
             )
         )
@@ -670,7 +668,7 @@ def plot_frontier_partial(
                 x=x_obs,
                 y=y_obs,
                 mode="markers",
-                marker=dict(size=6, color="blue", opacity=0.5),
+                marker={"size": 6, "color": "blue", "opacity": 0.5},
                 name="Observations",
             )
         )
@@ -726,7 +724,7 @@ def plot_frontier_partial(
             fontsize=10,
             verticalalignment="bottom",
             horizontalalignment="right",
-            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="black"),
+            bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8, "edgecolor": "black"},
         )
 
         ax.set_xlabel(input_var, fontsize=12)

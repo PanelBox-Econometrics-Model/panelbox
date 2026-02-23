@@ -9,6 +9,8 @@ This module provides diagnostic tests for panel data models including:
 - Spatial dependence tests (LM-Lag, LM-Error)
 """
 
+from __future__ import annotations
+
 from . import cointegration, unit_root
 from .spatial_tests import (
     LISAResult,
@@ -24,19 +26,19 @@ from .spatial_tests import (
 )
 
 __all__ = [
-    "cointegration",
-    "unit_root",
-    # Spatial LM tests
-    "lm_lag_test",
-    "lm_error_test",
-    "robust_lm_lag_test",
-    "robust_lm_error_test",
-    "run_lm_tests",
+    "LISAResult",
     "LMTestResult",
+    # LISA
+    "LocalMoranI",
     # Moran's I
     "MoranIPanelTest",
     "MoranIResult",
-    # LISA
-    "LocalMoranI",
-    "LISAResult",
+    "cointegration",
+    "lm_error_test",
+    # Spatial LM tests
+    "lm_lag_test",
+    "robust_lm_error_test",
+    "robust_lm_lag_test",
+    "run_lm_tests",
+    "unit_root",
 ]

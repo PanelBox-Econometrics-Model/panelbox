@@ -5,10 +5,12 @@ This module implements the 'info' command which displays information about
 datasets or saved results.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -69,8 +71,8 @@ Examples:
 
 def print_data_info(
     filepath: str,
-    entity_col: Optional[str] = None,
-    time_col: Optional[str] = None,
+    entity_col: str | None = None,
+    time_col: str | None = None,
     verbose: bool = False,
 ) -> None:
     """
@@ -111,9 +113,7 @@ def print_data_info(
         dtype = data[col].dtype
         n_missing = data[col].isna().sum()
         n_unique = data[col].nunique()
-        print(
-            f"  - {col:<20s} {str(dtype):<10s} (unique: {n_unique:>6,}, missing: {n_missing:>6,})"
-        )
+        print(f"  - {col:<20s} {dtype!s:<10s} (unique: {n_unique:>6,}, missing: {n_missing:>6,})")
 
     # Data types summary
     print("\nData Types:")

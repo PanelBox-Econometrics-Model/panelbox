@@ -1,5 +1,6 @@
 """
-Bias-Corrected GMM Estimator
+Bias-Corrected GMM Estimator.
+
 ==============================
 
 Implements Bias-Corrected GMM for dynamic panel data models following
@@ -26,26 +27,26 @@ Examples
 --------
 >>> from panelbox.gmm import BiasCorrectedGMM
 >>> model = BiasCorrectedGMM(
-...     data=panel_data,
-...     dep_var='y',
-...     lags=[1],
-...     exog_vars=['x1', 'x2'],
-...     bias_order=1
+...     data=panel_data, dep_var="y", lags=[1], exog_vars=["x1", "x2"], bias_order=1
 ... )
 >>> results = model.fit()
 >>> print(f"Bias magnitude: {model.bias_magnitude():.4f}")
 >>> print(results.summary())
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy import linalg, stats
+from scipy import stats
 
 from panelbox.gmm.difference_gmm import DifferenceGMM
-from panelbox.gmm.results import GMMResults, TestResult
+from panelbox.gmm.results import GMMResults
+
+logger = logging.getLogger(__name__)
 
 
 class BiasCorrectedGMM:
@@ -104,11 +105,7 @@ class BiasCorrectedGMM:
     Estimate bias-corrected GMM on employment data:
 
     >>> model = BiasCorrectedGMM(
-    ...     data=abdata,
-    ...     dep_var='n',
-    ...     lags=[1, 2],
-    ...     exog_vars=['w', 'k'],
-    ...     bias_order=1
+    ...     data=abdata, dep_var="n", lags=[1, 2], exog_vars=["w", "k"], bias_order=1
     ... )
     >>> results = model.fit()
     >>>
@@ -122,10 +119,10 @@ class BiasCorrectedGMM:
         self,
         data: pd.DataFrame,
         dep_var: str,
-        lags: List[int],
+        lags: list[int],
         id_var: str = "id",
         time_var: str = "year",
-        exog_vars: Optional[List[str]] = None,
+        exog_vars: list[str] | None = None,
         bias_order: int = 1,
         min_n: int = 50,
         min_t: int = 10,
@@ -175,6 +172,7 @@ class BiasCorrectedGMM:
                 f"N = {n_entities} < {self.min_n}. Bias correction may not be reliable "
                 "in small samples. Consider using standard GMM.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if avg_t < self.min_t:
@@ -182,6 +180,7 @@ class BiasCorrectedGMM:
                 f"Average T = {avg_t:.1f} < {self.min_t}. Bias correction requires "
                 "moderate T. Consider using standard GMM.",
                 UserWarning,
+                stacklevel=2,
             )
 
     def fit(
@@ -229,6 +228,7 @@ class BiasCorrectedGMM:
                 "Bias correction has negligible impact for T>30. "
                 "Consider using standard GMM to save computation time.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if n_entities > 5000:
@@ -236,10 +236,11 @@ class BiasCorrectedGMM:
                 "Bias-corrected GMM with N>5,000 may take considerable time. "
                 "Ensure this precision is needed for your application.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if verbose:
-            print("Step 1: Estimating uncorrected GMM...")
+            logger.info("Step 1: Estimating uncorrected GMM...")
 
         # Step 1: Estimate standard GMM
         if use_system_gmm:
@@ -269,7 +270,7 @@ class BiasCorrectedGMM:
         self.params_uncorrected_ = gmm_results.params.values
 
         if verbose:
-            print("Step 2: Computing bias term...")
+            logger.info("Step 2: Computing bias term...")
 
         # Step 2: Compute bias term
         n_entities = self.data.index.get_level_values(0).nunique()
@@ -277,13 +278,13 @@ class BiasCorrectedGMM:
 
         # Step 3: Apply bias correction
         if verbose:
-            print("Step 3: Applying bias correction...")
+            logger.info("Step 3: Applying bias correction...")
 
         self.params_ = self.params_uncorrected_ - self.bias_term_ / n_entities
 
         # Step 4: Adjust variance matrix
         if verbose:
-            print("Step 4: Adjusting variance matrix...")
+            logger.info("Step 4: Adjusting variance matrix...")
 
         self.vcov_ = self._adjust_variance(gmm_results.vcov)
 
@@ -291,8 +292,8 @@ class BiasCorrectedGMM:
         results = self._create_results(gmm_results)
 
         if verbose:
-            print("Bias correction complete!")
-            print(f"Bias magnitude: {self.bias_magnitude():.4f}")
+            logger.info("Bias correction complete!")
+            logger.info("Bias magnitude: %.4f", self.bias_magnitude())
 
         return results
 
@@ -341,9 +342,9 @@ class BiasCorrectedGMM:
         else:
             # Order-2 correction (more complex, not implemented yet)
             warnings.warn(
-                "Second-order bias correction not yet implemented. "
-                "Using first-order correction.",
+                "Second-order bias correction not yet implemented. Using first-order correction.",
                 UserWarning,
+                stacklevel=2,
             )
             bias_term = self._compute_first_order_bias(params)
 
@@ -362,7 +363,7 @@ class BiasCorrectedGMM:
         and differenced errors due to the fixed effects.
         """
         # Get panel dimensions
-        n_entities = self.data.index.get_level_values(0).nunique()
+        self.data.index.get_level_values(0).nunique()
         entity_sizes = self.data.groupby(level=0).size()
         avg_t = entity_sizes.mean()
 
@@ -375,7 +376,7 @@ class BiasCorrectedGMM:
 
         # Apply correction to lagged dependent variable coefficients
         # (first len(self.lags) parameters after intercept)
-        for i, lag in enumerate(self.lags):
+        for i, _lag in enumerate(self.lags):
             param_idx = i  # Index of lag coefficient in params
             if param_idx < k:
                 rho = params[param_idx]

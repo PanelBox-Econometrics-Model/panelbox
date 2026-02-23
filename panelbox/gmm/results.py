@@ -1,5 +1,6 @@
 """
-GMM Results Classes
+GMM Results Classes.
+
 ===================
 
 Data structures for GMM estimation results and specification tests.
@@ -10,12 +11,18 @@ TestResult : Results from a single specification test
 GMMResults : Complete results from GMM estimation
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from panelbox.core.serialization import SerializableMixin
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,13 +52,13 @@ class TestResult:
     Examples
     --------
     >>> test = TestResult(
-    ...     name='Hansen J-test',
+    ...     name="Hansen J-test",
     ...     statistic=12.5,
     ...     pvalue=0.185,
     ...     df=10,
-    ...     distribution='chi2',
-    ...     null_hypothesis='Instruments are valid',
-    ...     conclusion='PASS'
+    ...     distribution="chi2",
+    ...     null_hypothesis="Instruments are valid",
+    ...     conclusion="PASS",
     ... )
     >>> print(test)
     Hansen J-test: statistic=12.500, p-value=0.185 [PASS]
@@ -60,11 +67,11 @@ class TestResult:
     name: str
     statistic: float
     pvalue: float
-    df: Optional[int] = None
+    df: int | None = None
     distribution: str = "chi2"
     null_hypothesis: str = ""
     conclusion: str = ""
-    details: Dict = field(default_factory=dict)
+    details: dict = field(default_factory=dict)
 
     def __post_init__(self):
         """Auto-determine conclusion if not provided."""
@@ -120,7 +127,7 @@ class TestResult:
                 f"p-value={self.pvalue:.4f} [{self.conclusion}]"
             )
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -132,7 +139,7 @@ class TestResult:
 
 
 @dataclass
-class GMMResults:
+class GMMResults(SerializableMixin):
     """
     Results from GMM estimation.
 
@@ -189,7 +196,7 @@ class GMMResults:
 
     >>> from panelbox.gmm import DifferenceGMM
     >>>
-    >>> model = DifferenceGMM(data=data, dep_var='y', lags=1, exog_vars=['x1', 'x2'])
+    >>> model = DifferenceGMM(data=data, dep_var="y", lags=1, exog_vars=["x1", "x2"])
     >>> results = model.fit()
     >>>
     >>> # Print formatted summary
@@ -233,7 +240,7 @@ class GMMResults:
 
     >>> # LaTeX table for papers
     >>> latex = results.to_latex()
-    >>> with open('gmm_results.tex', 'w') as f:
+    >>> with open("gmm_results.tex", "w") as f:
     ...     f.write(latex)
     >>>
     >>> # DataFrame for further analysis
@@ -251,15 +258,15 @@ class GMMResults:
     >>> print(f"System GMM:     {sys_results.params['L1.y']:.3f}")
     >>>
     >>> # Compare efficiency (standard errors)
-    >>> diff_se = diff_results.std_errors['L1.y']
-    >>> sys_se = sys_results.std_errors['L1.y']
-    >>> print(f"Efficiency gain: {(diff_se - sys_se)/diff_se*100:.1f}%")
+    >>> diff_se = diff_results.std_errors["L1.y"]
+    >>> sys_se = sys_results.std_errors["L1.y"]
+    >>> print(f"Efficiency gain: {(diff_se - sys_se) / diff_se * 100:.1f}%")
     >>>
     >>> # Check which model is valid
-    >>> diff_valid = (diff_results.ar2_test.pvalue > 0.10 and
-    ...               0.10 < diff_results.hansen_j.pvalue < 0.50)
-    >>> sys_valid = (sys_results.ar2_test.pvalue > 0.10 and
-    ...              0.10 < sys_results.hansen_j.pvalue < 0.50)
+    >>> diff_valid = (
+    ...     diff_results.ar2_test.pvalue > 0.10 and 0.10 < diff_results.hansen_j.pvalue < 0.50
+    ... )
+    >>> sys_valid = sys_results.ar2_test.pvalue > 0.10 and 0.10 < sys_results.hansen_j.pvalue < 0.50
     >>>
     >>> if diff_valid and sys_valid:
     ...     if sys_se < diff_se * 0.9:
@@ -300,11 +307,11 @@ class GMMResults:
     sargan: TestResult
     ar1_test: TestResult
     ar2_test: TestResult
-    diff_hansen: Optional[TestResult] = None
+    diff_hansen: TestResult | None = None
 
     # Matrices
-    vcov: Optional[np.ndarray] = None
-    weight_matrix: Optional[np.ndarray] = None
+    vcov: np.ndarray | None = None
+    weight_matrix: np.ndarray | None = None
 
     # Flags
     converged: bool = True
@@ -316,8 +323,17 @@ class GMMResults:
     transformation: str = "fd"
 
     # Additional data
-    residuals: Optional[np.ndarray] = None
-    fitted_values: Optional[np.ndarray] = None
+    residuals: np.ndarray | None = None
+    fitted_values: np.ndarray | None = None
+
+    # Metadata for predict/forecast
+    dep_var: str = ""
+    exog_vars: list[str] = field(default_factory=list)
+    id_var: str = ""
+    time_var: str = ""
+    n_lags: int = 1
+    endogenous_vars: list[str] = field(default_factory=list)
+    predetermined_vars: list[str] = field(default_factory=list)
 
     @property
     def instrument_ratio(self) -> float:
@@ -353,7 +369,191 @@ class GMMResults:
 
         return pd.DataFrame({"lower": lower, "upper": upper}, index=self.params.index)
 
-    def summary(self, title: Optional[str] = None) -> str:
+    def predict(self, new_data: pd.DataFrame) -> np.ndarray:  # noqa: C901
+        """
+        Predict dependent variable in LEVELS using estimated coefficients.
+
+        The GMM model is estimated in first-differences but prediction
+        is done in levels:
+            y_hat_t = rho_1 * y_{t-1} + ... + rho_p * y_{t-p} + beta' * X_t
+
+        Parameters
+        ----------
+        new_data : pd.DataFrame
+            DataFrame containing:
+            - Columns for lags of dependent variable (named 'L1.{dep_var}',
+              'L2.{dep_var}', etc.) OR the dependent variable itself
+              (lags will be computed automatically)
+            - Columns for all exogenous variables
+            - Columns id_var and time_var
+
+        Returns
+        -------
+        np.ndarray
+            Predicted values in levels. Observations where lags are not
+            available (first periods per entity) will be NaN.
+        """
+        if not self.dep_var:
+            raise ValueError(
+                "Cannot predict: model metadata (dep_var, exog_vars) not stored. "
+                "Re-estimate the model with the latest version of panelbox."
+            )
+
+        X_cols = []
+
+        # 1. Lag columns of dependent variable
+        for lag in range(1, self.n_lags + 1):
+            lag_col_name = f"L{lag}.{self.dep_var}"
+            if lag_col_name in new_data.columns:
+                X_cols.append(new_data[lag_col_name].values)
+            elif self.dep_var in new_data.columns:
+                lagged = new_data.groupby(self.id_var)[self.dep_var].shift(lag)
+                X_cols.append(lagged.values)
+            else:
+                raise ValueError(
+                    f"Cannot find lag {lag} of '{self.dep_var}'. "
+                    f"Provide column '{lag_col_name}' or '{self.dep_var}' in new_data."
+                )
+
+        # 2. Exogenous variables
+        for var in self.exog_vars:
+            if var not in new_data.columns:
+                raise ValueError(f"Exogenous variable '{var}' not found in new_data.")
+            X_cols.append(new_data[var].values)
+
+        # 3. Endogenous variables (other than lagged dep)
+        for var in self.endogenous_vars:
+            if var not in new_data.columns:
+                raise ValueError(f"Endogenous variable '{var}' not found in new_data.")
+            X_cols.append(new_data[var].values)
+
+        # 4. Predetermined variables
+        for var in self.predetermined_vars:
+            if var not in new_data.columns:
+                raise ValueError(f"Predetermined variable '{var}' not found in new_data.")
+            X_cols.append(new_data[var].values)
+
+        # 5. Time dummies and constant (match remaining params)
+        n_structural = (
+            self.n_lags
+            + len(self.exog_vars)
+            + len(self.endogenous_vars)
+            + len(self.predetermined_vars)
+        )
+        remaining_params = list(self.params.index[n_structural:])
+        for param_name in remaining_params:
+            if param_name == "_cons":
+                X_cols.append(np.ones(len(new_data)))
+            elif param_name in new_data.columns:
+                X_cols.append(new_data[param_name].values)
+            elif param_name.startswith("year_"):
+                # Time dummy — try to reconstruct from time_var
+                try:
+                    year_val = int(param_name.replace("year_", ""))
+                    X_cols.append((new_data[self.time_var] == year_val).astype(float).values)
+                except (ValueError, KeyError):
+                    X_cols.append(np.zeros(len(new_data)))
+            else:
+                X_cols.append(np.zeros(len(new_data)))
+
+        X = np.column_stack(X_cols)
+
+        if X.shape[1] != len(self.params):
+            raise ValueError(
+                f"Feature matrix has {X.shape[1]} columns but model has "
+                f"{len(self.params)} parameters. Check variable names."
+            )
+
+        return X @ self.params.values
+
+    def forecast(
+        self,
+        last_obs: dict,
+        future_exog: pd.DataFrame,
+        steps: int = 1,
+    ) -> pd.DataFrame:
+        """
+        Iterative multi-step forecast for dynamic panel models.
+
+        Uses estimated AR coefficients to generate h-step-ahead forecasts,
+        feeding predicted values back as lags for subsequent periods.
+
+        Parameters
+        ----------
+        last_obs : dict
+            Dictionary mapping entity_id -> list of last observed values.
+            For AR(1): {entity: [y_T]}
+            For AR(2): {entity: [y_{T-1}, y_T]} (oldest first)
+        future_exog : pd.DataFrame
+            DataFrame with future exogenous variable values.
+            Must have columns: id_var, time_var, and all exog_vars.
+            Must have ``steps`` rows per entity.
+        steps : int, default=1
+            Number of periods to forecast ahead.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns: id_var, time_var, 'forecast'.
+            One row per entity per forecast step.
+        """
+        if not self.dep_var:
+            raise ValueError("Cannot forecast: model metadata not stored.")
+
+        # Extract AR coefficients
+        ar_coefs = []
+        for lag in range(1, self.n_lags + 1):
+            lag_name = f"L{lag}.{self.dep_var}"
+            if lag_name in self.params.index:
+                ar_coefs.append(self.params[lag_name])
+            else:
+                raise ValueError(f"AR coefficient '{lag_name}' not found in params.")
+        ar_coefs = np.array(ar_coefs)
+
+        # Exog + endogenous + predetermined coefficients
+        other_var_names = self.exog_vars + self.endogenous_vars + self.predetermined_vars
+        beta = np.array([self.params[v] for v in other_var_names])
+
+        all_forecasts = []
+
+        for entity_id, y_history in last_obs.items():
+            y_buffer = list(y_history)
+
+            entity_mask = future_exog[self.id_var] == entity_id
+            entity_future = future_exog[entity_mask].sort_values(self.time_var)
+
+            if len(entity_future) < steps:
+                raise ValueError(
+                    f"Entity {entity_id}: expected {steps} future periods, "
+                    f"got {len(entity_future)}."
+                )
+
+            for h in range(steps):
+                # AR component
+                ar_component = 0.0
+                for lag_idx in range(self.n_lags):
+                    if len(y_buffer) > lag_idx:
+                        ar_component += ar_coefs[lag_idx] * y_buffer[-(lag_idx + 1)]
+
+                # Exog component
+                x_h = entity_future.iloc[h][other_var_names].values.astype(float)
+                exog_component = beta @ x_h
+
+                y_hat = ar_component + exog_component
+
+                y_buffer.append(y_hat)
+
+                all_forecasts.append(
+                    {
+                        self.id_var: entity_id,
+                        self.time_var: entity_future.iloc[h][self.time_var],
+                        "forecast": y_hat,
+                    }
+                )
+
+        return pd.DataFrame(all_forecasts)
+
+    def summary(self, title: str | None = None) -> str:
         """
         Generate Stata-style regression table.
 
@@ -496,11 +696,7 @@ class GMMResults:
             var_escaped = var.replace("_", r"\_")
 
             lines.append(
-                f"        {var_escaped} & "
-                f"{coef:.4f}{stars} & "
-                f"{se:.4f} & "
-                f"{t:.2f} & "
-                f"{p:.4f} \\\\"
+                f"        {var_escaped} & {coef:.4f}{stars} & {se:.4f} & {t:.2f} & {p:.4f} \\\\"
             )
 
         lines.append(r"        \midrule")
@@ -529,7 +725,7 @@ class GMMResults:
 
         return "\n".join(lines)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """
         Convert results to dictionary.
 

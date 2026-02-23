@@ -5,12 +5,16 @@ This module implements the Hausman specification test for comparing
 Fixed Effects and Random Effects models.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -57,8 +61,8 @@ class HausmanTestResult:
         print("\n" + "=" * 60)
         print("Hausman Specification Test")
         print("=" * 60)
-        print(f"H0: Random Effects estimator is consistent and efficient")
-        print(f"H1: Random Effects estimator is inconsistent\n")
+        print("H0: Random Effects estimator is consistent and efficient")
+        print("H1: Random Effects estimator is inconsistent\n")
 
         print(f"Test statistic: {self.statistic:.4f}")
         print(f"P-value: {self.pvalue:.4f}")
@@ -170,6 +174,7 @@ def hausman_test(fe_result, re_result, df_correction: bool = True) -> HausmanTes
             "This may indicate model misspecification. "
             f"Minimum eigenvalue: {np.min(eigenvalues):.2e}",
             RuntimeWarning,
+            stacklevel=2,
         )
 
     # Compute test statistic
@@ -182,6 +187,7 @@ def hausman_test(fe_result, re_result, df_correction: bool = True) -> HausmanTes
             "Variance difference matrix is singular. Using pseudo-inverse. "
             "Results may be unreliable.",
             RuntimeWarning,
+            stacklevel=2,
         )
 
     # Hausman statistic
@@ -220,7 +226,7 @@ def hausman_test(fe_result, re_result, df_correction: bool = True) -> HausmanTes
 
 
 def hausman_test_discrete(
-    fe_result, re_result, n_bootstrap: int = 999, seed: Optional[int] = None
+    fe_result, re_result, n_bootstrap: int = 999, seed: int | None = None
 ) -> HausmanTestResult:
     """
     Hausman test for discrete panel models using bootstrap.
@@ -302,19 +308,20 @@ def hausman_test_discrete(
             "Variance difference matrix is not positive semi-definite. "
             f"Minimum eigenvalue: {np.min(eigenvalues):.2e}",
             RuntimeWarning,
+            stacklevel=2,
         )
 
     try:
         V_diff_inv = np.linalg.inv(V_diff_obs)
     except np.linalg.LinAlgError:
         V_diff_inv = np.linalg.pinv(V_diff_obs)
-        warnings.warn("Using pseudo-inverse for variance difference matrix.")
+        warnings.warn("Using pseudo-inverse for variance difference matrix.", stacklevel=2)
 
     # Observed Hausman statistic
     H_obs = b_diff_obs @ V_diff_inv @ b_diff_obs
 
     # Bootstrap
-    print(f"Running bootstrap with {n_bootstrap} replications...")
+    logger.info("Running bootstrap with %d replications...", n_bootstrap)
     boot_stats = []
 
     # Get entity IDs
@@ -331,7 +338,7 @@ def hausman_test_discrete(
 
     for b in range(n_bootstrap):
         if (b + 1) % 100 == 0:
-            print(f"  Bootstrap iteration {b+1}/{n_bootstrap}")
+            logger.info("  Bootstrap iteration %d/%d", b + 1, n_bootstrap)
 
         # Resample entities with replacement
         boot_entities = np.random.choice(entities, size=n_entities, replace=True)
@@ -384,8 +391,7 @@ def hausman_test_discrete(
                 # Skip this bootstrap sample if matrix is singular
                 continue
 
-        except Exception as e:
-            # Skip failed bootstrap iterations
+        except Exception:  # noqa: S112 — skip failed bootstrap iterations
             continue
 
     if len(boot_stats) < n_bootstrap / 2:
@@ -393,6 +399,7 @@ def hausman_test_discrete(
             f"Only {len(boot_stats)} out of {n_bootstrap} bootstrap "
             "iterations succeeded. Results may be unreliable.",
             RuntimeWarning,
+            stacklevel=2,
         )
 
     # Compute bootstrap p-value
@@ -451,5 +458,5 @@ def mundlak_test(re_result) -> dict:
            Cross Section Data." Econometrica, 46(1), 69-85.
     """
     raise NotImplementedError(
-        "Mundlak test not yet implemented. " "This will be added in a future release."
+        "Mundlak test not yet implemented. This will be added in a future release."
     )

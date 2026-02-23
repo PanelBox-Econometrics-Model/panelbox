@@ -6,10 +6,12 @@ quantile regression, including cluster bootstrap, pairs bootstrap,
 wild bootstrap, and subsampling bootstrap.
 """
 
+from __future__ import annotations
+
 from .bootstrap import BootstrapResult, QuantileBootstrap, bootstrap_qr
 
 __all__ = [
-    "bootstrap_qr",
-    "QuantileBootstrap",
     "BootstrapResult",
+    "QuantileBootstrap",
+    "bootstrap_qr",
 ]

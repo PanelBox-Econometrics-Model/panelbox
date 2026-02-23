@@ -4,9 +4,14 @@ Markdown Exporter for PanelBox Reports.
 Exports validation and regression results to Markdown format.
 """
 
+from __future__ import annotations
+
 import datetime
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class MarkdownExporter:
@@ -29,7 +34,7 @@ class MarkdownExporter:
     >>>
     >>> exporter = MarkdownExporter()
     >>> md = exporter.export_validation_report(validation_data)
-    >>> exporter.save(md, 'validation_report.md')
+    >>> exporter.save(md, "validation_report.md")
     """
 
     def __init__(self, include_toc: bool = True, github_flavor: bool = True):
@@ -37,8 +42,76 @@ class MarkdownExporter:
         self.include_toc = include_toc
         self.github_flavor = github_flavor
 
+    _SEVERITY_EMOJI = {"CRITICAL": "\U0001f534", "HIGH": "\U0001f7e0", "MEDIUM": "\U0001f7e1"}
+
+    def _format_model_info(self, model_info: dict[str, Any]) -> list[str]:
+        """Format model information section."""
+        lines = [
+            "## Model Information",
+            "",
+            f"- **Model Type:** {model_info.get('model_type', 'Unknown')}",
+        ]
+        if "formula" in model_info:
+            lines.append(f"- **Formula:** `{model_info['formula']}`")
+        lines.append(
+            f"- **Observations:** {model_info.get('nobs_formatted', model_info.get('nobs', 'N/A'))}"
+        )
+        if "n_entities" in model_info:
+            lines.append(
+                f"- **Entities:** "
+                f"{model_info.get('n_entities_formatted', model_info.get('n_entities'))}"
+            )
+        if "n_periods" in model_info:
+            lines.append(
+                f"- **Time Periods:** "
+                f"{model_info.get('n_periods_formatted', model_info.get('n_periods'))}"
+            )
+        lines.append("")
+        return lines
+
+    def _format_test_results(self, tests: list[dict[str, Any]]) -> list[str]:
+        """Format test results section grouped by category."""
+        lines = ["## Test Results", ""]
+        categories: dict[str, list] = {}
+        for test in tests:
+            categories.setdefault(test["category"], []).append(test)
+
+        for category, cat_tests in categories.items():
+            lines.extend([f"### {category}", ""])
+            lines.append("| Test | Statistic | P-value | Result |")
+            lines.append("|------|-----------|---------|--------|")
+            for test in cat_tests:
+                result_emoji = "\u274c REJECT" if test["result"] == "REJECT" else "\u2705 ACCEPT"
+                sig = test.get("significance", "")
+                lines.append(
+                    f"| {test['name']} | {test['statistic_formatted']} "
+                    f"| {test['pvalue_formatted']}{sig} | {result_emoji} |"
+                )
+            lines.append("")
+        return lines
+
+    def _format_recommendation(self, index: int, rec: dict[str, Any]) -> list[str]:
+        """Format a single recommendation entry."""
+        severity = rec["severity"].upper()
+        emoji = self._SEVERITY_EMOJI.get(severity, "\U0001f535")
+        lines = [
+            f"### {index}. {emoji} {rec['category']} ({severity})",
+            "",
+            f"**Issue:** {rec['issue']}",
+            "",
+        ]
+        if rec.get("tests"):
+            lines.append("**Failed Tests:**")
+            lines.extend(f"- {t}" for t in rec["tests"])
+            lines.append("")
+        if rec.get("suggestions"):
+            lines.append("**Suggested Actions:**")
+            lines.extend(f"1. {s}" for s in rec["suggestions"])
+            lines.append("")
+        return lines
+
     def export_validation_report(
-        self, validation_data: Dict[str, Any], title: str = "Validation Report"
+        self, validation_data: dict[str, Any], title: str = "Validation Report"
     ) -> str:
         """
         Export complete validation report to Markdown.
@@ -57,159 +130,75 @@ class MarkdownExporter:
 
         Examples
         --------
-        >>> md = exporter.export_validation_report(
-        ...     validation_data,
-        ...     title="Panel Data Validation"
-        ... )
+        >>> md = exporter.export_validation_report(validation_data, title="Panel Data Validation")
         """
-        lines = []
+        lines = [f"# {title}", ""]
 
-        # Title
-        lines.append(f"# {title}")
-        lines.append("")
-
-        # Metadata
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        lines.append(f"**Generated:** {timestamp}")
-        lines.append("")
+        lines.extend([f"**Generated:** {timestamp}", ""])
 
         # Summary
         summary = validation_data.get("summary", {})
-        lines.append("## Summary")
-        lines.append("")
-        lines.append(f"- **Total Tests:** {summary.get('total_tests', 0)}")
-        lines.append(f"- **Passed:** {summary.get('total_passed', 0)} ✅")
-        lines.append(f"- **Failed:** {summary.get('total_failed', 0)} ❌")
-        lines.append(f"- **Pass Rate:** {summary.get('pass_rate_formatted', '0%')}")
-        lines.append("")
+        lines.extend(
+            [
+                "## Summary",
+                "",
+                f"- **Total Tests:** {summary.get('total_tests', 0)}",
+                f"- **Passed:** {summary.get('total_passed', 0)} \u2705",
+                f"- **Failed:** {summary.get('total_failed', 0)} \u274c",
+                f"- **Pass Rate:** {summary.get('pass_rate_formatted', '0%')}",
+                "",
+            ]
+        )
 
-        # Status indicator
         if summary.get("has_issues", False):
-            lines.append(f"> ⚠️ **{summary.get('status_message', 'Issues detected')}**")
+            lines.append(f"> \u26a0\ufe0f **{summary.get('status_message', 'Issues detected')}**")
         else:
-            lines.append(f"> ✅ **{summary.get('status_message', 'All tests passed')}**")
+            lines.append(f"> \u2705 **{summary.get('status_message', 'All tests passed')}**")
         lines.append("")
 
         # TOC
         if self.include_toc:
-            lines.append("## Table of Contents")
-            lines.append("")
-            lines.append("- [Model Information](#model-information)")
-            lines.append("- [Test Results](#test-results)")
+            lines.extend(
+                [
+                    "## Table of Contents",
+                    "",
+                    "- [Model Information](#model-information)",
+                    "- [Test Results](#test-results)",
+                ]
+            )
             if validation_data.get("recommendations"):
                 lines.append("- [Recommendations](#recommendations)")
             lines.append("")
 
         # Model Information
-        model_info = validation_data.get("model_info", {})
-        lines.append("## Model Information")
-        lines.append("")
-        lines.append(f"- **Model Type:** {model_info.get('model_type', 'Unknown')}")
-        if "formula" in model_info:
-            lines.append(f"- **Formula:** `{model_info['formula']}`")
-        lines.append(
-            f"- **Observations:** {model_info.get('nobs_formatted', model_info.get('nobs', 'N/A'))}"
-        )
-        if "n_entities" in model_info:
-            lines.append(
-                f"- **Entities:** {model_info.get('n_entities_formatted', model_info.get('n_entities'))}"
-            )
-        if "n_periods" in model_info:
-            lines.append(
-                f"- **Time Periods:** {model_info.get('n_periods_formatted', model_info.get('n_periods'))}"
-            )
-        lines.append("")
+        lines.extend(self._format_model_info(validation_data.get("model_info", {})))
 
         # Test Results
         tests = validation_data.get("tests", [])
         if tests:
-            lines.append("## Test Results")
-            lines.append("")
-
-            # Group by category
-            categories: dict[str, list] = {}
-            for test in tests:
-                cat = test["category"]
-                if cat not in categories:
-                    categories[cat] = []
-                categories[cat].append(test)
-
-            # Export each category
-            for category, cat_tests in categories.items():
-                lines.append(f"### {category}")
-                lines.append("")
-
-                # Table header
-                lines.append("| Test | Statistic | P-value | Result |")
-                lines.append("|------|-----------|---------|--------|")
-
-                # Table rows
-                for test in cat_tests:
-                    name = test["name"]
-                    stat = test["statistic_formatted"]
-                    pval = test["pvalue_formatted"]
-                    sig = test.get("significance", "")
-                    result = test["result"]
-
-                    # Emoji indicator
-                    if result == "REJECT":
-                        result_emoji = "❌ REJECT"
-                    else:
-                        result_emoji = "✅ ACCEPT"
-
-                    lines.append(f"| {name} | {stat} | {pval}{sig} | {result_emoji} |")
-
-                lines.append("")
+            lines.extend(self._format_test_results(tests))
 
         # Recommendations
         recommendations = validation_data.get("recommendations", [])
         if recommendations:
-            lines.append("## Recommendations")
-            lines.append("")
-
+            lines.extend(["## Recommendations", ""])
             for i, rec in enumerate(recommendations, 1):
-                severity = rec["severity"].upper()
-                category = rec["category"]
-                issue = rec["issue"]
-
-                # Severity emoji
-                if severity == "CRITICAL":
-                    emoji = "🔴"
-                elif severity == "HIGH":
-                    emoji = "🟠"
-                elif severity == "MEDIUM":
-                    emoji = "🟡"
-                else:
-                    emoji = "🔵"
-
-                lines.append(f"### {i}. {emoji} {category} ({severity})")
-                lines.append("")
-                lines.append(f"**Issue:** {issue}")
-                lines.append("")
-
-                # Failed tests
-                if rec.get("tests"):
-                    lines.append("**Failed Tests:**")
-                    for test in rec["tests"]:
-                        lines.append(f"- {test}")
-                    lines.append("")
-
-                # Suggestions
-                if rec.get("suggestions"):
-                    lines.append("**Suggested Actions:**")
-                    for suggestion in rec["suggestions"]:
-                        lines.append(f"1. {suggestion}")
-                    lines.append("")
+                lines.extend(self._format_recommendation(i, rec))
 
         # Footer
-        lines.append("---")
-        lines.append("")
-        lines.append("*Generated with [PanelBox](https://github.com/panelbox/panelbox)*")
-        lines.append("")
+        lines.extend(
+            [
+                "---",
+                "",
+                "*Generated with [PanelBox](https://github.com/panelbox/panelbox)*",
+                "",
+            ]
+        )
 
         return "\n".join(lines)
 
-    def export_validation_tests(self, tests: List[Dict[str, Any]]) -> str:
+    def export_validation_tests(self, tests: list[dict[str, Any]]) -> str:
         """
         Export validation tests as Markdown table.
 
@@ -265,8 +254,8 @@ class MarkdownExporter:
 
     def export_regression_table(
         self,
-        coefficients: List[Dict[str, Any]],
-        model_info: Dict[str, Any],
+        coefficients: list[dict[str, Any]],
+        model_info: dict[str, Any],
         title: str = "Regression Results",
     ) -> str:
         """
@@ -341,7 +330,7 @@ class MarkdownExporter:
         return "\n".join(lines)
 
     def export_summary_stats(
-        self, stats: List[Dict[str, Any]], title: str = "Summary Statistics"
+        self, stats: list[dict[str, Any]], title: str = "Summary Statistics"
     ) -> str:
         """
         Export summary statistics as Markdown.
@@ -387,7 +376,7 @@ class MarkdownExporter:
         return "\n".join(lines)
 
     def save(
-        self, markdown_content: str, output_path: Union[str, Path], overwrite: bool = False
+        self, markdown_content: str, output_path: str | Path, overwrite: bool = False
     ) -> Path:
         """
         Save Markdown content to file.
@@ -408,14 +397,14 @@ class MarkdownExporter:
 
         Examples
         --------
-        >>> exporter.save(md, 'report.md')
+        >>> exporter.save(md, "report.md")
         """
         output_path = Path(output_path)
 
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. " "Use overwrite=True to replace."
+                f"File already exists: {output_path}. Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -429,7 +418,5 @@ class MarkdownExporter:
     def __repr__(self) -> str:
         """String representation."""
         return (
-            f"MarkdownExporter("
-            f"include_toc={self.include_toc}, "
-            f"github_flavor={self.github_flavor})"
+            f"MarkdownExporter(include_toc={self.include_toc}, github_flavor={self.github_flavor})"
         )

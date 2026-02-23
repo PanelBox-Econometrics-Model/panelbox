@@ -1,0 +1,3 @@
+# .git-blame-ignore-revs
+# Migracao de formatacao: black -> ruff format
+# TODO: Add the commit hash after committing the formatting changes

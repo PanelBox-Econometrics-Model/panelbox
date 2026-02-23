@@ -4,7 +4,7 @@ Tests for time-series cross-validation module.
 This test suite validates the TimeSeriesCV class for panel data models.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd

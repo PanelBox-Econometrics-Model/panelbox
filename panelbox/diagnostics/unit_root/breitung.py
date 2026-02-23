@@ -6,13 +6,18 @@ Reference:
     In Advances in Econometrics, Vol. 15, 161-177.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from statsmodels.regression.linear_model import OLS
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,8 +71,8 @@ class BreitungResult:
             "=" * 70,
             "Breitung (2000) Unit Root Test",
             "=" * 70,
-            f"H0: All series have a unit root",
-            f"H1: All series are stationary",
+            "H0: All series have a unit root",
+            "H1: All series are stationary",
             "",
             f"Specification: {self._format_trend()}",
             f"Number of entities (N): {self.n_entities}",
@@ -182,11 +187,11 @@ def breitung_test(
     >>> for i in range(10):
     ...     y = np.random.randn(100).cumsum()  # Random walk
     ...     for t, val in enumerate(y):
-    ...         data.append({'entity': i, 'time': t, 'y': val})
+    ...         data.append({"entity": i, "time": t, "y": val})
     >>> df = pd.DataFrame(data)
     >>>
     >>> # Test for unit root
-    >>> result = breitung_test(df, 'y', trend='ct')
+    >>> result = breitung_test(df, "y", trend="ct")
     >>> print(result.summary())
     """
     # Validate inputs
@@ -218,7 +223,7 @@ def breitung_test(
 
         if T_common is None:
             T_common = T
-        elif T != T_common:
+        elif T_common != T:
             raise ValueError("Breitung test requires balanced panel (same T for all entities)")
 
         # Extract variable

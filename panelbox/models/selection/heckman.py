@@ -19,8 +19,11 @@ Wooldridge, J.M. (1995). "Selection Corrections for Panel Data Models Under
     Conditional Mean Independence Assumptions." Journal of Econometrics, 68(1), 115-132.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -28,6 +31,8 @@ from scipy import stats
 from scipy.optimize import minimize
 
 from panelbox.models.base import NonlinearPanelModel, PanelModelResults
+
+logger = logging.getLogger(__name__)
 
 
 class PanelHeckman(NonlinearPanelModel):
@@ -60,8 +65,8 @@ class PanelHeckman(NonlinearPanelModel):
         exog: np.ndarray,
         selection: np.ndarray,
         exog_selection: np.ndarray,
-        entity: Optional[np.ndarray] = None,
-        time: Optional[np.ndarray] = None,
+        entity: np.ndarray | None = None,
+        time: np.ndarray | None = None,
         method: Literal["two_step", "mle"] = "two_step",
     ):
         # Store entity and time before calling super().__init__
@@ -96,7 +101,8 @@ class PanelHeckman(NonlinearPanelModel):
         if self.exog_selection.shape[1] <= self.exog.shape[1]:
             warnings.warn(
                 "Selection equation should include at least one exclusion restriction "
-                "(variable not in outcome equation) for identification"
+                "(variable not in outcome equation) for identification",
+                stacklevel=2,
             )
 
     def _log_likelihood(self, params: np.ndarray) -> float:
@@ -163,7 +169,7 @@ class PanelHeckman(NonlinearPanelModel):
         else:
             return exog @ beta
 
-    def fit(self, method: Optional[str] = None, **kwargs) -> "PanelHeckmanResult":
+    def fit(self, method: str | None = None, **kwargs) -> PanelHeckmanResult:
         """
         Estimate Heckman model.
 
@@ -189,6 +195,7 @@ class PanelHeckman(NonlinearPanelModel):
                 "MLE with N>500 may take several minutes. "
                 "Consider two-step estimation for large samples.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if method == "mle" and kwargs.get("quadrature_points", 10) > 15:
@@ -196,6 +203,7 @@ class PanelHeckman(NonlinearPanelModel):
                 "MLE with >15 quadrature points may be very slow. "
                 "Consider q=10 for exploratory analysis.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Selection rate warnings
@@ -205,6 +213,7 @@ class PanelHeckman(NonlinearPanelModel):
                 f"Extreme selection rate ({selection_rate:.1%}). "
                 "Inverse Mills ratios may be unstable. Check model specification.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if method == "two_step":
@@ -214,7 +223,7 @@ class PanelHeckman(NonlinearPanelModel):
         else:
             raise ValueError(f"Unknown method: {method}")
 
-    def _two_step_estimation(self) -> "PanelHeckmanResult":
+    def _two_step_estimation(self) -> PanelHeckmanResult:
         """
         Two-step Heckman procedure.
 
@@ -228,7 +237,8 @@ class PanelHeckman(NonlinearPanelModel):
         # If all selected, no selection bias - return OLS results
         if n_selected == len(self.selection):
             warnings.warn(
-                "All observations are selected. No selection bias to correct. Returning OLS estimates."
+                "All observations are selected. No selection bias to correct. Returning OLS estimates.",
+                stacklevel=2,
             )
 
             # Simple OLS
@@ -259,6 +269,7 @@ class PanelHeckman(NonlinearPanelModel):
         from scipy.optimize import minimize
 
         def probit_llf(params):
+            """Compute the probit log-likelihood function."""
             linear_pred = self.exog_selection @ params
             prob = stats.norm.cdf(linear_pred)
             prob = np.clip(prob, 1e-10, 1 - 1e-10)
@@ -317,10 +328,8 @@ class PanelHeckman(NonlinearPanelModel):
             lambda_imr=lambda_imr,
         )
 
-    def _mle_estimation(self, **kwargs) -> "PanelHeckmanResult":
-        """
-        Full information maximum likelihood estimation.
-        """
+    def _mle_estimation(self, **kwargs) -> PanelHeckmanResult:
+        """Full information maximum likelihood estimation."""
         # Initial values from two-step
         two_step = self._two_step_estimation()
 
@@ -343,7 +352,7 @@ class PanelHeckman(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"MLE did not converge: {result.message}")
+            warnings.warn(f"MLE did not converge: {result.message}", stacklevel=2)
 
         # Extract parameters
         params = result.x
@@ -383,7 +392,7 @@ class PanelHeckmanResult(PanelModelResults):
         sigma: float,
         rho: float,
         lambda_imr: np.ndarray,
-        llf: Optional[float] = None,
+        llf: float | None = None,
         converged: bool = True,
     ):
         self.model = model
@@ -396,6 +405,21 @@ class PanelHeckmanResult(PanelModelResults):
         self.lambda_imr = lambda_imr
         self.llf = llf
         self.converged = converged
+
+        # Store variable names for DataFrame prediction
+        if hasattr(model, "exog") and hasattr(model.exog, "columns"):
+            self.exog_names = list(model.exog.columns)
+        elif hasattr(model, "exog_names"):
+            self.exog_names = list(model.exog_names)
+        else:
+            self.exog_names = None
+
+        if hasattr(model, "exog_selection") and hasattr(model.exog_selection, "columns"):
+            self.exog_selection_names = list(model.exog_selection.columns)
+        elif hasattr(model, "exog_selection_names"):
+            self.exog_selection_names = list(model.exog_selection_names)
+        else:
+            self.exog_selection_names = None
 
         # Number of observations
         self.n_selected = np.sum(model.selection)
@@ -451,8 +475,8 @@ class PanelHeckmanResult(PanelModelResults):
 
     def predict(
         self,
-        exog: Optional[np.ndarray] = None,
-        exog_selection: Optional[np.ndarray] = None,
+        exog: np.ndarray | pd.DataFrame | None = None,
+        exog_selection: np.ndarray | pd.DataFrame | None = None,
         type: Literal["unconditional", "conditional"] = "unconditional",
     ) -> np.ndarray:
         """
@@ -460,10 +484,12 @@ class PanelHeckmanResult(PanelModelResults):
 
         Parameters
         ----------
-        exog : np.ndarray, optional
-            Outcome equation regressors
-        exog_selection : np.ndarray, optional
-            Selection equation regressors
+        exog : np.ndarray, pd.DataFrame, or None
+            Outcome equation regressors.
+            If pd.DataFrame, extracts columns matching exog_names.
+        exog_selection : np.ndarray, pd.DataFrame, or None
+            Selection equation regressors.
+            If pd.DataFrame, extracts columns matching exog_selection_names.
         type : str
             'unconditional': E[y*] (latent outcome)
             'conditional': E[y|selected] (observed outcome)
@@ -475,8 +501,25 @@ class PanelHeckmanResult(PanelModelResults):
         """
         if exog is None:
             exog = self.model.exog
+        elif isinstance(exog, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in exog: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
+
         if exog_selection is None:
             exog_selection = self.model.exog_selection
+        elif isinstance(exog_selection, pd.DataFrame):
+            if self.exog_selection_names is not None:
+                missing = [c for c in self.exog_selection_names if c not in exog_selection.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in exog_selection: {missing}")
+                exog_selection = exog_selection[self.exog_selection_names].values
+            else:
+                exog_selection = exog_selection.values
 
         # Linear prediction for outcome
         y_pred = exog @ self.outcome_params
@@ -489,7 +532,7 @@ class PanelHeckmanResult(PanelModelResults):
 
         return y_pred
 
-    def selection_test(self) -> Dict[str, float]:
+    def selection_test(self) -> dict[str, float]:
         """
         Test for presence of selection bias.
 
@@ -537,7 +580,7 @@ class PanelHeckmanResult(PanelModelResults):
         --------
         >>> result = model.fit()
         >>> test = result.selection_effect()
-        >>> print(test['interpretation'])
+        >>> print(test["interpretation"])
 
         Notes
         -----
@@ -625,7 +668,7 @@ class PanelHeckmanResult(PanelModelResults):
         except ImportError:
             raise ImportError(
                 "matplotlib is required for plotting. Install with: pip install matplotlib"
-            )
+            ) from None
 
         # Compute selection probabilities
         linear_pred = self.model.exog_selection @ self.probit_params
@@ -680,7 +723,7 @@ class PanelHeckmanResult(PanelModelResults):
         --------
         >>> result = model.fit()
         >>> comparison = result.compare_ols_heckman()
-        >>> print(comparison['interpretation'])
+        >>> print(comparison["interpretation"])
 
         Notes
         -----

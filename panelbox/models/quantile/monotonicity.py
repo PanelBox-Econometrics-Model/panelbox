@@ -5,7 +5,8 @@ Tools for ensuring monotonic (non-crossing) quantile curves across different
 quantile levels. Implements various methods including detection, rearrangement,
 isotonic regression, and constrained optimization.
 
-References:
+References
+----------
     Chernozhukov, V., Fernández-Val, I., & Galichon, A. (2010).
     Quantile and probability curves without crossing. Econometrica, 78(3), 1093-1125.
 
@@ -13,15 +14,18 @@ References:
     Noncrossing quantile regression curve estimation. Biometrika, 97(4), 825-838.
 """
 
+from __future__ import annotations
+
 import copy
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
+
+logger = logging.getLogger(__name__)
 
 
 class QuantileMonotonicity:
@@ -37,8 +41,8 @@ class QuantileMonotonicity:
 
     @staticmethod
     def detect_crossing(
-        results: Dict, X_test: Optional[np.ndarray] = None, n_test: int = 100
-    ) -> "CrossingReport":
+        results: dict, X_test: np.ndarray | None = None, n_test: int = 100
+    ) -> CrossingReport:
         """
         Detect if quantile curves cross.
 
@@ -61,7 +65,7 @@ class QuantileMonotonicity:
         # Get test points
         if X_test is None:
             # Use a sample of observations
-            model = list(results.values())[0].model
+            model = next(iter(results.values())).model
             n_sample = min(n_test, model.nobs)
             idx = np.random.choice(model.nobs, n_sample, replace=False)
             X_test = model.X[idx]
@@ -110,7 +114,7 @@ class QuantileMonotonicity:
         )
 
     @staticmethod
-    def rearrangement(results: Dict, X: Optional[np.ndarray] = None) -> Dict:
+    def rearrangement(results: dict, X: np.ndarray | None = None) -> dict:
         """
         Rearrangement method (Chernozhukov, Fernández-Val, Galichon 2010).
 
@@ -131,7 +135,7 @@ class QuantileMonotonicity:
         tau_list = sorted(results.keys())
 
         if X is None:
-            X = list(results.values())[0].model.X
+            X = next(iter(results.values())).model.X
 
         # Get predictions for all quantiles
         predictions = np.column_stack([X @ results[tau].params for tau in tau_list])
@@ -179,7 +183,7 @@ class QuantileMonotonicity:
         array
             Monotonized coefficient matrix
         """
-        n_tau, n_coef = coef_matrix.shape
+        _n_tau, n_coef = coef_matrix.shape
         monotonized = np.zeros_like(coef_matrix)
 
         for j in range(n_coef):
@@ -197,7 +201,7 @@ class QuantileMonotonicity:
         method: str = "trust-constr",
         max_iter: int = 1000,
         verbose: bool = False,
-    ) -> Dict[float, np.ndarray]:
+    ) -> dict[float, np.ndarray]:
         """
         Estimate QR with non-crossing constraints.
 
@@ -229,7 +233,7 @@ class QuantileMonotonicity:
         n_tau = len(tau_list)
 
         # Stack all parameters
-        n_params = n_tau * p
+        n_tau * p
 
         def check_loss(u: np.ndarray, tau: float) -> np.ndarray:
             """Check loss function for quantile regression."""
@@ -265,7 +269,7 @@ class QuantileMonotonicity:
 
         # Initial values (unconstrained estimates)
         if verbose:
-            print("Computing initial unconstrained estimates...")
+            logger.info("Computing initial unconstrained estimates...")
 
         init_params = []
         for tau in tau_list:
@@ -289,7 +293,7 @@ class QuantileMonotonicity:
 
         # Optimize
         if verbose:
-            print("Optimizing with non-crossing constraints...")
+            logger.info("Optimizing with non-crossing constraints...")
 
         result = minimize(
             fun=objective,
@@ -300,7 +304,9 @@ class QuantileMonotonicity:
         )
 
         if not result.success:
-            warnings.warn(f"Constrained optimization did not converge: {result.message}")
+            warnings.warn(
+                f"Constrained optimization did not converge: {result.message}", stacklevel=2
+            )
 
         # Extract results
         params_matrix = result.x.reshape(n_tau, p)
@@ -317,7 +323,7 @@ class QuantileMonotonicity:
         max_iter: int = 100,
         tol: float = 1e-6,
         verbose: bool = False,
-    ) -> Dict[float, np.ndarray]:
+    ) -> dict[float, np.ndarray]:
         """
         Simultaneous quantile regression with soft non-crossing penalty.
 
@@ -387,7 +393,7 @@ class QuantileMonotonicity:
             # Check convergence
             if np.max(np.abs(beta_matrix - beta_old)) < tol:
                 if verbose:
-                    print(f"Converged after {iteration+1} iterations")
+                    logger.info(f"Converged after {iteration + 1} iterations")
                 break
 
         results = {tau: beta_matrix[i] for i, tau in enumerate(tau_list)}
@@ -438,14 +444,14 @@ class CrossingReport:
     """Report on quantile crossing detection."""
 
     def __init__(
-        self, has_crossing: bool, crossings: List[Dict], total_inversions: int, pct_affected: float
+        self, has_crossing: bool, crossings: list[dict], total_inversions: int, pct_affected: float
     ):
         self.has_crossing = has_crossing
         self.crossings = crossings
         self.total_inversions = total_inversions
         self.pct_affected = pct_affected
 
-    def summary(self) -> "CrossingReport":
+    def summary(self) -> CrossingReport:
         """Print crossing summary."""
         print("\nQuantile Crossing Detection Report")
         print("=" * 50)
@@ -463,15 +469,14 @@ class CrossingReport:
                 tau1, tau2 = crossing["tau_pair"]
                 print(f"τ={tau1:.2f} vs τ={tau2:.2f}:")
                 print(
-                    f"  Inversions: {crossing['n_inversions']} "
-                    f"({crossing['pct_inversions']:.1f}%)"
+                    f"  Inversions: {crossing['n_inversions']} ({crossing['pct_inversions']:.1f}%)"
                 )
                 print(f"  Max violation: {crossing['max_violation']:.4f}")
                 print(f"  Mean violation: {crossing['mean_violation']:.4f}")
 
         return self
 
-    def plot_violations(self, X: np.ndarray, results: Dict):
+    def plot_violations(self, X: np.ndarray, results: dict):
         """Visualize crossing violations."""
         import matplotlib.pyplot as plt
 
@@ -535,7 +540,7 @@ class MonotonicityComparison:
 
     def compare_methods(
         self,
-        methods: List[str] = ["unconstrained", "rearrangement", "isotonic", "constrained"],
+        methods: list[str] = None,
         verbose: bool = False,
     ) -> pd.DataFrame:
         """
@@ -553,13 +558,15 @@ class MonotonicityComparison:
         DataFrame
             Comparison results
         """
+        if methods is None:
+            methods = ["unconstrained", "rearrangement", "isotonic", "constrained"]
         from ..pooled import PooledQuantile
 
         comparison = []
 
         for method in methods:
             if verbose:
-                print(f"\nEstimating with method: {method}")
+                logger.info(f"Estimating with method: {method}")
 
             if method == "unconstrained":
                 # Standard QR without constraints
@@ -595,8 +602,6 @@ class MonotonicityComparison:
                 # Create results dict
                 results = {}
                 for i, tau in enumerate(self.tau_list):
-                    from copy import deepcopy
-
                     results[tau] = type(
                         "Result",
                         (),
@@ -665,7 +670,7 @@ class MonotonicityComparison:
             coefs = [results[tau].params[var_idx] for tau in self.tau_list]
             ax.plot(self.tau_list, coefs, "o-", linewidth=2)
             ax.set_xlabel("Quantile (τ)")
-            ax.set_ylabel(f"Coefficient {var_idx+1}")
+            ax.set_ylabel(f"Coefficient {var_idx + 1}")
             ax.set_title(f"{method.capitalize()} Method")
             ax.grid(True, alpha=0.3)
 

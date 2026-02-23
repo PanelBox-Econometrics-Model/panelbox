@@ -12,17 +12,23 @@ LeSage, J.P. and Pace, R.K. (2009). "Introduction to Spatial Econometrics."
     Chapman & Hall/CRC.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from scipy import optimize
 from scipy.sparse import issparse
+from scipy.sparse.linalg import splu
 from scipy.stats import chi2
 
 from .base_spatial import SpatialPanelModel
 from .spatial_lag import SpatialPanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class GeneralNestingSpatial(SpatialPanelModel):
@@ -80,13 +86,12 @@ class GeneralNestingSpatial(SpatialPanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        W1: Optional[np.ndarray] = None,
-        W2: Optional[np.ndarray] = None,
-        W3: Optional[np.ndarray] = None,
-        weights: Optional[np.ndarray] = None,
+        W1: np.ndarray | None = None,
+        W2: np.ndarray | None = None,
+        W3: np.ndarray | None = None,
+        weights: np.ndarray | None = None,
     ):
         """Initialize GNS model with multiple weight matrices."""
-
         # Use first non-null W matrix for base initialization
         W_base = W1 if W1 is not None else (W2 if W2 is not None else W3)
         if W_base is None:
@@ -152,7 +157,7 @@ class GeneralNestingSpatial(SpatialPanelModel):
         """
         # Prepare data
         y, X = self.prepare_data(effects)
-        n_obs, k_vars = X.shape
+        _n_obs, _k_vars = X.shape
         T = self.n_periods
         N = self.n_entities
 
@@ -170,10 +175,9 @@ class GeneralNestingSpatial(SpatialPanelModel):
 
             # Combine X and WX
             X_full = np.hstack([X, WX])
-            k_full = X_full.shape[1]
+            X_full.shape[1]
         else:
             X_full = X
-            k_full = k_vars
             WX = None
 
         if method == "ml":
@@ -218,7 +222,6 @@ class GeneralNestingSpatial(SpatialPanelModel):
         **kwargs,
     ):
         """Maximum Likelihood estimation for GNS model."""
-
         n_obs = len(y)
         T = self.n_periods
         N = self.n_entities
@@ -229,7 +232,6 @@ class GeneralNestingSpatial(SpatialPanelModel):
 
         def negative_log_likelihood(params):
             """Negative log-likelihood for GNS model."""
-
             # Parse parameters
             rho = params[0]
             lambda_ = params[1]
@@ -301,14 +303,14 @@ class GeneralNestingSpatial(SpatialPanelModel):
         )
 
         if not opt_result.success:
-            warnings.warn(f"Optimization did not converge: {opt_result.message}")
+            warnings.warn(f"Optimization did not converge: {opt_result.message}", stacklevel=2)
 
         # Extract results
         params_opt = opt_result.x
         rho = params_opt[0]
         lambda_ = params_opt[1]
         beta_theta = params_opt[2 : 2 + k_full]
-        sigma2 = params_opt[2 + k_full]
+        params_opt[2 + k_full]
 
         # Split beta and theta if WX included
         if include_wx:
@@ -326,7 +328,7 @@ class GeneralNestingSpatial(SpatialPanelModel):
             cov_matrix = np.linalg.inv(-hessian)
             std_errors = np.sqrt(np.diag(cov_matrix))
         except np.linalg.LinAlgError:
-            warnings.warn("Hessian is singular, using identity matrix for covariance")
+            warnings.warn("Hessian is singular, using identity matrix for covariance", stacklevel=2)
             std_errors = np.ones(len(params_opt))
             cov_matrix = np.eye(len(params_opt))
 
@@ -347,8 +349,9 @@ class GeneralNestingSpatial(SpatialPanelModel):
                     1
                     - pd.Series(np.abs(params_opt / std_errors)).apply(
                         lambda x: pd.Series([x]).apply(
-                            lambda z: 1
-                            - 0.5 * (1 + np.sign(z) * (1 - np.exp(-2 * z**2 / np.pi) ** 0.5))
+                            lambda z: (
+                                1 - 0.5 * (1 + np.sign(z) * (1 - np.exp(-2 * z**2 / np.pi) ** 0.5))
+                            )
                         )[0]
                     )
                 ),
@@ -407,19 +410,19 @@ class GeneralNestingSpatial(SpatialPanelModel):
             # For dense matrices
             sign, log_det = np.linalg.slogdet(A)
             if sign <= 0:
-                warnings.warn("Matrix has non-positive determinant")
+                warnings.warn("Matrix has non-positive determinant", stacklevel=2)
                 return -1e10
         return log_det
 
     def _compute_hessian_ml(self, params, y, X, X_full, WX, T, N):
         """Compute Hessian matrix for ML estimation (numerical approximation)."""
-
         eps = 1e-5
         n_params = len(params)
         hessian = np.zeros((n_params, n_params))
 
         # Define objective function
         def obj_func(p):
+            """Compute the concentrated log-likelihood objective."""
             return self._ml_objective_for_hessian(p, y, X, X_full, WX, T, N)
 
         # Numerical Hessian using finite differences
@@ -494,8 +497,8 @@ class GeneralNestingSpatial(SpatialPanelModel):
         return nll
 
     def test_restrictions(
-        self, restrictions: Dict[str, float], full_model: Optional[SpatialPanelResults] = None
-    ) -> Dict:
+        self, restrictions: dict[str, float], full_model: SpatialPanelResults | None = None
+    ) -> dict:
         """
         Likelihood Ratio test for parameter restrictions.
 

@@ -12,6 +12,7 @@ Wooldridge, J. M. (2010). Econometric Analysis of Cross Section and Panel Data
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +22,8 @@ import numpy as np
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class MundlakTest(ValidationTest):
@@ -57,7 +60,7 @@ class MundlakTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Mundlak test.
 

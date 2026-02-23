@@ -1,5 +1,5 @@
 """
-Panel VAR Data Transformations for GMM Estimation
+Panel VAR Data Transformations for GMM Estimation.
 
 This module implements transformation methods for removing fixed effects in Panel VAR models,
 specifically designed for GMM estimation following Arellano & Bover (1995) and Abrigo & Love (2016).
@@ -8,25 +8,30 @@ Transformations:
 - Forward Orthogonal Deviations (FOD): Arellano & Bover (1995)
 - First-Differences (FD): Anderson & Hsiao (1981)
 
-References:
+References
+----------
 - Arellano, M., & Bover, O. (1995). Another look at the instrumental variable estimation
   of error-components models. Journal of econometrics, 68(1), 29-51.
 - Abrigo, M. R., & Love, I. (2016). Estimation of panel vector autoregression in Stata.
   The Stata Journal, 16(3), 778-804.
 """
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def forward_orthogonal_deviation(
     data: pd.DataFrame,
     entity_col: str = "entity",
     time_col: str = "time",
-    value_cols: Optional[list] = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    value_cols: list | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Apply Forward Orthogonal Deviations (FOD) transformation to panel data.
 
@@ -68,11 +73,13 @@ def forward_orthogonal_deviation(
 
     Examples
     --------
-    >>> df = pd.DataFrame({
-    ...     'entity': [1, 1, 1, 2, 2, 2],
-    ...     'time': [1, 2, 3, 1, 2, 3],
-    ...     'y': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-    ... })
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "entity": [1, 1, 1, 2, 2, 2],
+    ...         "time": [1, 2, 3, 1, 2, 3],
+    ...         "y": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    ...     }
+    ... )
     >>> transformed, meta = forward_orthogonal_deviation(df)
     >>> print(transformed.shape[0])  # Lost last period per entity
     4
@@ -102,7 +109,7 @@ def forward_orthogonal_deviation(
         raise ValueError("No numeric columns to transform")
 
     # Sort data by entity and time
-    df = data[[entity_col, time_col] + value_cols].copy()
+    df = data[[entity_col, time_col, *value_cols]].copy()
     df = df.sort_values([entity_col, time_col]).reset_index(drop=True)
 
     # Compute entity-specific time series length
@@ -112,7 +119,7 @@ def forward_orthogonal_deviation(
     time_idx = df.groupby(entity_col).cumcount()
 
     # Compute periods ahead for each observation (Tᵢ - t)
-    periods_ahead = entity_periods - time_idx - 1
+    entity_periods - time_idx - 1
 
     # Prepare containers
     transformed_data = []
@@ -161,7 +168,7 @@ def forward_orthogonal_deviation(
     meta_df = pd.DataFrame(meta_data)
 
     # Restore original column order
-    col_order = [entity_col, time_col] + value_cols
+    col_order = [entity_col, time_col, *value_cols]
     transformed_df = transformed_df[col_order]
 
     return transformed_df, meta_df
@@ -171,7 +178,7 @@ def first_difference(
     data: pd.DataFrame,
     entity_col: str = "entity",
     time_col: str = "time",
-    value_cols: Optional[list] = None,
+    value_cols: list | None = None,
 ) -> pd.DataFrame:
     """
     Apply First-Differences (FD) transformation to panel data.
@@ -201,13 +208,15 @@ def first_difference(
 
     Examples
     --------
-    >>> df = pd.DataFrame({
-    ...     'entity': [1, 1, 1, 2, 2, 2],
-    ...     'time': [1, 2, 3, 1, 2, 3],
-    ...     'y': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-    ... })
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "entity": [1, 1, 1, 2, 2, 2],
+    ...         "time": [1, 2, 3, 1, 2, 3],
+    ...         "y": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    ...     }
+    ... )
     >>> fd = first_difference(df)
-    >>> print(fd['y'].iloc[0])  # 2.0 - 1.0 = 1.0
+    >>> print(fd["y"].iloc[0])  # 2.0 - 1.0 = 1.0
     1.0
 
     Notes
@@ -234,7 +243,7 @@ def first_difference(
         raise ValueError("No numeric columns to transform")
 
     # Sort data by entity and time
-    df = data[[entity_col, time_col] + value_cols].copy()
+    df = data[[entity_col, time_col, *value_cols]].copy()
     df = df.sort_values([entity_col, time_col]).reset_index(drop=True)
 
     # Compute first differences within each entity
@@ -261,7 +270,7 @@ def first_difference(
     transformed_df = pd.DataFrame(transformed_data)
 
     # Restore original column order
-    col_order = [entity_col, time_col] + value_cols
+    col_order = [entity_col, time_col, *value_cols]
     transformed_df = transformed_df[col_order]
 
     return transformed_df

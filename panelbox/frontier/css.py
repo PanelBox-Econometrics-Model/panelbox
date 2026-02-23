@@ -8,25 +8,31 @@ to capture inefficiency.
 The main advantage is robustness to distributional misspecification.
 The main disadvantage is that it requires T ≥ 5 (preferably T ≥ 10).
 
-References:
+References
+----------
     Cornwell, C., Schmidt, P., & Sickles, R. C. (1990).
         Production frontiers with cross-sectional and time-series variation
         in efficiency levels. Journal of Econometrics, 46(1-2), 185-200.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class CSSResult:
     """Results from Cornwell-Schmidt-Sickles estimation.
 
-    Attributes:
+    Attributes
+    ----------
         params: Estimated parameters (β coefficients)
         param_names: Parameter names
         alpha_it: Time-varying intercepts (N x T matrix)
@@ -61,7 +67,8 @@ class CSSResult:
     def summary(self) -> pd.DataFrame:
         """Create summary DataFrame of results.
 
-        Returns:
+        Returns
+        -------
             DataFrame with parameter estimates, standard errors, t-stats, p-values
         """
         summary_df = pd.DataFrame(
@@ -77,7 +84,8 @@ class CSSResult:
     def efficiency_by_entity(self) -> pd.DataFrame:
         """Get efficiency statistics by entity.
 
-        Returns:
+        Returns
+        -------
             DataFrame with entity-level efficiency statistics
         """
         results = []
@@ -101,7 +109,8 @@ class CSSResult:
     def efficiency_by_period(self) -> pd.DataFrame:
         """Get efficiency statistics by time period.
 
-        Returns:
+        Returns
+        -------
             DataFrame with period-level efficiency statistics
         """
         results = []
@@ -122,7 +131,7 @@ class CSSResult:
         return pd.DataFrame(results)
 
 
-def estimate_css_model(
+def estimate_css_model(  # noqa: C901
     y: np.ndarray,
     X: np.ndarray,
     entity_id: np.ndarray,
@@ -141,7 +150,8 @@ def estimate_css_model(
 
     The entity with the highest intercept in period t is the frontier (TE = 1).
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable (n,)
         X: Exogenous variables (n, k) - should NOT include constant
         entity_id: Entity identifiers (n,) - integer coded 0, 1, ..., N-1
@@ -149,18 +159,21 @@ def estimate_css_model(
         time_trend: Type of time trend ('none', 'linear', 'quadratic')
         frontier_type: 'production' or 'cost'
 
-    Returns:
+    Returns
+    -------
         CSSResult object with estimates
 
-    Raises:
+    Raises
+    ------
         ValueError: If time_trend not in {'none', 'linear', 'quadratic'}
         ValueError: If T < 5 (minimum recommended)
 
-    References:
+    References
+    ----------
         Cornwell, C., Schmidt, P., & Sickles, R. C. (1990).
 
     Example:
-        >>> result = estimate_css_model(y, X, entity_id, time_id, time_trend='quadratic')
+        >>> result = estimate_css_model(y, X, entity_id, time_id, time_trend="quadratic")
         >>> print(result.efficiency_by_entity())
         >>> # Get efficiency for entity 5, period 3
         >>> eff_5_3 = result.efficiency_it[5, 3]
@@ -186,6 +199,7 @@ def estimate_css_model(
             f"T = {T} is less than recommended minimum (T ≥ 5). "
             "CSS estimator may not be reliable with few time periods.",
             UserWarning,
+            stacklevel=2,
         )
 
     # Create entity dummies (N dummies, drop one for identification)
@@ -215,11 +229,10 @@ def estimate_css_model(
     if time_trend == "none":
         # Only entity fixed effects: α_i (constant over time)
         Z = np.column_stack([entity_dummies, X])
-        n_entity_params = N
     else:
         # Entity fixed effects with time trends
-        Z = np.column_stack([entity_dummies] + time_trends + [X])
-        n_entity_params = N * (1 + len(time_trends))
+        Z = np.column_stack([entity_dummies, *time_trends, X])
+        N * (1 + len(time_trends))
 
     # Estimate via OLS (or GLS for efficiency)
     # For now, use OLS: β̂ = (Z'Z)⁻¹Z'y
@@ -228,11 +241,11 @@ def estimate_css_model(
     ZtZ = Z.T @ Z
     try:
         ZtZ_inv = np.linalg.inv(ZtZ)
-    except np.linalg.LinAlgError:
+    except np.linalg.LinAlgError as err:
         raise ValueError(
             "Design matrix is singular. Check for collinearity or "
             "insufficient variation in entity/time dimensions."
-        )
+        ) from err
 
     # OLS estimates
     Zty = Z.T @ y
@@ -334,14 +347,16 @@ def test_time_trend_specification(
     Estimates CSS models with 'none', 'linear', and 'quadratic' time trends
     and performs nested F-tests.
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable
         X: Exogenous variables
         entity_id: Entity identifiers
         time_id: Time identifiers
         frontier_type: 'production' or 'cost'
 
-    Returns:
+    Returns
+    -------
         DataFrame with test results
 
     Example:
@@ -401,8 +416,10 @@ def test_time_trend_specification(
         }
     )
 
-    print("\nF-Tests for Time Trend Specification:")
-    print(f"Linear vs None:     F = {f_stat_linear:.4f}, p-value = {p_value_linear:.4f}")
-    print(f"Quadratic vs Linear: F = {f_stat_quadratic:.4f}, p-value = {p_value_quadratic:.4f}")
+    logger.info("F-Tests for Time Trend Specification:")
+    logger.info(f"Linear vs None:     F = {f_stat_linear:.4f}, p-value = {p_value_linear:.4f}")
+    logger.info(
+        f"Quadratic vs Linear: F = {f_stat_quadratic:.4f}, p-value = {p_value_quadratic:.4f}"
+    )
 
     return summary

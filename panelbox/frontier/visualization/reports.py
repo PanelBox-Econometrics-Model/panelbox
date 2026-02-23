@@ -8,22 +8,28 @@ This module provides functions to generate professional reports in various forma
 - Model comparison tables
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
+logger = logging.getLogger(__name__)
 
-def to_latex(
+
+def to_latex(  # noqa: C901
     result,
-    include_stats: Optional[List[str]] = None,
-    caption: Optional[str] = None,
-    label: Optional[str] = None,
+    include_stats: list[str] | None = None,
+    caption: str | None = None,
+    label: str | None = None,
     float_format: str = "%.4f",
 ) -> str:
     """Generate LaTeX table of SFA results.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object
         include_stats: Statistics to include ('coef', 'se', 'tval', 'pval')
                       Default: ['coef', 'se', 'pval']
@@ -31,14 +37,14 @@ def to_latex(
         label: Table label for referencing
         float_format: Format string for floating point numbers
 
-    Returns:
+    Returns
+    -------
         LaTeX table string
 
     Example:
         >>> result = sf.fit()
         >>> latex = result.to_latex(
-        ...     caption='SFA Results for Banking Efficiency',
-        ...     label='tab:sfa_results'
+        ...     caption="SFA Results for Banking Efficiency", label="tab:sfa_results"
         ... )
         >>> print(latex)
     """
@@ -64,7 +70,7 @@ def to_latex(
         lines.append(f"\\label{{{label}}}")
 
     # Table header
-    n_cols = 1 + len(include_stats)
+    1 + len(include_stats)
     lines.append(f"\\begin{{tabular}}{{l{'r' * len(include_stats)}}}")
     lines.append("\\toprule")
 
@@ -147,30 +153,28 @@ def to_latex(
 
 def to_html(
     result,
-    filename: Optional[str] = None,
+    filename: str | None = None,
     include_plots: bool = True,
     theme: str = "academic",
     **kwargs,
 ) -> str:
     """Generate HTML report with interactive plots.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object
         filename: If provided, save HTML to this file
         include_plots: Include interactive Plotly plots
         theme: Report theme ('academic', 'professional', 'presentation')
         **kwargs: Additional plot configuration
 
-    Returns:
+    Returns
+    -------
         HTML string
 
     Example:
         >>> result = sf.fit()
-        >>> result.to_html(
-        ...     filename='sfa_report.html',
-        ...     include_plots=True,
-        ...     theme='academic'
-        ... )
+        >>> result.to_html(filename="sfa_report.html", include_plots=True, theme="academic")
     """
     # HTML template
     html_parts = []
@@ -263,13 +267,13 @@ def to_html(
         elif pval < 0.1:
             stars = "*"
 
-        html_parts.append(f"<tr>")
+        html_parts.append("<tr>")
         html_parts.append(f"<td>{param}</td>")
         html_parts.append(f"<td>{coef:.6f}{stars}</td>")
         html_parts.append(f"<td>{se:.6f}</td>")
         html_parts.append(f"<td>{tval:.4f}</td>")
         html_parts.append(f"<td>{pval:.4f}</td>")
-        html_parts.append(f"</tr>")
+        html_parts.append("</tr>")
 
     html_parts.append("</tbody>")
     html_parts.append("</table>")
@@ -438,16 +442,18 @@ def get_html_css(theme: str = "academic") -> str:
 def to_markdown(result) -> str:
     """Generate Markdown report of SFA results.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object
 
-    Returns:
+    Returns
+    -------
         Markdown string
 
     Example:
         >>> result = sf.fit()
         >>> md = result.to_markdown()
-        >>> with open('report.md', 'w') as f:
+        >>> with open("report.md", "w") as f:
         ...     f.write(md)
     """
     lines = []
@@ -533,26 +539,27 @@ def to_markdown(result) -> str:
 
 
 def compare_models(
-    models: Dict[str, Any], output_format: str = "dataframe"
-) -> Union[pd.DataFrame, str]:
+    models: dict[str, Any], output_format: str = "dataframe"
+) -> pd.DataFrame | str:
     """Compare multiple SFA models side by side.
 
-    Parameters:
+    Parameters
+    ----------
         models: Dictionary mapping model names to SFResult objects
         output_format: Output format ('dataframe', 'latex', 'markdown')
 
-    Returns:
+    Returns
+    -------
         DataFrame or formatted string
 
     Example:
         >>> result_hn = sf_hn.fit()
         >>> result_tn = sf_tn.fit()
         >>> result_bc95 = sf_bc95.fit()
-        >>> comparison = compare_models({
-        ...     'Half-Normal': result_hn,
-        ...     'Truncated Normal': result_tn,
-        ...     'BC95': result_bc95
-        ... }, output_format='latex')
+        >>> comparison = compare_models(
+        ...     {"Half-Normal": result_hn, "Truncated Normal": result_tn, "BC95": result_bc95},
+        ...     output_format="latex",
+        ... )
     """
     # Collect statistics from all models
     comparison_data = {}
@@ -590,29 +597,27 @@ def efficiency_table(
     result,
     sort_by: str = "te",
     ascending: bool = False,
-    top_n: Optional[int] = None,
+    top_n: int | None = None,
     estimator: str = "bc",
 ) -> pd.DataFrame:
     """Create formatted efficiency rankings table.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object
         sort_by: Column to sort by ('te', 'entity', 'time')
         ascending: Sort order
         top_n: Limit to top N rows
         estimator: Efficiency estimator
 
-    Returns:
+    Returns
+    -------
         Formatted DataFrame
 
     Example:
         >>> result = sf.fit()
-        >>> eff_table = result.efficiency_table(
-        ...     sort_by='te',
-        ...     ascending=False,
-        ...     top_n=20
-        ... )
-        >>> eff_table.to_excel('efficiency_rankings.xlsx')
+        >>> eff_table = result.efficiency_table(sort_by="te", ascending=False, top_n=20)
+        >>> eff_table.to_excel("efficiency_rankings.xlsx")
     """
     eff_df = result.efficiency(estimator=estimator)
 

@@ -10,21 +10,23 @@ These models are appropriate when the dependent variable is binary (0/1).
 
 from __future__ import annotations
 
+import logging
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.special import expit, logit
+from scipy.special import expit
 from statsmodels.discrete.discrete_model import Logit, Probit
 
 from panelbox.core.results import PanelResults
-from panelbox.models.discrete.base import ConvergenceWarning, NonlinearPanelModel
-from panelbox.standard_errors import cluster_by_entity
+from panelbox.models.discrete.base import NonlinearPanelModel
 
 if TYPE_CHECKING:
-    pass
+    from panelbox.marginal_effects.discrete_me import MarginalEffectsResult
+
+logger = logging.getLogger(__name__)
 
 
 class PooledLogit(NonlinearPanelModel):
@@ -69,14 +71,14 @@ class PooledLogit(NonlinearPanelModel):
     >>>
     >>> # Pooled Logit with cluster-robust SEs
     >>> logit = pb.PooledLogit("lfp ~ age + educ + kids", data, "id", "year")
-    >>> results = logit.fit(cov_type='cluster')
+    >>> results = logit.fit(cov_type="cluster")
     >>> print(results.summary())
     >>>
     >>> # With robust SEs (heteroskedasticity-robust, not clustered)
-    >>> results_robust = logit.fit(cov_type='robust')
+    >>> results_robust = logit.fit(cov_type="robust")
     >>>
     >>> # Standard (non-robust) SEs
-    >>> results_standard = logit.fit(cov_type='nonrobust')
+    >>> results_standard = logit.fit(cov_type="nonrobust")
 
     Notes
     -----
@@ -116,7 +118,7 @@ class PooledLogit(NonlinearPanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
         self._sm_model = None
@@ -155,7 +157,7 @@ class PooledLogit(NonlinearPanelModel):
 
         return float(ll)
 
-    def fit(
+    def fit(  # noqa: C901
         self,
         cov_type: Literal["nonrobust", "robust", "cluster"] = "cluster",
         **kwargs,
@@ -180,7 +182,7 @@ class PooledLogit(NonlinearPanelModel):
 
         Examples
         --------
-        >>> results = model.fit(cov_type='cluster')
+        >>> results = model.fit(cov_type="cluster")
         >>> print(results.summary())
         """
         # Build design matrices
@@ -331,6 +333,7 @@ class PooledLogit(NonlinearPanelModel):
 
         # Add predict method to results
         def predict_method(X=None, type="prob"):
+            """Generate predicted probabilities from the fitted model."""
             if X is None:
                 # Use original X
                 eta_pred = eta
@@ -352,6 +355,7 @@ class PooledLogit(NonlinearPanelModel):
 
         # Add pseudo_r2 method
         def pseudo_r2_method(kind="mcfadden"):
+            """Compute McFadden pseudo R-squared."""
             if kind == "mcfadden":
                 return pseudo_r2
             elif kind == "cox_snell":
@@ -399,7 +403,7 @@ class PooledLogit(NonlinearPanelModel):
 
             try:
                 auc_roc = roc_auc_score(y, fitted_probs)
-            except:
+            except Exception:
                 auc_roc = np.nan
 
             return {
@@ -435,7 +439,7 @@ class PooledLogit(NonlinearPanelModel):
             sort_idx = np.argsort(fitted_probs)
             y_sorted = y[sort_idx]
             probs_sorted = fitted_probs[sort_idx]
-            entities_sorted = self.data.data[self.data.entity_col].values[sort_idx]
+            self.data.data[self.data.entity_col].values[sort_idx]
 
             # Divide into groups
             n_obs = len(y)
@@ -623,7 +627,7 @@ class PooledLogit(NonlinearPanelModel):
         This property rebuilds the design matrix from the formula and data.
         It is used by marginal effects computations.
         """
-        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        _y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
         return X
 
     @property
@@ -662,8 +666,8 @@ class PooledLogit(NonlinearPanelModel):
         Examples
         --------
         >>> results = model.fit()
-        >>> probs = model.predict(type='prob')
-        >>> linear_pred = model.predict(type='linear')
+        >>> probs = model.predict(type="prob")
+        >>> linear_pred = model.predict(type="linear")
         """
         if not self._fitted:
             raise ValueError("Model must be fitted before prediction. Call fit() first.")
@@ -671,7 +675,7 @@ class PooledLogit(NonlinearPanelModel):
         if type == "prob":
             return self._results.fittedvalues
         elif type == "linear":
-            y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+            _y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
             return X @ self._results.params.values
         else:
             raise ValueError(f"type must be 'linear' or 'prob', got '{type}'")
@@ -707,15 +711,15 @@ class PooledLogit(NonlinearPanelModel):
         --------
         >>> results = model.fit()
         >>> # Average Marginal Effects
-        >>> ame = model.marginal_effects(at='overall')
+        >>> ame = model.marginal_effects(at="overall")
         >>> print(ame.summary())
         >>>
         >>> # Marginal Effects at Means
-        >>> mem = model.marginal_effects(at='mean')
+        >>> mem = model.marginal_effects(at="mean")
         >>> print(mem.summary())
         >>>
         >>> # Marginal Effects at Representative values
-        >>> mer = model.marginal_effects(representative={'x1': 0.5, 'x2': 1.0})
+        >>> mer = model.marginal_effects(representative={"x1": 0.5, "x2": 1.0})
         >>> print(mer.summary())
 
         Notes
@@ -783,7 +787,7 @@ class PooledProbit(NonlinearPanelModel):
     >>>
     >>> # Pooled Probit with cluster-robust SEs
     >>> probit = pb.PooledProbit("lfp ~ age + educ + kids", data, "id", "year")
-    >>> results = probit.fit(cov_type='cluster')
+    >>> results = probit.fit(cov_type="cluster")
     >>> print(results.summary())
 
     See Also
@@ -797,7 +801,7 @@ class PooledProbit(NonlinearPanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
         self._sm_model = None
@@ -840,7 +844,7 @@ class PooledProbit(NonlinearPanelModel):
 
         return float(ll)
 
-    def fit(
+    def fit(  # noqa: C901
         self,
         cov_type: Literal["nonrobust", "robust", "cluster"] = "cluster",
         **kwargs,
@@ -1006,10 +1010,8 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add predict method
         def predict_method(X=None, type="prob"):
-            if X is None:
-                eta_pred = eta
-            else:
-                eta_pred = X @ params
+            """Generate predicted probabilities from the fitted model."""
+            eta_pred = eta if X is None else X @ params
 
             if type == "linear":
                 return eta_pred
@@ -1025,6 +1027,7 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add pseudo_r2 method
         def pseudo_r2_method(kind="mcfadden"):
+            """Compute McFadden pseudo R-squared."""
             if kind == "mcfadden":
                 return pseudo_r2
             elif kind == "cox_snell":
@@ -1041,6 +1044,7 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add classification metrics method
         def classification_metrics_method(threshold=0.5):
+            """Compute classification accuracy metrics."""
             y_pred = (fitted_probs >= threshold).astype(int)
 
             tp = np.sum((y == 1) & (y_pred == 1))
@@ -1059,7 +1063,7 @@ class PooledProbit(NonlinearPanelModel):
                 from sklearn.metrics import roc_auc_score
 
                 auc_roc = roc_auc_score(y, fitted_probs)
-            except:
+            except Exception:
                 auc_roc = np.nan
 
             return {
@@ -1075,9 +1079,7 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add Hosmer-Lemeshow test method
         def hosmer_lemeshow_test_method(n_groups=10):
-            """
-            Hosmer-Lemeshow goodness-of-fit test for panel data.
-            """
+            """Hosmer-Lemeshow goodness-of-fit test for panel data."""
             sort_idx = np.argsort(fitted_probs)
             y_sorted = y[sort_idx]
             probs_sorted = fitted_probs[sort_idx]
@@ -1139,9 +1141,7 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add Information Matrix Test method
         def information_matrix_test_method():
-            """
-            Information Matrix Test for model misspecification.
-            """
+            """Information Matrix Test for model misspecification."""
             score_i = (y - fitted_probs)[:, np.newaxis] * X
             S = score_i.T @ score_i / n
 
@@ -1177,9 +1177,7 @@ class PooledProbit(NonlinearPanelModel):
 
         # Add Link Test method
         def link_test_method():
-            """
-            Link test for model specification (Probit).
-            """
+            """Link test for model specification (Probit)."""
             eta_hat = X @ params
             X_augmented = np.column_stack([X, eta_hat**2])
 
@@ -1231,7 +1229,7 @@ class PooledProbit(NonlinearPanelModel):
         This property rebuilds the design matrix from the formula and data.
         It is used by marginal effects computations.
         """
-        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        _y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
         return X
 
     @property
@@ -1271,7 +1269,7 @@ class PooledProbit(NonlinearPanelModel):
         if type == "prob":
             return self._results.fittedvalues
         elif type == "linear":
-            y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+            _y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
             return X @ self._results.params.values
         else:
             raise ValueError(f"type must be 'linear' or 'prob', got '{type}'")
@@ -1307,15 +1305,15 @@ class PooledProbit(NonlinearPanelModel):
         --------
         >>> results = model.fit()
         >>> # Average Marginal Effects
-        >>> ame = model.marginal_effects(at='overall')
+        >>> ame = model.marginal_effects(at="overall")
         >>> print(ame.summary())
         >>>
         >>> # Marginal Effects at Means
-        >>> mem = model.marginal_effects(at='mean')
+        >>> mem = model.marginal_effects(at="mean")
         >>> print(mem.summary())
         >>>
         >>> # Marginal Effects at Representative values
-        >>> mer = model.marginal_effects(representative={'x1': 0.5, 'x2': 1.0})
+        >>> mer = model.marginal_effects(representative={"x1": 0.5, "x2": 1.0})
         >>> print(mer.summary())
 
         Notes
@@ -1444,10 +1442,8 @@ class FixedEffectsLogit(NonlinearPanelModel):
         self._prepare_data()
 
     def _prepare_data(self):
-        """
-        Prepare data: identify entities with variation and drop others.
-        """
-        y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+        """Prepare data: identify entities with variation and drop others."""
+        y, _X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
         y = y.ravel()
 
         entities = self.data.data[self.data.entity_col].values
@@ -1887,8 +1883,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
     >>>
     >>> # Use more quadrature points for higher precision
     >>> re_probit_20 = pb.RandomEffectsProbit(
-    ...     "y ~ x1 + x2", data, "entity", "time",
-    ...     quadrature_points=20
+    ...     "y ~ x1 + x2", data, "entity", "time", quadrature_points=20
     ... )
     >>> results_20 = re_probit_20.fit()
 
@@ -1932,7 +1927,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
         entity_col: str,
         time_col: str,
         quadrature_points: int = 12,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
         self.quadrature_points = quadrature_points
@@ -2098,9 +2093,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
 
     @property
     def sigma_alpha(self) -> float:
-        """
-        Standard deviation of random effects.
-        """
+        """Standard deviation of random effects."""
         if self._sigma_alpha is None:
             if not self._fitted:
                 raise ValueError("Model must be fitted first. Call fit().")
@@ -2169,7 +2162,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
         var_names = self.formula_parser.get_variable_names(self.data.data)
 
         # Add sigma_alpha to variable names
-        var_names_full = var_names + ["log_sigma_alpha"]
+        var_names_full = [*var_names, "log_sigma_alpha"]
 
         # Create results object
         results = self._create_results(params, var_names_full, y.ravel(), X)
@@ -2241,6 +2234,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
         for i in range(k):
 
             def grad_i(p):
+                """Compute individual-level gradient contributions."""
                 return self._score(p)[i]
 
             hessian[i, :] = approx_fprime(params, grad_i, eps)
@@ -2251,7 +2245,9 @@ class RandomEffectsProbit(NonlinearPanelModel):
         except np.linalg.LinAlgError:
             # If singular, use pseudo-inverse
             vcov = -np.linalg.pinv(hessian)
-            warnings.warn("Hessian is singular. Using pseudo-inverse for covariance matrix.")
+            warnings.warn(
+                "Hessian is singular. Using pseudo-inverse for covariance matrix.", stacklevel=2
+            )
 
         # Standard errors
         std_errors = np.sqrt(np.diag(vcov))
@@ -2345,10 +2341,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
             include_re : bool
                 If True, include random effect (requires entity info)
             """
-            if X_new is None:
-                X_pred = X
-            else:
-                X_pred = X_new
+            X_pred = X if X_new is None else X_new
 
             linear_pred = X_pred @ beta
 
@@ -2377,7 +2370,7 @@ class RandomEffectsProbit(NonlinearPanelModel):
 
         return results
 
-    def marginal_effects(self, at: str = "mean", method: str = "dydx") -> "MarginalEffectsResult":
+    def marginal_effects(self, at: str = "mean", method: str = "dydx") -> MarginalEffectsResult:
         """
         Compute marginal effects for Random Effects Probit.
 

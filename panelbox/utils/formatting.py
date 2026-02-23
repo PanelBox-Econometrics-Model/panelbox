@@ -5,7 +5,11 @@ This module provides functions for formatting statistical output
 in a readable, publication-quality format.
 """
 
-from typing import Union
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def format_pvalue(pvalue: float, digits: int = 4) -> str:
@@ -39,7 +43,7 @@ def format_pvalue(pvalue: float, digits: int = 4) -> str:
         return f"{pvalue:.{digits}f}"
 
 
-def format_number(value: Union[int, float], decimals: int = 4, width: int = 10) -> str:
+def format_number(value: int | float, decimals: int = 4, width: int = 10) -> str:
     """
     Format number for tabular display.
 

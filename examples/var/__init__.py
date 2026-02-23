@@ -1,5 +1,5 @@
 """
-PanelBox Panel VAR Tutorials
+PanelBox Panel VAR Tutorials.
 
 This module contains comprehensive tutorials for Panel Vector Autoregression
 (VAR) models including:
@@ -17,6 +17,7 @@ Example:
     To view available tutorials::
 
         from panelbox.examples import var
+
         print(var.list_tutorials())
 """
 
@@ -150,7 +151,7 @@ def list_pathways():
     """Print available learning pathways."""
     print("Learning Pathways:")
     print()
-    for key, info in LEARNING_PATHWAYS.items():
+    for _key, info in LEARNING_PATHWAYS.items():
         sequence = " -> ".join(info["sequence"])
         print(f"  {info['name']}: {sequence}")
         print(f"    {info['description']}")
@@ -202,11 +203,11 @@ def verify_installation():
 
 
 __all__ = [
-    "TUTORIALS",
     "LEARNING_PATHWAYS",
-    "list_tutorials",
-    "list_pathways",
-    "get_tutorial_path",
+    "TUTORIALS",
     "get_data_path",
+    "get_tutorial_path",
+    "list_pathways",
+    "list_tutorials",
     "verify_installation",
 ]

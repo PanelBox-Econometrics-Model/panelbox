@@ -6,10 +6,16 @@ implementing the check loss function and common functionality for panel quantile
 regression estimation.
 """
 
+from __future__ import annotations
+
+import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+
+from panelbox.core.serialization import SerializableMixin
+
+logger = logging.getLogger(__name__)
 
 
 class QuantilePanelModel(ABC):
@@ -146,7 +152,7 @@ class QuantilePanelModel(ABC):
         return result
 
 
-class QuantilePanelResult:
+class QuantilePanelResult(SerializableMixin):
     """Results container for quantile panel regression."""
 
     def __init__(self, model, results):

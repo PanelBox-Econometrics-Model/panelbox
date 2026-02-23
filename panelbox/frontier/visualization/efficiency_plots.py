@@ -7,11 +7,16 @@ This module provides visualization functions for:
 - Efficiency by groups (box plots)
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 def plot_efficiency_distribution(
@@ -20,12 +25,13 @@ def plot_efficiency_distribution(
     bins: int = 30,
     show_kde: bool = True,
     show_stats: bool = True,
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot distribution of efficiency scores with histogram and KDE.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency' column (from result.efficiency())
         backend: 'plotly' for interactive or 'matplotlib' for static
         bins: Number of histogram bins
@@ -34,13 +40,14 @@ def plot_efficiency_distribution(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc')
-        >>> fig = plot_efficiency_distribution(eff_df, backend='plotly')
+        >>> eff_df = result.efficiency(estimator="bc")
+        >>> fig = plot_efficiency_distribution(eff_df, backend="plotly")
         >>> fig.show()
     """
     efficiency = efficiency_df["efficiency"].values
@@ -57,7 +64,6 @@ def plot_efficiency_distribution(
 
     if backend == "plotly":
         import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
 
         fig = go.Figure()
 
@@ -87,7 +93,7 @@ def plot_efficiency_distribution(
                     y=kde_values,
                     mode="lines",
                     name="KDE",
-                    line=dict(color="red", width=2),
+                    line={"color": "red", "width": 2},
                 )
             )
 
@@ -156,7 +162,7 @@ def plot_efficiency_distribution(
         fig, ax = plt.subplots(figsize=kwargs.get("figsize", (10, 6)))
 
         # Histogram
-        n, bins_edges, patches = ax.hist(
+        _n, _bins_edges, _patches = ax.hist(
             efficiency,
             bins=bins,
             density=show_kde,
@@ -210,7 +216,12 @@ def plot_efficiency_distribution(
                 fontsize=10,
                 verticalalignment="top",
                 horizontalalignment="right",
-                bbox=dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="black"),
+                bbox={
+                    "boxstyle": "round",
+                    "facecolor": "white",
+                    "alpha": 0.8,
+                    "edgecolor": "black",
+                },
             )
 
         plt.tight_layout()
@@ -226,13 +237,14 @@ def plot_efficiency_ranking(
     top_n: int = 10,
     bottom_n: int = 10,
     entity_col: str = "entity",
-    title: Optional[str] = None,
+    title: str | None = None,
     colorscale: str = "RdYlGn",
     **kwargs,
 ) -> Any:
     """Plot efficiency rankings showing top and bottom performers.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency' column and entity identifier
         backend: 'plotly' for interactive or 'matplotlib' for static
         top_n: Number of top performers to show
@@ -242,12 +254,13 @@ def plot_efficiency_ranking(
         colorscale: Color gradient ('RdYlGn' = red-yellow-green)
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc')
+        >>> eff_df = result.efficiency(estimator="bc")
         >>> fig = plot_efficiency_ranking(eff_df, top_n=15, bottom_n=15)
         >>> fig.show()
     """
@@ -287,7 +300,7 @@ def plot_efficiency_ranking(
         import plotly.graph_objects as go
 
         # Map normalized efficiency to colors
-        colormap = px.colors.sample_colorscale(colorscale, eff_normalized)
+        px.colors.sample_colorscale(colorscale, eff_normalized)
 
         fig = go.Figure()
 
@@ -296,13 +309,13 @@ def plot_efficiency_ranking(
                 y=labels,
                 x=efficiency_values,
                 orientation="h",
-                marker=dict(
-                    color=eff_normalized,
-                    colorscale=colorscale,
-                    showscale=True,
-                    colorbar=dict(title="Efficiency"),
-                    line=dict(color="black", width=1),
-                ),
+                marker={
+                    "color": eff_normalized,
+                    "colorscale": colorscale,
+                    "showscale": True,
+                    "colorbar": {"title": "Efficiency"},
+                    "line": {"color": "black", "width": 1},
+                },
                 text=[f"{e:.4f}" for e in efficiency_values],
                 textposition="outside",
                 hovertemplate="<b>%{y}</b><br>Efficiency: %{x:.4f}<extra></extra>",
@@ -347,10 +360,10 @@ def plot_efficiency_ranking(
 
         # Horizontal bar chart
         y_positions = np.arange(len(labels))
-        bars = ax.barh(y_positions, efficiency_values, color=colors, edgecolor="black", linewidth=1)
+        ax.barh(y_positions, efficiency_values, color=colors, edgecolor="black", linewidth=1)
 
         # Add value labels
-        for i, (pos, val) in enumerate(zip(y_positions, efficiency_values)):
+        for _i, (pos, val) in enumerate(zip(y_positions, efficiency_values)):
             ax.text(val + 0.01, pos, f"{val:.4f}", va="center", fontsize=9)
 
         # Add separator line
@@ -380,13 +393,14 @@ def plot_efficiency_boxplot(
     efficiency_df: pd.DataFrame,
     group_var: str,
     backend: str = "plotly",
-    test: Optional[str] = None,
-    title: Optional[str] = None,
+    test: str | None = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot box plots of efficiency by groups.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency' column and grouping variable
         group_var: Name of column to group by
         backend: 'plotly' for interactive or 'matplotlib' for static
@@ -394,15 +408,16 @@ def plot_efficiency_boxplot(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc')
+        >>> eff_df = result.efficiency(estimator="bc")
         >>> # Assuming 'region' column exists in original data
-        >>> eff_df = eff_df.join(data['region'])
-        >>> fig = plot_efficiency_boxplot(eff_df, group_var='region', test='kruskal')
+        >>> eff_df = eff_df.join(data["region"])
+        >>> fig = plot_efficiency_boxplot(eff_df, group_var="region", test="kruskal")
         >>> fig.show()
     """
     if group_var not in efficiency_df.columns:
@@ -526,7 +541,12 @@ def plot_efficiency_boxplot(
                 fontsize=10,
                 verticalalignment="bottom",
                 horizontalalignment="right",
-                bbox=dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="black"),
+                bbox={
+                    "boxstyle": "round",
+                    "facecolor": "white",
+                    "alpha": 0.8,
+                    "edgecolor": "black",
+                },
             )
 
         plt.xticks(rotation=45, ha="right")

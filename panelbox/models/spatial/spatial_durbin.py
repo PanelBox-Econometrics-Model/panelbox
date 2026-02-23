@@ -19,16 +19,23 @@ LeSage, J.P. & Pace, R.K. (2009). Introduction to Spatial Econometrics. CRC Pres
 Elhorst, J.P. (2014). Spatial Econometrics: From Cross-Sectional Data to Spatial Panels. Springer.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
-from scipy.stats import norm
 
 from panelbox.models.spatial.base_spatial import SpatialPanelModel
 from panelbox.models.spatial.spatial_lag import SpatialPanelResults as SpatialPanelResult
+
+if TYPE_CHECKING:
+    from panelbox.core.spatial_weights import SpatialWeights
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialDurbin(SpatialPanelModel):
@@ -80,9 +87,9 @@ class SpatialDurbin(SpatialPanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        W: Union[np.ndarray, "SpatialWeights"],
+        W: np.ndarray | SpatialWeights,
         effects: Literal["fixed", "random"] = "fixed",
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         """Initialize Spatial Durbin Model."""
         super().__init__(formula, data, entity_col, time_col, W, weights)
@@ -109,8 +116,8 @@ class SpatialDurbin(SpatialPanelModel):
     def fit(
         self,
         method: Literal["qml", "ml"] = "qml",
-        effects: Optional[str] = None,
-        initial_values: Optional[Dict[str, float]] = None,
+        effects: str | None = None,
+        initial_values: dict[str, float] | None = None,
         maxiter: int = 1000,
         **kwargs,
     ) -> SpatialPanelResult:
@@ -155,7 +162,7 @@ class SpatialDurbin(SpatialPanelModel):
             raise ValueError(f"Invalid combination: effects='{self.effects}', method='{method}'")
 
     def _fit_qml_pooled(
-        self, initial_values: Optional[Dict[str, float]] = None, maxiter: int = 1000, **kwargs
+        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
     ) -> SpatialPanelResult:
         """
         Quasi-Maximum Likelihood estimation (pooled, no fixed effects).
@@ -173,7 +180,7 @@ class SpatialDurbin(SpatialPanelModel):
         X = np.asarray(self.exog)
 
         # Add constant if not already present
-        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        _const_added = not np.any(np.all(X[0, :] == X, axis=0))
         if _const_added:
             X = np.column_stack([np.ones(len(y)), X])
 
@@ -191,6 +198,7 @@ class SpatialDurbin(SpatialPanelModel):
         NT = N * T
 
         def concentrated_llf(rho):
+            """Compute the concentrated log-likelihood."""
             Wy = self._spatial_lag(y)
             y_filtered = y - rho * Wy
             try:
@@ -222,7 +230,7 @@ class SpatialDurbin(SpatialPanelModel):
             options={"maxiter": maxiter, **kwargs},
         )
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         rho_hat = result.x[0]
         self.rho = rho_hat
@@ -247,7 +255,7 @@ class SpatialDurbin(SpatialPanelModel):
         # Parameter names
         if _const_added:
             if hasattr(self.exog, "columns"):
-                base_names = ["const"] + list(self.exog.columns)
+                base_names = ["const", *list(self.exog.columns)]
             else:
                 base_names = ["const"] + [f"x{i}" for i in range(np.asarray(self.exog).shape[1])]
         else:
@@ -275,7 +283,7 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
     def _fit_qml_fe(
-        self, initial_values: Optional[Dict[str, float]] = None, maxiter: int = 1000, **kwargs
+        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
     ) -> SpatialPanelResult:
         """
         Quasi-Maximum Likelihood estimation with fixed effects.
@@ -368,7 +376,7 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         # Extract optimal rho
         rho_hat = result.x[0]
@@ -435,7 +443,7 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
     def _fit_ml_re(
-        self, initial_values: Optional[Dict[str, float]] = None, maxiter: int = 1000, **kwargs
+        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
     ) -> SpatialPanelResult:
         """
         Maximum Likelihood estimation with random effects.
@@ -534,7 +542,7 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         # Extract parameters
         params_opt = result.x
@@ -580,8 +588,8 @@ class SpatialDurbin(SpatialPanelModel):
         X_transformed = self._quasi_demean(X_augmented, theta_gls)
         Wy_transformed = self._spatial_lag(y_transformed)
 
-        y_filtered = y_transformed - rho_hat * Wy_transformed
-        fitted = X_transformed @ np.concatenate([beta_hat, theta_hat])
+        y_transformed - rho_hat * Wy_transformed
+        X_transformed @ np.concatenate([beta_hat, theta_hat])
         residuals = (
             y - self._spatial_lag(y) * rho_hat - X_augmented @ np.concatenate([beta_hat, theta_hat])
         )
@@ -622,7 +630,7 @@ class SpatialDurbin(SpatialPanelModel):
         np.ndarray
             Quasi-demeaned data
         """
-        if isinstance(X, pd.DataFrame) or isinstance(X, pd.Series):
+        if isinstance(X, (pd.DataFrame, pd.Series)):
             # Group mean
             X_bar = X.groupby(level=self.entity_col).transform("mean")
             # Quasi-demean
@@ -725,7 +733,7 @@ class SpatialDurbin(SpatialPanelModel):
 
         return hessian
 
-    def _parse_initial_values_re(self, initial_values: Dict[str, Any], K: int) -> np.ndarray:
+    def _parse_initial_values_re(self, initial_values: dict[str, Any], K: int) -> np.ndarray:
         """
         Parse initial values dictionary for random effects model.
 
@@ -743,10 +751,7 @@ class SpatialDurbin(SpatialPanelModel):
         """
         params0 = np.zeros(2 * K + 3)
 
-        if "rho" in initial_values:
-            params0[0] = initial_values["rho"]
-        else:
-            params0[0] = 0.1
+        params0[0] = initial_values.get("rho", 0.1)
 
         if "beta" in initial_values:
             params0[1 : K + 1] = initial_values["beta"]
@@ -771,7 +776,7 @@ class SpatialDurbin(SpatialPanelModel):
         return params0
 
     def predict(
-        self, exog: Optional[np.ndarray] = None, effects_type: Literal["direct", "total"] = "total"
+        self, exog: np.ndarray | None = None, effects_type: Literal["direct", "total"] = "total"
     ) -> np.ndarray:
         """
         Generate predictions from the fitted SDM.
@@ -791,10 +796,7 @@ class SpatialDurbin(SpatialPanelModel):
         if self.rho is None:
             raise ValueError("Model must be fitted before prediction")
 
-        if exog is None:
-            X = self.exog
-        else:
-            X = exog
+        X = self.exog if exog is None else exog
 
         # Compute WX
         WX = self._spatial_lag(X)

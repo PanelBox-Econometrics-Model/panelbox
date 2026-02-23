@@ -5,7 +5,10 @@ This module provides charts for visualizing panel data over time, including
 multi-line plots, trend analysis, and faceted time series.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -14,6 +17,8 @@ from plotly.subplots import make_subplots
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("timeseries_panel")
@@ -39,7 +44,7 @@ class PanelTimeSeriesChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create panel time series chart."""
         time = data.get("time")
         values = np.asarray(data.get("values"))
@@ -61,7 +66,10 @@ class PanelTimeSeriesChart(PlotlyChartBase):
             unique_entities = unique_entities[:max_entities]
             import warnings
 
-            warnings.warn(f"Too many entities. Limiting to first {max_entities} for performance.")
+            warnings.warn(
+                f"Too many entities. Limiting to first {max_entities} for performance.",
+                stacklevel=2,
+            )
 
         # Create DataFrame for easier manipulation
         df = pd.DataFrame({"time": time, "value": values, "entity": entity_id})
@@ -78,7 +86,7 @@ class PanelTimeSeriesChart(PlotlyChartBase):
                     y=entity_data["value"],
                     mode="lines",
                     name=str(entity),
-                    line=dict(color=colors[i % len(colors)] if colors else None, width=2),
+                    line={"color": colors[i % len(colors)] if colors else None, "width": 2},
                     hovertemplate=(
                         f"<b>{entity}</b><br>"
                         + "Time: %{x}<br>"
@@ -98,7 +106,7 @@ class PanelTimeSeriesChart(PlotlyChartBase):
                     y=mean_by_time["value"],
                     mode="lines",
                     name="Mean",
-                    line=dict(color="black", width=3, dash="dash"),
+                    line={"color": "black", "width": 3, "dash": "dash"},
                     hovertemplate=(
                         "<b>Mean</b><br>"
                         + "Time: %{x}<br>"
@@ -114,7 +122,7 @@ class PanelTimeSeriesChart(PlotlyChartBase):
             xaxis_title=data.get("xaxis_title", "Time"),
             yaxis_title=data.get("yaxis_title", variable_name),
             hovermode="closest",
-            legend=dict(orientation="v", yanchor="top", y=1, xanchor="left", x=1.02),
+            legend={"orientation": "v", "yanchor": "top", "y": 1, "xanchor": "left", "x": 1.02},
         )
 
         return fig
@@ -144,7 +152,7 @@ class TrendLineChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create trend line chart."""
         time = data.get("time")
         values = np.asarray(data.get("values"))
@@ -161,7 +169,7 @@ class TrendLineChart(PlotlyChartBase):
                 y=values,
                 mode="lines",
                 name="Original",
-                line=dict(color="lightgray", width=1),
+                line={"color": "lightgray", "width": 1},
                 opacity=0.7,
             )
         )
@@ -176,14 +184,14 @@ class TrendLineChart(PlotlyChartBase):
                     y=ma,
                     mode="lines",
                     name=f"MA({window})",
-                    line=dict(
-                        color=(
+                    line={
+                        "color": (
                             self.theme.color_scheme[0]
                             if self.theme and self.theme.color_scheme
                             else "blue"
                         ),
-                        width=2,
-                    ),
+                        "width": 2,
+                    },
                 )
             )
 
@@ -205,7 +213,7 @@ class TrendLineChart(PlotlyChartBase):
                         y=trend,
                         mode="lines",
                         name="Trend",
-                        line=dict(color="red", width=2, dash="dash"),
+                        line={"color": "red", "width": 2, "dash": "dash"},
                     )
                 )
 
@@ -243,7 +251,7 @@ class FacetedTimeSeriesChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create faceted time series chart."""
         time = data.get("time")
         values = np.asarray(data.get("values"))
@@ -289,14 +297,14 @@ class FacetedTimeSeriesChart(PlotlyChartBase):
                     y=entity_data["value"],
                     mode="lines",
                     name=str(entity),
-                    line=dict(
-                        color=(
+                    line={
+                        "color": (
                             self.theme.color_scheme[0]
                             if self.theme and self.theme.color_scheme
                             else "blue"
                         ),
-                        width=2,
-                    ),
+                        "width": 2,
+                    },
                     showlegend=False,
                     hovertemplate=(
                         "Time: %{x}<br>" + f"{variable_name}: %{{y:.2f}}<br>" + "<extra></extra>"

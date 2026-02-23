@@ -1,6 +1,6 @@
-"""
-Static panel models.
-"""
+"""Static panel models."""
+
+from __future__ import annotations
 
 from panelbox.models.static.between import BetweenEstimator
 from panelbox.models.static.first_difference import FirstDifferenceEstimator
@@ -9,9 +9,9 @@ from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.models.static.random_effects import RandomEffects
 
 __all__ = [
-    "PooledOLS",
-    "FixedEffects",
-    "RandomEffects",
     "BetweenEstimator",
     "FirstDifferenceEstimator",
+    "FixedEffects",
+    "PooledOLS",
+    "RandomEffects",
 ]

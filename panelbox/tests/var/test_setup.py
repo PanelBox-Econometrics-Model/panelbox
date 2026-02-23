@@ -1,11 +1,13 @@
 # tests/var/test_setup.py
 """
 Test to verify that the validation infrastructure is set up correctly.
+
 This is a sanity check for FASE 1 completion.
 """
 
+from __future__ import annotations
+
 import numpy as np
-import pytest
 
 
 def test_panel_data_fixture(panel_data):

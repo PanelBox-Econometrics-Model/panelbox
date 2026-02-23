@@ -90,7 +90,7 @@ All imports should succeed and `/tmp/test_kaleido.png` should be created.
 ## Step 4: Launch Jupyter
 
 ```bash
-cd /home/guhaase/projetos/panelbox/examples/visualization/notebooks
+cd examples/visualization/notebooks
 jupyter notebook
 # or
 jupyter lab
@@ -151,7 +151,7 @@ These directories are already created. Contents are git-ignored (only `.gitkeep`
 Run the test suite to verify all example code works:
 
 ```bash
-cd /home/guhaase/projetos/panelbox/examples/visualization
+cd examples/visualization
 pytest tests/test_visualization_examples.py -v
 ```
 

@@ -17,16 +17,14 @@ Examples
 --------
 >>> from panelbox.visualization import create_acf_pacf_plot
 >>>
->>> chart = create_acf_pacf_plot(
-...     residuals,
-...     max_lags=20,
-...     confidence_level=0.95,
-...     theme='academic'
-... )
+>>> chart = create_acf_pacf_plot(residuals, max_lags=20, confidence_level=0.95, theme="academic")
 >>> chart.show()
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -36,14 +34,16 @@ from ..base import PlotlyChartBase
 from ..registry import register_chart
 from ..themes import Theme
 
+logger = logging.getLogger(__name__)
+
 
 def _get_font_config(theme: Theme, size_modifier: int = 0) -> dict:
     """Helper to extract font configuration from theme."""
-    return dict(
-        family=theme.font_config.get("family", "Arial"),
-        size=theme.font_config.get("size", 12) + size_modifier,
-        color=theme.font_config.get("color", "#2c3e50"),
-    )
+    return {
+        "family": theme.font_config.get("family", "Arial"),
+        "size": theme.font_config.get("size", 12) + size_modifier,
+        "color": theme.font_config.get("color", "#2c3e50"),
+    }
 
 
 def calculate_acf(residuals: np.ndarray, max_lags: int) -> np.ndarray:
@@ -136,7 +136,7 @@ def calculate_pacf(residuals: np.ndarray, max_lags: int) -> np.ndarray:
     return pacf
 
 
-def ljung_box_test(residuals: np.ndarray, max_lags: int) -> Dict[str, float]:
+def ljung_box_test(residuals: np.ndarray, max_lags: int) -> dict[str, float]:
     """
     Ljung-Box test for autocorrelation.
 
@@ -194,14 +194,12 @@ class ACFPACFPlot(PlotlyChartBase):
     >>> from panelbox.visualization import ChartFactory
     >>>
     >>> chart = ChartFactory.create(
-    ...     'acf_pacf_plot',
-    ...     data={'residuals': residuals, 'max_lags': 20},
-    ...     theme='academic'
+    ...     "acf_pacf_plot", data={"residuals": residuals, "max_lags": 20}, theme="academic"
     ... )
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """
         Create ACF/PACF plot.
 
@@ -266,8 +264,8 @@ class ACFPACFPlot(PlotlyChartBase):
             go.Bar(
                 x=lags,
                 y=acf[1:],
-                marker=dict(
-                    color=[
+                marker={
+                    "color": [
                         (
                             self.theme.success_color
                             if abs(val) > confidence_band
@@ -275,8 +273,8 @@ class ACFPACFPlot(PlotlyChartBase):
                         )
                         for val in acf[1:]
                     ],
-                    line=dict(color=self.theme.get_color(0), width=1),
-                ),
+                    "line": {"color": self.theme.get_color(0), "width": 1},
+                },
                 name="ACF",
                 showlegend=False,
             ),
@@ -289,8 +287,8 @@ class ACFPACFPlot(PlotlyChartBase):
             go.Bar(
                 x=lags,
                 y=pacf[1:],
-                marker=dict(
-                    color=[
+                marker={
+                    "color": [
                         (
                             self.theme.success_color
                             if abs(val) > confidence_band
@@ -298,8 +296,8 @@ class ACFPACFPlot(PlotlyChartBase):
                         )
                         for val in pacf[1:]
                     ],
-                    line=dict(color=self.theme.get_color(1), width=1),
-                ),
+                    "line": {"color": self.theme.get_color(1), "width": 1},
+                },
                 name="PACF",
                 showlegend=False,
             ),
@@ -365,7 +363,7 @@ class ACFPACFPlot(PlotlyChartBase):
         fig.update_yaxes(title_text="PACF", row=2, col=1)
 
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             height=700,
             showlegend=False,
             hovermode="x unified",
@@ -395,19 +393,19 @@ class UnitRootTestPlot(PlotlyChartBase):
     >>> from panelbox.visualization import ChartFactory
     >>>
     >>> chart = ChartFactory.create(
-    ...     'unit_root_test_plot',
+    ...     "unit_root_test_plot",
     ...     data={
-    ...         'test_names': ['ADF', 'PP', 'KPSS'],
-    ...         'test_stats': [-3.5, -3.8, 0.3],
-    ...         'critical_values': {'1%': -3.96, '5%': -3.41, '10%': -3.13},
-    ...         'pvalues': [0.008, 0.003, 0.15]
+    ...         "test_names": ["ADF", "PP", "KPSS"],
+    ...         "test_stats": [-3.5, -3.8, 0.3],
+    ...         "critical_values": {"1%": -3.96, "5%": -3.41, "10%": -3.13},
+    ...         "pvalues": [0.008, 0.003, 0.15],
     ...     },
-    ...     theme='professional'
+    ...     theme="professional",
     ... )
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """
         Create unit root test visualization.
 
@@ -434,8 +432,8 @@ class UnitRootTestPlot(PlotlyChartBase):
         test_stats = data.get("test_stats", [])
         critical_values = data.get("critical_values", {})
         pvalues = data.get("pvalues", [])
-        series = data.get("series", None)
-        time_index = data.get("time_index", None)
+        series = data.get("series")
+        time_index = data.get("time_index")
 
         if len(test_names) == 0:
             raise ValueError("Test names cannot be empty")
@@ -456,7 +454,7 @@ class UnitRootTestPlot(PlotlyChartBase):
 
         # Color code by significance (assuming H0: unit root exists for ADF/PP)
         colors = []
-        for i, pval in enumerate(pvalues):
+        for _i, pval in enumerate(pvalues):
             if pval < 0.01:
                 colors.append(self.theme.success_color)  # Strong rejection
             elif pval < 0.05:
@@ -470,7 +468,7 @@ class UnitRootTestPlot(PlotlyChartBase):
         trace_stats = go.Bar(
             x=test_names,
             y=test_stats,
-            marker=dict(color=colors, line=dict(color=self.theme.get_color(0), width=1)),
+            marker={"color": colors, "line": {"color": self.theme.get_color(0), "width": 1}},
             name="Test Statistic",
             text=[f"{stat:.3f}<br>p={pval:.4f}" for stat, pval in zip(test_stats, pvalues)],
             textposition="outside",
@@ -506,7 +504,7 @@ class UnitRootTestPlot(PlotlyChartBase):
                     x=time_index,
                     y=series,
                     mode="lines",
-                    line=dict(color=self.theme.get_color(0), width=2),
+                    line={"color": self.theme.get_color(0), "width": 2},
                     name="Series",
                     hovertemplate="Time: %{x}<br>Value: %{y:.3f}<extra></extra>",
                 ),
@@ -553,7 +551,7 @@ class UnitRootTestPlot(PlotlyChartBase):
             fig.update_yaxes(title_text="Test Statistic")
 
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             height=700 if has_series else 500,
             showlegend=False,
             hovermode="closest",
@@ -583,20 +581,18 @@ class CointegrationHeatmap(PlotlyChartBase):
     >>> from panelbox.visualization import ChartFactory
     >>>
     >>> chart = ChartFactory.create(
-    ...     'cointegration_heatmap',
+    ...     "cointegration_heatmap",
     ...     data={
-    ...         'variables': ['GDP', 'Consumption', 'Investment'],
-    ...         'pvalues': [[1.0, 0.02, 0.15],
-    ...                     [0.02, 1.0, 0.08],
-    ...                     [0.15, 0.08, 1.0]],
-    ...         'test_name': 'Engle-Granger'
+    ...         "variables": ["GDP", "Consumption", "Investment"],
+    ...         "pvalues": [[1.0, 0.02, 0.15], [0.02, 1.0, 0.08], [0.15, 0.08, 1.0]],
+    ...         "test_name": "Engle-Granger",
     ...     },
-    ...     theme='academic'
+    ...     theme="academic",
     ... )
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """
         Create cointegration heatmap.
 
@@ -620,7 +616,7 @@ class CointegrationHeatmap(PlotlyChartBase):
         variables = data.get("variables", [])
         pvalues = np.array(data.get("pvalues", []))
         test_name = data.get("test_name", "Cointegration Test")
-        test_stats = data.get("test_stats", None)
+        test_stats = data.get("test_stats")
         if test_stats is not None:
             test_stats = np.array(test_stats)
 
@@ -673,11 +669,18 @@ class CointegrationHeatmap(PlotlyChartBase):
                 zmin=0,
                 zmax=1,
                 hovertemplate="<b>%{y}</b> vs <b>%{x}</b><br>p-value: %{z:.4f}<extra></extra>",
-                colorbar=dict(
-                    title="p-value",
-                    tickvals=[0, 0.01, 0.05, 0.10, 0.5, 1.0],
-                    ticktext=["0.00<br>(Strong)", "0.01", "0.05", "0.10", "0.50", "1.00<br>(None)"],
-                ),
+                colorbar={
+                    "title": "p-value",
+                    "tickvals": [0, 0.01, 0.05, 0.10, 0.5, 1.0],
+                    "ticktext": [
+                        "0.00<br>(Strong)",
+                        "0.01",
+                        "0.05",
+                        "0.10",
+                        "0.50",
+                        "1.00<br>(None)",
+                    ],
+                },
             )
         )
 
@@ -711,9 +714,9 @@ class CointegrationHeatmap(PlotlyChartBase):
         title = kwargs.get("title", f"{test_name} - Pairwise Cointegration Tests")
 
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
-            xaxis=dict(title="Variable", side="bottom", tickangle=-45),
-            yaxis=dict(title="Variable", autorange="reversed"),  # Top to bottom
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
+            xaxis={"title": "Variable", "side": "bottom", "tickangle": -45},
+            yaxis={"title": "Variable", "autorange": "reversed"},  # Top to bottom
             height=600,
             width=700,
         )
@@ -741,19 +744,19 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
     >>> from panelbox.visualization import ChartFactory
     >>>
     >>> chart = ChartFactory.create(
-    ...     'cross_sectional_dependence_plot',
+    ...     "cross_sectional_dependence_plot",
     ...     data={
-    ...         'cd_statistic': 5.23,
-    ...         'pvalue': 0.001,
-    ...         'avg_correlation': 0.42,
-    ...         'entity_correlations': [0.3, 0.5, 0.6, 0.2]
+    ...         "cd_statistic": 5.23,
+    ...         "pvalue": 0.001,
+    ...         "avg_correlation": 0.42,
+    ...         "entity_correlations": [0.3, 0.5, 0.6, 0.2],
     ...     },
-    ...     theme='professional'
+    ...     theme="professional",
     ... )
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """
         Create cross-sectional dependence visualization.
 
@@ -775,10 +778,10 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
             Plotly figure object
         """
         # Extract data
-        cd_stat = data.get("cd_statistic", None)
-        pvalue = data.get("pvalue", None)
-        avg_corr = data.get("avg_correlation", None)
-        entity_corrs = data.get("entity_correlations", None)
+        cd_stat = data.get("cd_statistic")
+        pvalue = data.get("pvalue")
+        avg_corr = data.get("avg_correlation")
+        entity_corrs = data.get("entity_correlations")
 
         if cd_stat is None:
             raise ValueError("CD statistic is required")
@@ -812,21 +815,23 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
         indicator = go.Indicator(
             mode="number+delta+gauge",
             value=cd_stat,
-            title=dict(text="Pesaran CD Statistic"),
-            delta=dict(reference=0, increasing=dict(color=self.theme.danger_color)),
-            gauge=dict(
-                axis=dict(range=[-5, 5]),
-                bar=dict(color=color),
-                threshold=dict(
-                    line=dict(color="red", width=4), thickness=0.75, value=1.96  # 5% critical value
-                ),
-                steps=[
-                    dict(range=[-5, -1.96], color="lightgray"),
-                    dict(range=[-1.96, 1.96], color="lightgreen"),
-                    dict(range=[1.96, 5], color="lightcoral"),
+            title={"text": "Pesaran CD Statistic"},
+            delta={"reference": 0, "increasing": {"color": self.theme.danger_color}},
+            gauge={
+                "axis": {"range": [-5, 5]},
+                "bar": {"color": color},
+                "threshold": {
+                    "line": {"color": "red", "width": 4},
+                    "thickness": 0.75,
+                    "value": 1.96,  # 5% critical value
+                },
+                "steps": [
+                    {"range": [-5, -1.96], "color": "lightgray"},
+                    {"range": [-1.96, 1.96], "color": "lightgreen"},
+                    {"range": [1.96, 5], "color": "lightcoral"},
                 ],
-            ),
-            domain=dict(x=[0, 1], y=[0.3, 1]),
+            },
+            domain={"x": [0, 1], "y": [0.3, 1]},
         )
 
         if has_entity_data:
@@ -836,10 +841,10 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
 
         # Add text annotations for statistics
         stats_text = (
-            f"<b>CD Statistic:</b> {cd_stat:.3f}<br>" f"<b>p-value:</b> {pvalue:.4f}<br>"
+            f"<b>CD Statistic:</b> {cd_stat:.3f}<br><b>p-value:</b> {pvalue:.4f}<br>"
             if pvalue is not None
             else (
-                "" f"<b>Avg |ρ|:</b> {avg_corr:.3f}<br>"
+                f"<b>Avg |ρ|:</b> {avg_corr:.3f}<br>"
                 if avg_corr is not None
                 else ""
                 f"<b>Interpretation:</b> {'Strong CD' if pvalue and pvalue < 0.05 else 'Weak/No CD'}"
@@ -865,19 +870,19 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
 
         # Entity-level correlations bar chart
         if has_entity_data:
-            entity_names = [f"Entity {i+1}" for i in range(len(entity_corrs))]
+            entity_names = [f"Entity {i + 1}" for i in range(len(entity_corrs))]
 
             fig.add_trace(
                 go.Bar(
                     x=entity_names,
                     y=entity_corrs,
-                    marker=dict(
-                        color=entity_corrs,
-                        colorscale="RdYlGn_r",  # Red (high) to Green (low)
-                        cmin=0,
-                        cmax=1,
-                        colorbar=dict(title="Correlation", x=1.15),
-                    ),
+                    marker={
+                        "color": entity_corrs,
+                        "colorscale": "RdYlGn_r",  # Red (high) to Green (low)
+                        "cmin": 0,
+                        "cmax": 1,
+                        "colorbar": {"title": "Correlation", "x": 1.15},
+                    },
                     name="Correlation",
                     hovertemplate="<b>%{x}</b><br>Avg Correlation: %{y:.3f}<extra></extra>",
                 ),
@@ -892,7 +897,7 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
         title = kwargs.get("title", "Cross-Sectional Dependence Test (Pesaran CD)")
 
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             height=500,
             showlegend=False,
         )
@@ -906,9 +911,9 @@ class CrossSectionalDependencePlot(PlotlyChartBase):
 # Export helper to avoid circular imports
 __all__ = [
     "ACFPACFPlot",
-    "UnitRootTestPlot",
     "CointegrationHeatmap",
     "CrossSectionalDependencePlot",
+    "UnitRootTestPlot",
     "calculate_acf",
     "calculate_pacf",
     "ljung_box_test",

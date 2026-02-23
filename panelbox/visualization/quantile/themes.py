@@ -5,10 +5,14 @@ This module provides predefined themes optimized for different publication
 venues including academic journals, presentations, and reports.
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
+
+import logging
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
 
 
 class PublicationTheme:
@@ -20,11 +24,11 @@ class PublicationTheme:
 
     Examples
     --------
-    >>> PublicationTheme.apply('nature')
+    >>> PublicationTheme.apply("nature")
     >>> # Now all plots will use Nature's style guidelines
 
     >>> # Or use as context manager
-    >>> with PublicationTheme.use('economics'):
+    >>> with PublicationTheme.use("economics"):
     ...     fig = plt.figure()
     ...     # Create plot with economics journal style
     """
@@ -232,7 +236,7 @@ class PublicationTheme:
     }
 
     @classmethod
-    def apply(cls, theme_name: str, color_palette: Optional[str] = None) -> None:
+    def apply(cls, theme_name: str, color_palette: str | None = None) -> None:
         """
         Apply a predefined theme.
 
@@ -287,7 +291,7 @@ class PublicationTheme:
         return cls.COLOR_PALETTES[palette_name]
 
     @classmethod
-    def use(cls, theme_name: str, color_palette: Optional[str] = None):
+    def use(cls, theme_name: str, color_palette: str | None = None):
         """
         Context manager for temporary theme application.
 
@@ -300,9 +304,9 @@ class PublicationTheme:
 
         Examples
         --------
-        >>> with PublicationTheme.use('nature'):
+        >>> with PublicationTheme.use("nature"):
         ...     plt.plot([1, 2, 3], [1, 4, 9])
-        ...     plt.savefig('figure.pdf')
+        ...     plt.savefig("figure.pdf")
         """
         return ThemeContext(theme_name, color_palette)
 
@@ -332,7 +336,7 @@ class PublicationTheme:
                     value = ", ".join(str(v) for v in value)
                 f.write(f"{key}: {value}\n")
 
-        print(f"Theme configuration saved to {filename}")
+        logger.info(f"Theme configuration saved to {filename}")
 
     @classmethod
     def get_figsize(cls, theme_name: str, columns: str = "single") -> tuple:
@@ -366,7 +370,7 @@ class PublicationTheme:
 class ThemeContext:
     """Context manager for temporary theme application."""
 
-    def __init__(self, theme_name: str, color_palette: Optional[str] = None):
+    def __init__(self, theme_name: str, color_palette: str | None = None):
         self.theme_name = theme_name
         self.color_palette = color_palette
         self.original_rcparams = {}
@@ -388,9 +392,7 @@ class ThemeContext:
 
 
 class ColorSchemes:
-    """
-    Utility class for managing color schemes in visualizations.
-    """
+    """Utility class for managing color schemes in visualizations."""
 
     @staticmethod
     def get_sequential(n: int, cmap_name: str = "Blues") -> list:

@@ -6,11 +6,12 @@ including Average Marginal Effects (AME), Marginal Effects at Means (MEM),
 and Marginal Effects at Representative values (MER).
 """
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 from scipy.stats import norm
 
 from panelbox.marginal_effects.delta_method import (
@@ -25,6 +26,8 @@ try:
 except ImportError:
     OrderedLogit = None
     OrderedProbit = None
+
+logger = logging.getLogger(__name__)
 
 
 class MarginalEffectsResult:
@@ -47,11 +50,11 @@ class MarginalEffectsResult:
 
     def __init__(
         self,
-        marginal_effects: Union[dict, pd.Series],
-        std_errors: Union[dict, pd.Series],
+        marginal_effects: dict | pd.Series,
+        std_errors: dict | pd.Series,
         parent_result,
         me_type: str = "ame",
-        at_values: Optional[dict] = None,
+        at_values: dict | None = None,
     ):
         """Initialize marginal effects result."""
         self.marginal_effects = pd.Series(marginal_effects)
@@ -111,6 +114,7 @@ class MarginalEffectsResult:
 
         # Add significance stars
         def add_stars(pval):
+            """Add significance stars to a numeric value."""
             if pval < 0.001:
                 return "***"
             elif pval < 0.01:
@@ -126,7 +130,10 @@ class MarginalEffectsResult:
         if isinstance(pvals, pd.Series):
             stars = pvals.apply(add_stars)
         else:
-            stars = pd.Series([add_stars(p) for p in pvals], index=self.marginal_effects.index)
+            stars = pd.Series(
+                [add_stars(p) for p in pvals],  # type: ignore[unreachable]
+                index=self.marginal_effects.index,
+            )
 
         df = pd.DataFrame(
             {
@@ -134,8 +141,8 @@ class MarginalEffectsResult:
                 "Std. Err.": self.std_errors,
                 "z": self.z_stats,
                 "P>|z|": pvals,
-                f"[{alpha/2:.3f}": ci["lower"],
-                f"{1-alpha/2:.3f}]": ci["upper"],
+                f"[{alpha / 2:.3f}": ci["lower"],
+                f"{1 - alpha / 2:.3f}]": ci["upper"],
             }
         )
 
@@ -172,21 +179,21 @@ def _is_binary(x: np.ndarray, tol: float = 1e-10) -> bool:
     return False
 
 
-def _logit_pdf(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+def _logit_pdf(x: float | np.ndarray) -> float | np.ndarray:
     """PDF of standard logistic distribution: exp(x) / (1 + exp(x))^2."""
     # Use stable computation to avoid overflow
     exp_x = np.exp(np.minimum(x, 20))  # Cap to avoid overflow
     return exp_x / (1 + exp_x) ** 2
 
 
-def _logit_cdf(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+def _logit_cdf(x: float | np.ndarray) -> float | np.ndarray:
     """CDF of standard logistic distribution: 1 / (1 + exp(-x))."""
     # Use stable computation
     return 1 / (1 + np.exp(-np.minimum(x, 20)))
 
 
 def compute_ame(
-    result, varlist: Optional[List[str]] = None, dummy_method: str = "diff"
+    result, varlist: list[str] | None = None, dummy_method: str = "diff"
 ) -> MarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME).
@@ -256,7 +263,7 @@ def compute_ame(
     std_errors = {}
     cov_matrix = result.cov_params if hasattr(result, "cov_params") else result.cov
 
-    for var in ame.keys():
+    for var in ame:
         gradient = ame_gradients[var]
         se_results = delta_method_se(gradient, cov_matrix)
         std_errors[var] = (
@@ -288,7 +295,7 @@ def _ame_continuous(result, X: np.ndarray, var_idx: int, params: np.ndarray) -> 
         Average marginal effect
     """
     model = result.model
-    n_obs = X.shape[0]
+    X.shape[0]
 
     # Linear predictions
     linear_pred = X @ params
@@ -363,19 +370,19 @@ def _ame_discrete(result, X: np.ndarray, var_idx: int, params: np.ndarray) -> fl
 
 def _ame_discrete_gradient(result, X: np.ndarray, var_idx: int, params: np.ndarray) -> np.ndarray:
     """Compute gradient of discrete AME w.r.t. parameters."""
-    n_params = len(params)
-    n_obs = X.shape[0]
-    model = result.model
+    len(params)
+    X.shape[0]
 
     # Function to compute AME for given parameters
     def ame_func(p):
+        """Compute the average marginal effect for a variable."""
         return _ame_discrete(result, X, var_idx, p)
 
     # Numerical gradient
     return numerical_gradient(ame_func, params)
 
 
-def compute_mem(result, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+def compute_mem(result, varlist: list[str] | None = None) -> MarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM).
 
@@ -463,7 +470,7 @@ def compute_mem(result, varlist: Optional[List[str]] = None) -> MarginalEffectsR
     std_errors = {}
     cov_matrix = result.cov_params if hasattr(result, "cov_params") else result.cov
 
-    for var in mem.keys():
+    for var in mem:
         var_idx = exog_names.index(var)
         gradient = compute_me_gradient(model, params, var_idx, X, "mem")
         se_results = delta_method_se(gradient, cov_matrix)
@@ -477,7 +484,7 @@ def compute_mem(result, varlist: Optional[List[str]] = None) -> MarginalEffectsR
     return MarginalEffectsResult(mem, std_errors, result, me_type="mem", at_values=at_values)
 
 
-def compute_mer(result, at: dict, varlist: Optional[List[str]] = None) -> MarginalEffectsResult:
+def compute_mer(result, at: dict, varlist: list[str] | None = None) -> MarginalEffectsResult:  # noqa: C901
     """
     Compute Marginal Effects at Representative values (MER).
 
@@ -576,17 +583,19 @@ def compute_mer(result, at: dict, varlist: Optional[List[str]] = None) -> Margin
 
     # Function to compute MER for a given parameter vector
     def mer_func(p):
+        """Compute marginal effect at representative values."""
         linear_pred = X_rep @ p
         if hasattr(model, "family") and model.family == "probit":
             return p * norm.pdf(linear_pred)
         else:
             return p * _logit_pdf(linear_pred)
 
-    for var in mer.keys():
+    for var in mer:
         var_idx = exog_names.index(var)
 
         # Numerical gradient
         def var_mer_func(p):
+            """Compute variance of marginal effect at representative values."""
             linear_pred = X_rep @ p
             if _is_binary(X[:, var_idx]):
                 X_rep1 = X_rep.copy()
@@ -642,7 +651,7 @@ class OrderedMarginalEffectsResult:
         std_errors: pd.DataFrame,
         parent_result,
         me_type: str = "ame",
-        at_values: Optional[dict] = None,
+        at_values: dict | None = None,
     ):
         """Initialize ordered marginal effects result."""
         self.marginal_effects = marginal_effects
@@ -705,15 +714,15 @@ class OrderedMarginalEffectsResult:
         effects = self.marginal_effects[var].values
         ses = self.std_errors[var].values
 
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
         x = np.arange(len(categories))
         ax.bar(x, effects, alpha=0.8)
 
         if include_ci:
             z_crit = norm.ppf(1 - alpha / 2)
-            ci_lower = effects - z_crit * ses
-            ci_upper = effects + z_crit * ses
+            effects - z_crit * ses
+            effects + z_crit * ses
             ax.errorbar(
                 x, effects, yerr=z_crit * ses, fmt="none", color="black", capsize=5, alpha=0.6
             )
@@ -775,7 +784,7 @@ class OrderedMarginalEffectsResult:
         return f"OrderedMarginalEffectsResult(type='{self.me_type}', categories={n_cats}, variables={n_vars})"
 
 
-def compute_ordered_ame(model, varlist: Optional[List[str]] = None) -> OrderedMarginalEffectsResult:
+def compute_ordered_ame(model, varlist: list[str] | None = None) -> OrderedMarginalEffectsResult:
     """
     Compute Average Marginal Effects for ordered choice models.
 
@@ -845,15 +854,9 @@ def compute_ordered_ame(model, varlist: Optional[List[str]] = None) -> OrderedMa
                     lower_z = cutpoints_extended[j] - linear_pred
                     upper_z = cutpoints_extended[j + 1] - linear_pred
 
-                    if np.isfinite(lower_z):
-                        lower_pdf = _logit_pdf(lower_z)
-                    else:
-                        lower_pdf = 0
+                    lower_pdf = _logit_pdf(lower_z) if np.isfinite(lower_z) else 0
 
-                    if np.isfinite(upper_z):
-                        upper_pdf = _logit_pdf(upper_z)
-                    else:
-                        upper_pdf = 0
+                    upper_pdf = _logit_pdf(upper_z) if np.isfinite(upper_z) else 0
 
                     me_ij = beta_k * (lower_pdf - upper_pdf)
 
@@ -862,15 +865,9 @@ def compute_ordered_ame(model, varlist: Optional[List[str]] = None) -> OrderedMa
                     lower_z = cutpoints_extended[j] - linear_pred
                     upper_z = cutpoints_extended[j + 1] - linear_pred
 
-                    if np.isfinite(lower_z):
-                        lower_pdf = norm.pdf(lower_z)
-                    else:
-                        lower_pdf = 0
+                    lower_pdf = norm.pdf(lower_z) if np.isfinite(lower_z) else 0
 
-                    if np.isfinite(upper_z):
-                        upper_pdf = norm.pdf(upper_z)
-                    else:
-                        upper_pdf = 0
+                    upper_pdf = norm.pdf(upper_z) if np.isfinite(upper_z) else 0
 
                     me_ij = beta_k * (lower_pdf - upper_pdf)
 
@@ -902,7 +899,7 @@ def compute_ordered_ame(model, varlist: Optional[List[str]] = None) -> OrderedMa
     return OrderedMarginalEffectsResult(ame_df, se_df, model, me_type="ame")
 
 
-def compute_ordered_mem(model, varlist: Optional[List[str]] = None) -> OrderedMarginalEffectsResult:
+def compute_ordered_mem(model, varlist: list[str] | None = None) -> OrderedMarginalEffectsResult:
     """
     Compute Marginal Effects at Means for ordered choice models.
 
@@ -963,35 +960,23 @@ def compute_ordered_mem(model, varlist: Optional[List[str]] = None) -> OrderedMa
                 lower_z = cutpoints_extended[j] - linear_pred_mean
                 upper_z = cutpoints_extended[j + 1] - linear_pred_mean
 
-                if np.isfinite(lower_z):
-                    lower_pdf = _logit_pdf(lower_z)
-                else:
-                    lower_pdf = 0
+                lower_pdf = _logit_pdf(lower_z) if np.isfinite(lower_z) else 0
 
-                if np.isfinite(upper_z):
-                    upper_pdf = _logit_pdf(upper_z)
-                else:
-                    upper_pdf = 0
+                upper_pdf = _logit_pdf(upper_z) if np.isfinite(upper_z) else 0
 
             elif type(model).__name__ == "OrderedProbit":
                 lower_z = cutpoints_extended[j] - linear_pred_mean
                 upper_z = cutpoints_extended[j + 1] - linear_pred_mean
 
-                if np.isfinite(lower_z):
-                    lower_pdf = norm.pdf(lower_z)
-                else:
-                    lower_pdf = 0
+                lower_pdf = norm.pdf(lower_z) if np.isfinite(lower_z) else 0
 
-                if np.isfinite(upper_z):
-                    upper_pdf = norm.pdf(upper_z)
-                else:
-                    upper_pdf = 0
+                upper_pdf = norm.pdf(upper_z) if np.isfinite(upper_z) else 0
 
             mem_matrix[j, v_idx] = beta_k * (lower_pdf - upper_pdf)
 
             # Compute standard error (simplified)
             if hasattr(model, "bse"):
-                mem_se_matrix[j, v_idx] = model.bse[var_idx] * np.abs((lower_pdf - upper_pdf))
+                mem_se_matrix[j, v_idx] = model.bse[var_idx] * np.abs(lower_pdf - upper_pdf)
             else:
                 mem_se_matrix[j, v_idx] = np.nan
 

@@ -16,13 +16,17 @@ Norton, E. C., Wang, H., & Ai, C. (2004). "Computing interaction effects and
     standard errors in logit and probit models." The Stata Journal, 4(2), 154-167.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class InteractionEffectsResult:
@@ -48,8 +52,8 @@ class InteractionEffectsResult:
     def __init__(
         self,
         cross_partial: np.ndarray,
-        standard_errors: Optional[np.ndarray] = None,
-        predicted_prob: Optional[np.ndarray] = None,
+        standard_errors: np.ndarray | None = None,
+        predicted_prob: np.ndarray | None = None,
         var1_name: str = "X1",
         var2_name: str = "X2",
     ):
@@ -118,7 +122,7 @@ class InteractionEffectsResult:
 
         return "\n".join(lines)
 
-    def plot(self, figsize: Tuple[int, int] = (12, 8)) -> plt.Figure:
+    def plot(self, figsize: tuple[int, int] = (12, 8)) -> plt.Figure:
         """
         Create visualization of interaction effects.
 
@@ -241,9 +245,9 @@ class InteractionEffectsResult:
 
 def compute_interaction_effects(
     model_result,
-    var1: Union[str, int],
-    var2: Union[str, int],
-    interaction_term: Optional[Union[str, int]] = None,
+    var1: str | int,
+    var2: str | int,
+    interaction_term: str | int | None = None,
     method: str = "delta",
     n_bootstrap: int = 100,
 ) -> InteractionEffectsResult:
@@ -374,10 +378,11 @@ def _logit_interaction(X, params, xb, var1_idx, var2_idx, interact_idx):
     Lambda = 1 / (1 + np.exp(-xb))
     lambda_pdf = Lambda * (1 - Lambda)
 
-    # Parameters
-    beta1 = params[var1_idx]
-    beta2 = params[var2_idx]
-    beta12 = params[interact_idx] if interact_idx is not None else 0
+    # Parameters - convert to array for safe positional indexing
+    p = np.asarray(params)
+    beta1 = p[var1_idx]
+    beta2 = p[var2_idx]
+    beta12 = p[interact_idx] if interact_idx is not None else 0
 
     # Cross-partial derivative
     cross_partial = beta12 * lambda_pdf + beta1 * beta2 * lambda_pdf * (1 - 2 * Lambda)
@@ -399,10 +404,11 @@ def _probit_interaction(X, params, xb, var1_idx, var2_idx, interact_idx):
     # Normal PDF
     phi = norm.pdf(xb)
 
-    # Parameters
-    beta1 = params[var1_idx]
-    beta2 = params[var2_idx]
-    beta12 = params[interact_idx] if interact_idx is not None else 0
+    # Parameters - convert to array for safe positional indexing
+    p = np.asarray(params)
+    beta1 = p[var1_idx]
+    beta2 = p[var2_idx]
+    beta12 = p[interact_idx] if interact_idx is not None else 0
 
     # Cross-partial derivative
     cross_partial = -phi * (beta12 + beta1 * beta2 * xb)
@@ -422,10 +428,11 @@ def _poisson_interaction(X, params, xb, var1_idx, var2_idx, interact_idx):
     # Mean function
     lambda_ = np.exp(xb)
 
-    # Parameters
-    beta1 = params[var1_idx]
-    beta2 = params[var2_idx]
-    beta12 = params[interact_idx] if interact_idx is not None else 0
+    # Parameters - convert to array for safe positional indexing
+    p = np.asarray(params)
+    beta1 = p[var1_idx]
+    beta2 = p[var2_idx]
+    beta12 = p[interact_idx] if interact_idx is not None else 0
 
     # Cross-partial derivative
     cross_partial = lambda_ * (beta12 + beta1 * beta2)
@@ -450,7 +457,7 @@ def _delta_method_se(model_result, X, params, xb, var1_idx, var2_idx, interact_i
         if "logit" in model_type:
             Lambda = 1 / (1 + np.exp(-xb))
             lambda_pdf = Lambda * (1 - Lambda)
-            lambda_dpdf = lambda_pdf * (1 - 2 * Lambda)
+            lambda_pdf * (1 - 2 * Lambda)
 
             # Gradient computation is model-specific and complex
             # Simplified version here
@@ -467,7 +474,7 @@ def _delta_method_se(model_result, X, params, xb, var1_idx, var2_idx, interact_i
         return se_cross_partial
 
     except Exception as e:
-        warnings.warn(f"Could not compute delta method standard errors: {e}")
+        warnings.warn(f"Could not compute delta method standard errors: {e}", stacklevel=2)
         return None
 
 
@@ -509,13 +516,13 @@ def _bootstrap_se(model_result, X, var1_idx, var2_idx, interact_idx, n_bootstrap
         return se_cross_partial
 
     except Exception as e:
-        warnings.warn(f"Could not compute bootstrap standard errors: {e}")
+        warnings.warn(f"Could not compute bootstrap standard errors: {e}", stacklevel=2)
         return None
 
 
 def test_interaction_significance(
-    model_with_interaction, model_without_interaction, var1: Union[str, int], var2: Union[str, int]
-) -> Dict[str, Any]:
+    model_with_interaction, model_without_interaction, var1: str | int, var2: str | int
+) -> dict[str, Any]:
     """
     Test whether interaction improves model fit.
 

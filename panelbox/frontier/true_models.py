@@ -11,7 +11,8 @@ Key innovations:
 2. True Random Effects (TRE): Three-component error structure with heterogeneity
    (w_i), inefficiency (u_it), and noise (v_it)
 
-References:
+References
+----------
     Greene, W. H. (2005).
         Reconsidering heterogeneity in panel data estimators of the stochastic
         frontier model. Journal of Econometrics, 126(2), 269-303.
@@ -21,13 +22,16 @@ References:
         Journal of Productivity Analysis, 23(1), 7-32.
 """
 
-import warnings
-from typing import Any, Dict, Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import stats
-from scipy.special import log_ndtr, ndtr, roots_hermite
+from scipy.special import log_ndtr, roots_hermite
 from scipy.stats.qmc import Halton
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # True Fixed Effects (TFE) Model - Greene (2005)
@@ -56,7 +60,8 @@ def loglik_true_fixed_effects(
         - Classical: confounds α_i with u_i (time-invariant)
         - TFE: separates α_i (heterogeneity) from u_{it} (inefficiency)
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), α_1, ..., α_N]
                OR [β, ln(σ²_v), ln(σ²_u)] if using concentrated likelihood
         y: Dependent variable (n,)
@@ -66,18 +71,21 @@ def loglik_true_fixed_effects(
         sign: +1 for production, -1 for cost
         return_alpha: If True, return dict with alpha_i estimates
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (or dict if return_alpha=True)
 
-    References:
+    References
+    ----------
         Greene, W. H. (2005). Journal of Econometrics, 126(2), 269-303.
 
-    Notes:
+    Notes
+    -----
         - This implementation uses the concentrated likelihood approach
         - α_i are profiled out for each candidate (β, σ²_v, σ²_u)
         - Reduces computational burden from N+k to just k parameters
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -87,8 +95,8 @@ def loglik_true_fixed_effects(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
 
     # Compute composite error variance
     sigma_sq = sigma_v_sq + sigma_u_sq
@@ -101,7 +109,7 @@ def loglik_true_fixed_effects(
 
     # Get unique entities
     unique_entities = np.unique(entity_id)
-    N = len(unique_entities)
+    len(unique_entities)
 
     loglik = 0.0
     alpha_estimates = {}
@@ -111,7 +119,7 @@ def loglik_true_fixed_effects(
         # Get observations for entity i
         mask_i = entity_id == i
         resid_i = residuals[mask_i]
-        T_i = len(resid_i)  # Number of periods for entity i
+        len(resid_i)  # Number of periods for entity i
 
         # Concentrated likelihood: maximize over α_i analytically
         # For given (β, σ²_v, σ²_u), the optimal α_i can be found
@@ -137,6 +145,7 @@ def loglik_true_fixed_effects(
         from scipy.optimize import minimize_scalar
 
         def neg_loglik_alpha(alpha_i):
+            """Compute negative log-likelihood for the true fixed-effects model."""
             epsilon_it = resid_i - alpha_i
             ll = 0.0
 
@@ -198,16 +207,19 @@ def bias_correct_tfe_analytical(
 
     The incidental parameters problem causes bias of order O(1/T) in α_i.
 
-    Parameters:
+    Parameters
+    ----------
         alpha_hat: Uncorrected α_i estimates (N,)
         T: Number of time periods per entity (N,) or scalar
         sigma_v_sq: Variance of noise
         sigma_u_sq: Variance of inefficiency
 
-    Returns:
+    Returns
+    -------
         Bias-corrected α_i estimates (N,)
 
-    References:
+    References
+    ----------
         Hahn, J., & Newey, W. (2004).
             Jacknife and analytical bias reduction for nonlinear panel models.
             Econometrica, 72(4), 1295-1319.
@@ -234,13 +246,14 @@ def bias_correct_tfe_jackknife(
     time_id: np.ndarray,
     theta: np.ndarray,
     sign: int = 1,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Jackknife bias correction for TFE model.
 
     Estimates model T times, each time leaving out one period,
     then combines estimates to reduce bias.
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable
         X: Exogenous variables
         entity_id: Entity identifiers
@@ -248,10 +261,12 @@ def bias_correct_tfe_jackknife(
         theta: Parameter estimates [β, ln(σ²_v), ln(σ²_u)]
         sign: +1 for production, -1 for cost
 
-    Returns:
+    Returns
+    -------
         Dict with bias-corrected estimates
 
-    References:
+    References
+    ----------
         Dhaene, G., & Jochmans, K. (2015).
             Split-panel jackknife estimation of fixed-effect models.
             The Review of Economic Studies, 82(3), 991-1030.
@@ -325,7 +340,8 @@ def loglik_true_random_effects(
         - u_{it}: captures time-varying inefficiency
         - v_{it}: random shocks
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), ln(σ²_w)]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -335,18 +351,21 @@ def loglik_true_random_effects(
         n_quadrature: Number of quadrature points (default 32)
         method: 'gauss-hermite' or 'simulated'
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value
 
-    References:
+    References
+    ----------
         Greene, W. H. (2005). Journal of Econometrics, 126(2), 269-303.
 
-    Notes:
+    Notes
+    -----
         - Integrates over w_i using numerical quadrature
         - Higher n_quadrature = more accurate but slower
         - Recommended: n_quadrature ≥ 20 for three-component models
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -358,9 +377,9 @@ def loglik_true_random_effects(
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
     sigma_w_sq = np.exp(ln_sigma_w_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
-    sigma_w = np.sqrt(sigma_w_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_w_sq)
 
     # Residuals
     epsilon = y - X @ beta
@@ -416,8 +435,8 @@ def _tre_gauss_hermite_integration(
     nodes, weights = roots_hermite(n_quad_points)
     weights = weights / np.sqrt(np.pi)  # Adjust for our parameterization
 
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
     sigma_w = np.sqrt(sigma_w_sq)
 
     # Composite error variance
@@ -433,7 +452,7 @@ def _tre_gauss_hermite_integration(
         # Get observations for entity i
         mask_i = entity_id == i
         epsilon_i = epsilon[mask_i]
-        T_i = len(epsilon_i)
+        len(epsilon_i)
 
         # Integrate over w_i using Gauss-Hermite quadrature
         # w_i = σ_w * sqrt(2) * node
@@ -491,8 +510,8 @@ def _tre_simulated_mle(
     halton = Halton(d=1, seed=42)
     draws = halton.random(n_simulations)
 
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
     sigma_w = np.sqrt(sigma_w_sq)
 
     # Composite error variance
@@ -508,7 +527,7 @@ def _tre_simulated_mle(
         # Get observations for entity i
         mask_i = entity_id == i
         epsilon_i = epsilon[mask_i]
-        T_i = len(epsilon_i)
+        len(epsilon_i)
 
         # Simulate w_i using Halton draws
         simulated_likelihood = 0.0
@@ -553,15 +572,17 @@ def _tre_simulated_mle(
 
 def variance_decomposition_tre(
     sigma_v_sq: float, sigma_u_sq: float, sigma_w_sq: float
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Decompose variance into components for TRE model.
 
-    Parameters:
+    Parameters
+    ----------
         sigma_v_sq: Variance of noise
         sigma_u_sq: Variance of inefficiency
         sigma_w_sq: Variance of heterogeneity
 
-    Returns:
+    Returns
+    -------
         Dict with variance shares:
             - gamma_v: Share of noise variance
             - gamma_u: Share of inefficiency variance
@@ -604,7 +625,8 @@ def loglik_tfe_bc95(
         u_{it} ~ N⁺(Z_{it}δ, σ²_u) is inefficiency with determinants
         v_{it} ~ N(0, σ²_v) is noise
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), δ]
         y: Dependent variable
         X: Frontier variables
@@ -613,10 +635,11 @@ def loglik_tfe_bc95(
         time_id: Time identifiers
         sign: +1 for production, -1 for cost
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value
     """
-    n, k = X.shape
+    _n, k = X.shape
     m = Z.shape[1]
 
     # Extract parameters
@@ -628,7 +651,7 @@ def loglik_tfe_bc95(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Compute μ_{it} = Z_{it}δ
@@ -654,12 +677,13 @@ def loglik_tfe_bc95(
         mask_i = entity_id == i
         resid_i = residuals[mask_i]
         mu_it_i = mu_it[mask_i]
-        T_i = len(resid_i)
+        len(resid_i)
 
         # Optimize α_i for entity i
         from scipy.optimize import minimize_scalar
 
         def neg_loglik_alpha(alpha_i):
+            """Compute negative log-likelihood for the true random-effects model."""
             epsilon_it = resid_i - alpha_i
             mu_star = (sigma_u_sq * (-sign * epsilon_it) + sigma_v_sq * mu_it_i) / sigma_sq
 
@@ -722,7 +746,8 @@ def loglik_tre_bc95(
         u_{it} ~ N⁺(Z_{it}δ, σ²_u) is inefficiency with determinants
         v_{it} ~ N(0, σ²_v) is noise
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), ln(σ²_w), δ]
         y: Dependent variable
         X: Frontier variables
@@ -732,10 +757,11 @@ def loglik_tre_bc95(
         sign: +1 for production, -1 for cost
         n_quadrature: Number of quadrature points
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value
     """
-    n, k = X.shape
+    _n, k = X.shape
     m = Z.shape[1]
 
     # Extract parameters
@@ -749,7 +775,7 @@ def loglik_tre_bc95(
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
     sigma_w_sq = np.exp(ln_sigma_w_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
     sigma_w = np.sqrt(sigma_w_sq)
 
@@ -780,7 +806,7 @@ def loglik_tre_bc95(
         mask_i = entity_id == i
         epsilon_i = epsilon[mask_i]
         mu_it_i = mu_it[mask_i]
-        T_i = len(epsilon_i)
+        len(epsilon_i)
 
         # Integrate over w_i
         integral = 0.0

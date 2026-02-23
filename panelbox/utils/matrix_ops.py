@@ -5,9 +5,13 @@ This module provides optimized matrix operations commonly used in
 panel data estimation.
 """
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def add_intercept(X: np.ndarray) -> np.ndarray:
@@ -56,8 +60,8 @@ def demean_matrix(X: np.ndarray, groups: np.ndarray) -> np.ndarray:
 
 
 def compute_ols(
-    y: np.ndarray, X: np.ndarray, weights: Optional[np.ndarray] = None
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    y: np.ndarray, X: np.ndarray, weights: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute OLS estimates.
 
@@ -151,10 +155,7 @@ def compute_rsquared(
         R-squared (adjusted R-squared should be computed separately by caller)
     """
     # Total sum of squares
-    if has_intercept:
-        tss = np.sum((y - y.mean()) ** 2)
-    else:
-        tss = np.sum(y**2)
+    tss = np.sum((y - y.mean()) ** 2) if has_intercept else np.sum(y**2)
 
     # Residual sum of squares
     rss = np.sum(resid**2)
@@ -167,7 +168,7 @@ def compute_rsquared(
 
 def compute_panel_rsquared(
     y: np.ndarray, fitted: np.ndarray, resid: np.ndarray, groups: np.ndarray
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """
     Compute panel-specific R-squared measures.
 

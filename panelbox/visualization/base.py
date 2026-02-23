@@ -10,8 +10,9 @@ from __future__ import annotations
 import base64
 import io
 import json
+import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .themes import Theme
@@ -32,6 +33,8 @@ try:
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
+
+logger = logging.getLogger(__name__)
 
 
 class BaseChart(ABC):
@@ -97,7 +100,7 @@ class BaseChart(ABC):
     ...         return f"<div>{self.figure}</div>"
     """
 
-    def __init__(self, theme: Optional[Theme] = None, config: Optional[Dict] = None):
+    def __init__(self, theme: Theme | None = None, config: dict | None = None):
         """
         Initialize base chart.
 
@@ -119,7 +122,7 @@ class BaseChart(ABC):
         self.figure = None
         self._data = None
 
-    def create(self, data: Dict[str, Any], **kwargs) -> BaseChart:
+    def create(self, data: dict[str, Any], **kwargs) -> BaseChart:
         """
         Create chart from data (Template Method).
 
@@ -167,7 +170,7 @@ class BaseChart(ABC):
 
         return self
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """
         Validate input data.
 
@@ -186,7 +189,7 @@ class BaseChart(ABC):
         if not isinstance(data, dict):
             raise ValueError(f"Data must be a dictionary, got {type(data)}")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Preprocess data before chart creation.
 
@@ -207,7 +210,7 @@ class BaseChart(ABC):
         return data
 
     @abstractmethod
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> Any:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> Any:
         """
         Create the chart figure.
 
@@ -286,7 +289,7 @@ class BaseChart(ABC):
         """
         pass
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Export chart as dictionary.
 
@@ -323,11 +326,11 @@ class PlotlyChartBase(BaseChart):
     >>> class MyPlotlyChart(PlotlyChartBase):
     ...     def _create_figure(self, data, **kwargs):
     ...         fig = go.Figure()
-    ...         fig.add_trace(go.Scatter(x=data['x'], y=data['y']))
+    ...         fig.add_trace(go.Scatter(x=data["x"], y=data["y"]))
     ...         return fig
     """
 
-    def __init__(self, theme: Optional[Theme] = None, config: Optional[Dict] = None):
+    def __init__(self, theme: Theme | None = None, config: dict | None = None):
         """Initialize Plotly chart."""
         if not HAS_PLOTLY:
             raise ImportError(
@@ -375,7 +378,7 @@ class PlotlyChartBase(BaseChart):
 
         return figure
 
-    def _create_base_layout(self) -> Dict:
+    def _create_base_layout(self) -> dict:
         """
         Create base Plotly layout from theme.
 
@@ -419,9 +422,7 @@ class PlotlyChartBase(BaseChart):
         fig_dict = self.figure.to_dict()
         return json.dumps(fig_dict, cls=NumpyEncoder)
 
-    def to_html(
-        self, include_plotlyjs: str = "cdn", config: Optional[Dict] = None, **kwargs
-    ) -> str:
+    def to_html(self, include_plotlyjs: str = "cdn", config: dict | None = None, **kwargs) -> str:
         """
         Convert to standalone HTML.
 
@@ -453,7 +454,7 @@ class PlotlyChartBase(BaseChart):
             self.figure, include_plotlyjs=include_plotlyjs, config=plotly_config, **kwargs
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Export as dictionary.
 
@@ -470,8 +471,8 @@ class PlotlyChartBase(BaseChart):
     def to_image(
         self,
         format: str = "png",
-        width: Optional[int] = None,
-        height: Optional[int] = None,
+        width: int | None = None,
+        height: int | None = None,
         scale: float = 1.0,
         **kwargs,
     ) -> bytes:
@@ -510,13 +511,13 @@ class PlotlyChartBase(BaseChart):
         >>> chart = MyChart()
         >>> chart.create(data)
         >>> # Export as PNG
-        >>> png_bytes = chart.to_image('png', width=800, height=600)
-        >>> with open('chart.png', 'wb') as f:
+        >>> png_bytes = chart.to_image("png", width=800, height=600)
+        >>> with open("chart.png", "wb") as f:
         ...     f.write(png_bytes)
         >>> # Export as high-res PNG for retina displays
-        >>> png_bytes = chart.to_image('png', scale=2.0)
+        >>> png_bytes = chart.to_image("png", scale=2.0)
         >>> # Export as SVG
-        >>> svg_bytes = chart.to_image('svg')
+        >>> svg_bytes = chart.to_image("svg")
         """
         if self.figure is None:
             raise ValueError("Chart has not been created yet. Call create() first.")
@@ -529,16 +530,16 @@ class PlotlyChartBase(BaseChart):
         except ValueError as e:
             if "kaleido" in str(e).lower():
                 raise ImportError(
-                    "kaleido is required for image export. " "Install with: pip install kaleido"
+                    "kaleido is required for image export. Install with: pip install kaleido"
                 ) from e
             raise
 
     def save_image(
         self,
         file_path: str,
-        format: Optional[str] = None,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
+        format: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
         scale: float = 1.0,
         **kwargs,
     ) -> None:
@@ -575,13 +576,13 @@ class PlotlyChartBase(BaseChart):
         >>> chart = MyChart()
         >>> chart.create(data)
         >>> # Save as PNG
-        >>> chart.save_image('output/chart.png')
+        >>> chart.save_image("output/chart.png")
         >>> # Save as high-res PNG
-        >>> chart.save_image('output/chart_2x.png', scale=2.0)
+        >>> chart.save_image("output/chart_2x.png", scale=2.0)
         >>> # Save as SVG with custom size
-        >>> chart.save_image('output/chart.svg', width=1200, height=800)
+        >>> chart.save_image("output/chart.svg", width=1200, height=800)
         >>> # Save as PDF
-        >>> chart.save_image('output/chart.pdf')
+        >>> chart.save_image("output/chart.pdf")
         """
         if self.figure is None:
             raise ValueError("Chart has not been created yet. Call create() first.")
@@ -602,7 +603,7 @@ class PlotlyChartBase(BaseChart):
         valid_formats = ["png", "svg", "jpeg", "jpg", "pdf", "webp"]
         if format not in valid_formats:
             raise ValueError(
-                f"Invalid format '{format}'. " f"Must be one of: {', '.join(valid_formats)}"
+                f"Invalid format '{format}'. Must be one of: {', '.join(valid_formats)}"
             )
 
         # Get image bytes
@@ -620,7 +621,7 @@ class PlotlyChartBase(BaseChart):
             f.write(image_bytes)
 
     def to_png(
-        self, width: Optional[int] = None, height: Optional[int] = None, scale: float = 1.0
+        self, width: int | None = None, height: int | None = None, scale: float = 1.0
     ) -> bytes:
         """
         Export chart as PNG image bytes.
@@ -645,12 +646,12 @@ class PlotlyChartBase(BaseChart):
         --------
         >>> chart.create(data)
         >>> png_bytes = chart.to_png(width=800, height=600)
-        >>> with open('chart.png', 'wb') as f:
+        >>> with open("chart.png", "wb") as f:
         ...     f.write(png_bytes)
         """
         return self.to_image(format="png", width=width, height=height, scale=scale)
 
-    def to_svg(self, width: Optional[int] = None, height: Optional[int] = None) -> bytes:
+    def to_svg(self, width: int | None = None, height: int | None = None) -> bytes:
         """
         Export chart as SVG image bytes.
 
@@ -672,12 +673,12 @@ class PlotlyChartBase(BaseChart):
         --------
         >>> chart.create(data)
         >>> svg_bytes = chart.to_svg(width=800, height=600)
-        >>> with open('chart.svg', 'wb') as f:
+        >>> with open("chart.svg", "wb") as f:
         ...     f.write(svg_bytes)
         """
         return self.to_image(format="svg", width=width, height=height)
 
-    def to_pdf(self, width: Optional[int] = None, height: Optional[int] = None) -> bytes:
+    def to_pdf(self, width: int | None = None, height: int | None = None) -> bytes:
         """
         Export chart as PDF bytes.
 
@@ -699,7 +700,7 @@ class PlotlyChartBase(BaseChart):
         --------
         >>> chart.create(data)
         >>> pdf_bytes = chart.to_pdf(width=800, height=600)
-        >>> with open('chart.pdf', 'wb') as f:
+        >>> with open("chart.pdf", "wb") as f:
         ...     f.write(pdf_bytes)
         """
         return self.to_image(format="pdf", width=width, height=height)
@@ -727,11 +728,11 @@ class MatplotlibChartBase(BaseChart):
     >>> class MyMatplotlibChart(MatplotlibChartBase):
     ...     def _create_figure(self, data, **kwargs):
     ...         self.fig, self.ax = plt.subplots()
-    ...         self.ax.plot(data['x'], data['y'])
+    ...         self.ax.plot(data["x"], data["y"])
     ...         return self.fig
     """
 
-    def __init__(self, theme: Optional[Theme] = None, config: Optional[Dict] = None):
+    def __init__(self, theme: Theme | None = None, config: dict | None = None):
         """Initialize Matplotlib chart."""
         if not HAS_MATPLOTLIB:
             raise ImportError(

@@ -5,17 +5,22 @@ This module defines the core data types, enumerations, and validation
 functions used throughout the frontier analysis module.
 """
 
+from __future__ import annotations
+
+import logging
 from enum import Enum
-from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class FrontierType(str, Enum):
     """Type of frontier to estimate.
 
-    Attributes:
+    Attributes
+    ----------
         PRODUCTION: Production frontier where inefficiency reduces output
                    (y = f(x) * exp(-u) * exp(v))
         COST: Cost frontier where inefficiency increases cost
@@ -29,7 +34,8 @@ class FrontierType(str, Enum):
 class DistributionType(str, Enum):
     """Distribution assumed for the inefficiency term u.
 
-    Attributes:
+    Attributes
+    ----------
         HALF_NORMAL: Half-normal distribution (Aigner et al. 1977)
         EXPONENTIAL: Exponential distribution (Meeusen & van den Broeck 1977)
         TRUNCATED_NORMAL: Truncated normal distribution with location parameter μ
@@ -45,7 +51,8 @@ class DistributionType(str, Enum):
 class ModelType(str, Enum):
     """Type of SFA model structure.
 
-    Attributes:
+    Attributes
+    ----------
         CROSS_SECTION: Cross-sectional model (no panel structure)
         POOLED: Pooled panel model (ignores time dimension)
         PITT_LEE: Pitt & Lee (1981) panel model (time-invariant inefficiency)
@@ -70,21 +77,22 @@ class ModelType(str, Enum):
     TRUE_RANDOM_EFFECTS = "tre"
 
 
-def validate_frontier_data(
+def validate_frontier_data(  # noqa: C901
     data: pd.DataFrame,
     depvar: str,
-    exog: List[str],
-    entity: Optional[str] = None,
-    time: Optional[str] = None,
-    inefficiency_vars: Optional[List[str]] = None,
-    het_vars: Optional[List[str]] = None,
+    exog: list[str],
+    entity: str | None = None,
+    time: str | None = None,
+    inefficiency_vars: list[str] | None = None,
+    het_vars: list[str] | None = None,
 ) -> dict:
     """Validate data for frontier estimation.
 
     Performs comprehensive validation of input data for SFA models,
     checking for missing values, variable existence, and data types.
 
-    Parameters:
+    Parameters
+    ----------
         data: Input DataFrame
         depvar: Dependent variable name
         exog: List of exogenous variable names
@@ -93,10 +101,12 @@ def validate_frontier_data(
         inefficiency_vars: Variables for inefficiency mean (BC95)
         het_vars: Variables for heteroskedasticity
 
-    Returns:
+    Returns
+    -------
         Dictionary with validation results and processed data info
 
-    Raises:
+    Raises
+    ------
         ValueError: If validation fails
         KeyError: If required variables not found in data
     """
@@ -105,7 +115,7 @@ def validate_frontier_data(
         raise ValueError("Input DataFrame is empty")
 
     # Check all required variables exist
-    all_vars = [depvar] + exog
+    all_vars = [depvar, *exog]
     if inefficiency_vars:
         all_vars.extend(inefficiency_vars)
     if het_vars:
@@ -120,7 +130,7 @@ def validate_frontier_data(
         raise KeyError(f"Variables not found in DataFrame: {missing_vars}")
 
     # Check for missing values
-    check_cols = [depvar] + exog
+    check_cols = [depvar, *exog]
     if inefficiency_vars:
         check_cols.extend(inefficiency_vars)
     if het_vars:
@@ -148,7 +158,7 @@ def validate_frontier_data(
     if inf_counts.any():
         inf_info = inf_counts[inf_counts > 0]
         raise ValueError(
-            f"Infinite values detected:\n{inf_info}\n" "Please remove or replace infinite values."
+            f"Infinite values detected:\n{inf_info}\nPlease remove or replace infinite values."
         )
 
     # Validate panel structure if applicable
@@ -167,9 +177,8 @@ def validate_frontier_data(
         if not is_balanced:
             min_periods = entity_counts.min()
             max_periods = entity_counts.max()
-            print(
-                f"Warning: Unbalanced panel detected. "
-                f"Periods per entity: {min_periods} to {max_periods}"
+            logger.warning(
+                f"Unbalanced panel detected. Periods per entity: {min_periods} to {max_periods}"
             )
 
     # Check for collinearity (warn only)
@@ -178,12 +187,12 @@ def validate_frontier_data(
 
         X = data[exog].values
         if matrix_rank(X) < len(exog):
-            print(
-                f"Warning: Potential collinearity detected. "
+            logger.warning(
+                f"Potential collinearity detected. "
                 f"Matrix rank ({matrix_rank(X)}) < number of variables ({len(exog)})"
             )
-    except Exception:
-        pass  # If check fails, continue anyway
+    except Exception:  # noqa: S110 — collinearity check is advisory, not critical
+        pass
 
     return {
         "n_obs": n_obs,
@@ -197,7 +206,7 @@ def validate_frontier_data(
 
 
 def prepare_panel_index(
-    data: pd.DataFrame, entity: Optional[str] = None, time: Optional[str] = None
+    data: pd.DataFrame, entity: str | None = None, time: str | None = None
 ) -> pd.DataFrame:
     """Prepare panel data with proper multi-index.
 
@@ -205,12 +214,14 @@ def prepare_panel_index(
     (entity, time) for panel models, or simple integer index for
     cross-sectional models.
 
-    Parameters:
+    Parameters
+    ----------
         data: Input DataFrame
         entity: Entity identifier column name
         time: Time identifier column name
 
-    Returns:
+    Returns
+    -------
         DataFrame with proper index
     """
     data = data.copy()
@@ -235,16 +246,18 @@ def prepare_panel_index(
 
 
 def check_distribution_compatibility(
-    dist: DistributionType, model_type: ModelType, inefficiency_vars: Optional[List[str]] = None
+    dist: DistributionType, model_type: ModelType, inefficiency_vars: list[str] | None = None
 ) -> None:
     """Check if distribution is compatible with model type.
 
-    Parameters:
+    Parameters
+    ----------
         dist: Distribution type for inefficiency
         model_type: Type of SFA model
         inefficiency_vars: Variables for heterogeneity in inefficiency
 
-    Raises:
+    Raises
+    ------
         ValueError: If incompatible combination detected
     """
     # BC95 requires truncated normal
@@ -256,15 +269,14 @@ def check_distribution_compatibility(
         )
 
     # Check model-specific restrictions
-    if model_type == ModelType.BATTESE_COELLI_95:
-        if dist != DistributionType.TRUNCATED_NORMAL:
-            raise ValueError("Battese-Coelli (1995) model requires truncated_normal distribution")
+    if model_type == ModelType.BATTESE_COELLI_95 and dist != DistributionType.TRUNCATED_NORMAL:
+        raise ValueError("Battese-Coelli (1995) model requires truncated_normal distribution")
 
     # Gamma is computationally intensive - warn for large panels
     if dist == DistributionType.GAMMA:
         if model_type not in [ModelType.CROSS_SECTION, ModelType.POOLED]:
-            print(
-                "Warning: Gamma distribution with panel models can be "
+            logger.warning(
+                "Gamma distribution with panel models can be "
                 "computationally intensive. Consider half_normal or exponential "
                 "for faster estimation."
             )
@@ -272,9 +284,9 @@ def check_distribution_compatibility(
 
 def add_translog(
     data: pd.DataFrame,
-    variables: List[str],
+    variables: list[str],
     include_time: bool = False,
-    time_var: Optional[str] = None,
+    time_var: str | None = None,
     prefix: str = "",
 ) -> pd.DataFrame:
     """Generate Translog terms for flexible functional form.
@@ -284,24 +296,27 @@ def add_translog(
         - Cross-product terms: x_j × x_k for j < k
         - Time interactions (optional): t × x_j, t²
 
-    Parameters:
+    Parameters
+    ----------
         data: Input DataFrame
         variables: List of variable names to expand (should already be in logs)
         include_time: Whether to include time trend interactions
         time_var: Name of time variable (required if include_time=True)
         prefix: Prefix for generated variable names (default: "")
 
-    Returns:
+    Returns
+    -------
         DataFrame with original data plus Translog terms
 
     Example:
         >>> # For Cobb-Douglas: ln(y) = β₀ + β₁·ln(K) + β₂·ln(L)
         >>> # Generate Translog terms:
-        >>> data_translog = add_translog(data, ['ln_K', 'ln_L'])
+        >>> data_translog = add_translog(data, ["ln_K", "ln_L"])
         >>> # Now can estimate: ln(y) = β₀ + β₁·ln(K) + β₂·ln(L)
         >>>                           + β₁₁·ln(K)² + β₂₂·ln(L)² + β₁₂·ln(K)·ln(L)
 
-    Notes:
+    Notes
+    -----
         - Variables should already be in log form (e.g., ln_K, ln_L)
         - For K inputs, generates K quadratic + K(K-1)/2 interaction terms
         - Total terms: K + K + K(K-1)/2 = K(K+3)/2
@@ -322,10 +337,7 @@ def add_translog(
     for j, var_j in enumerate(variables):
         for var_k in variables[j + 1 :]:
             # Create interaction name (e.g., ln_K_ln_L)
-            if prefix:
-                new_name = f"{prefix}{var_j}_{var_k}"
-            else:
-                new_name = f"{var_j}_{var_k}"
+            new_name = f"{prefix}{var_j}_{var_k}" if prefix else f"{var_j}_{var_k}"
 
             data_out[new_name] = data[var_j] * data[var_k]
 

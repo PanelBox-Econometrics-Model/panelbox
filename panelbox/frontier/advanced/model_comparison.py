@@ -5,20 +5,25 @@ simpler alternatives (Pitt-Lee, True Fixed/Random Effects) to demonstrate
 the value of separating persistent and transient inefficiency.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
 from .four_component import FourComponentResult
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ModelComparisonResult:
     """Results from model comparison.
 
-    Attributes:
+    Attributes
+    ----------
         four_component: Results from four-component model
         model_names: List of model names
         log_likelihoods: Log-likelihood for each model
@@ -29,11 +34,11 @@ class ModelComparisonResult:
     """
 
     four_component: FourComponentResult
-    model_names: List[str]
-    log_likelihoods: Dict[str, float]
-    aics: Dict[str, float]
-    bics: Dict[str, float]
-    variance_shares: Dict[str, Dict[str, float]]
+    model_names: list[str]
+    log_likelihoods: dict[str, float]
+    aics: dict[str, float]
+    bics: dict[str, float]
+    variance_shares: dict[str, dict[str, float]]
     efficiency_correlation: pd.DataFrame
 
     def print_summary(self):
@@ -89,19 +94,21 @@ def compare_with_pitt_lee(
     The Pitt-Lee model does not separate persistent and transient inefficiency.
     It treats all inefficiency as time-invariant.
 
-    Parameters:
+    Parameters
+    ----------
         four_comp_result: Results from four-component model
 
-    Returns:
+    Returns
+    -------
         ModelComparisonResult with comparison statistics
 
-    Notes:
+    Notes
+    -----
         The Pitt-Lee model is nested within the four-component model.
         We can approximate it by combining persistent and transient inefficiency.
     """
     model = four_comp_result.model
     n = model.n_obs
-    N = model.n_entities
     k = len(model.exog_names)
 
     # Four-component model statistics
@@ -225,20 +232,22 @@ def compare_with_true_effects(
     inefficiency at all. They treat all variation as either fixed effects
     or random heterogeneity.
 
-    Parameters:
+    Parameters
+    ----------
         four_comp_result: Results from four-component model
 
-    Returns:
+    Returns
+    -------
         ModelComparisonResult with comparison statistics
 
-    Notes:
+    Notes
+    -----
         - True FE: All α_i variation is fixed effects (no inefficiency)
         - True RE: All α_i variation is random heterogeneity (no inefficiency)
         - Four-Component: Separates α_i into μ_i (heterogeneity) and η_i (inefficiency)
     """
     model = four_comp_result.model
     n = model.n_obs
-    N = model.n_entities
     k = len(model.exog_names)
 
     # Four-component model
@@ -303,8 +312,8 @@ def compare_with_true_effects(
     te_overall = te_persistent[model.entity_id] * te_transient
 
     # True FE/RE assume perfect efficiency (TE = 1.0)
-    te_fe = np.ones(n)
-    te_re = np.ones(n)
+    np.ones(n)
+    np.ones(n)
 
     corr_matrix = pd.DataFrame(
         {
@@ -372,20 +381,22 @@ def compare_all_models(
     - True Fixed Effects: No inefficiency
     - True Random Effects: No inefficiency
 
-    Parameters:
+    Parameters
+    ----------
         four_comp_result: Results from four-component model
 
-    Returns:
+    Returns
+    -------
         ModelComparisonResult with comprehensive comparison
 
-    Notes:
+    Notes
+    -----
         This demonstrates the value of the four-component decomposition
         in separating persistent vs transient inefficiency and heterogeneity
         vs inefficiency.
     """
     model = four_comp_result.model
     n = model.n_obs
-    N = model.n_entities
     k = len(model.exog_names)
 
     # Four-component variance decomposition
@@ -474,8 +485,8 @@ def compare_all_models(
     te_transient = np.exp(-four_comp_result.u_it)
     te_overall = te_persistent[model.entity_id] * te_transient
     te_pl = te_persistent[model.entity_id]  # Only persistent
-    te_fe = np.ones(n)
-    te_re = np.ones(n)
+    np.ones(n)
+    np.ones(n)
 
     corr_data = {
         "Overall (4C)": te_overall,

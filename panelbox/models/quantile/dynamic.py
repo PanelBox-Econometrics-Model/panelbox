@@ -5,7 +5,8 @@ Implements dynamic panel quantile regression with lagged dependent variables,
 including methods for handling endogeneity through instrumental variables
 and control function approaches.
 
-References:
+References
+----------
     Galvao, A. F. (2011). Quantile regression for dynamic panel data with
     fixed effects. Journal of Econometrics, 164(1), 142-157.
 
@@ -16,14 +17,18 @@ References:
     quantile regressions. The Econometrics Journal, 19(3), C61-C94.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.linalg import lstsq
 
 from .base import QuantilePanelModel, QuantilePanelResult
+
+logger = logging.getLogger(__name__)
 
 
 class DynamicQuantile(QuantilePanelModel):
@@ -57,23 +62,80 @@ class DynamicQuantile(QuantilePanelModel):
     def __init__(
         self,
         data,
-        formula: Optional[str] = None,
-        tau: Union[float, np.ndarray] = 0.5,
+        formula: str | None = None,
+        tau: float | np.ndarray = 0.5,
         lags: int = 1,
         method: str = "iv",
     ):
-        super().__init__(data, formula, tau)
+        # Store data and parameters directly (avoid abstract method check)
+        self.data = data
+        self.formula = formula
+        self.tau = np.atleast_1d(tau)
+        self.n_quantiles = len(self.tau)
         self.lags = lags
         self.method = method
+
+        # Validate tau values
+        if np.any(self.tau <= 0) or np.any(self.tau >= 1):
+            raise ValueError("Quantile levels tau must be in (0, 1)")
+
+        # Parse formula if provided
+        if formula:
+            self._parse_formula()
+
+        self._setup_data()
         self._setup_dynamic_data()
+
+    def _objective(self, params: np.ndarray, tau: float) -> float:
+        """Compute check loss objective function."""
+        residuals = self.y_dynamic - self.X_with_lags @ params
+        check = residuals * (tau - (residuals < 0).astype(float))
+        return np.sum(check)
+
+    def _parse_formula(self):
+        """Parse formula to extract variables."""
+        if "~" in self.formula:
+            lhs, rhs = self.formula.split("~")
+            self.dependent_var = lhs.strip()
+            self.independent_vars = [v.strip() for v in rhs.split("+")]
+        else:
+            raise ValueError("Invalid formula format")
+
+    def _setup_data(self):
+        """Setup data matrices from panel data."""
+        if self.formula:
+            self.y = self.data.data[self.dependent_var].values
+            self.X = self.data.data[self.independent_vars].values
+        else:
+            # Use all numeric columns except entity/time
+            numeric_cols = self.data.data.select_dtypes(include=[np.number]).columns
+            non_id_cols = [
+                c for c in numeric_cols if c not in [self.data.entity_col, self.data.time_col]
+            ]
+            self.dependent_var = non_id_cols[0]
+            self.independent_vars = non_id_cols[1:]
+            self.y = self.data.data[self.dependent_var].values
+            self.X = self.data.data[self.independent_vars].values
+
+        # Add constant if not present
+        if not np.any(np.all(self.X[0] == self.X, axis=0)):
+            self.X = np.column_stack([np.ones(len(self.y)), self.X])
+
+        self.nobs, self.k_exog = self.X.shape
 
     def _setup_dynamic_data(self):
         """Create lagged variables and adjust sample."""
         # Sort by entity and time
-        self.data_sorted = self.data._data.sort_values([self.data.entity_col, self.data.time_col])
+        self.data_sorted = self.data.data.sort_values(
+            [self.data.entity_col, self.data.time_col]
+        ).reset_index(drop=True)
 
-        # Create lags
+        # Maximum lag depth we might need (for instruments)
+        max_lag_depth = self.lags + 4  # reserve up to 4 extra lags for instruments
+
+        # Create lags and deeper lags simultaneously
         self.y_lagged = []
+        self._deeper_lags = {d: [] for d in range(self.lags + 1, max_lag_depth + 1)}
         self.valid_obs = []
         self.entity_ids = []
         self.time_ids = []
@@ -82,11 +144,10 @@ class DynamicQuantile(QuantilePanelModel):
             entity_data = self.data_sorted[self.data_sorted[self.data.entity_col] == entity]
 
             if len(entity_data) > self.lags:
-                # Get lagged y for each valid time period
-                y_values = entity_data[self.endog_name].values
+                y_values = entity_data[self.dependent_var].values
 
                 for t in range(self.lags, len(entity_data)):
-                    # Collect lags
+                    # Collect required lags
                     y_lag = []
                     for lag in range(1, self.lags + 1):
                         y_lag.append(y_values[t - lag])
@@ -96,10 +157,21 @@ class DynamicQuantile(QuantilePanelModel):
                     self.entity_ids.append(entity)
                     self.time_ids.append(entity_data[self.data.time_col].iloc[t])
 
+                    # Collect deeper lags for instruments
+                    for d in range(self.lags + 1, max_lag_depth + 1):
+                        if t >= d:
+                            self._deeper_lags[d].append(y_values[t - d])
+                        else:
+                            self._deeper_lags[d].append(np.nan)
+
         self.y_lagged = np.array(self.y_lagged)
         self.valid_obs = np.array(self.valid_obs)
         self.entity_ids = np.array(self.entity_ids)
         self.time_ids = np.array(self.time_ids)
+
+        # Convert deeper lags to arrays
+        for d in list(self._deeper_lags.keys()):
+            self._deeper_lags[d] = np.array(self._deeper_lags[d])
 
         # Adjust sample
         valid_mask = np.isin(np.arange(len(self.y)), self.valid_obs)
@@ -111,7 +183,7 @@ class DynamicQuantile(QuantilePanelModel):
 
     def fit(
         self, iv_lags: int = 2, bootstrap: bool = False, n_boot: int = 100, verbose: bool = False
-    ) -> "DynamicQuantileResult":
+    ) -> DynamicQuantileResult:
         """
         Fit dynamic quantile regression.
 
@@ -142,23 +214,30 @@ class DynamicQuantile(QuantilePanelModel):
 
     def _fit_iv(
         self, iv_lags: int, bootstrap: bool, n_boot: int, verbose: bool
-    ) -> "DynamicQuantilePanelResult":
+    ) -> DynamicQuantilePanelResult:
         """
         Instrumental variables approach (Galvao 2011).
 
         Uses deeper lags as instruments for lagged dependent variable.
         """
         if verbose:
-            print("Dynamic QR via IV (Galvao 2011)")
-            print("=" * 50)
+            logger.info("Dynamic QR via IV (Galvao 2011)")
+            logger.info("=" * 50)
 
         # Construct instruments
         instruments = self._construct_instruments(iv_lags)
+        vm = self._iv_valid_mask  # valid mask from instrument construction
+
+        # Subset data to match valid instrument observations
+        y_lag_iv = self.y_lagged[vm]
+        y_dyn_iv = self.y_dynamic[vm]
+        X_dyn_iv = self.X_dynamic[vm]
+        ent_iv = self.entity_ids[vm]
 
         results = {}
         for tau in self.tau:
             if verbose:
-                print(f"\nEstimating τ = {tau}")
+                logger.info(f"Estimating τ = {tau}")
 
             # Two-stage approach
             # Stage 1: Regress endogenous on instruments
@@ -166,18 +245,18 @@ class DynamicQuantile(QuantilePanelModel):
 
             for j in range(self.lags):
                 # Project y_{t-j} on instruments
-                coef_1st = lstsq(instruments, self.y_lagged[:, j])[0]
+                coef_1st = lstsq(instruments, y_lag_iv[:, j])[0]
                 y_lag_hat.append(instruments @ coef_1st)
 
             y_lag_hat = np.column_stack(y_lag_hat) if self.lags > 1 else y_lag_hat[0].reshape(-1, 1)
 
             # Stage 2: QR with fitted values
-            X_iv = np.column_stack([y_lag_hat, self.X_dynamic])
+            X_iv = np.column_stack([y_lag_hat, X_dyn_iv])
 
             # Use interior point method for quantile regression
             from ...optimization.quantile.interior_point import frisch_newton_qr
 
-            beta_iv, info = frisch_newton_qr(X_iv, self.y_dynamic, tau)
+            beta_iv, info = frisch_newton_qr(X_iv, y_dyn_iv, tau)
 
             # Bootstrap inference if requested
             if bootstrap:
@@ -194,25 +273,36 @@ class DynamicQuantile(QuantilePanelModel):
                 persistence=beta_iv[: self.lags],
                 converged=info["converged"],
                 method="iv",
-                n_obs=len(self.y_dynamic),
-                n_entities=len(np.unique(self.entity_ids)),
+                n_obs=len(y_dyn_iv),
+                n_entities=len(np.unique(ent_iv)),
             )
 
         return DynamicQuantilePanelResult(self, results)
 
     def _construct_instruments(self, iv_lags: int) -> np.ndarray:
-        """Construct instrument matrix."""
-        # Use exogenous X as instruments
-        instruments = [self.X_dynamic]
+        """Construct instrument matrix using exogenous X and deeper lags."""
+        # Collect all deeper lag columns, allowing NaN
+        deeper_cols = []
+        for lag_depth in range(self.lags + 1, self.lags + iv_lags + 1):
+            if lag_depth in self._deeper_lags:
+                deeper_cols.append(self._deeper_lags[lag_depth])
 
-        # Add deeper lags if available
-        # This is a simplified version - full implementation would be more careful
-        # about the panel structure and availability of deeper lags
+        # Find valid mask: rows where ALL deeper lags are non-NaN
+        if deeper_cols:
+            stacked = np.column_stack(deeper_cols)
+            valid = ~np.any(np.isnan(stacked), axis=1)
+            self._iv_valid_mask = valid
+            instruments = np.column_stack(
+                [
+                    self.X_dynamic[valid],
+                    stacked[valid],
+                ]
+            )
+        else:
+            self._iv_valid_mask = np.ones(len(self.y_dynamic), dtype=bool)
+            instruments = self.X_dynamic.copy()
 
-        # For now, just use exogenous variables
-        # In a complete implementation, we would add y_{t-2}, y_{t-3}, etc.
-
-        return np.column_stack(instruments)
+        return instruments
 
     def _compute_iv_covariance(
         self, beta: np.ndarray, tau: float, instruments: np.ndarray, X_iv: np.ndarray
@@ -222,8 +312,9 @@ class DynamicQuantile(QuantilePanelModel):
 
         This is complex - using simplified version.
         """
-        n = len(self.y_dynamic)
-        residuals = self.y_dynamic - X_iv @ beta
+        vm = self._iv_valid_mask
+        n = int(vm.sum())
+        residuals = self.y_dynamic[vm] - X_iv @ beta
 
         # Simplified sandwich estimator
         psi = tau - (residuals < 0).astype(float)
@@ -251,7 +342,7 @@ class DynamicQuantile(QuantilePanelModel):
 
         for b in range(n_boot):
             if verbose and b % 20 == 0:
-                print(f"  Bootstrap iteration {b}/{n_boot}")
+                logger.info(f"  Bootstrap iteration {b}/{n_boot}")
 
             # Cluster bootstrap (by entity)
             entities = np.unique(self.entity_ids)
@@ -290,25 +381,23 @@ class DynamicQuantile(QuantilePanelModel):
                 beta_b, _ = frisch_newton_qr(X_iv_boot, y_boot, tau, max_iter=50)
                 beta_boot.append(beta_b)
 
-            except:
-                # Skip if optimization fails
+            except Exception:  # noqa: S110 — skip failed bootstrap iterations
                 pass
 
         return np.array(beta_boot)
 
-    def _fit_qcf(self, bootstrap: bool, n_boot: int, verbose: bool) -> "DynamicQuantilePanelResult":
+    def _fit_qcf(self, bootstrap: bool, n_boot: int, verbose: bool) -> DynamicQuantilePanelResult:
         """
         Quantile Control Function approach (Powell 2016).
 
         Controls for endogeneity using control function.
         """
         if verbose:
-            print("Dynamic QR via Control Function (Powell 2016)")
-            print("=" * 50)
+            logger.info("Dynamic QR via Control Function (Powell 2016)")
+            logger.info("=" * 50)
 
         # Step 1: First stage regression to get control function
         # Regress y_{t-1} on exogenous variables
-        import pandas as pd
 
         from ...utils.data import PanelData
 
@@ -341,7 +430,7 @@ class DynamicQuantile(QuantilePanelModel):
         results = {}
         for tau in self.tau:
             if verbose:
-                print(f"\nEstimating τ = {tau}")
+                logger.info(f"Estimating τ = {tau}")
 
             from ...optimization.quantile.interior_point import frisch_newton_qr
 
@@ -378,15 +467,15 @@ class DynamicQuantile(QuantilePanelModel):
         # Simplified bootstrap - would be more complex in full implementation
         return np.eye(len(self.X_with_lags[0])) * 0.01
 
-    def _fit_gmm(self, iv_lags: int, verbose: bool) -> "DynamicQuantilePanelResult":
+    def _fit_gmm(self, iv_lags: int, verbose: bool) -> DynamicQuantilePanelResult:
         """
         GMM approach for dynamic quantile regression.
 
         Uses moment conditions based on quantile restrictions.
         """
         if verbose:
-            print("Dynamic QR via GMM")
-            print("=" * 50)
+            logger.info("Dynamic QR via GMM")
+            logger.info("=" * 50)
 
         # Construct moment conditions
         instruments = self._construct_instruments(iv_lags)
@@ -394,10 +483,11 @@ class DynamicQuantile(QuantilePanelModel):
         results = {}
         for tau in self.tau:
             if verbose:
-                print(f"\nEstimating τ = {tau}")
+                logger.info(f"Estimating τ = {tau}")
 
             # GMM objective function
             def gmm_objective(beta):
+                """Compute the GMM objective function."""
                 residuals = self.y_dynamic - self.X_with_lags @ beta
                 psi = tau - (residuals < 0).astype(float)
                 moments = instruments.T @ psi
@@ -430,7 +520,7 @@ class DynamicQuantile(QuantilePanelModel):
 
         return DynamicQuantilePanelResult(self, results)
 
-    def compute_long_run_effects(self, results: "DynamicQuantilePanelResult") -> Dict[float, Dict]:
+    def compute_long_run_effects(self, results: DynamicQuantilePanelResult) -> dict[float, dict]:
         """
         Compute long-run effects: β/(1-ρ).
 
@@ -451,7 +541,7 @@ class DynamicQuantile(QuantilePanelModel):
             rho = np.sum(res.persistence)  # Sum if multiple lags
 
             if abs(rho) >= 1:
-                warnings.warn(f"Unit root or explosive at τ={tau} (ρ={rho:.3f})")
+                warnings.warn(f"Unit root or explosive at τ={tau} (ρ={rho:.3f})", stacklevel=2)
                 lr_effects[tau] = None
             else:
                 # Long-run multiplier
@@ -471,7 +561,7 @@ class DynamicQuantile(QuantilePanelModel):
 
     def compute_impulse_response(
         self,
-        results: "DynamicQuantilePanelResult",
+        results: DynamicQuantilePanelResult,
         tau: float,
         horizon: int = 20,
         shock_size: float = 1.0,
@@ -522,7 +612,7 @@ class DynamicQuantileResult:
     def __init__(
         self,
         params: np.ndarray,
-        cov_matrix: Optional[np.ndarray],
+        cov_matrix: np.ndarray | None,
         tau: float,
         persistence: np.ndarray,
         converged: bool,
@@ -545,14 +635,14 @@ class DynamicQuantileResult:
             setattr(self, key, value)
 
     @property
-    def std_errors(self) -> Optional[np.ndarray]:
+    def std_errors(self) -> np.ndarray | None:
         """Standard errors of coefficients."""
         if self.cov_matrix is not None:
             return np.sqrt(np.diag(self.cov_matrix))
         return None
 
     @property
-    def t_stats(self) -> Optional[np.ndarray]:
+    def t_stats(self) -> np.ndarray | None:
         """T-statistics."""
         if self.std_errors is not None:
             return self.params / self.std_errors
@@ -571,9 +661,9 @@ class DynamicQuantileResult:
         for i, rho in enumerate(self.persistence):
             if self.std_errors is not None:
                 se = self.std_errors[i]
-                print(f"  ρ{i+1} (lag {i+1}): {rho:.4f} ({se:.4f})")
+                print(f"  ρ{i + 1} (lag {i + 1}): {rho:.4f} ({se:.4f})")
             else:
-                print(f"  ρ{i+1} (lag {i+1}): {rho:.4f}")
+                print(f"  ρ{i + 1} (lag {i + 1}): {rho:.4f}")
 
         print(f"\nTotal persistence: {np.sum(self.persistence):.4f}")
 
@@ -587,9 +677,9 @@ class DynamicQuantileResult:
         for i in range(len(self.persistence), len(self.params)):
             if self.std_errors is not None:
                 se = self.std_errors[i]
-                print(f"  β{i-len(self.persistence)+1}: {self.params[i]:.4f} ({se:.4f})")
+                print(f"  β{i - len(self.persistence) + 1}: {self.params[i]:.4f} ({se:.4f})")
             else:
-                print(f"  β{i-len(self.persistence)+1}: {self.params[i]:.4f}")
+                print(f"  β{i - len(self.persistence) + 1}: {self.params[i]:.4f}")
 
         # Control function coefficient if QCF method
         if hasattr(self, "control_function_coef"):
@@ -640,7 +730,7 @@ class DynamicQuantilePanelResult(QuantilePanelResult):
         plt.tight_layout()
         return fig
 
-    def plot_impulse_responses(self, tau_list: Optional[List[float]] = None, horizon: int = 20):
+    def plot_impulse_responses(self, tau_list: list[float] | None = None, horizon: int = 20):
         """Plot impulse response functions for multiple quantiles."""
         import matplotlib.pyplot as plt
 

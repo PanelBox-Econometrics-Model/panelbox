@@ -5,11 +5,17 @@ This module provides the Hausman test for choosing between Fixed Effects
 and Random Effects models.
 """
 
+from __future__ import annotations
+
+import logging
+
 import numpy as np
 import pandas as pd
 from scipy import stats
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class HausmanTestResult:
@@ -64,13 +70,13 @@ class HausmanTestResult:
         if pvalue < alpha:
             self.reject_null = True
             self.conclusion = (
-                f"Reject H0 at {alpha*100:.0f}% level. " "Use Fixed Effects (RE is inconsistent)."
+                f"Reject H0 at {alpha * 100:.0f}% level. Use Fixed Effects (RE is inconsistent)."
             )
             self.recommendation = "Fixed Effects"
         else:
             self.reject_null = False
             self.conclusion = (
-                f"Fail to reject H0 at {alpha*100:.0f}% level. "
+                f"Fail to reject H0 at {alpha * 100:.0f}% level. "
                 "Random Effects is consistent and efficient."
             )
             self.recommendation = "Random Effects"
@@ -258,47 +264,13 @@ class HausmanTest:
     **Basic usage:**
 
     >>> import panelbox as pb
-    >>>
-    >>> # Estimate both models
     >>> fe = pb.FixedEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> fe_results = fe.fit()
-    >>>
     >>> re = pb.RandomEffects(data, "y", ["x1", "x2"], "firm", "year")
     >>> re_results = re.fit()
-    >>>
-    >>> # Run Hausman test
     >>> hausman = pb.HausmanTest(fe_results, re_results)
     >>> result = hausman.run()
     >>> print(result)
-    >>>
-    >>> # Use recommendation
-    >>> if result.recommendation == "Fixed Effects":
-    ...     final_results = fe_results
-    >>> else:
-    ...     final_results = re_results
-
-    **Interpreting results:**
-
-    >>> # Examine test statistic and p-value
-    >>> print(f"Chi2 statistic: {result.statistic:.3f}")
-    >>> print(f"P-value: {result.pvalue:.4f}")
-    >>> print(f"Degrees of freedom: {result.df}")
-    >>>
-    >>> # Check coefficient differences
-    >>> print("\nCoefficient Comparison:")
-    >>> for var in result.fe_params.index:
-    ...     diff_pct = 100 * result.diff[var] / result.fe_params[var]
-    ...     print(f"{var}: {diff_pct:.1f}% difference")
-
-    **Different significance levels:**
-
-    >>> # Test at 1% level for more stringent requirement
-    >>> result_strict = hausman.run(alpha=0.01)
-    >>> print(result_strict.conclusion)
-    >>>
-    >>> # Test at 10% level for more lenient requirement
-    >>> result_lenient = hausman.run(alpha=0.10)
-    >>> print(result_lenient.conclusion)
     """
 
     def __init__(self, fe_results: PanelResults, re_results: PanelResults, alpha: float = 0.05):

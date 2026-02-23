@@ -6,16 +6,19 @@ L1 penalization on the fixed effects to handle the incidental parameters problem
 when T is small.
 """
 
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
-import pandas as pd
 from scipy.optimize import minimize
 
 from panelbox.core.panel_data import PanelData
 
 from .base import QuantilePanelModel
+
+logger = logging.getLogger(__name__)
 
 
 class FixedEffectsQuantile(QuantilePanelModel):
@@ -41,9 +44,9 @@ class FixedEffectsQuantile(QuantilePanelModel):
     def __init__(
         self,
         data: PanelData,
-        formula: Optional[str] = None,
-        tau: Union[float, List[float]] = 0.5,
-        lambda_fe: Union[float, str] = "auto",
+        formula: str | None = None,
+        tau: float | list[float] = 0.5,
+        lambda_fe: float | str = "auto",
     ):
         super().__init__(data, formula, tau)
         self.lambda_fe = lambda_fe
@@ -61,19 +64,19 @@ class FixedEffectsQuantile(QuantilePanelModel):
         if self.formula:
             # Parse formula to get variables
             self._parse_formula()
-            self.y = self.data.df[self.dependent_var].values
-            self.X = self.data.df[self.independent_vars].values
+            self.y = self.data.data[self.dependent_var].values
+            self.X = self.data.data[self.independent_vars].values
         else:
             # Use all variables except the first as X
-            self.y = self.data.df.iloc[:, 0].values
-            self.X = self.data.df.iloc[:, 1:].values
+            self.y = self.data.data.iloc[:, 0].values
+            self.X = self.data.data.iloc[:, 1:].values
 
         # Add constant if not present
-        if not np.any(np.all(self.X == self.X[0], axis=0)):
+        if not np.any(np.all(self.X[0] == self.X, axis=0)):
             self.X = np.column_stack([np.ones(len(self.y)), self.X])
 
         self.nobs, self.k_exog = self.X.shape
-        self.entity_ids = self.data.entity_ids.values
+        self.entity_ids = self.data.data[self.data.entity_col].values
 
     def _setup_entity_indicators(self):
         """Create mapping from observations to entities."""
@@ -153,7 +156,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
     def _select_lambda_cv(
         self,
         tau: float,
-        lambda_grid: Optional[np.ndarray] = None,
+        lambda_grid: np.ndarray | None = None,
         cv_folds: int = 5,
         verbose: bool = False,
     ) -> float:
@@ -168,8 +171,8 @@ class FixedEffectsQuantile(QuantilePanelModel):
             lambda_grid = np.logspace(np.log10(lambda_max * 0.001), np.log10(lambda_max), 20)
 
         if verbose:
-            print(f"Cross-validation for λ selection (τ={tau})")
-            print(
+            logger.info(f"Cross-validation for λ selection (τ={tau})")
+            logger.info(
                 f"Testing {len(lambda_grid)} values from {lambda_grid[0]:.4f} to {lambda_grid[-1]:.4f}"
             )
 
@@ -215,14 +218,14 @@ class FixedEffectsQuantile(QuantilePanelModel):
             cv_scores.append(np.mean(fold_losses))
 
             if verbose:
-                print(f"  λ = {lambda_val:.4f}: CV score = {cv_scores[-1]:.6f}")
+                logger.info(f"  λ = {lambda_val:.4f}: CV score = {cv_scores[-1]:.6f}")
 
         # Select lambda with minimum CV score
         best_idx = np.argmin(cv_scores)
         best_lambda = lambda_grid[best_idx]
 
         if verbose:
-            print(f"Selected λ = {best_lambda:.4f} (CV score = {cv_scores[best_idx]:.6f})")
+            logger.info(f"Selected λ = {best_lambda:.4f} (CV score = {cv_scores[best_idx]:.6f})")
 
         self.cv_results_ = {
             "lambda_grid": lambda_grid,
@@ -254,10 +257,10 @@ class FixedEffectsQuantile(QuantilePanelModel):
         self,
         tau: float,
         lambda_val: float,
-        X_train: Optional[np.ndarray] = None,
-        y_train: Optional[np.ndarray] = None,
-        entity_train: Optional[np.ndarray] = None,
-    ) -> Dict[str, Any]:
+        X_train: np.ndarray | None = None,
+        y_train: np.ndarray | None = None,
+        entity_train: np.ndarray | None = None,
+    ) -> dict[str, Any]:
         """Fit model with specific lambda value."""
         if X_train is None:
             X_train = self.X
@@ -287,6 +290,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
 
         # Define objective for this specific data
         def obj(p):
+            """Compute the quantile regression objective function."""
             beta = p[: X_train.shape[1]]
             alpha = p[X_train.shape[1] :]
             alpha_expanded = alpha[entity_train]
@@ -296,6 +300,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
             return check_loss + penalty
 
         def grad(p):
+            """Compute the gradient of the objective function."""
             beta = p[: X_train.shape[1]]
             alpha = p[X_train.shape[1] :]
             alpha_expanded = alpha[entity_train]
@@ -324,7 +329,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
 
     def fit(
         self, method: str = "L-BFGS-B", cv_folds: int = 5, verbose: bool = False, **kwargs
-    ) -> "FixedEffectsQuantilePanelResult":
+    ) -> FixedEffectsQuantilePanelResult:
         """
         Fit Fixed Effects Quantile Regression.
 
@@ -347,7 +352,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
 
         for tau in self.tau:
             if verbose:
-                print(f"\nEstimating Fixed Effects QR for τ = {tau}")
+                logger.info(f"Estimating Fixed Effects QR for τ = {tau}")
 
             # Select or use provided lambda
             if self.lambda_fe == "auto":
@@ -428,8 +433,8 @@ class FixedEffectsQuantile(QuantilePanelModel):
     def plot_shrinkage_path(
         self,
         tau: float = 0.5,
-        lambda_grid: Optional[np.ndarray] = None,
-        var_names: Optional[List[str]] = None,
+        lambda_grid: np.ndarray | None = None,
+        var_names: list[str] | None = None,
     ):
         """
         Plot coefficient paths as function of penalty parameter.
@@ -459,7 +464,7 @@ class FixedEffectsQuantile(QuantilePanelModel):
 
         # Coefficient paths
         if var_names is None:
-            var_names = [f"β{i+1}" for i in range(self.k_exog)]
+            var_names = [f"β{i + 1}" for i in range(self.k_exog)]
 
         for i, var in enumerate(var_names):
             ax1.plot(np.log10(lambda_grid), coef_paths[:, i], label=var)
@@ -522,7 +527,7 @@ class FixedEffectsQuantileResult:
         print("\nCoefficients:")
         print("-" * 40)
         for i in range(len(self.params)):
-            print(f"  β{i+1}: {self.params[i]:8.4f} ({self.bse[i]:.4f})")
+            print(f"  β{i + 1}: {self.params[i]:8.4f} ({self.bse[i]:.4f})")
 
         print("\nFixed Effects Distribution:")
         print("-" * 40)
@@ -561,12 +566,12 @@ class FixedEffectsQuantilePanelResult:
     """Container for Fixed Effects QR results across multiple quantiles."""
 
     def __init__(
-        self, model: FixedEffectsQuantile, results: Dict[float, FixedEffectsQuantileResult]
+        self, model: FixedEffectsQuantile, results: dict[float, FixedEffectsQuantileResult]
     ):
         self.model = model
         self.results = results
 
-    def summary(self, tau: Optional[float] = None):
+    def summary(self, tau: float | None = None):
         """Print summary of results."""
         print("\n" + "=" * 60)
         print("FIXED EFFECTS QUANTILE REGRESSION RESULTS")
@@ -575,12 +580,12 @@ class FixedEffectsQuantilePanelResult:
         if tau is None:
             tau_list = sorted(self.results.keys())
         else:
-            tau_list = [tau] if np.isscalar(tau) else tau
+            tau_list = [tau] if isinstance(tau, (int, float)) else list(tau)
 
         for tau in tau_list:
             self.results[tau].summary()
 
-    def plot_coefficients(self, var_idx: Optional[int] = None):
+    def plot_coefficients(self, var_idx: int | None = None):
         """Plot coefficients across quantiles."""
         import matplotlib.pyplot as plt
 
@@ -591,17 +596,14 @@ class FixedEffectsQuantilePanelResult:
             n_coef = len(self.results[tau_list[0]].params)
 
             fig, axes = plt.subplots((n_coef + 1) // 2, 2, figsize=(12, 4 * ((n_coef + 1) // 2)))
-            if n_coef == 1:
-                axes = [axes]
-            else:
-                axes = axes.flatten()
+            axes = [axes] if n_coef == 1 else axes.flatten()
 
             for i in range(n_coef):
                 ax = axes[i]
                 coefs = [self.results[tau].params[i] for tau in tau_list]
                 se = [self.results[tau].bse[i] for tau in tau_list]
 
-                ax.plot(tau_list, coefs, "o-", label=f"β{i+1}")
+                ax.plot(tau_list, coefs, "o-", label=f"β{i + 1}")
                 ax.fill_between(
                     tau_list,
                     np.array(coefs) - 1.96 * np.array(se),
@@ -609,8 +611,8 @@ class FixedEffectsQuantilePanelResult:
                     alpha=0.3,
                 )
                 ax.set_xlabel("Quantile (τ)")
-                ax.set_ylabel(f"β{i+1}")
-                ax.set_title(f"Coefficient {i+1} across Quantiles")
+                ax.set_ylabel(f"β{i + 1}")
+                ax.set_title(f"Coefficient {i + 1} across Quantiles")
                 ax.grid(True, alpha=0.3)
                 ax.legend()
 
@@ -634,8 +636,8 @@ class FixedEffectsQuantilePanelResult:
                 alpha=0.3,
             )
             ax.set_xlabel("Quantile (τ)")
-            ax.set_ylabel(f"β{var_idx+1}")
-            ax.set_title(f"Coefficient {var_idx+1} across Quantiles (Fixed Effects QR)")
+            ax.set_ylabel(f"β{var_idx + 1}")
+            ax.set_title(f"Coefficient {var_idx + 1} across Quantiles (Fixed Effects QR)")
             ax.grid(True, alpha=0.3)
 
         plt.tight_layout()

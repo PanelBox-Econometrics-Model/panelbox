@@ -7,6 +7,8 @@ Creates three datasets:
 3. count_panel_test.csv - For Poisson/NegBin models
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import numpy as np
@@ -101,7 +103,7 @@ print(f"   Saved to: {output_path}")
 print(f"   Shape: {data_censored.shape}")
 print(f"   Mean of y: {data_censored['y'].mean():.3f}")
 print(
-    f"   Censored observations: {(data_censored['y'] == 0).sum()} ({(data_censored['y'] == 0).mean()*100:.1f}%)"
+    f"   Censored observations: {(data_censored['y'] == 0).sum()} ({(data_censored['y'] == 0).mean() * 100:.1f}%)"
 )
 
 # ============================================
@@ -144,7 +146,7 @@ print(f"   Shape: {data_count.shape}")
 print(f"   Mean of y: {data_count['y'].mean():.3f}")
 print(f"   Variance of y: {data_count['y'].var():.3f}")
 print(f"   Variance/Mean ratio: {data_count['y'].var() / data_count['y'].mean():.3f}")
-print(f"   (>1 indicates overdispersion, suitable for NegBin)")
+print("   (>1 indicates overdispersion, suitable for NegBin)")
 
 # ============================================
 # Summary Statistics

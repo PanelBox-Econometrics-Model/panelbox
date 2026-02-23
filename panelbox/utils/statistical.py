@@ -5,10 +5,14 @@ This module provides statistical functions for hypothesis testing
 and inference in panel models.
 """
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 def compute_tstat(coef: float, se: float) -> float:
@@ -56,7 +60,7 @@ def compute_pvalue(tstat: float, df: int, two_sided: bool = True) -> float:
 
 def compute_fstat(
     rss_restricted: float, rss_unrestricted: float, df_diff: int, df_resid: int
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Compute F-statistic for nested model comparison.
 
@@ -91,8 +95,8 @@ def wald_test(
     restrictions: np.ndarray,
     params: np.ndarray,
     vcov: np.ndarray,
-    q: Optional[np.ndarray] = None,
-) -> Tuple[float, float, int]:
+    q: np.ndarray | None = None,
+) -> tuple[float, float, int]:
     """
     Compute Wald test for linear restrictions.
 

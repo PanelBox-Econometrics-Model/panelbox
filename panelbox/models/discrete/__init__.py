@@ -14,7 +14,7 @@ Examples
 >>>
 >>> # Pooled Logit
 >>> logit = pb.PooledLogit("lfp ~ age + educ + kids", data, "id", "year")
->>> results = logit.fit(cov_type='cluster')
+>>> results = logit.fit(cov_type="cluster")
 >>> print(results.summary())
 >>>
 >>> # Fixed Effects Logit
@@ -22,6 +22,8 @@ Examples
 >>> fe_results = fe_logit.fit()
 >>> print(fe_results.summary())
 """
+
+from __future__ import annotations
 
 from panelbox.models.discrete.base import NonlinearPanelModel
 from panelbox.models.discrete.binary import (
@@ -39,16 +41,16 @@ from panelbox.models.discrete.multinomial import (
 from panelbox.models.discrete.ordered import OrderedLogit, OrderedProbit, RandomEffectsOrderedLogit
 
 __all__ = [
-    "NonlinearPanelModel",
-    "PooledLogit",
-    "PooledProbit",
-    "FixedEffectsLogit",
-    "RandomEffectsProbit",
-    "OrderedLogit",
-    "OrderedProbit",
-    "RandomEffectsOrderedLogit",
-    "MultinomialLogit",
-    "MultinomialLogitResult",
     "ConditionalLogit",
     "ConditionalLogitResult",
+    "FixedEffectsLogit",
+    "MultinomialLogit",
+    "MultinomialLogitResult",
+    "NonlinearPanelModel",
+    "OrderedLogit",
+    "OrderedProbit",
+    "PooledLogit",
+    "PooledProbit",
+    "RandomEffectsOrderedLogit",
+    "RandomEffectsProbit",
 ]

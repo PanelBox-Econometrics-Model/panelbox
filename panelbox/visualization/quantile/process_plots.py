@@ -11,18 +11,17 @@ results, including:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+import logging
 
 import numpy as np
 
-if TYPE_CHECKING:
-    pass
+logger = logging.getLogger(__name__)
 
 
 def quantile_process_plot(
     quantiles: np.ndarray,
     params: np.ndarray,
-    std_errors: Optional[np.ndarray] = None,
+    std_errors: np.ndarray | None = None,
     alpha: float = 0.05,
     ax=None,
     **kwargs,
@@ -53,7 +52,7 @@ def quantile_process_plot(
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        raise ImportError("matplotlib is required for plotting")
+        raise ImportError("matplotlib is required for plotting") from None
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -110,7 +109,7 @@ def residual_plot(residuals: np.ndarray, ax=None, **kwargs):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        raise ImportError("matplotlib is required for plotting")
+        raise ImportError("matplotlib is required for plotting") from None
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -150,7 +149,7 @@ def qq_plot(residuals: np.ndarray, ax=None, **kwargs):
         import matplotlib.pyplot as plt
         from scipy import stats
     except ImportError:
-        raise ImportError("matplotlib and scipy are required for plotting")
+        raise ImportError("matplotlib and scipy are required for plotting") from None
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 8))

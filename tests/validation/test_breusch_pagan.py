@@ -169,7 +169,6 @@ class TestBreuschPagan:
 
     def test_design_matrix_not_available(self, clean_panel_data):
         """Test ValueError when design matrix is not available (line 115)."""
-        from unittest.mock import Mock
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()
@@ -185,8 +184,6 @@ class TestBreuschPagan:
     def test_singular_matrix_handling(self, clean_panel_data):
         """Test handling of singular matrix in auxiliary regression (lines 128-130)."""
         from unittest.mock import patch
-
-        import numpy.linalg
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()
@@ -211,7 +208,7 @@ class TestBreuschPagan:
 
     def test_zero_total_variance(self, clean_panel_data):
         """Test R²=0 when SST=0 (line 145)."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()

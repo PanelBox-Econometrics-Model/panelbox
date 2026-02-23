@@ -172,7 +172,7 @@ def test_fisher_grunfeld():
     assert len(result.individual_pvalues) == 10
 
     print(f"\nGrunfeld 'invest': statistic={result.statistic:.4f}, p={result.pvalue:.4f}")
-    print(f"Individual p-values:")
+    print("Individual p-values:")
     for entity, pval in list(result.individual_pvalues.items())[:3]:
         print(f"  Entity {entity}: {pval:.4f}")
 

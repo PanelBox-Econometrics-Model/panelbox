@@ -13,6 +13,7 @@ Stata command: xttest3
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,6 +24,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class ModifiedWaldTest(ValidationTest):
@@ -118,13 +121,14 @@ class ModifiedWaldTest(ValidationTest):
     3. **Use Feasible GLS (FGLS)** to exploit heteroskedasticity:
        ```python
        from panelbox import FeasibleGLS
+
        fgls = FeasibleGLS(data, "y", ["x1", "x2"], "entity", "time")
        result_fgls = fgls.fit()
        ```
 
     4. **Transform variables** to stabilize variance:
        ```python
-       data['log_y'] = np.log(data['y'])  # Log transformation
+       data["log_y"] = np.log(data["y"])  # Log transformation
        ```
 
     **Relationship to Other Tests:**
@@ -240,7 +244,7 @@ class ModifiedWaldTest(ValidationTest):
     >>> print(f"SE ratio (cluster/standard): {se_cluster/se_std:.2f}")
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Modified Wald test.
 

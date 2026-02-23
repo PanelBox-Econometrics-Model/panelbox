@@ -11,7 +11,8 @@ Main estimators:
 
 All estimators are conditional on the composed error ε = v ± u.
 
-References:
+References
+----------
     Jondrow, J., Lovell, C. K., Materov, I. S., & Schmidt, P. (1982).
         On the estimation of technical inefficiency in the stochastic
         frontier production function model. Journal of Econometrics.
@@ -25,14 +26,18 @@ References:
         frontier models. Journal of Productivity Analysis.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.special import log_ndtr, ndtr
+from scipy.special import ndtr
 
 from .data import FrontierType
+
+logger = logging.getLogger(__name__)
 
 
 def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -> pd.DataFrame:
@@ -41,7 +46,8 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
     Main entry point for efficiency estimation. Computes point estimates
     and confidence intervals for inefficiency and efficiency.
 
-    Parameters:
+    Parameters
+    ----------
         result: SFResult object from model estimation
         estimator: Type of estimator
                   'jlms' - Conditional mean E[u|ε]
@@ -49,14 +55,16 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
                   'mode' - Modal estimator M[u|ε]
         ci_level: Confidence level (0-1) for intervals
 
-    Returns:
+    Returns
+    -------
         DataFrame with columns:
             - inefficiency: Point estimate of u
             - efficiency: Efficiency score (TE or CE)
             - ci_lower: Lower confidence bound
             - ci_upper: Upper confidence bound
 
-    Raises:
+    Raises
+    ------
         ValueError: If estimator not recognized
     """
     # Get model info
@@ -93,7 +101,7 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
     elif estimator.lower() == "mode":
         u_hat = _mode_estimator(epsilon, sigma_v, sigma_u, sigma, dist, sign)
     else:
-        raise ValueError(f"Unknown estimator: {estimator}. " "Choose from 'jlms', 'bc', 'mode'.")
+        raise ValueError(f"Unknown estimator: {estimator}. Choose from 'jlms', 'bc', 'mode'.")
 
     # Compute efficiency from inefficiency
     if frontier_type == FrontierType.PRODUCTION:
@@ -133,7 +141,8 @@ def _jlms_estimator(
 
     Conditional mean of inefficiency given composed error.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error (y - X'β)
         sigma_v: Standard deviation of noise
         sigma_u: Standard deviation of inefficiency
@@ -141,7 +150,8 @@ def _jlms_estimator(
         dist: Distribution type
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Conditional mean of u
     """
     if dist == "half_normal":
@@ -154,7 +164,6 @@ def _jlms_estimator(
     elif dist == "gamma":
         # Gamma JLMS requires numerical integration
         # For now, get gamma parameters from result
-        from .result import SFResult
 
         # This will be handled when we pass the result object
         raise NotImplementedError(
@@ -247,7 +256,8 @@ def _bc_estimator(
     Note: We use CE = exp(-u) ∈ (0,1] for cost frontier
     (not CE = exp(u) ∈ [1,∞)) for consistency with TE scale.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error
         sigma_v: Noise std dev
         sigma_u: Inefficiency std dev
@@ -258,7 +268,8 @@ def _bc_estimator(
         frontier_type: Production or cost
         ci_level: Confidence level
 
-    Returns:
+    Returns
+    -------
         DataFrame with efficiency estimates and CIs
     """
     if dist == "half_normal":
@@ -363,7 +374,8 @@ def _mode_estimator(
 
     Returns the mode of the conditional distribution f(u|ε).
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error
         sigma_v: Noise std dev
         sigma_u: Inefficiency std dev
@@ -371,7 +383,8 @@ def _mode_estimator(
         dist: Distribution type
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Modal estimate of u
     """
     if dist == "half_normal":
@@ -391,7 +404,7 @@ def _mode_half_normal(
 
     Mode is μ_* if μ_* > 0, else 0.
     """
-    sigma_v_sq = sigma_v**2
+    sigma_v**2
     sigma_u_sq = sigma_u**2
     sigma_sq = sigma**2
 
@@ -429,14 +442,16 @@ def _jlms_gamma(
 
     Uses numerical integration (quad) for each observation.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error
         sigma_v: Noise std dev
         P: Gamma shape parameter
         theta_gamma: Gamma rate parameter
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Conditional mean of u
     """
     from scipy.integrate import quad
@@ -449,6 +464,7 @@ def _jlms_gamma(
 
         # Posterior f(u | ε) ∝ f(ε | u) · f(u)
         def posterior_numerator(u):
+            """Compute the numerator of the posterior efficiency integral."""
             if u < 0:
                 return 0.0
             # f(ε | u) = φ((ε - sign*u) / σ_v) / σ_v
@@ -459,6 +475,7 @@ def _jlms_gamma(
 
         # Normalizing constant
         def posterior_denominator(u):
+            """Compute the denominator of the posterior efficiency integral."""
             if u < 0:
                 return 0.0
             lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
@@ -490,14 +507,16 @@ def _bc_gamma(
 
     Uses numerical integration.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error
         sigma_v: Noise std dev
         P: Gamma shape parameter
         theta_gamma: Gamma rate parameter
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Efficiency scores
     """
     from scipy.integrate import quad
@@ -509,6 +528,7 @@ def _bc_gamma(
         eps_i = epsilon[i]
 
         def integrand_numerator(u):
+            """Compute the numerator integrand for efficiency."""
             if u < 0:
                 return 0.0
             lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
@@ -516,6 +536,7 @@ def _bc_gamma(
             return np.exp(-u) * lik * prior
 
         def integrand_denominator(u):
+            """Compute the denominator integrand for efficiency."""
             if u < 0:
                 return 0.0
             lik = stats.norm.pdf(eps_i - sign * u, loc=0, scale=sigma_v)
@@ -554,7 +575,8 @@ def _horrace_schmidt_ci(
     Computes confidence intervals for efficiency based on the
     conditional distribution of u given ε.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error
         sigma_v: Noise std dev
         sigma_u: Inefficiency std dev
@@ -565,7 +587,8 @@ def _horrace_schmidt_ci(
         frontier_type: Production or cost
         ci_level: Confidence level (e.g., 0.95)
 
-    Returns:
+    Returns
+    -------
         Tuple of (lower_bound, upper_bound) for efficiency
     """
     # For half-normal, use exact quantiles of conditional distribution
@@ -654,17 +677,20 @@ def estimate_panel_efficiency(
     - Kumbhakar (1990): Flexible time pattern
     - Lee-Schmidt (1993): Time dummies
 
-    Parameters:
+    Parameters
+    ----------
         result: PanelSFResult object from panel model estimation
         estimator: Type of estimator ('jlms', 'bc', 'mode')
         ci_level: Confidence level for intervals
         by_period: If True, return (entity, period) pairs
                    If False, return entity-level averages
 
-    Returns:
+    Returns
+    -------
         DataFrame with efficiency estimates
 
-    Notes:
+    Notes
+    -----
         For Pitt-Lee model, efficiency is constant over time per entity.
         For time-varying models, efficiency varies by (entity, period).
     """
@@ -802,7 +828,6 @@ def _panel_efficiency_pitt_lee(
     by_period,
 ):
     """Efficiency for Pitt-Lee model (time-invariant)."""
-
     # For each entity, compute efficiency using ALL time periods
     results = []
 
@@ -821,7 +846,7 @@ def _panel_efficiency_pitt_lee(
 
         # Adjusted composite variance
         sigma_i_sq = sigma_v**2 / T_i + sigma_u**2
-        sigma_i = np.sqrt(sigma_i_sq)
+        np.sqrt(sigma_i_sq)
 
         # Conditional mean (adjusted for panel)
         mu_star_i = -sign * T_i * sigma_u**2 * epsilon_bar_i / (T_i * sigma_u**2 + sigma_v**2)
@@ -846,10 +871,7 @@ def _panel_efficiency_pitt_lee(
 
             u_i = sigma_star * (mills + arg)
 
-            if frontier_type == FrontierType.PRODUCTION:
-                efficiency_i = np.exp(-u_i)
-            else:
-                efficiency_i = np.exp(u_i)
+            efficiency_i = np.exp(-u_i) if frontier_type == FrontierType.PRODUCTION else np.exp(u_i)
 
         else:
             raise ValueError(f"Unknown estimator: {estimator}")
@@ -898,7 +920,6 @@ def _panel_efficiency_time_varying(
     by_period,
 ):
     """Efficiency for time-varying models (BC92, Kumbhakar, Lee-Schmidt)."""
-
     # Get temporal parameters
     temporal_params = result.temporal_params
     panel_type = result.panel_type
@@ -936,7 +957,7 @@ def _panel_efficiency_time_varying(
             sigma_v_sq = sigma_v**2
             sigma_u_sq = sigma_u**2
             sigma_it_sq = sigma_v_sq + (u_it_scale**2) * sigma_u_sq
-            sigma_it = np.sqrt(sigma_it_sq)
+            np.sqrt(sigma_it_sq)
 
             sigma_star_sq = sigma_v_sq * (u_it_scale**2) * sigma_u_sq / sigma_it_sq
             sigma_star = np.sqrt(sigma_star_sq)
@@ -993,7 +1014,6 @@ def _panel_efficiency_bc95(
     by_period,
 ):
     """Efficiency for BC95 model with inefficiency determinants."""
-
     # BC95 uses observation-specific mean μ_it = Z_it δ
     # Efficiency varies by (entity, period)
 

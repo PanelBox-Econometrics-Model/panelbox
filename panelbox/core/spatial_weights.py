@@ -1,5 +1,5 @@
 """
-Spatial Weight Matrix Infrastructure
+Spatial Weight Matrix Infrastructure.
 
 This module provides the foundation for spatial econometric models through
 spatial weight matrices that define neighborhood relationships between spatial units.
@@ -8,13 +8,18 @@ Classes:
     SpatialWeights: Main class for handling spatial weight matrices
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 from scipy.spatial.distance import cdist
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialWeights:
@@ -42,8 +47,8 @@ class SpatialWeights:
     >>> # Create from contiguity
     >>> import geopandas as gpd
     >>> gdf = gpd.read_file("regions.shp")
-    >>> W = SpatialWeights.from_contiguity(gdf, criterion='queen')
-    >>> W.standardize('row')
+    >>> W = SpatialWeights.from_contiguity(gdf, criterion="queen")
+    >>> W.standardize("row")
 
     >>> # Create from distance
     >>> coords = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
@@ -53,7 +58,7 @@ class SpatialWeights:
     >>> W = SpatialWeights.from_knn(coords, k=2)
     """
 
-    def __init__(self, matrix: Union[np.ndarray, csr_matrix], normalized: bool = False):
+    def __init__(self, matrix: np.ndarray | csr_matrix, normalized: bool = False):
         """
         Initialize spatial weight matrix.
 
@@ -73,17 +78,14 @@ class SpatialWeights:
     def _validate(self):
         """Validate W matrix properties."""
         # Check square
-        if self.matrix.shape[0] != self.matrix.shape[1]:
+        if self.matrix.shape[0] != self.matrix.shape[1]:  # type: ignore[index]
             raise ValueError("W must be square")
 
         # Check diagonal (should be zero)
-        if issparse(self.matrix):
-            diag = self.matrix.diagonal()
-        else:
-            diag = np.diag(self.matrix)
+        diag = self.matrix.diagonal() if issparse(self.matrix) else np.diag(self.matrix)
 
         if not np.allclose(diag, 0):
-            warnings.warn("W has non-zero diagonal; setting to zero")
+            warnings.warn("W has non-zero diagonal; setting to zero", stacklevel=2)
             if issparse(self.matrix):
                 self.matrix.setdiag(0)
             else:
@@ -120,8 +122,8 @@ class SpatialWeights:
             from libpysal.weights import Queen, Rook
         except ImportError:
             raise ImportError(
-                "libpysal is required for contiguity weights. " "Install with: pip install libpysal"
-            )
+                "libpysal is required for contiguity weights. Install with: pip install libpysal"
+            ) from None
 
         if criterion == "queen":
             w = Queen.from_dataframe(gdf)
@@ -155,7 +157,7 @@ class SpatialWeights:
         SpatialWeights
             Weight matrix based on distance
         """
-        n = len(coords)
+        len(coords)
 
         # Compute pairwise distances
         distances = cdist(coords, coords, metric="minkowski", p=p)
@@ -213,7 +215,7 @@ class SpatialWeights:
         return cls(matrix)
 
     @classmethod
-    def from_matrix(cls, array: Union[np.ndarray, list]):
+    def from_matrix(cls, array: np.ndarray | list):
         """
         Create W from numpy array or list.
 
@@ -390,10 +392,7 @@ class SpatialWeights:
         np.ndarray
             Indices of neighbors
         """
-        if issparse(self.matrix):
-            row = self.matrix.getrow(i).toarray().flatten()
-        else:
-            row = self.matrix[i]
+        row = self.matrix.getrow(i).toarray().flatten() if issparse(self.matrix) else self.matrix[i]
 
         return np.where(row > 0)[0]
 
@@ -401,7 +400,7 @@ class SpatialWeights:
         self,
         gdf=None,
         coords=None,
-        figsize: Tuple[int, int] = (10, 8),
+        figsize: tuple[int, int] = (10, 8),
         backend: Literal["matplotlib", "plotly"] = "matplotlib",
         show_edges: bool = True,
         edge_alpha: float = 0.5,
@@ -464,7 +463,7 @@ class SpatialWeights:
                                 zorder=1,
                             )
 
-            ax.set_title(f"Spatial Connections (N={self.n}, edges={int(self.s0/2)})")
+            ax.set_title(f"Spatial Connections (N={self.n}, edges={int(self.s0 / 2)})")
             ax.set_xlabel("X Coordinate")
             ax.set_ylabel("Y Coordinate")
 
@@ -486,7 +485,7 @@ class SpatialWeights:
                 x=[],
                 y=[],
                 mode="lines",
-                line=dict(width=0.5, color="gray"),
+                line={"width": 0.5, "color": "gray"},
                 hoverinfo="none",
                 showlegend=False,
             )
@@ -503,7 +502,7 @@ class SpatialWeights:
                 x=coords[:, 0],
                 y=coords[:, 1],
                 mode="markers",
-                marker=dict(size=10, color="lightblue", line=dict(width=1, color="black")),
+                marker={"size": 10, "color": "lightblue", "line": {"width": 1, "color": "black"}},
                 text=[f"Unit {i}" for i in range(self.n)],
                 hovertemplate="%{text}<extra></extra>",
                 showlegend=False,
@@ -513,9 +512,9 @@ class SpatialWeights:
             fig = go.Figure(data=[edge_trace, node_trace])
 
             fig.update_layout(
-                title=f"Spatial Connections (N={self.n}, edges={int(self.s0/2)})",
-                xaxis=dict(title="X Coordinate"),
-                yaxis=dict(title="Y Coordinate"),
+                title=f"Spatial Connections (N={self.n}, edges={int(self.s0 / 2)})",
+                xaxis={"title": "X Coordinate"},
+                yaxis={"title": "Y Coordinate"},
                 hovermode="closest",
                 height=600,
                 showlegend=False,
@@ -566,7 +565,7 @@ class SpatialWeights:
         norm_str = " [row-normalized]" if self.normalized else ""
         return (
             f"SpatialWeights(n={self.n}, edges={int(self.s0)}, "
-            f"density={100*self.s0/(self.n*self.n):.1f}%"
+            f"density={100 * self.s0 / (self.n * self.n):.1f}%"
             f"{sparse_str}{norm_str})"
         )
 

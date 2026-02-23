@@ -5,7 +5,9 @@ This module provides a test runner that executes validation tests on
 fitted panel models and returns ValidationResult objects.
 """
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from panelbox.experiment.results import ValidationResult
 
@@ -26,19 +28,16 @@ class ValidationTest:
     >>> # Fit a model
     >>> data = pb.load_grunfeld()
     >>> experiment = pb.PanelExperiment(
-    ...     data=data,
-    ...     formula="invest ~ value + capital",
-    ...     entity_col="firm",
-    ...     time_col="year"
+    ...     data=data, formula="invest ~ value + capital", entity_col="firm", time_col="year"
     ... )
-    >>> results = experiment.fit_model('fixed_effects', name='fe')
+    >>> results = experiment.fit_model("fixed_effects", name="fe")
     >>>
     >>> # Run validation tests
     >>> test_runner = ValidationTest()
-    >>> validation_result = test_runner.run(results, config='full')
+    >>> validation_result = test_runner.run(results, config="full")
     >>>
     >>> # Save report
-    >>> validation_result.save_html('validation.html', test_type='validation')
+    >>> validation_result.save_html("validation.html", test_type="validation")
     """
 
     # Test configurations
@@ -53,7 +52,7 @@ class ValidationTest:
         pass
 
     def run(
-        self, results: Any, tests: Optional[List[str]] = None, config: str = "basic"
+        self, results: Any, tests: list[str] | None = None, config: str = "basic"
     ) -> ValidationResult:
         """
         Run validation tests on model results.
@@ -89,22 +88,17 @@ class ValidationTest:
         >>> runner = ValidationTest()
         >>>
         >>> # Run with basic config
-        >>> result = runner.run(model_results, config='basic')
+        >>> result = runner.run(model_results, config="basic")
         >>>
         >>> # Run specific tests
-        >>> result = runner.run(
-        ...     model_results,
-        ...     tests=['heteroskedasticity', 'normality']
-        ... )
+        >>> result = runner.run(model_results, tests=["heteroskedasticity", "normality"])
         >>>
         >>> # Run full test suite
-        >>> result = runner.run(model_results, config='full')
+        >>> result = runner.run(model_results, config="full")
         """
         # Validate config
         if config not in self.CONFIGS:
-            raise ValueError(
-                f"config must be one of {list(self.CONFIGS.keys())}, " f"got '{config}'"
-            )
+            raise ValueError(f"config must be one of {list(self.CONFIGS.keys())}, got '{config}'")
 
         # Determine which tests to run
         if tests is None:
@@ -129,7 +123,7 @@ class ValidationTest:
                 "use the model's built-in diagnostic methods."
             )
 
-    def _extract_model_info(self, results: Any) -> Dict[str, Any]:
+    def _extract_model_info(self, results: Any) -> dict[str, Any]:
         """
         Extract model information from results.
 
@@ -178,7 +172,7 @@ class ValidationTest:
 
         return model_info
 
-    def _extract_warnings(self, results: Any) -> List[str]:
+    def _extract_warnings(self, results: Any) -> list[str]:
         """
         Extract warnings from model results.
 
@@ -195,24 +189,19 @@ class ValidationTest:
         warnings = []
 
         # Check for low R²
-        if hasattr(results, "rsquared"):
-            if results.rsquared < 0.3:
-                warnings.append("Low R² (< 0.3). Model explains little variance in the data.")
+        if hasattr(results, "rsquared") and results.rsquared < 0.3:
+            warnings.append("Low R² (< 0.3). Model explains little variance in the data.")
 
         # Check for high condition number (multicollinearity indicator)
-        if hasattr(results, "condition_number"):
-            if results.condition_number > 30:
-                warnings.append(
-                    "High condition number (> 30). Potential multicollinearity detected."
-                )
+        if hasattr(results, "condition_number") and results.condition_number > 30:
+            warnings.append("High condition number (> 30). Potential multicollinearity detected.")
 
         # Check for small sample size
-        if hasattr(results, "nobs"):
-            if results.nobs < 30:
-                warnings.append(f"Small sample size (n={results.nobs}). Results may be unreliable.")
+        if hasattr(results, "nobs") and results.nobs < 30:
+            warnings.append(f"Small sample size (n={results.nobs}). Results may be unreliable.")
 
         return warnings
 
     def __repr__(self) -> str:
         """String representation of ValidationTest."""
-        return f"ValidationTest(\n" f"  configs={list(self.CONFIGS.keys())}\n" f")"
+        return f"ValidationTest(\n  configs={list(self.CONFIGS.keys())}\n)"

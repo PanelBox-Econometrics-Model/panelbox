@@ -5,11 +5,21 @@ This module provides a high-level API for managing panel data experiments,
 fitting multiple models, and comparing results.
 """
 
+from __future__ import annotations
+
+import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import geopandas as gpd
+
+    from panelbox.core.spatial_weights import SpatialWeights
 
 
 class PanelExperiment:
@@ -46,23 +56,20 @@ class PanelExperiment:
     --------
     >>> # With entity/time columns
     >>> experiment = PanelExperiment(
-    ...     data=df,
-    ...     formula="y ~ x1 + x2",
-    ...     entity_col="firm_id",
-    ...     time_col="year"
+    ...     data=df, formula="y ~ x1 + x2", entity_col="firm_id", time_col="year"
     ... )
 
     >>> # Fit models
-    >>> experiment.fit_model('pooled_ols', name='ols')
-    >>> experiment.fit_model('fixed_effects', name='fe')
-    >>> experiment.fit_model('random_effects', name='re')
+    >>> experiment.fit_model("pooled_ols", name="ols")
+    >>> experiment.fit_model("fixed_effects", name="fe")
+    >>> experiment.fit_model("random_effects", name="re")
 
     >>> # List models
     >>> experiment.list_models()
     ['ols', 'fe', 're']
 
     >>> # Get model
-    >>> fe_model = experiment.get_model('fe')
+    >>> fe_model = experiment.get_model("fe")
     """
 
     # Model type aliases
@@ -106,8 +113,8 @@ class PanelExperiment:
         self,
         data: pd.DataFrame,
         formula: str,
-        entity_col: Optional[str] = None,
-        time_col: Optional[str] = None,
+        entity_col: str | None = None,
+        time_col: str | None = None,
     ):
         """
         Initialize PanelExperiment.
@@ -138,11 +145,11 @@ class PanelExperiment:
             self.data = self.original_data.copy()
 
         # Storage for fitted models
-        self._models: Dict[str, Any] = {}
-        self._model_metadata: Dict[str, Dict[str, Any]] = {}
+        self._models: dict[str, Any] = {}
+        self._model_metadata: dict[str, dict[str, Any]] = {}
 
         # Model counter for auto-naming
-        self._model_counters: Dict[str, int] = {}
+        self._model_counters: dict[str, int] = {}
 
         # Experiment metadata
         self.created_at = datetime.now()
@@ -180,7 +187,7 @@ class PanelExperiment:
             if self.time_col is not None and self.time_col not in self.original_data.columns:
                 raise ValueError(f"time_col '{self.time_col}' not found in data")
 
-    def fit_model(self, model_type: str, name: Optional[str] = None, **kwargs) -> Any:
+    def fit_model(self, model_type: str, name: str | None = None, **kwargs) -> Any:
         """
         Fit a panel model.
 
@@ -226,16 +233,16 @@ class PanelExperiment:
         Examples
         --------
         >>> # Linear models
-        >>> experiment.fit_model('pooled_ols', name='ols')
-        >>> experiment.fit_model('fixed_effects', name='fe', cov_type='clustered')
+        >>> experiment.fit_model("pooled_ols", name="ols")
+        >>> experiment.fit_model("fixed_effects", name="fe", cov_type="clustered")
         >>>
         >>> # Discrete choice models
-        >>> experiment.fit_model('pooled_logit', name='logit')
-        >>> experiment.fit_model('fe_logit', name='fe_logit')
+        >>> experiment.fit_model("pooled_logit", name="logit")
+        >>> experiment.fit_model("fe_logit", name="fe_logit")
         >>>
         >>> # Count models
-        >>> experiment.fit_model('poisson', name='poisson_model')
-        >>> experiment.fit_model('negbin', name='nb_model')
+        >>> experiment.fit_model("poisson", name="poisson_model")
+        >>> experiment.fit_model("negbin", name="nb_model")
         """
         # Resolve model type alias
         model_type_resolved = self.MODEL_ALIASES.get(model_type.lower(), model_type.lower())
@@ -263,8 +270,7 @@ class PanelExperiment:
 
         if model_type_resolved not in valid_model_types:
             raise ValueError(
-                f"Unknown model_type '{model_type}'. "
-                f"Valid types: {list(self.MODEL_ALIASES.keys())}"
+                f"Unknown model_type '{model_type}'. Valid types: {list(self.MODEL_ALIASES.keys())}"
             )
 
         # Generate name if not provided
@@ -276,7 +282,7 @@ class PanelExperiment:
             raise ValueError(f"Model with name '{name}' already exists")
 
         # Create and fit model
-        print(f"Fitting {model_type_resolved} model '{name}'...")
+        logger.info("Fitting %s model '%s'...", model_type_resolved, name)
         model = self._create_model(model_type_resolved)
         results = model.fit(**kwargs)
 
@@ -289,11 +295,11 @@ class PanelExperiment:
             "kwargs": kwargs,
         }
 
-        print(f"✅ Model '{name}' fitted successfully")
+        logger.info("Model '%s' fitted successfully", name)
 
         return results
 
-    def list_models(self) -> List[str]:
+    def list_models(self) -> list[str]:
         """
         List names of all fitted models.
 
@@ -330,18 +336,17 @@ class PanelExperiment:
 
         Examples
         --------
-        >>> model = experiment.get_model('ols')
+        >>> model = experiment.get_model("ols")
         >>> print(model.summary)
         """
         if name not in self._models:
             available = self.list_models()
             raise KeyError(
-                f"Model '{name}' not found. "
-                f"Available models: {available if available else 'none'}"
+                f"Model '{name}' not found. Available models: {available if available else 'none'}"
             )
         return self._models[name]
 
-    def get_model_metadata(self, name: str) -> Dict[str, Any]:
+    def get_model_metadata(self, name: str) -> dict[str, Any]:
         """
         Get metadata for a fitted model.
 
@@ -357,8 +362,8 @@ class PanelExperiment:
 
         Examples
         --------
-        >>> meta = experiment.get_model_metadata('ols')
-        >>> print(meta['model_type'])
+        >>> meta = experiment.get_model_metadata("ols")
+        >>> print(meta["model_type"])
         'pooled_ols'
         """
         if name not in self._model_metadata:
@@ -390,7 +395,7 @@ class PanelExperiment:
         counter = self._model_counters[model_type]
         return f"{model_type}_{counter}"
 
-    def _create_model(self, model_type: str) -> Any:
+    def _create_model(self, model_type: str) -> Any:  # noqa: C901
         """
         Factory method to create model.
 
@@ -413,7 +418,7 @@ class PanelExperiment:
         try:
             import panelbox as pb
         except ImportError:
-            raise ImportError("panelbox is required to fit models")
+            raise ImportError("panelbox is required to fit models") from None
 
         # Create model based on type
         # Linear models
@@ -510,9 +515,9 @@ class PanelExperiment:
 
         Examples
         --------
-        >>> experiment.fit_model('fixed_effects', name='fe')
-        >>> val_result = experiment.validate_model('fe')
-        >>> val_result.save_html('validation_report.html', test_type='validation')
+        >>> experiment.fit_model("fixed_effects", name="fe")
+        >>> val_result = experiment.validate_model("fe")
+        >>> val_result.save_html("validation_report.html", test_type="validation")
         """
         from panelbox.experiment.results import ValidationResult
 
@@ -528,7 +533,7 @@ class PanelExperiment:
             metadata={"experiment_formula": self.formula, "model_name": name},
         )
 
-    def compare_models(self, model_names: Optional[List[str]] = None, **kwargs):
+    def compare_models(self, model_names: list[str] | None = None, **kwargs):
         """
         Compare multiple fitted models and return ComparisonResult.
 
@@ -549,16 +554,16 @@ class PanelExperiment:
 
         Examples
         --------
-        >>> experiment.fit_model('pooled_ols', name='pooled')
-        >>> experiment.fit_model('fixed_effects', name='fe')
-        >>> experiment.fit_model('random_effects', name='re')
+        >>> experiment.fit_model("pooled_ols", name="pooled")
+        >>> experiment.fit_model("fixed_effects", name="fe")
+        >>> experiment.fit_model("random_effects", name="re")
         >>>
         >>> # Compare all models
         >>> comp_result = experiment.compare_models()
-        >>> comp_result.save_html('comparison.html', test_type='comparison')
+        >>> comp_result.save_html("comparison.html", test_type="comparison")
         >>>
         >>> # Compare specific models
-        >>> comp_result = experiment.compare_models(model_names=['fe', 're'])
+        >>> comp_result = experiment.compare_models(model_names=["fe", "re"])
         """
         from panelbox.experiment.results import ComparisonResult
 
@@ -571,8 +576,8 @@ class PanelExperiment:
         return ComparisonResult.from_experiment(experiment=self, model_names=model_names, **kwargs)
 
     def fit_all_models(
-        self, model_types: Optional[List[str]] = None, names: Optional[List[str]] = None, **kwargs
-    ) -> Dict[str, Any]:
+        self, model_types: list[str] | None = None, names: list[str] | None = None, **kwargs
+    ) -> dict[str, Any]:
         """
         Fit multiple models at once.
 
@@ -602,8 +607,7 @@ class PanelExperiment:
         >>>
         >>> # Fit specific models with custom names
         >>> results = experiment.fit_all_models(
-        ...     model_types=['fixed_effects', 'random_effects'],
-        ...     names=['fe', 're']
+        ...     model_types=["fixed_effects", "random_effects"], names=["fe", "re"]
         ... )
         """
         # Default to all three model types
@@ -655,17 +659,15 @@ class PanelExperiment:
 
         Examples
         --------
-        >>> experiment.fit_model('fixed_effects', name='fe')
+        >>> experiment.fit_model("fixed_effects", name="fe")
         >>>
         >>> # Analyze residuals
-        >>> residual_result = experiment.analyze_residuals('fe')
+        >>> residual_result = experiment.analyze_residuals("fe")
         >>> print(residual_result.summary())
         >>>
         >>> # Save HTML report
         >>> residual_result.save_html(
-        ...     'residual_diagnostics.html',
-        ...     test_type='residuals',
-        ...     theme='professional'
+        ...     "residual_diagnostics.html", test_type="residuals", theme="professional"
         ... )
         >>>
         >>> # Check specific tests
@@ -698,8 +700,8 @@ class PanelExperiment:
         self,
         file_path: str,
         theme: str = "professional",
-        title: Optional[str] = None,
-        reports: Optional[List[Dict[str, str]]] = None,
+        title: str | None = None,
+        reports: list[dict[str, str]] | None = None,
     ):
         """
         Save master report with experiment overview and model summaries.
@@ -739,28 +741,27 @@ class PanelExperiment:
         >>> # Create experiment and fit models
         >>> data = pb.load_grunfeld()
         >>> experiment = pb.PanelExperiment(
-        ...     data=data,
-        ...     formula="invest ~ value + capital",
-        ...     entity_col="firm",
-        ...     time_col="year"
+        ...     data=data, formula="invest ~ value + capital", entity_col="firm", time_col="year"
         ... )
-        >>> experiment.fit_model('pooled_ols', name='ols')
-        >>> experiment.fit_model('fixed_effects', name='fe')
+        >>> experiment.fit_model("pooled_ols", name="ols")
+        >>> experiment.fit_model("fixed_effects", name="fe")
         >>>
         >>> # Generate validation report
-        >>> validation = experiment.validate_model('fe')
-        >>> validation.save_html('validation.html', test_type='validation')
+        >>> validation = experiment.validate_model("fe")
+        >>> validation.save_html("validation.html", test_type="validation")
         >>>
         >>> # Generate master report
         >>> experiment.save_master_report(
-        ...     'master.html',
-        ...     theme='professional',
-        ...     reports=[{
-        ...         'type': 'validation',
-        ...         'title': 'Fixed Effects Validation',
-        ...         'description': 'Specification tests for FE model',
-        ...         'file_path': 'validation.html'
-        ...     }]
+        ...     "master.html",
+        ...     theme="professional",
+        ...     reports=[
+        ...         {
+        ...             "type": "validation",
+        ...             "title": "Fixed Effects Validation",
+        ...             "description": "Specification tests for FE model",
+        ...             "file_path": "validation.html",
+        ...         }
+        ...     ],
         ... )
 
         See Also
@@ -846,11 +847,11 @@ class PanelExperiment:
 
     def run_spatial_diagnostics(
         self,
-        W: Union[np.ndarray, "SpatialWeights"],
+        W: np.ndarray | SpatialWeights,
         alpha: float = 0.05,
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         verbose: bool = True,
-    ) -> Dict:
+    ) -> dict:
         """
         Run complete battery of spatial diagnostics on panel data.
 
@@ -886,7 +887,7 @@ class PanelExperiment:
         Examples
         --------
         >>> # Load spatial weights matrix
-        >>> W = load_spatial_weights('weights.csv')
+        >>> W = load_spatial_weights("weights.csv")
         >>>
         >>> # Run diagnostics
         >>> spatial_diag = experiment.run_spatial_diagnostics(W)
@@ -895,17 +896,17 @@ class PanelExperiment:
         >>> print(f"Recommended model: {spatial_diag['recommendation']}")
         >>>
         >>> # Fit recommended model
-        >>> if spatial_diag['recommendation'] == 'SAR':
-        ...     experiment.fit_model('spatial_lag', W=W, name='sar')
-        ... elif spatial_diag['recommendation'] == 'SEM':
-        ...     experiment.fit_model('spatial_error', W=W, name='sem')
+        >>> if spatial_diag["recommendation"] == "SAR":
+        ...     experiment.fit_model("spatial_lag", W=W, name="sar")
+        ... elif spatial_diag["recommendation"] == "SEM":
+        ...     experiment.fit_model("spatial_error", W=W, name="sem")
         """
         from ..validation.spatial import LocalMoranI, MoranIPanelTest, run_lm_tests
 
         # Get or fit OLS model
         if model_name is None:
             if verbose:
-                print("Fitting pooled OLS for spatial diagnostics...")
+                logger.info("Fitting pooled OLS for spatial diagnostics...")
             ols_result = self.fit_model("pooled_ols", name="_ols_diagnostic")
             model_name = "_ols_diagnostic"
         else:
@@ -951,7 +952,7 @@ class PanelExperiment:
 
         # Run Moran's I test (pooled)
         if verbose:
-            print("\nRunning Moran's I test for spatial autocorrelation...")
+            logger.info("Running Moran's I test for spatial autocorrelation...")
 
         morans_test = MoranIPanelTest(
             residuals=residuals,
@@ -964,7 +965,7 @@ class PanelExperiment:
 
         # Run Local Moran's I (LISA)
         if verbose:
-            print("Computing Local Moran's I (LISA)...")
+            logger.info("Computing Local Moran's I (LISA)...")
 
         lisa = LocalMoranI(
             variable=residuals,
@@ -977,7 +978,7 @@ class PanelExperiment:
 
         # Run LM tests
         if verbose:
-            print("\nRunning LM tests for model specification...")
+            logger.info("Running LM tests for model specification...")
 
         lm_results = run_lm_tests(ols_result, W, alpha=alpha, verbose=verbose)
 
@@ -995,28 +996,28 @@ class PanelExperiment:
 
         # Print summary if verbose
         if verbose:
-            print("\n" + "=" * 60)
-            print("SPATIAL DIAGNOSTICS SUMMARY")
-            print("=" * 60)
-            print(f"Moran's I: {morans_result.statistic:.4f} (p={morans_result.pvalue:.4f})")
+            logger.info("=" * 50)
+            logger.info("SPATIAL DIAGNOSTICS SUMMARY")
+            logger.info("=" * 50)
+            logger.info("Moran's I: %.4f (p=%.4f)", morans_result.statistic, morans_result.pvalue)
 
             # LISA clusters summary
             cluster_counts = lisa_results["cluster_type"].value_counts()
-            print("\nLISA Clusters:")
+            logger.info("LISA Clusters:")
             for cluster, count in cluster_counts.items():
-                print(f"  {cluster}: {count} units")
+                logger.info("  %s: %d units", cluster, count)
 
-            print(f"\nRecommended Model: {lm_results['recommendation']}")
-            print(f"Reason: {lm_results['reason']}")
-            print("=" * 60)
+            logger.info("Recommended Model: %s", lm_results["recommendation"])
+            logger.info("Reason: %s", lm_results["reason"])
+            logger.info("=" * 50)
 
         return self.spatial_diagnostics
 
     def estimate_spatial_model(
         self,
         model_type: str = "auto",
-        W: Optional[Union[np.ndarray, "SpatialWeights"]] = None,
-        name: Optional[str] = None,
+        W: np.ndarray | SpatialWeights | None = None,
+        name: str | None = None,
         **kwargs,
     ):
         """
@@ -1052,13 +1053,11 @@ class PanelExperiment:
         --------
         >>> # Auto-select based on diagnostics
         >>> experiment.run_spatial_diagnostics(W)
-        >>> spatial_result = experiment.estimate_spatial_model(model_type='auto')
+        >>> spatial_result = experiment.estimate_spatial_model(model_type="auto")
         >>>
         >>> # Manually specify model
         >>> sar_result = experiment.estimate_spatial_model(
-        ...     model_type='sar',
-        ...     W=W,
-        ...     name='spatial_lag'
+        ...     model_type="sar", W=W, name="spatial_lag"
         ... )
         """
         # Handle auto selection
@@ -1092,14 +1091,11 @@ class PanelExperiment:
         }
 
         # Get actual model type
-        if model_type.lower() in model_map:
-            actual_model_type = model_map[model_type.lower()]
-        else:
-            actual_model_type = model_type
+        actual_model_type = model_map.get(model_type.lower(), model_type)
 
         # Special handling for OLS recommendation
         if model_type.lower() == "ols":
-            print("No spatial dependence detected. Using standard panel model.")
+            logger.info("No spatial dependence detected. Using standard panel model.")
             return self.fit_model("fixed_effects", name=name or "fe_no_spatial", **kwargs)
 
         # Add W to kwargs for spatial models
@@ -1110,7 +1106,7 @@ class PanelExperiment:
             name = f"{actual_model_type}_{len(self._models) + 1}"
 
         # Fit the spatial model
-        print(f"Estimating {actual_model_type.replace('_', ' ').title()} model...")
+        logger.info("Estimating %s model...", actual_model_type.replace("_", " ").title())
         result = self.fit_model(actual_model_type, name=name, **kwargs)
 
         return result
@@ -1119,7 +1115,7 @@ class PanelExperiment:
         self,
         file_path: str,
         include_maps: bool = False,
-        gdf: Optional["gpd.GeoDataFrame"] = None,
+        gdf: gpd.GeoDataFrame | None = None,
         **kwargs,
     ):
         """

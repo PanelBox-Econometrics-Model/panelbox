@@ -420,22 +420,25 @@ def test_jackknife_different_models():
     assert jk_results_pooled.n_jackknife > 0
 
 
-def test_jackknife_verbose_mode(mock_results, capsys):
-    """Test jackknife with verbose=True to cover print statements."""
+def test_jackknife_verbose_mode(mock_results, caplog):
+    """Test jackknife with verbose=True to cover logging statements."""
+    import logging
+
     jk = PanelJackknife(mock_results, verbose=True)
-    jk.run()
+    with caplog.at_level(logging.INFO, logger="panelbox"):
+        jk.run()
 
-    captured = capsys.readouterr()
-    # Check that verbose output is present (lines 196-198, 210, 279-280)
-    assert "Starting jackknife procedure" in captured.out
-    assert "Total entities:" in captured.out
-    assert "Jackknife sample" in captured.out
-    assert "Jackknife Complete!" in captured.out
-    assert "Successful samples:" in captured.out
+    # Check that verbose output is present in log
+    assert "Starting jackknife procedure" in caplog.text
+    assert "Total entities:" in caplog.text
+    assert "Jackknife sample" in caplog.text
+    assert "Jackknife Complete!" in caplog.text
+    assert "Successful samples:" in caplog.text
 
 
-def test_jackknife_with_failures(simple_panel_data, capsys):
+def test_jackknife_with_failures(simple_panel_data, caplog):
     """Test jackknife when some samples fail (lines 228-231, 238-239)."""
+    import logging
     from unittest.mock import patch
 
     from panelbox import FixedEffects
@@ -457,13 +460,13 @@ def test_jackknife_with_failures(simple_panel_data, capsys):
             raise RuntimeError("Simulated failure")
         return original_fit(self, **kwargs)
 
-    with patch.object(type(fe), "fit", mock_fit_with_failures):
-        jk_results = jk.run()
+    with caplog.at_level(logging.WARNING, logger="panelbox"):
+        with patch.object(type(fe), "fit", mock_fit_with_failures):
+            jk_results = jk.run()
 
-    captured = capsys.readouterr()
-    # Should have warning about failed samples (lines 238-239)
+    # Should have warning about failed samples in log
     assert (
-        "Warning:" in captured.out
+        any(r.levelname == "WARNING" for r in caplog.records)
         or len(jk_results.jackknife_estimates) < results.entity_index.nunique()
     )
 

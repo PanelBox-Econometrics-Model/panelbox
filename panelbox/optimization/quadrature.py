@@ -5,13 +5,18 @@ This module implements Gauss-Hermite quadrature for integrating functions
 over normal distributions, which is essential for Random Effects models.
 """
 
-from typing import Callable, Optional, Tuple
+from __future__ import annotations
+
+import logging
+from typing import Callable
 
 import numpy as np
 from scipy import special
 
+logger = logging.getLogger(__name__)
 
-def gauss_hermite_quadrature(n_points: int) -> Tuple[np.ndarray, np.ndarray]:
+
+def gauss_hermite_quadrature(n_points: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute Gauss-Hermite quadrature nodes and weights.
 
@@ -42,7 +47,7 @@ def gauss_hermite_quadrature(n_points: int) -> Tuple[np.ndarray, np.ndarray]:
     --------
     >>> nodes, weights = gauss_hermite_quadrature(5)
     >>> # Integrate x² over standard normal
-    >>> integral = np.sum(weights * (np.sqrt(2) * nodes)**2)
+    >>> integral = np.sum(weights * (np.sqrt(2) * nodes) ** 2)
     >>> np.allclose(integral, 1.0)  # E[X²] for N(0,1)
     True
     """
@@ -108,11 +113,11 @@ def integrate_normal(
 
 def adaptive_gauss_hermite(
     func: Callable[[float], float],
-    n_points_list: list = [8, 12, 16, 20],
+    n_points_list: list = None,
     mu: float = 0.0,
     sigma: float = 1.0,
     tol: float = 1e-8,
-) -> Tuple[float, int]:
+) -> tuple[float, int]:
     """
     Adaptive Gauss-Hermite quadrature with automatic selection of points.
 
@@ -145,6 +150,8 @@ def adaptive_gauss_hermite(
     >>> np.allclose(integral, np.exp(0.5))  # E[exp(X)] = exp(μ + σ²/2)
     True
     """
+    if n_points_list is None:
+        n_points_list = [8, 12, 16, 20]
     if len(n_points_list) < 2:
         raise ValueError("Need at least 2 different n_points for adaptation")
 
@@ -166,7 +173,8 @@ def adaptive_gauss_hermite(
 
     warnings.warn(
         f"Adaptive quadrature did not converge to tolerance {tol}. "
-        f"Final difference: {np.abs(integral - prev_integral):.2e}"
+        f"Final difference: {np.abs(integral - prev_integral):.2e}",
+        stacklevel=2,
     )
 
     return integral, n_points_list[-1]
@@ -206,6 +214,7 @@ def integrate_product_normal(
     """
 
     def product_func(x):
+        """Compute the product function for quadrature integration."""
         result = 1.0
         for f in func_list:
             result *= f(x)
@@ -214,7 +223,7 @@ def integrate_product_normal(
     return integrate_normal(product_func, n_points, mu, sigma)
 
 
-def gauss_hermite_2d(n_points: int) -> Tuple[np.ndarray, np.ndarray]:
+def gauss_hermite_2d(n_points: int) -> tuple[np.ndarray, np.ndarray]:
     """
     2D Gauss-Hermite quadrature for bivariate normal integration.
 

@@ -1,5 +1,5 @@
 """
-data_loaders.py
+data_loaders.py.
 ---------------
 Functions to load datasets used in the Marginal Effects Tutorial Series.
 
@@ -59,7 +59,7 @@ def load_dataset(name: str, seed: int = 42) -> pd.DataFrame:
     }
 
     if name not in generators:
-        raise ValueError(f"Unknown dataset '{name}'. " f"Valid options: {sorted(generators)}")
+        raise ValueError(f"Unknown dataset '{name}'. Valid options: {sorted(generators)}")
 
     rng = np.random.default_rng(seed)
     df = generators[name](rng)

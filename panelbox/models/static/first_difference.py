@@ -5,7 +5,9 @@ This module provides the First Difference estimator which eliminates
 entity fixed effects through first-differencing.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -26,6 +28,8 @@ from panelbox.standard_errors.newey_west import NeweyWestResult
 from panelbox.standard_errors.pcse import PCSEResult
 from panelbox.standard_errors.robust import RobustCovarianceResult
 from panelbox.utils.matrix_ops import compute_ols, compute_vcov_nonrobust
+
+logger = logging.getLogger(__name__)
 
 
 class FirstDifferenceEstimator(PanelModel):
@@ -84,12 +88,12 @@ class FirstDifferenceEstimator(PanelModel):
     >>>
     >>> # First Difference estimator
     >>> fd = pb.FirstDifferenceEstimator("invest ~ value + capital", data, "firm", "year")
-    >>> results = fd.fit(cov_type='robust')
+    >>> results = fd.fit(cov_type="robust")
     >>> print(results.summary())
     >>>
     >>> # Compare with Fixed Effects
     >>> fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
-    >>> results_fe = fe.fit(cov_type='robust')
+    >>> results_fe = fe.fit(cov_type="robust")
     >>>
     >>> print(f"First Diff coefs: {results.params.values}")
     >>> print(f"Fixed Effects coefs: {results_fe.params.values}")
@@ -183,13 +187,13 @@ class FirstDifferenceEstimator(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
         # Store original observation count
         self.n_obs_original = len(data)
-        self.n_obs_differenced: Optional[int] = None
+        self.n_obs_differenced: int | None = None
 
     def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
@@ -221,16 +225,16 @@ class FirstDifferenceEstimator(PanelModel):
         Examples
         --------
         >>> # Classical standard errors
-        >>> results = model.fit(cov_type='nonrobust')
+        >>> results = model.fit(cov_type="nonrobust")
 
         >>> # Heteroskedasticity-robust (recommended)
-        >>> results = model.fit(cov_type='robust')
+        >>> results = model.fit(cov_type="robust")
 
         >>> # Cluster-robust by entity (recommended for FD)
-        >>> results = model.fit(cov_type='clustered')
+        >>> results = model.fit(cov_type="clustered")
 
         >>> # Driscoll-Kraay (for serial correlation + heteroskedasticity)
-        >>> results = model.fit(cov_type='driscoll_kraay', max_lags=2)
+        >>> results = model.fit(cov_type="driscoll_kraay", max_lags=2)
 
         Notes
         -----
@@ -286,7 +290,7 @@ class FirstDifferenceEstimator(PanelModel):
         # Ensure df_resid is positive
         if df_resid <= 0:
             raise ValueError(
-                f"Insufficient degrees of freedom: df_resid = {df_resid}. " f"n={n}, k={k}"
+                f"Insufficient degrees of freedom: df_resid = {df_resid}. n={n}, k={k}"
             )
 
         # Compute fitted values and residuals in original scale (levels)
@@ -301,13 +305,7 @@ class FirstDifferenceEstimator(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: Union[
-            RobustCovarianceResult,
-            ClusteredCovarianceResult,
-            DriscollKraayResult,
-            NeweyWestResult,
-            PCSEResult,
-        ]
+        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult | PCSEResult
 
         if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X_diff, resid_diff, df_resid)
@@ -332,7 +330,7 @@ class FirstDifferenceEstimator(PanelModel):
 
         elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for serial correlation (recommended for FD)
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(
                 X_diff, resid_diff, times_diff, max_lags=max_lags, kernel=kernel
@@ -341,7 +339,7 @@ class FirstDifferenceEstimator(PanelModel):
 
         elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X_diff, resid_diff, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
@@ -423,7 +421,44 @@ class FirstDifferenceEstimator(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
+
+        # Store entity/time column names for predict(newdata)
+        results._entity_col = self.data.entity_col
+        results._time_col = self.data.time_col
+
+        # Override predict() to first-difference new data
+        _results = results  # capture for closure
+
+        def _fd_predict(newdata=None):
+            if newdata is None:
+                return _results.fittedvalues
+
+            # Sort by entity and time
+            X_df = newdata.copy()
+            X_df = X_df.sort_values([_results._entity_col, _results._time_col])
+
+            # Get regressor variable names from formula parser
+            parser = _results._formula_parser
+            if parser is None:
+                from panelbox.core.formula_parser import FormulaParser
+
+                parser = FormulaParser(_results.formula).parse()
+
+            x_vars = parser.regressors
+
+            # First-difference each variable within each group
+            X_diff = X_df.groupby(_results._entity_col)[x_vars].diff()
+
+            # Remove NaN (first period of each group)
+            valid_mask = X_diff.notna().all(axis=1)
+            X_diff = X_diff[valid_mask].values
+
+            # FD has no intercept
+            return X_diff @ _results.params.values
+
+        results.predict = _fd_predict
 
         # Store results and update state
         self._results = results

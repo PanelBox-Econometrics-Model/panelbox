@@ -6,18 +6,22 @@ fixed effects quantile regression, which assumes fixed effects are pure
 location shifters.
 """
 
+from __future__ import annotations
+
+import logging
 import time
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
-import pandas as pd
 from scipy import stats
 
 from panelbox.core.panel_data import PanelData
 
 from .base import QuantilePanelModel
 from .pooled import PooledQuantile
+
+logger = logging.getLogger(__name__)
 
 
 class CanayTwoStep(QuantilePanelModel):
@@ -53,7 +57,7 @@ class CanayTwoStep(QuantilePanelModel):
     """
 
     def __init__(
-        self, data: PanelData, formula: Optional[str] = None, tau: Union[float, List[float]] = 0.5
+        self, data: PanelData, formula: str | None = None, tau: float | list[float] = 0.5
     ):
         # Store data and parameters
         self.data = data
@@ -104,7 +108,7 @@ class CanayTwoStep(QuantilePanelModel):
             self.X = self.data.data.iloc[:, 1:].values
 
         # Add constant if not present
-        if not np.any(np.all(self.X == self.X[0], axis=0)):
+        if not np.any(np.all(self.X[0] == self.X, axis=0)):
             self.X = np.column_stack([np.ones(len(self.y)), self.X])
 
         self.nobs, self.k_exog = self.X.shape
@@ -122,7 +126,7 @@ class CanayTwoStep(QuantilePanelModel):
 
     def fit(
         self, se_adjustment: str = "two-step", verbose: bool = False, **kwargs
-    ) -> "CanayTwoStepResult":
+    ) -> CanayTwoStepResult:
         """
         Two-step estimation procedure.
 
@@ -143,20 +147,20 @@ class CanayTwoStep(QuantilePanelModel):
         CanayTwoStepResult
         """
         if verbose:
-            print("Canay Two-Step Quantile Regression")
-            print("=" * 50)
+            logger.info("Canay Two-Step Quantile Regression")
+            logger.info("=" * 50)
 
         # Step 1: Estimate fixed effects via FE-OLS
         if not self._step1_complete:
             if verbose:
-                print("\nStep 1: Estimating fixed effects via FE-OLS...")
+                logger.info("Step 1: Estimating fixed effects via FE-OLS...")
 
             self._estimate_fixed_effects()
 
             if verbose:
-                print(f"  Fixed effects estimated for {self.n_entities} entities")
-                print(f"  Mean FE: {np.mean(self.fixed_effects_):.4f}")
-                print(f"  Std FE:  {np.std(self.fixed_effects_):.4f}")
+                logger.info(f"  Fixed effects estimated for {self.n_entities} entities")
+                logger.info(f"  Mean FE: {np.mean(self.fixed_effects_):.4f}")
+                logger.info(f"  Std FE:  {np.std(self.fixed_effects_):.4f}")
 
         # Check T size and issue warning
         avg_T = self.nobs / self.n_entities
@@ -165,16 +169,17 @@ class CanayTwoStep(QuantilePanelModel):
                 f"Average T = {avg_T:.1f} is small. Canay estimator requires "
                 "large T for consistency. Consider using penalty method instead.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Step 2: Quantile regression on transformed data
         if verbose:
-            print("\nStep 2: Pooled QR on transformed data...")
+            logger.info("Step 2: Pooled QR on transformed data...")
 
         results = {}
         for tau in self.tau:
             if verbose:
-                print(f"  Estimating τ = {tau}...")
+                logger.info(f"  Estimating τ = {tau}...")
 
             result_tau = self._estimate_quantile_step2(tau, se_adjustment, **kwargs)
             results[tau] = result_tau
@@ -188,14 +193,12 @@ class CanayTwoStep(QuantilePanelModel):
         )
 
         if verbose:
-            print("\nEstimation complete!")
+            logger.info("Estimation complete!")
 
         return final_result
 
     def _estimate_fixed_effects(self):
-        """
-        Step 1: Estimate fixed effects via within-transformation OLS.
-        """
+        """Step 1: Estimate fixed effects via within-transformation OLS."""
         # Demean variables by entity (within transformation)
         y_demeaned = np.zeros_like(self.y)
         X_demeaned = np.zeros_like(self.X)
@@ -267,10 +270,8 @@ class CanayTwoStep(QuantilePanelModel):
 
     def _estimate_quantile_step2(
         self, tau: float, se_adjustment: str = "two-step", **kwargs
-    ) -> "CanayQuantileResult":
-        """
-        Step 2: Pooled QR on transformed data.
-        """
+    ) -> CanayQuantileResult:
+        """Step 2: Pooled QR on transformed data."""
         # Create temporary pooled QR model with transformed y
         temp_model = PooledQuantile(
             endog=self.y_transformed_,
@@ -316,8 +317,8 @@ class CanayTwoStep(QuantilePanelModel):
         Based on Canay (2011) Appendix.
         """
         # Get components from step 1
-        beta_ols = self.fe_ols_result_["params"]
-        V_ols = self.fe_ols_result_["cov_matrix"]
+        self.fe_ols_result_["params"]
+        self.fe_ols_result_["cov_matrix"]
 
         # Residuals from QR step
         residuals_qr = self.y_transformed_ - self.X @ beta_qr
@@ -328,7 +329,7 @@ class CanayTwoStep(QuantilePanelModel):
         try:
             kde = gaussian_kde(residuals_qr)
             f_hat = kde(0)[0]  # Density at zero
-        except:
+        except Exception:
             # Fallback to simple estimate
             h = 1.06 * np.std(residuals_qr) * (self.nobs ** (-0.2))
             f_hat = 1 / (2 * h)  # Approximate density
@@ -371,8 +372,8 @@ class CanayTwoStep(QuantilePanelModel):
         return V_adjusted
 
     def test_location_shift(
-        self, tau_grid: Optional[List[float]] = None, method: str = "wald"
-    ) -> "LocationShiftTestResult":
+        self, tau_grid: list[float] | None = None, method: str = "wald"
+    ) -> LocationShiftTestResult:
         """
         Test if fixed effects are pure location shifters.
 
@@ -395,15 +396,15 @@ class CanayTwoStep(QuantilePanelModel):
         if tau_grid is None:
             tau_grid = [0.1, 0.25, 0.5, 0.75, 0.9]
 
-        print("\nTesting Location Shift Assumption")
-        print("=" * 50)
-        print("H0: Fixed effects are pure location shifters")
-        print(f"Testing across quantiles: {tau_grid}")
+        logger.info("Testing Location Shift Assumption")
+        logger.info("=" * 50)
+        logger.info("H0: Fixed effects are pure location shifters")
+        logger.info(f"Testing across quantiles: {tau_grid}")
 
         # Estimate at multiple quantiles
         results_full = {}
         for tau in tau_grid:
-            print(f"  Estimating τ = {tau}...")
+            logger.info(f"  Estimating τ = {tau}...")
             self.tau = [tau]
             result = self.fit(se_adjustment="naive", verbose=False)
             results_full[tau] = result.results[tau]
@@ -477,8 +478,8 @@ class CanayTwoStep(QuantilePanelModel):
         return result
 
     def compare_with_penalty_method(
-        self, tau: float = 0.5, lambda_fe: Union[float, str] = "auto"
-    ) -> Dict[str, Any]:
+        self, tau: float = 0.5, lambda_fe: float | str = "auto"
+    ) -> dict[str, Any]:
         """
         Compare Canay two-step with Koenker penalty method.
 
@@ -486,18 +487,18 @@ class CanayTwoStep(QuantilePanelModel):
         """
         from .fixed_effects import FixedEffectsQuantile
 
-        print("\nComparison: Canay vs Penalty Method")
-        print("=" * 50)
+        logger.info("Comparison: Canay vs Penalty Method")
+        logger.info("=" * 50)
 
         # Canay two-step
-        print("\n1. Canay Two-Step:")
+        logger.info("1. Canay Two-Step:")
         start_time = time.time()
         canay_result = self.fit(verbose=False)
         canay_time = time.time() - start_time
         canay_coef = canay_result.results[tau].params
 
         # Penalty method
-        print("\n2. Koenker Penalty Method:")
+        logger.info("2. Koenker Penalty Method:")
         fe_model = FixedEffectsQuantile(self.data, self.formula, tau=tau, lambda_fe=lambda_fe)
         start_time = time.time()
         fe_result = fe_model.fit(verbose=False)
@@ -505,26 +506,26 @@ class CanayTwoStep(QuantilePanelModel):
         fe_coef = fe_result.results[tau].params
 
         # Compare
-        print("\nResults Comparison:")
-        print("-" * 40)
-        print(f"{'Variable':<15} {'Canay':>10} {'Penalty':>10} {'Difference':>10}")
-        print("-" * 40)
+        logger.info("Results Comparison:")
+        logger.info("-" * 40)
+        logger.info(f"{'Variable':<15} {'Canay':>10} {'Penalty':>10} {'Difference':>10}")
+        logger.info("-" * 40)
 
         for i in range(len(canay_coef)):
             diff = canay_coef[i] - fe_coef[i]
-            print(f"β{i+1:<14} {canay_coef[i]:10.4f} {fe_coef[i]:10.4f} {diff:10.4f}")
+            logger.info(f"β{i + 1:<14} {canay_coef[i]:10.4f} {fe_coef[i]:10.4f} {diff:10.4f}")
 
-        print("\nComputational Time:")
-        print(f"  Canay:   {canay_time:6.2f} seconds")
-        print(f"  Penalty: {fe_time:6.2f} seconds")
-        print(f"  Speedup: {fe_time/canay_time:6.1f}x")
+        logger.info("Computational Time:")
+        logger.info(f"  Canay:   {canay_time:6.2f} seconds")
+        logger.info(f"  Penalty: {fe_time:6.2f} seconds")
+        logger.info(f"  Speedup: {fe_time / canay_time:6.1f}x")
 
         # Correlation of coefficients
         corr = np.corrcoef(canay_coef, fe_coef)[0, 1]
-        print(f"\nCoefficient correlation: {corr:.4f}")
+        logger.info(f"Coefficient correlation: {corr:.4f}")
 
         if corr < 0.95:
-            print("\nWarning: Low correlation suggests location shift assumption may be violated.")
+            logger.warning("Low correlation suggests location shift assumption may be violated.")
 
         return {
             "canay": canay_result,
@@ -567,16 +568,16 @@ class CanayTwoStepResult:
     def __init__(
         self,
         model: CanayTwoStep,
-        results: Dict[float, CanayQuantileResult],
+        results: dict[float, CanayQuantileResult],
         fixed_effects: np.ndarray,
-        fe_ols_result: Dict[str, Any],
+        fe_ols_result: dict[str, Any],
     ):
         self.model = model
         self.results = results
         self.fixed_effects = fixed_effects
         self.fe_ols_result = fe_ols_result
 
-    def summary(self, tau: Optional[float] = None):
+    def summary(self, tau: float | None = None):
         """Extended summary including FE information."""
         print("\n" + "=" * 60)
         print("CANAY TWO-STEP QUANTILE REGRESSION RESULTS")
@@ -598,7 +599,7 @@ class CanayTwoStepResult:
         if tau is None:
             tau_list = sorted(self.results.keys())
         else:
-            tau_list = [tau] if np.isscalar(tau) else tau
+            tau_list = [tau] if isinstance(tau, (int, float)) else list(tau)
 
         for tau in tau_list:
             result = self.results[tau]
@@ -608,7 +609,7 @@ class CanayTwoStepResult:
             for i, coef in enumerate(result.params):
                 se = result.bse[i]
                 t_stat = coef / se if se > 0 else 0
-                print(f"    β{i+1}: {coef:8.4f} ({se:6.4f})  t={t_stat:6.2f}")
+                print(f"    β{i + 1}: {coef:8.4f} ({se:6.4f})  t={t_stat:6.2f}")
 
     def plot_fixed_effects_distribution(self):
         """Visualize the distribution of estimated fixed effects."""
@@ -635,7 +636,7 @@ class CanayTwoStepResult:
             x_range = np.linspace(self.fixed_effects.min(), self.fixed_effects.max(), 100)
             ax.plot(x_range, kde(x_range))
             ax.fill_between(x_range, kde(x_range), alpha=0.3)
-        except:
+        except Exception:
             ax.hist(self.fixed_effects, bins=30, density=True, alpha=0.7)
         ax.set_xlabel("Fixed Effect Value")
         ax.set_ylabel("Density")
@@ -653,7 +654,6 @@ class CanayTwoStepResult:
 
         # 4. QQ plot
         ax = axes[1, 1]
-        from scipy import stats
 
         stats.probplot(self.fixed_effects, dist="norm", plot=ax)
         ax.set_title("Normal Q-Q Plot")
@@ -669,9 +669,9 @@ class LocationShiftTestResult:
         self,
         statistic: float,
         p_value: float,
-        df: Optional[int],
+        df: int | None,
         method: str,
-        tau_grid: List[float],
+        tau_grid: list[float],
         coef_matrix: np.ndarray,
     ):
         self.statistic = statistic
@@ -707,17 +707,14 @@ class LocationShiftTestResult:
 
         n_coef = self.coef_matrix.shape[1]
         fig, axes = plt.subplots((n_coef + 1) // 2, 2, figsize=(12, 4 * ((n_coef + 1) // 2)))
-        if n_coef == 1:
-            axes = [axes]
-        else:
-            axes = axes.flatten()
+        axes = [axes] if n_coef == 1 else axes.flatten()
 
         for i in range(n_coef):
             ax = axes[i] if n_coef > 1 else axes
             ax.plot(self.tau_grid, self.coef_matrix[:, i], "o-")
             ax.set_xlabel("Quantile (τ)")
-            ax.set_ylabel(f"β{i+1}")
-            ax.set_title(f"Coefficient {i+1} across Quantiles")
+            ax.set_ylabel(f"β{i + 1}")
+            ax.set_title(f"Coefficient {i + 1} across Quantiles")
             ax.grid(True, alpha=0.3)
 
             # Add horizontal line at mean

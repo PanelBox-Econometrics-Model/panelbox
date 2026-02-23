@@ -1,0 +1,14 @@
+PROFILING SUMMARY
+================================================================================
+
+Model                    Time (s)     Status
+---------------------------------------------
+PooledOLS_N100_T20         0.0362          ✓
+FixedEffects_N100_T20       0.0757          ✓
+RandomEffects_N100_T20       0.0655          ✓
+DifferenceGMM_N50_T10       0.2527          ✓
+SystemGMM_N50_T10          0.2022          ✓
+
+================================================================================
+
+Profile files saved in: /home/guhaase/projetos/panelbox/tests/performance/profiles

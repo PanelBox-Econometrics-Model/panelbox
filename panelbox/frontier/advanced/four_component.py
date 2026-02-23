@@ -7,7 +7,8 @@ decomposes output into:
     - Random noise (v_it)
     - Transient inefficiency (u_it)
 
-References:
+References
+----------
     Kumbhakar, S. C., Lien, G., & Hardaker, J. B. (2014).
         Technical efficiency in competing panel data models: a study of
         Norwegian grain farming. Journal of Productivity Analysis, 41(2), 321-337.
@@ -17,8 +18,10 @@ References:
         and long/short-run efficiency. Journal of Productivity Analysis, 42, 123-136.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -26,13 +29,15 @@ from scipy import stats
 from scipy.optimize import minimize
 from scipy.special import log_ndtr
 
+logger = logging.getLogger(__name__)
+
 
 def step1_within_estimator(
     y: np.ndarray,
     X: np.ndarray,
     entity_id: np.ndarray,
     time_id: np.ndarray,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Step 1: Within (FE) estimator to separate α_i and ε_it.
 
     Model: y_it = α_i + x_it'β + ε_it
@@ -41,19 +46,22 @@ def step1_within_estimator(
     demeaning the data within each entity. This separates the entity-specific
     effects (α_i) from the time-varying error (ε_it).
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable (n,)
         X: Exogenous variables including constant (n, k)
         entity_id: Entity identifier codes (n,)
         time_id: Time period identifier codes (n,)
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - beta: Fixed effects estimates of β (k,)
             - alpha_i: Estimated fixed effects (N,)
             - epsilon_it: Estimated residuals (n,)
 
-    Notes:
+    Notes
+    -----
         The within transformation removes the constant term, so β does not
         include an intercept. The fixed effects α_i capture all time-invariant
         heterogeneity.
@@ -95,7 +103,7 @@ def step2_separate_transient(
     entity_id: np.ndarray,
     time_id: np.ndarray,
     verbose: bool = False,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Step 2: Separate transient inefficiency (u_it) from noise (v_it).
 
     For each time period t:
@@ -105,24 +113,27 @@ def step2_separate_transient(
     This step applies a cross-sectional SFA model to the residuals from Step 1.
     The pooled estimation assumes constant variance across time periods.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon_it: Residuals from Step 1 (n,)
         entity_id: Entity identifier codes (n,)
         time_id: Time period identifier codes (n,)
         verbose: Print convergence warnings
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - u_it: Transient inefficiency estimates (n,)
             - v_it: Noise estimates (n,)
             - sigma_v: Noise standard deviation
             - sigma_u: Transient inefficiency standard deviation
 
-    Notes:
+    Notes
+    -----
         Uses JLMS (Jondrow et al., 1982) estimator for inefficiency.
         Assumes half-normal distribution for u_it.
     """
-    n = len(epsilon_it)
+    len(epsilon_it)
 
     def loglik_halfnormal_cross(theta, epsilon):
         """Half-normal log-likelihood for cross-section."""
@@ -158,7 +169,7 @@ def step2_separate_transient(
     )
 
     if not result.success and verbose:
-        print(f"Warning: Step 2 optimization did not converge")
+        logger.warning("Step 2 optimization did not converge")
 
     # Extract parameters
     sigma_v_sq = np.exp(result.x[0])
@@ -193,7 +204,7 @@ def step2_separate_transient(
 def step3_separate_persistent(
     alpha_i: np.ndarray,
     verbose: bool = False,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Step 3: Separate persistent inefficiency (η_i) from heterogeneity (μ_i).
 
     Model: α_i = μ_i - η_i
@@ -202,22 +213,25 @@ def step3_separate_persistent(
     This step applies a cross-sectional SFA model to the fixed effects from Step 1.
     This separates structural inefficiency (persistent) from random heterogeneity.
 
-    Parameters:
+    Parameters
+    ----------
         alpha_i: Fixed effects from Step 1 (N,)
         verbose: Print convergence warnings
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - eta_i: Persistent inefficiency estimates (N,)
             - mu_i: Heterogeneity estimates (N,)
             - sigma_mu: Heterogeneity standard deviation
             - sigma_eta: Persistent inefficiency standard deviation
 
-    Notes:
+    Notes
+    -----
         Uses JLMS (Jondrow et al., 1982) estimator for inefficiency.
         Assumes half-normal distribution for η_i.
     """
-    N = len(alpha_i)
+    len(alpha_i)
 
     def loglik_halfnormal_cross(theta, alpha):
         """Half-normal log-likelihood."""
@@ -253,7 +267,7 @@ def step3_separate_persistent(
     )
 
     if not result.success and verbose:
-        print(f"Warning: Step 3 optimization did not converge")
+        logger.warning("Step 3 optimization did not converge")
 
     # Extract parameters
     sigma_mu_sq = np.exp(result.x[0])
@@ -302,7 +316,8 @@ class FourComponentSFA:
         Step 2: SFA on ε_it → u_it, v_it
         Step 3: SFA on α_i → η_i, μ_i
 
-    Parameters:
+    Parameters
+    ----------
         data: Panel DataFrame
         depvar: Dependent variable name
         exog: List of exogenous variable names
@@ -310,7 +325,8 @@ class FourComponentSFA:
         time: Time identifier column name
         frontier_type: 'production' or 'cost'
 
-    Attributes:
+    Attributes
+    ----------
         data: Input panel data
         depvar: Dependent variable name
         exog: Exogenous variable names
@@ -328,18 +344,19 @@ class FourComponentSFA:
     Example:
         >>> model = FourComponentSFA(
         ...     data=panel_df,
-        ...     depvar='log_output',
-        ...     exog=['log_labor', 'log_capital'],
-        ...     entity='firm_id',
-        ...     time='year',
-        ...     frontier_type='production',
+        ...     depvar="log_output",
+        ...     exog=["log_labor", "log_capital"],
+        ...     entity="firm_id",
+        ...     time="year",
+        ...     frontier_type="production",
         ... )
         >>> result = model.fit()
         >>> te_persistent = result.persistent_efficiency()
         >>> te_transient = result.transient_efficiency()
         >>> te_overall = result.overall_efficiency()
 
-    References:
+    References
+    ----------
         Kumbhakar, S. C., Lien, G., & Hardaker, J. B. (2014).
             Technical efficiency in competing panel data models: a study of
             Norwegian grain farming. Journal of Productivity Analysis, 41(2), 321-337.
@@ -353,7 +370,7 @@ class FourComponentSFA:
         self,
         data: pd.DataFrame,
         depvar: str,
-        exog: List[str],
+        exog: list[str],
         entity: str,
         time: str,
         frontier_type: str = "production",
@@ -379,7 +396,7 @@ class FourComponentSFA:
 
         # Add constant
         self.X = np.column_stack([np.ones(len(X)), X])
-        self.exog_names = ["const"] + self.exog
+        self.exog_names = ["const", *self.exog]
 
         # Entity and time IDs
         self.entity_id = pd.Categorical(self.data[self.entity]).codes
@@ -392,39 +409,42 @@ class FourComponentSFA:
     def fit(self, verbose: bool = False):
         """Fit the four-component model.
 
-        Parameters:
+        Parameters
+        ----------
             verbose: Print estimation progress
 
-        Returns:
+        Returns
+        -------
             FourComponentResult with all estimates
 
-        Notes:
+        Notes
+        -----
             This method runs all three estimation steps sequentially:
             1. Within estimator for fixed effects
             2. Cross-sectional SFA for transient inefficiency
             3. Cross-sectional SFA for persistent inefficiency
         """
         if verbose:
-            print("=" * 60)
-            print("Four-Component SFA Model")
-            print("=" * 60)
+            logger.info("=" * 60)
+            logger.info("Four-Component SFA Model")
+            logger.info("=" * 60)
 
         # Step 1: Within estimator
         if verbose:
-            print("\nStep 1: Within (FE) estimator...")
+            logger.info("Step 1: Within (FE) estimator...")
 
         step1_result = step1_within_estimator(self.y, self.X, self.entity_id, self.time_id)
 
         if verbose:
-            print(f"  β̂ = {step1_result['beta']}")
-            print(
+            logger.info(f"  β̂ = {step1_result['beta']}")
+            logger.info(
                 f"  Range of α̂_i: [{step1_result['alpha_i'].min():.4f}, "
                 f"{step1_result['alpha_i'].max():.4f}]"
             )
 
         # Step 2: Separate transient inefficiency
         if verbose:
-            print("\nStep 2: Separating transient inefficiency...")
+            logger.info("Step 2: Separating transient inefficiency...")
 
         step2_result = step2_separate_transient(
             step1_result["epsilon_it"],
@@ -434,12 +454,12 @@ class FourComponentSFA:
         )
 
         if verbose:
-            print(f"  σ̂_v = {step2_result['sigma_v']:.4f} (noise)")
-            print(f"  σ̂_u = {step2_result['sigma_u']:.4f} (transient inefficiency)")
+            logger.info(f"  σ̂_v = {step2_result['sigma_v']:.4f} (noise)")
+            logger.info(f"  σ̂_u = {step2_result['sigma_u']:.4f} (transient inefficiency)")
 
         # Step 3: Separate persistent inefficiency
         if verbose:
-            print("\nStep 3: Separating persistent inefficiency...")
+            logger.info("Step 3: Separating persistent inefficiency...")
 
         step3_result = step3_separate_persistent(
             step1_result["alpha_i"],
@@ -447,8 +467,8 @@ class FourComponentSFA:
         )
 
         if verbose:
-            print(f"  σ̂_μ = {step3_result['sigma_mu']:.4f} (heterogeneity)")
-            print(f"  σ̂_η = {step3_result['sigma_eta']:.4f} (persistent inefficiency)")
+            logger.info(f"  σ̂_μ = {step3_result['sigma_mu']:.4f} (heterogeneity)")
+            logger.info(f"  σ̂_η = {step3_result['sigma_eta']:.4f} (persistent inefficiency)")
 
         # Create result object
         result = FourComponentResult(
@@ -466,9 +486,9 @@ class FourComponentSFA:
         )
 
         if verbose:
-            print("\n" + "=" * 60)
-            print("Estimation complete!")
-            print("=" * 60)
+            logger.info("=" * 60)
+            logger.info("Estimation complete!")
+            logger.info("=" * 60)
             result.print_summary()
 
         return result
@@ -478,7 +498,8 @@ class FourComponentSFA:
 class FourComponentResult:
     """Results from four-component SFA model.
 
-    Attributes:
+    Attributes
+    ----------
         model: Reference to FourComponentSFA model
         beta: Coefficient estimates (k,)
         alpha_i: Fixed effects (N,)
@@ -492,7 +513,7 @@ class FourComponentResult:
         sigma_eta: Persistent inefficiency standard deviation
     """
 
-    model: "FourComponentSFA"
+    model: FourComponentSFA
     beta: np.ndarray
     alpha_i: np.ndarray
     mu_i: np.ndarray  # Heterogeneity
@@ -537,12 +558,14 @@ class FourComponentResult:
     def persistent_efficiency(self) -> pd.DataFrame:
         """Compute persistent technical efficiency: TE_p,i = exp(-η_i).
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - persistent_efficiency: Persistent efficiency scores
 
-        Notes:
+        Notes
+        -----
             Persistent efficiency ranges from 0 to 1, where 1 indicates
             perfect efficiency in the structural/long-run component.
         """
@@ -560,13 +583,15 @@ class FourComponentResult:
     def transient_efficiency(self) -> pd.DataFrame:
         """Compute transient technical efficiency: TE_t,it = exp(-u_it).
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - time: Time identifier
                 - transient_efficiency: Transient efficiency scores
 
-        Notes:
+        Notes
+        -----
             Transient efficiency ranges from 0 to 1, where 1 indicates
             perfect efficiency in the managerial/short-run component.
         """
@@ -634,7 +659,8 @@ class FourComponentResult:
     def overall_efficiency(self) -> pd.DataFrame:
         """Compute overall efficiency: TE_o,it = TE_p,i × TE_t,it.
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - time: Time identifier
@@ -642,7 +668,8 @@ class FourComponentResult:
                 - persistent_efficiency: Persistent component
                 - transient_efficiency: Transient component
 
-        Notes:
+        Notes
+        -----
             Overall efficiency is the product of persistent and transient
             efficiency. This gives the total technical efficiency accounting
             for both structural and managerial factors.
@@ -669,7 +696,8 @@ class FourComponentResult:
     def decomposition(self) -> pd.DataFrame:
         """Return full decomposition of all 4 components.
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - time: Time identifier
@@ -678,7 +706,8 @@ class FourComponentResult:
                 - u_it: Transient inefficiency
                 - v_it: Noise
 
-        Notes:
+        Notes
+        -----
             This provides the complete decomposition:
                 y_it = x_it'β + μ_i - η_i + v_it - u_it
         """
@@ -707,12 +736,12 @@ class FourComponentResult:
         print("FOUR-COMPONENT SFA RESULTS")
         print("=" * 60)
 
-        print(f"\nSample:")
+        print("\nSample:")
         print(f"  Observations: {self.model.n_obs}")
         print(f"  Entities: {self.model.n_entities}")
         print(f"  Time periods: {self.model.n_periods}")
 
-        print(f"\nVariance Components:")
+        print("\nVariance Components:")
         print(f"  σ²_v  (noise):                {self.sigma_v**2:.6f}")
         print(f"  σ²_u  (transient ineff.):     {self.sigma_u**2:.6f}")
         print(f"  σ²_μ  (heterogeneity):        {self.sigma_mu**2:.6f}")
@@ -721,7 +750,7 @@ class FourComponentResult:
         total_var = self.sigma_v**2 + self.sigma_u**2 + self.sigma_mu**2 + self.sigma_eta**2
         print(f"\n  Total variance: {total_var:.6f}")
 
-        print(f"\nVariance Shares:")
+        print("\nVariance Shares:")
         print(f"  Noise:              {100 * self.sigma_v**2 / total_var:.2f}%")
         print(f"  Transient ineff.:   {100 * self.sigma_u**2 / total_var:.2f}%")
         print(f"  Heterogeneity:      {100 * self.sigma_mu**2 / total_var:.2f}%")
@@ -731,7 +760,7 @@ class FourComponentResult:
         te_transient = np.exp(-self.u_it)
         te_overall = te_persistent[self.model.entity_id] * te_transient
 
-        print(f"\nEfficiency Summary:")
+        print("\nEfficiency Summary:")
         print(
             f"  Persistent TE:  mean={te_persistent.mean():.4f}, "
             f"std={te_persistent.std():.4f}, "
@@ -810,7 +839,7 @@ class FourComponentResult:
         Example
         -------
         >>> result = model.fit()
-        >>> me = result.marginal_effects(method='mean')
+        >>> me = result.marginal_effects(method="mean")
         >>> print(me)
 
         See Also
@@ -827,19 +856,22 @@ class FourComponentResult:
         confidence_level: float = 0.95,
         random_state: int = None,
         verbose: bool = False,
-    ) -> "BootstrapResult":
+    ) -> BootstrapResult:
         """Compute bootstrap confidence intervals for efficiency estimates.
 
-        Parameters:
+        Parameters
+        ----------
             n_bootstrap: Number of bootstrap replications
             confidence_level: Confidence level for intervals (default 0.95)
             random_state: Random seed for reproducibility
             verbose: Print progress
 
-        Returns:
+        Returns
+        -------
             BootstrapResult with confidence intervals
 
-        Notes:
+        Notes
+        -----
             Uses parametric bootstrap by resampling entities with replacement.
             This preserves the panel structure within each entity.
         """
@@ -863,13 +895,13 @@ class FourComponentResult:
         }
 
         if verbose:
-            print(f"\nRunning {n_bootstrap} bootstrap replications...")
+            logger.info(f"Running {n_bootstrap} bootstrap replications...")
 
         unique_entities = np.unique(self.model.entity_id)
 
         for b in range(n_bootstrap):
             if verbose and (b + 1) % 10 == 0:
-                print(f"  Replication {b + 1}/{n_bootstrap}")
+                logger.info(f"  Replication {b + 1}/{n_bootstrap}")
 
             # Resample entities with replacement
             boot_entities = np.random.choice(
@@ -923,7 +955,7 @@ class FourComponentResult:
 
             except Exception as e:
                 if verbose:
-                    print(f"  Warning: Bootstrap replication {b+1} failed: {e}")
+                    logger.warning(f"Bootstrap replication {b + 1} failed: {e}")
                 # Use NaN for failed replications
                 persistent_eff_boot[b] = np.nan
                 transient_eff_boot[b] = np.nan
@@ -932,7 +964,7 @@ class FourComponentResult:
                     variance_components_boot[key][b] = np.nan
 
         if verbose:
-            print("  Bootstrap complete!")
+            logger.info("Bootstrap complete!")
 
         # Compute confidence intervals
         persistent_ci = np.nanpercentile(persistent_eff_boot, [lower_pct, upper_pct], axis=0)
@@ -963,7 +995,8 @@ class FourComponentResult:
 class BootstrapResult:
     """Results from bootstrap inference.
 
-    Attributes:
+    Attributes
+    ----------
         result: Original FourComponentResult
         n_bootstrap: Number of bootstrap replications
         confidence_level: Confidence level used
@@ -983,16 +1016,17 @@ class BootstrapResult:
     persistent_ci: np.ndarray
     transient_ci: np.ndarray
     overall_ci: np.ndarray
-    variance_ci: Dict[str, np.ndarray]
+    variance_ci: dict[str, np.ndarray]
     persistent_eff_boot: np.ndarray
     transient_eff_boot: np.ndarray
     overall_eff_boot: np.ndarray
-    variance_components_boot: Dict[str, np.ndarray]
+    variance_components_boot: dict[str, np.ndarray]
 
     def persistent_efficiency_ci(self) -> pd.DataFrame:
         """Return persistent efficiency with confidence intervals.
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - persistent_efficiency: Point estimate
@@ -1015,7 +1049,8 @@ class BootstrapResult:
     def transient_efficiency_ci(self) -> pd.DataFrame:
         """Return transient efficiency with confidence intervals.
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - time: Time identifier
@@ -1040,7 +1075,8 @@ class BootstrapResult:
     def overall_efficiency_ci(self) -> pd.DataFrame:
         """Return overall efficiency with confidence intervals.
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier
                 - time: Time identifier
@@ -1073,7 +1109,7 @@ class BootstrapResult:
         print(f"\nBootstrap replications: {self.n_bootstrap}")
         print(f"Confidence level: {self.confidence_level * 100:.1f}%")
 
-        print(f"\nVariance Components:")
+        print("\nVariance Components:")
         for key in ["sigma_v", "sigma_u", "sigma_mu", "sigma_eta"]:
             point = getattr(self.result, key)
             ci_lower, ci_upper = self.variance_ci[key]
@@ -1083,7 +1119,7 @@ class BootstrapResult:
         te_transient = np.exp(-self.result.u_it)
         te_overall = te_persistent[self.result.model.entity_id] * te_transient
 
-        print(f"\nEfficiency Estimates (mean ± CI width):")
+        print("\nEfficiency Estimates (mean ± CI width):")
         pers_ci_width = (self.persistent_ci[1] - self.persistent_ci[0]).mean()
         trans_ci_width = (self.transient_ci[1] - self.transient_ci[0]).mean()
         overall_ci_width = (self.overall_ci[1] - self.overall_ci[0]).mean()

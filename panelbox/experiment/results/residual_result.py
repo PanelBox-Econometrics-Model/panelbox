@@ -5,12 +5,17 @@ This module provides a container class for residual diagnostic analysis results,
 completing the result container trilogy (Validation, Comparison, Residual).
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 from scipy import stats
 
 from .base import BaseResult
+
+logger = logging.getLogger(__name__)
 
 
 class ResidualResult(BaseResult):
@@ -47,7 +52,7 @@ class ResidualResult(BaseResult):
     >>> from panelbox import FixedEffects
     >>> from panelbox.experiment.results import ResidualResult
     >>>
-    >>> model = FixedEffects('y ~ x1 + x2', data, entity_id='firm', time_id='year')
+    >>> model = FixedEffects("y ~ x1 + x2", data, entity_id="firm", time_id="year")
     >>> results = model.fit()
     >>>
     >>> residual_result = ResidualResult.from_model_results(results)
@@ -66,22 +71,20 @@ class ResidualResult(BaseResult):
     Generate HTML report:
 
     >>> residual_result.save_html(
-    ...     'residual_diagnostics.html',
-    ...     test_type='residuals',
-    ...     theme='professional'
+    ...     "residual_diagnostics.html", test_type="residuals", theme="professional"
     ... )
 
     Export to JSON:
 
-    >>> residual_result.save_json('residuals.json')
+    >>> residual_result.save_json("residuals.json")
     """
 
     def __init__(
         self,
         model_results: Any,
-        residuals: Optional[np.ndarray] = None,
-        fitted_values: Optional[np.ndarray] = None,
-        standardized_residuals: Optional[np.ndarray] = None,
+        residuals: np.ndarray | None = None,
+        fitted_values: np.ndarray | None = None,
+        standardized_residuals: np.ndarray | None = None,
         timestamp=None,
         metadata=None,
     ):
@@ -308,7 +311,7 @@ class ResidualResult(BaseResult):
 
     # ==================== BaseResult Implementation ====================
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert result to dictionary for report generation.
 
@@ -514,12 +517,11 @@ class ResidualResult(BaseResult):
         >>> from panelbox import FixedEffects
         >>> from panelbox.experiment.results import ResidualResult
         >>>
-        >>> model = FixedEffects('y ~ x1 + x2', data, entity_id='firm', time_id='year')
+        >>> model = FixedEffects("y ~ x1 + x2", data, entity_id="firm", time_id="year")
         >>> results = model.fit()
         >>>
         >>> residual_result = ResidualResult.from_model_results(
-        ...     results,
-        ...     metadata={'model_type': 'fixed_effects'}
+        ...     results, metadata={"model_type": "fixed_effects"}
         ... )
         >>> print(residual_result.summary())
         """

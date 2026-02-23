@@ -6,18 +6,23 @@ of quantile regression implementations, including memory usage, computation
 time, and scalability analysis.
 """
 
+from __future__ import annotations
+
 import json
+import logging
 import time
 import tracemalloc
 import warnings
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
 import psutil
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,7 +36,7 @@ class ProfileResult:
     cpu_percent: float = 0.0
     n_iterations: int = 0
     convergence: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class PerformanceProfiler:
@@ -44,7 +49,7 @@ class PerformanceProfiler:
     Examples
     --------
     >>> profiler = PerformanceProfiler()
-    >>> with profiler.profile('optimization'):
+    >>> with profiler.profile("optimization"):
     ...     result = model.fit()
     >>> report = profiler.generate_report()
     >>> report.print_summary()
@@ -70,7 +75,7 @@ class PerformanceProfiler:
 
         Examples
         --------
-        >>> with profiler.profile('optimization', tau=0.5):
+        >>> with profiler.profile("optimization", tau=0.5):
         ...     # Code to profile
         ...     result = model.fit()
         """
@@ -89,7 +94,7 @@ class PerformanceProfiler:
             end_memory = self.process.memory_info().rss / 1024 / 1024
             end_cpu = self.process.cpu_percent(interval=None)
 
-            current, peak = tracemalloc.get_traced_memory()
+            _current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
 
             # Create profile result
@@ -107,8 +112,8 @@ class PerformanceProfiler:
             self.current_run[name] = result
 
     def benchmark_estimators(
-        self, data, formula, tau: float = 0.5, methods: Optional[List[str]] = None, n_runs: int = 3
-    ) -> "BenchmarkReport":
+        self, data, formula, tau: float = 0.5, methods: list[str] | None = None, n_runs: int = 3
+    ) -> BenchmarkReport:
         """
         Benchmark different QR estimators.
 
@@ -136,7 +141,7 @@ class PerformanceProfiler:
         results = {}
 
         for method in methods:
-            print(f"Benchmarking {method}...")
+            logger.info(f"Benchmarking {method}...")
             method_results = []
 
             for run in range(n_runs):
@@ -160,18 +165,18 @@ class PerformanceProfiler:
 
                             model = LocationScale(data, formula, tau)
                         else:
-                            warnings.warn(f"Unknown method: {method}")
+                            warnings.warn(f"Unknown method: {method}", stacklevel=2)
                             continue
 
                         # Fit model
                         with self.profile(f"{method}_fit_run{run}"):
-                            result = model.fit(verbose=False)
+                            model.fit(verbose=False)
 
                         # Store result
                         method_results.append(self.current_run[f"{method}_run{run}"])
 
                     except Exception as e:
-                        warnings.warn(f"Method {method} failed: {e}")
+                        warnings.warn(f"Method {method} failed: {e}", stacklevel=2)
                         method_results.append(
                             ProfileResult(
                                 name=method,
@@ -188,7 +193,7 @@ class PerformanceProfiler:
         return self._create_benchmark_report(results)
 
     def profile_scaling(
-        self, data_generator: Callable, sizes: List[int], method: str = "pooled", tau: float = 0.5
+        self, data_generator: Callable, sizes: list[int], method: str = "pooled", tau: float = 0.5
     ) -> pd.DataFrame:
         """
         Profile performance scaling with data size.
@@ -212,7 +217,7 @@ class PerformanceProfiler:
         results = []
 
         for size in sizes:
-            print(f"Testing size: {size}")
+            logger.info(f"Testing size: {size}")
 
             # Generate data
             data = data_generator(size)
@@ -226,11 +231,11 @@ class PerformanceProfiler:
 
                         model = PooledQuantile(data, "y ~ x", tau)
                     else:
-                        warnings.warn(f"Unknown method: {method}")
+                        warnings.warn(f"Unknown method: {method}", stacklevel=2)
                         continue
 
                     # Fit
-                    result = model.fit(verbose=False)
+                    model.fit(verbose=False)
 
                     # Get metrics
                     profile_result = self.current_run[f"size_{size}"]
@@ -259,7 +264,7 @@ class PerformanceProfiler:
 
         return pd.DataFrame(results)
 
-    def identify_bottlenecks(self, detailed: bool = False) -> Dict[str, Any]:
+    def identify_bottlenecks(self, detailed: bool = False) -> dict[str, Any]:
         """
         Identify performance bottlenecks.
 
@@ -317,9 +322,7 @@ class PerformanceProfiler:
 
         return bottlenecks
 
-    def _create_benchmark_report(
-        self, results: Dict[str, List[ProfileResult]]
-    ) -> "BenchmarkReport":
+    def _create_benchmark_report(self, results: dict[str, list[ProfileResult]]) -> BenchmarkReport:
         """Create formatted benchmark report."""
         data = []
 
@@ -355,7 +358,7 @@ class PerformanceProfiler:
         df = pd.DataFrame(data)
         return BenchmarkReport(df, results)
 
-    def generate_report(self) -> "ProfileReport":
+    def generate_report(self) -> ProfileReport:
         """
         Generate comprehensive profiling report.
 
@@ -393,13 +396,13 @@ class PerformanceProfiler:
         with open(filename, "w") as f:
             json.dump(data, f, indent=2)
 
-        print(f"Results saved to {filename}")
+        logger.info(f"Results saved to {filename}")
 
 
 class BenchmarkReport:
     """Benchmark report with analysis."""
 
-    def __init__(self, df: pd.DataFrame, raw_results: Dict[str, List[ProfileResult]]):
+    def __init__(self, df: pd.DataFrame, raw_results: dict[str, list[ProfileResult]]):
         self.df = df
         self.raw_results = raw_results
         self._analyze()
@@ -493,7 +496,7 @@ class BenchmarkReport:
 class ProfileReport:
     """Comprehensive profiling report."""
 
-    def __init__(self, metrics: List[ProfileResult]):
+    def __init__(self, metrics: list[ProfileResult]):
         self.metrics = metrics
         self._analyze()
 

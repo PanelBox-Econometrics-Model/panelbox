@@ -1,0 +1,31 @@
+name: Mutation Testing
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Sundays at 2am
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[test]"
+          pip install mutmut
+
+      - name: Run mutation tests (core)
+        run: |
+          mutmut run "panelbox/core/*" || true
+          mutmut results
+
+      - name: Upload mutation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: mutants/

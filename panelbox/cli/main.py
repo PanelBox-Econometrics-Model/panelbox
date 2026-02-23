@@ -6,9 +6,10 @@ to estimate panel data models, run diagnostics, and generate reports from
 the command line.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
-from typing import List, Optional
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -65,7 +66,7 @@ For more information, visit: https://github.com/yourusername/panelbox
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """
     Main entry point for PanelBox CLI.
 

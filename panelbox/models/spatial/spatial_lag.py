@@ -6,18 +6,20 @@ fixed effects using Quasi-Maximum Likelihood estimation following
 Lee & Yu (2010).
 """
 
-from typing import Dict, Literal, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 from scipy.linalg import inv
 from scipy.optimize import minimize, minimize_scalar
 
-from panelbox.core.spatial_weights import SpatialWeights
 from panelbox.models.discrete.results import PanelResults
 
 from .base_spatial import SpatialPanelModel
+
+logger = logging.getLogger(__name__)
 
 
 class SpatialLag(SpatialPanelModel):
@@ -116,7 +118,7 @@ class SpatialLag(SpatialPanelModel):
             return self._fit_ml_re(maxiter=maxiter, tol=tol, verbose=verbose, **kwargs)
         else:
             raise NotImplementedError(
-                f"Combination effects='{effects}' and method='{method}' " "not yet implemented"
+                f"Combination effects='{effects}' and method='{method}' not yet implemented"
             )
 
     def _fit_qml_fe(
@@ -141,7 +143,7 @@ class SpatialLag(SpatialPanelModel):
             Estimation results
         """
         if verbose:
-            print("Estimating SAR-FE using Quasi-ML (Lee & Yu 2010)")
+            logger.info("Estimating SAR-FE using Quasi-ML (Lee & Yu 2010)")
 
         # Apply within transformation
         y_within = self._within_transformation(self.endog.values.reshape(-1, 1)).flatten()
@@ -193,7 +195,7 @@ class SpatialLag(SpatialPanelModel):
 
         # Grid search for initial value
         if verbose:
-            print(
+            logger.info(
                 f"Grid search over {rho_grid_size} points in [{rho_bounds[0]:.3f}, {rho_bounds[1]:.3f}]"
             )
 
@@ -204,14 +206,14 @@ class SpatialLag(SpatialPanelModel):
             try:
                 llf = concentrated_llf(rho)
                 llf_grid.append(llf)
-            except:
+            except Exception:
                 llf_grid.append(-np.inf)
 
         llf_grid = np.array(llf_grid)
         rho_init = rho_grid[np.argmax(llf_grid)]
 
         if verbose:
-            print(f"Initial ρ from grid search: {rho_init:.4f}")
+            logger.info(f"Initial ρ from grid search: {rho_init:.4f}")
 
         # Optimization
         if optimizer == "brent":
@@ -241,8 +243,8 @@ class SpatialLag(SpatialPanelModel):
             raise ValueError(f"Unknown optimizer: {optimizer}")
 
         if verbose:
-            print(f"Optimized ρ: {rho_hat:.6f}")
-            print(f"Log-likelihood: {llf_opt:.2f}")
+            logger.info(f"Optimized ρ: {rho_hat:.6f}")
+            logger.info(f"Log-likelihood: {llf_opt:.2f}")
 
         # Compute β at optimal ρ
         Wy = self._spatial_lag(y_within.reshape(-1, 1)).flatten()
@@ -273,7 +275,7 @@ class SpatialLag(SpatialPanelModel):
                 and len(col_names) > X_within.shape[1]
             ):
                 col_names = col_names[1:]  # Remove first column name (intercept)
-            param_names = ["rho"] + col_names
+            param_names = ["rho", *col_names]
         else:
             param_names = ["rho"] + [f"x{i}" for i in range(X_within.shape[1])]
 
@@ -379,13 +381,13 @@ class SpatialLag(SpatialPanelModel):
             Estimation results
         """
         if verbose:
-            print("Estimating pooled SAR using Quasi-ML")
+            logger.info("Estimating pooled SAR using Quasi-ML")
 
         y = self.endog.values.flatten()
         X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
         # Add constant if not present; track whether we added one
-        _const_added = not np.any(np.all(X == X[0, :], axis=0))
+        _const_added = not np.any(np.all(X[0, :] == X, axis=0))
         if _const_added:
             X = np.column_stack([np.ones(len(y)), X])
 
@@ -417,7 +419,7 @@ class SpatialLag(SpatialPanelModel):
         # Grid search
         rho_grid = np.linspace(rho_bounds[0] * 0.95, rho_bounds[1] * 0.95, rho_grid_size)
         llf_grid = [concentrated_llf(r) for r in rho_grid]
-        rho_init = rho_grid[np.argmax(llf_grid)]
+        rho_grid[np.argmax(llf_grid)]
 
         # Optimization
         result = minimize_scalar(
@@ -449,13 +451,13 @@ class SpatialLag(SpatialPanelModel):
         if _const_added:
             # We prepended a constant column to X; get original column names if available
             if hasattr(self.exog, "columns"):
-                param_names = ["rho", "const"] + list(self.exog.columns)
+                param_names = ["rho", "const", *list(self.exog.columns)]
             else:
                 param_names = ["rho", "const"] + [f"x{i}" for i in range(self.exog.shape[1])]
         else:
             # No constant added; X.shape[1] == self.exog.shape[1]
             if hasattr(self.exog, "columns"):
-                param_names = ["rho"] + list(self.exog.columns)
+                param_names = ["rho", *list(self.exog.columns)]
             else:
                 param_names = ["rho"] + [f"x{i}" for i in range(self.exog.shape[1])]
 
@@ -562,7 +564,7 @@ class SpatialLag(SpatialPanelModel):
             Journal of Econometrics, 117(1), 123-150.
         """
         if verbose:
-            print("Estimating SAR-RE using Maximum Likelihood")
+            logger.info("Estimating SAR-RE using Maximum Likelihood")
 
         # Get data dimensions
         N = self.n_entities
@@ -616,7 +618,7 @@ class SpatialLag(SpatialPanelModel):
             # This is constant across time periods, so multiply by T
             try:
                 log_det_rho = T * self._log_det_jacobian(rho)
-            except:
+            except Exception:
                 return 1e10
 
             # Log-likelihood components
@@ -653,7 +655,7 @@ class SpatialLag(SpatialPanelModel):
         bounds += [(1e-6, None)]  # sigma_epsilon^2 > 0
 
         if verbose:
-            print(
+            logger.info(
                 f"Initial params: rho={params_init[0]:.4f}, sigma_alpha2={params_init[-2]:.4f}, sigma_eps2={params_init[-1]:.4f}"
             )
 
@@ -669,11 +671,11 @@ class SpatialLag(SpatialPanelModel):
         if not result.success:
             import warnings
 
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         if verbose:
-            print(f"Optimization converged: {result.success}")
-            print(f"Final nll: {result.fun:.2f}")
+            logger.info(f"Optimization converged: {result.success}")
+            logger.info(f"Final nll: {result.fun:.2f}")
 
         # Extract parameters
         rho_hat = result.x[0]
@@ -682,9 +684,9 @@ class SpatialLag(SpatialPanelModel):
         sigma_eps2_hat = result.x[2 + k]
 
         if verbose:
-            print(f"Final rho: {rho_hat:.6f}")
-            print(f"Final sigma_alpha2: {sigma_alpha2_hat:.6f}")
-            print(f"Final sigma_eps2: {sigma_eps2_hat:.6f}")
+            logger.info(f"Final rho: {rho_hat:.6f}")
+            logger.info(f"Final sigma_alpha2: {sigma_alpha2_hat:.6f}")
+            logger.info(f"Final sigma_eps2: {sigma_eps2_hat:.6f}")
 
         # Compute fitted values and residuals
         Wy_hat = self._spatial_lag(y.reshape(-1, 1)).flatten()
@@ -697,6 +699,7 @@ class SpatialLag(SpatialPanelModel):
             from scipy.optimize import approx_fprime
 
             def grad_fn(p):
+                """Compute the gradient of the log-likelihood."""
                 return approx_fprime(p, negative_log_likelihood, epsilon=1e-8)
 
             hessian_approx = np.eye(len(result.x))
@@ -711,18 +714,21 @@ class SpatialLag(SpatialPanelModel):
             cov_matrix = np.linalg.inv(hessian_approx)
             std_errors = np.sqrt(np.diag(cov_matrix))
 
-        except:
+        except Exception:
             # Fallback: use simple estimates
             import warnings
 
-            warnings.warn("Could not compute standard errors from Hessian. Using approximations.")
+            warnings.warn(
+                "Could not compute standard errors from Hessian. Using approximations.",
+                stacklevel=2,
+            )
 
             std_errors = np.ones(len(result.x)) * 0.1
             cov_matrix = np.eye(len(result.x)) * 0.01
 
         # Build parameter names
         if hasattr(self.exog, "columns"):
-            param_names = ["rho"] + list(self.exog.columns) + ["sigma_alpha2", "sigma_epsilon2"]
+            param_names = ["rho", *list(self.exog.columns), "sigma_alpha2", "sigma_epsilon2"]
         else:
             param_names = ["rho"] + [f"x{i}" for i in range(k)] + ["sigma_alpha2", "sigma_epsilon2"]
 
@@ -733,7 +739,7 @@ class SpatialLag(SpatialPanelModel):
         cov_params_df = pd.DataFrame(cov_matrix, index=param_names, columns=param_names)
 
         # Build standard errors Series
-        bse_series = pd.Series(std_errors, index=param_names)
+        pd.Series(std_errors, index=param_names)
 
         # Log-likelihood and information criteria
         log_likelihood = -result.fun
@@ -784,9 +790,9 @@ class SpatialLag(SpatialPanelModel):
 
     def predict(
         self,
-        params: Optional[Dict[str, float]] = None,
-        exog: Optional[np.ndarray] = None,
-        effects: Optional[np.ndarray] = None,
+        params: dict[str, float] | None = None,
+        exog: np.ndarray | None = None,
+        effects: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Generate predictions from SAR model.
@@ -887,6 +893,16 @@ class SpatialPanelResults(PanelResults):
         self.resid = resid
         self.sigma2 = sigma2
 
+        # Store W matrix and exog_names for prediction on new data
+        if hasattr(model, "W"):
+            self._W = model.W
+        if hasattr(model, "exog") and hasattr(model.exog, "columns"):
+            self.exog_names = list(model.exog.columns)
+        elif hasattr(model, "exog_names"):
+            self.exog_names = list(model.exog_names)
+        else:
+            self.exog_names = None
+
         # Standard errors
         self.bse = pd.Series(np.sqrt(np.diag(cov_params)), index=params.index)
 
@@ -906,6 +922,83 @@ class SpatialPanelResults(PanelResults):
 
         # Compute fit statistics
         self._compute_fit_statistics()
+
+    def predict(self, new_data=None, W=None):
+        """
+        Predict using fitted spatial model.
+
+        Parameters
+        ----------
+        new_data : pd.DataFrame, np.ndarray, or None
+            New data for prediction. If None, returns fitted values from
+            the model's predict method.
+        W : np.ndarray or SpatialWeights, optional
+            Spatial weight matrix for new data. Required for spatial lag
+            models predicting on new data.
+
+        Returns
+        -------
+        np.ndarray
+            Predicted values
+        """
+        if new_data is None:
+            # Use existing model predict
+            return self._model.predict()
+
+        # Convert DataFrame to array if needed
+        if isinstance(new_data, pd.DataFrame):
+            if self.exog_names is not None:
+                missing = [c for c in self.exog_names if c not in new_data.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                X = new_data[self.exog_names].values
+            else:
+                X = new_data.values
+        else:
+            X = new_data
+
+        # For spatial error models, prediction is just X @ beta (no spatial multiplier)
+        if self._model.model_type == "SEM":
+            # Extract beta (skip lambda)
+            if isinstance(self.params, pd.Series):
+                beta = self.params.drop("lambda")
+            else:
+                beta = self.params[1:]
+            return X @ beta.values if hasattr(beta, "values") else X @ beta
+
+        # For spatial lag / durbin models, we need W
+        if W is None:
+            W = getattr(self, "_W", None)
+        if W is None:
+            raise ValueError(
+                "Spatial lag/durbin models require weight matrix W for prediction on new data. "
+                "Pass W as parameter or ensure it was stored during estimation."
+            )
+
+        # Get W as dense array
+        if hasattr(W, "to_dense"):
+            W_dense = W.to_dense()
+        elif hasattr(W, "toarray"):
+            W_dense = W.toarray()
+        else:
+            W_dense = np.asarray(W)
+
+        # Extract rho and beta
+        if isinstance(self.params, pd.Series):
+            _spatial_rho = float(self.params.get("rho", 0.0))
+            beta = self.params.drop("rho")
+            # Also drop variance component params if present
+            for drop_name in ["sigma_alpha2", "sigma_epsilon2"]:
+                if drop_name in beta.index:
+                    beta = beta.drop(drop_name)
+            beta_vals = beta.values
+        else:
+            _spatial_rho = self.params[0]
+            beta_vals = self.params[1:]
+
+        # y = (I - rho*W)^{-1} @ (X @ beta)
+        I = np.eye(W_dense.shape[0])
+        return np.linalg.solve(I - _spatial_rho * W_dense, X @ beta_vals)
 
     @property
     def rho(self):

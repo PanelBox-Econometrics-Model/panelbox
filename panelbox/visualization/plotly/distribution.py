@@ -5,7 +5,10 @@ This module provides charts for visualizing data distributions, including
 histograms, kernel density estimates, violin plots, and box plots.
 """
 
-from typing import Any, Dict, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -13,6 +16,8 @@ from scipy import stats
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("distribution_histogram")
@@ -35,10 +40,10 @@ class HistogramChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create histogram chart."""
         values = np.asarray(data.get("values", []))
-        groups = data.get("groups", None)
+        groups = data.get("groups")
         show_kde = data.get("show_kde", False)
         show_normal = data.get("show_normal", False)
         bins = data.get("bins", "auto")
@@ -93,11 +98,11 @@ class HistogramChart(PlotlyChartBase):
                         y=y_kde,
                         mode="lines",
                         name="KDE",
-                        line=dict(color="red", width=2),
+                        line={"color": "red", "width": 2},
                     )
                 )
-            except Exception:
-                pass  # Skip KDE if it fails
+            except Exception:  # noqa: S110 — KDE may fail for degenerate data
+                pass
 
         # Add normal distribution overlay
         if show_normal:
@@ -112,7 +117,7 @@ class HistogramChart(PlotlyChartBase):
                     y=y_normal,
                     mode="lines",
                     name="Normal",
-                    line=dict(color="green", width=2, dash="dash"),
+                    line={"color": "green", "width": 2, "dash": "dash"},
                 )
             )
 
@@ -129,7 +134,7 @@ class HistogramChart(PlotlyChartBase):
 
         return fig
 
-    def _calculate_bins(self, values: np.ndarray, bins: Union[str, int]) -> int:
+    def _calculate_bins(self, values: np.ndarray, bins: str | int) -> int:
         """Calculate number of bins using Freedman-Diaconis rule or specified number."""
         if isinstance(bins, int):
             return bins
@@ -165,10 +170,10 @@ class KDEChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create KDE chart."""
         values = np.asarray(data.get("values", []))
-        groups = data.get("groups", None)
+        groups = data.get("groups")
         show_rug = data.get("show_rug", True)
         fill = data.get("fill", True)
 
@@ -177,7 +182,7 @@ class KDEChart(PlotlyChartBase):
         if groups is not None:
             # Multiple KDE curves for groups
             unique_groups = np.unique(groups)
-            for i, group in enumerate(unique_groups):
+            for _i, group in enumerate(unique_groups):
                 mask = groups == group
                 group_values = values[mask]
 
@@ -197,7 +202,7 @@ class KDEChart(PlotlyChartBase):
                                 name=str(group),
                                 fill="tozeroy" if fill else None,
                                 opacity=0.6 if fill else 1.0,
-                                line=dict(width=2),
+                                line={"width": 2},
                             )
                         )
 
@@ -209,12 +214,12 @@ class KDEChart(PlotlyChartBase):
                                     y=np.zeros_like(group_values),
                                     mode="markers",
                                     name=f"{group} (rug)",
-                                    marker=dict(symbol="line-ns", size=10, line=dict(width=1)),
+                                    marker={"symbol": "line-ns", "size": 10, "line": {"width": 1}},
                                     showlegend=False,
                                 )
                             )
-                    except Exception:
-                        pass  # Skip if KDE fails
+                    except Exception:  # noqa: S110 — KDE may fail for degenerate data
+                        pass
         else:
             # Single KDE curve
             if len(values) > 1:
@@ -233,7 +238,7 @@ class KDEChart(PlotlyChartBase):
                             name="Density",
                             fill="tozeroy" if fill else None,
                             opacity=0.6 if fill else 1.0,
-                            line=dict(width=3),
+                            line={"width": 3},
                             marker_color=(
                                 self.theme.color_scheme[0]
                                 if self.theme and self.theme.color_scheme
@@ -250,12 +255,12 @@ class KDEChart(PlotlyChartBase):
                                 y=np.zeros_like(values),
                                 mode="markers",
                                 name="Observations",
-                                marker=dict(
-                                    symbol="line-ns",
-                                    size=10,
-                                    color="rgba(0,0,0,0.3)",
-                                    line=dict(width=1),
-                                ),
+                                marker={
+                                    "symbol": "line-ns",
+                                    "size": 10,
+                                    "color": "rgba(0,0,0,0.3)",
+                                    "line": {"width": 1},
+                                },
                             )
                         )
 
@@ -279,8 +284,8 @@ class KDEChart(PlotlyChartBase):
                         annotation_position="bottom",
                     )
 
-                except Exception:
-                    pass  # Skip if KDE fails
+                except Exception:  # noqa: S110 — KDE may fail for degenerate data
+                    pass
 
         # Update layout
         fig.update_layout(
@@ -312,10 +317,10 @@ class ViolinPlotChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create violin plot."""
         values = np.asarray(data.get("values", []))
-        groups = data.get("groups", None)
+        groups = data.get("groups")
         show_box = data.get("show_box", True)
         show_points = data.get("show_points", False)
 
@@ -388,10 +393,10 @@ class BoxPlotChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create box plot."""
         values = np.asarray(data.get("values", []))
-        groups = data.get("groups", None)
+        groups = data.get("groups")
         show_mean = data.get("show_mean", True)
         show_points = data.get("show_points", False)
         orientation = data.get("orientation", "v")  # 'v' or 'h'

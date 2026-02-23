@@ -19,15 +19,19 @@ Wooldridge, J.M. (1995). "Selection Corrections for Panel Data Models Under
     Conditional Mean Independence Assumptions." Journal of Econometrics, 68(1), 115-132.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
-import pandas as pd
 from scipy import stats
 from scipy.optimize import minimize
 
 from panelbox.models.base import NonlinearPanelModel, PanelModelResults
+
+logger = logging.getLogger(__name__)
 
 
 class PanelHeckman(NonlinearPanelModel):
@@ -60,8 +64,8 @@ class PanelHeckman(NonlinearPanelModel):
         exog: np.ndarray,
         selection: np.ndarray,
         exog_selection: np.ndarray,
-        entity: Optional[np.ndarray] = None,
-        time: Optional[np.ndarray] = None,
+        entity: np.ndarray | None = None,
+        time: np.ndarray | None = None,
         method: Literal["two_step", "mle"] = "two_step",
     ):
         # Store entity and time before calling super().__init__
@@ -96,7 +100,8 @@ class PanelHeckman(NonlinearPanelModel):
         if self.exog_selection.shape[1] <= self.exog.shape[1]:
             warnings.warn(
                 "Selection equation should include at least one exclusion restriction "
-                "(variable not in outcome equation) for identification"
+                "(variable not in outcome equation) for identification",
+                stacklevel=2,
             )
 
     def _log_likelihood(self, params: np.ndarray) -> float:
@@ -163,7 +168,7 @@ class PanelHeckman(NonlinearPanelModel):
         else:
             return exog @ beta
 
-    def fit(self, method: Optional[str] = None, **kwargs) -> "PanelHeckmanResult":
+    def fit(self, method: str | None = None, **kwargs) -> PanelHeckmanResult:
         """
         Estimate Heckman model.
 
@@ -189,7 +194,7 @@ class PanelHeckman(NonlinearPanelModel):
         else:
             raise ValueError(f"Unknown method: {method}")
 
-    def _two_step_estimation(self) -> "PanelHeckmanResult":
+    def _two_step_estimation(self) -> PanelHeckmanResult:
         """
         Two-step Heckman procedure.
 
@@ -200,6 +205,7 @@ class PanelHeckman(NonlinearPanelModel):
         from scipy.optimize import minimize
 
         def probit_llf(params):
+            """Compute the probit log-likelihood function."""
             linear_pred = self.exog_selection @ params
             prob = stats.norm.cdf(linear_pred)
             prob = np.clip(prob, 1e-10, 1 - 1e-10)
@@ -257,10 +263,8 @@ class PanelHeckman(NonlinearPanelModel):
             lambda_imr=lambda_imr,
         )
 
-    def _mle_estimation(self, **kwargs) -> "PanelHeckmanResult":
-        """
-        Full information maximum likelihood estimation.
-        """
+    def _mle_estimation(self, **kwargs) -> PanelHeckmanResult:
+        """Full information maximum likelihood estimation."""
         # Initial values from two-step
         two_step = self._two_step_estimation()
 
@@ -283,7 +287,7 @@ class PanelHeckman(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"MLE did not converge: {result.message}")
+            warnings.warn(f"MLE did not converge: {result.message}", stacklevel=2)
 
         # Extract parameters
         params = result.x
@@ -323,7 +327,7 @@ class PanelHeckmanResult(PanelModelResults):
         sigma: float,
         rho: float,
         lambda_imr: np.ndarray,
-        llf: Optional[float] = None,
+        llf: float | None = None,
         converged: bool = True,
     ):
         self.model = model
@@ -391,8 +395,8 @@ class PanelHeckmanResult(PanelModelResults):
 
     def predict(
         self,
-        exog: Optional[np.ndarray] = None,
-        exog_selection: Optional[np.ndarray] = None,
+        exog: np.ndarray | None = None,
+        exog_selection: np.ndarray | None = None,
         type: Literal["unconditional", "conditional"] = "unconditional",
     ) -> np.ndarray:
         """
@@ -429,7 +433,7 @@ class PanelHeckmanResult(PanelModelResults):
 
         return y_pred
 
-    def selection_test(self) -> Dict[str, float]:
+    def selection_test(self) -> dict[str, float]:
         """
         Test for presence of selection bias.
 

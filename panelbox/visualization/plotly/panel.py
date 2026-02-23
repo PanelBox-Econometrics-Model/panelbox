@@ -6,7 +6,10 @@ including entity effects, time effects, between-within variance decomposition,
 and panel structure analysis.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -15,14 +18,16 @@ import plotly.graph_objects as go
 from ..base import PlotlyChartBase
 from ..registry import register_chart
 
+logger = logging.getLogger(__name__)
+
 
 def _get_font_config(theme, size_modifier=0):
     """Helper to extract font configuration from theme."""
-    return dict(
-        family=theme.font_config.get("family", "Arial"),
-        size=theme.font_config.get("size", 12) + size_modifier,
-        color=theme.font_config.get("color", "#2c3e50"),
-    )
+    return {
+        "family": theme.font_config.get("family", "Arial"),
+        "size": theme.font_config.get("size", 12) + size_modifier,
+        "color": theme.font_config.get("color", "#2c3e50"),
+    }
 
 
 @register_chart("panel_entity_effects")
@@ -47,21 +52,18 @@ class EntityEffectsPlot(PlotlyChartBase):
     --------
     >>> from panelbox.visualization import ChartFactory
     >>> data = {
-    ...     'entity_id': ['Firm_A', 'Firm_B', 'Firm_C'],
-    ...     'effect': [0.5, -0.3, 0.8],
-    ...     'std_error': [0.1, 0.15, 0.12]
+    ...     "entity_id": ["Firm_A", "Firm_B", "Firm_C"],
+    ...     "effect": [0.5, -0.3, 0.8],
+    ...     "std_error": [0.1, 0.15, 0.12],
     ... }
-    >>> chart = ChartFactory.create('panel_entity_effects', data=data)
+    >>> chart = ChartFactory.create("panel_entity_effects", data=data)
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create entity effects visualization."""
         # Extract data
-        if isinstance(data, dict):
-            transformed_data = data
-        else:
-            transformed_data = self._prepare_data()
+        transformed_data = data if isinstance(data, dict) else self._prepare_data()
 
         entity_ids = transformed_data["entity_id"]
         effects = transformed_data["effect"]
@@ -119,14 +121,14 @@ class EntityEffectsPlot(PlotlyChartBase):
 
         # Add error bars if available
         if show_confidence and std_errors is not None:
-            error_x = dict(
-                type="data",
-                symmetric=False,
-                array=df["ci_upper"] - df["effect"],
-                arrayminus=df["effect"] - df["ci_lower"],
-                color="rgba(0,0,0,0.3)",
-                thickness=1.5,
-            )
+            error_x = {
+                "type": "data",
+                "symmetric": False,
+                "array": df["ci_upper"] - df["effect"],
+                "arrayminus": df["effect"] - df["ci_lower"],
+                "color": "rgba(0,0,0,0.3)",
+                "thickness": 1.5,
+            }
         else:
             error_x = None
 
@@ -136,7 +138,7 @@ class EntityEffectsPlot(PlotlyChartBase):
                 y=df["entity_id"],
                 x=df["effect"],
                 orientation="h",
-                marker=dict(color=colors, line=dict(color="rgba(0,0,0,0.3)", width=1)),
+                marker={"color": colors, "line": {"color": "rgba(0,0,0,0.3)", "width": 1}},
                 error_x=error_x,
                 text=[f"{e:.3f}" for e in df["effect"]],
                 textposition="auto",
@@ -157,7 +159,7 @@ class EntityEffectsPlot(PlotlyChartBase):
         # Update layout
         title = self.config.get("title", "Entity Fixed Effects")
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             xaxis_title="Effect Size",
             yaxis_title="Entity",
             showlegend=False,
@@ -168,7 +170,7 @@ class EntityEffectsPlot(PlotlyChartBase):
 
         return fig
 
-    def _prepare_data(self) -> Dict[str, Any]:
+    def _prepare_data(self) -> dict[str, Any]:
         """Prepare data for plotting."""
         if isinstance(self.data, dict):
             # Already in correct format
@@ -206,21 +208,18 @@ class TimeEffectsPlot(PlotlyChartBase):
     Examples
     --------
     >>> data = {
-    ...     'time': [2000, 2001, 2002, 2003],
-    ...     'effect': [0.1, 0.3, -0.2, 0.5],
-    ...     'std_error': [0.05, 0.06, 0.04, 0.07]
+    ...     "time": [2000, 2001, 2002, 2003],
+    ...     "effect": [0.1, 0.3, -0.2, 0.5],
+    ...     "std_error": [0.05, 0.06, 0.04, 0.07],
     ... }
-    >>> chart = ChartFactory.create('panel_time_effects', data=data)
+    >>> chart = ChartFactory.create("panel_time_effects", data=data)
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create time effects visualization."""
         # Extract data
-        if isinstance(data, dict):
-            transformed_data = data
-        else:
-            transformed_data = self._prepare_data()
+        transformed_data = data if isinstance(data, dict) else self._prepare_data()
 
         time_periods = transformed_data["time"]
         effects = transformed_data["effect"]
@@ -264,8 +263,8 @@ class TimeEffectsPlot(PlotlyChartBase):
                     y=list(df["ci_upper"]) + list(df["ci_lower"][::-1]),
                     fill="toself",
                     fillcolor="rgba(100, 100, 100, 0.2)",
-                    line=dict(color="rgba(255,255,255,0)"),
-                    name=f"{int((1-significance_level)*100)}% CI",
+                    line={"color": "rgba(255,255,255,0)"},
+                    name=f"{int((1 - significance_level) * 100)}% CI",
                     hoverinfo="skip",
                     showlegend=True,
                 )
@@ -278,8 +277,8 @@ class TimeEffectsPlot(PlotlyChartBase):
                 y=df["effect"],
                 mode="lines+markers",
                 name="Time Effect",
-                line=dict(color=self.theme.get_color(0), width=3),  # Primary color
-                marker=dict(size=8, color=self.theme.get_color(0)),
+                line={"color": self.theme.get_color(0), "width": 3},  # Primary color
+                marker={"size": 8, "color": self.theme.get_color(0)},
                 hovertemplate=(
                     "<b>Time: %{x}</b><br>" + "Effect: %{y:.4f}<br>" + "<extra></extra>"
                 ),
@@ -305,12 +304,12 @@ class TimeEffectsPlot(PlotlyChartBase):
                         x=significant_periods["time"],
                         y=significant_periods["effect"],
                         mode="markers",
-                        marker=dict(
-                            size=12,
-                            color=self.theme.warning_color,
-                            symbol="star",
-                            line=dict(color="white", width=1),
-                        ),
+                        marker={
+                            "size": 12,
+                            "color": self.theme.warning_color,
+                            "symbol": "star",
+                            "line": {"color": "white", "width": 1},
+                        },
                         name="Significant",
                         hoverinfo="skip",
                         showlegend=True,
@@ -320,7 +319,7 @@ class TimeEffectsPlot(PlotlyChartBase):
         # Update layout
         title = self.config.get("title", "Time Fixed Effects")
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             xaxis_title="Time Period",
             yaxis_title="Effect Size",
             hovermode="x unified",
@@ -329,7 +328,7 @@ class TimeEffectsPlot(PlotlyChartBase):
 
         return fig
 
-    def _prepare_data(self) -> Dict[str, Any]:
+    def _prepare_data(self) -> dict[str, Any]:
         """Prepare data for plotting."""
         if isinstance(self.data, dict):
             return self.data
@@ -368,21 +367,18 @@ class BetweenWithinPlot(PlotlyChartBase):
     Examples
     --------
     >>> data = {
-    ...     'variables': ['wage', 'education', 'experience'],
-    ...     'between_var': [10.5, 5.2, 8.3],
-    ...     'within_var': [3.2, 1.8, 2.1]
+    ...     "variables": ["wage", "education", "experience"],
+    ...     "between_var": [10.5, 5.2, 8.3],
+    ...     "within_var": [3.2, 1.8, 2.1],
     ... }
-    >>> chart = ChartFactory.create('panel_between_within', data=data)
+    >>> chart = ChartFactory.create("panel_between_within", data=data)
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create between-within variance decomposition chart."""
         # Extract data
-        if isinstance(data, dict):
-            transformed_data = data
-        else:
-            transformed_data = self._prepare_data()
+        transformed_data = data if isinstance(data, dict) else self._prepare_data()
 
         variables = transformed_data["variables"]
         between_var = np.array(transformed_data["between_var"])
@@ -416,7 +412,7 @@ class BetweenWithinPlot(PlotlyChartBase):
 
         # Update layout
         title = self.config.get("title", "Between-Within Variance Decomposition")
-        fig.update_layout(title=dict(text=title, font=_get_font_config(self.theme, 4)))
+        fig.update_layout(title={"text": title, "font": _get_font_config(self.theme, 4)})
         fig.update_layout(**self.theme.layout_config)
 
         return fig
@@ -507,11 +503,11 @@ class BetweenWithinPlot(PlotlyChartBase):
                 x=between_var,
                 y=within_var,
                 mode="markers+text",
-                marker=dict(
-                    size=15,
-                    color=self.theme.get_color(0),  # Primary
-                    line=dict(color="white", width=2),
-                ),
+                marker={
+                    "size": 15,
+                    "color": self.theme.get_color(0),  # Primary
+                    "line": {"color": "white", "width": 2},
+                },
                 text=variables,
                 textposition="top center",
                 hovertemplate=(
@@ -530,7 +526,7 @@ class BetweenWithinPlot(PlotlyChartBase):
                 x=[0, max_val],
                 y=[0, max_val],
                 mode="lines",
-                line=dict(color="rgba(0,0,0,0.3)", dash="dash"),
+                line={"color": "rgba(0,0,0,0.3)", "dash": "dash"},
                 name="Equal Variance",
                 showlegend=True,
             )
@@ -540,7 +536,7 @@ class BetweenWithinPlot(PlotlyChartBase):
 
         return fig
 
-    def _prepare_data(self) -> Dict[str, Any]:
+    def _prepare_data(self) -> dict[str, Any]:
         """Prepare data for plotting."""
         if isinstance(self.data, dict):
             return self.data
@@ -573,21 +569,18 @@ class PanelStructurePlot(PlotlyChartBase):
     Examples
     --------
     >>> data = {
-    ...     'entities': ['A', 'B', 'C'],
-    ...     'time_periods': [2000, 2001, 2002],
-    ...     'presence_matrix': [[1, 1, 1], [1, 1, 0], [1, 0, 0]]
+    ...     "entities": ["A", "B", "C"],
+    ...     "time_periods": [2000, 2001, 2002],
+    ...     "presence_matrix": [[1, 1, 1], [1, 1, 0], [1, 0, 0]],
     ... }
-    >>> chart = ChartFactory.create('panel_structure', data=data)
+    >>> chart = ChartFactory.create("panel_structure", data=data)
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create panel structure visualization."""
         # Extract data
-        if isinstance(data, dict):
-            transformed_data = data
-        else:
-            transformed_data = self._prepare_data()
+        transformed_data = data if isinstance(data, dict) else self._prepare_data()
 
         entities = transformed_data["entities"]
         time_periods = transformed_data["time_periods"]
@@ -629,9 +622,11 @@ class PanelStructurePlot(PlotlyChartBase):
                     + "Status: %{z}<br>"
                     + "<extra></extra>"
                 ),
-                colorbar=dict(
-                    title="Observation", tickvals=[0, 1], ticktext=["Missing", "Present"]
-                ),
+                colorbar={
+                    "title": "Observation",
+                    "tickvals": [0, 1],
+                    "ticktext": ["Missing", "Present"],
+                },
             )
         )
 
@@ -647,25 +642,25 @@ class PanelStructurePlot(PlotlyChartBase):
             )
 
             annotations.append(
-                dict(
-                    text=stats_text,
-                    xref="paper",
-                    yref="paper",
-                    x=1.15,
-                    y=0.5,
-                    showarrow=False,
-                    align="left",
-                    font=dict(size=10),
-                    bgcolor="rgba(255,255,255,0.8)",
-                    bordercolor="#ddd",
-                    borderwidth=1,
-                )
+                {
+                    "text": stats_text,
+                    "xref": "paper",
+                    "yref": "paper",
+                    "x": 1.15,
+                    "y": 0.5,
+                    "showarrow": False,
+                    "align": "left",
+                    "font": {"size": 10},
+                    "bgcolor": "rgba(255,255,255,0.8)",
+                    "bordercolor": "#ddd",
+                    "borderwidth": 1,
+                }
             )
 
         # Update layout
         title = self.config.get("title", "Panel Data Structure")
         fig.update_layout(
-            title=dict(text=title, font=_get_font_config(self.theme, 4)),
+            title={"text": title, "font": _get_font_config(self.theme, 4)},
             xaxis_title="Time Period",
             yaxis_title="Entity",
             annotations=annotations,
@@ -674,7 +669,7 @@ class PanelStructurePlot(PlotlyChartBase):
 
         return fig
 
-    def _prepare_data(self) -> Dict[str, Any]:
+    def _prepare_data(self) -> dict[str, Any]:
         """Prepare data for plotting."""
         if isinstance(self.data, dict):
             return self.data

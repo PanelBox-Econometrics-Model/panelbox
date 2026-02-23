@@ -6,7 +6,10 @@ endogenous regressors. Supports Pooled, Fixed Effects, and Random Effects
 specifications with instrumental variables.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -20,6 +23,8 @@ from panelbox.standard_errors import (
     twoway_cluster,
 )
 from panelbox.utils.matrix_ops import compute_rsquared
+
+logger = logging.getLogger(__name__)
 
 
 class PanelIV(PanelModel):
@@ -68,20 +73,13 @@ class PanelIV(PanelModel):
     >>> data = pb.load_grunfeld()
     >>>
     >>> # Pooled IV: invest is endogenous, use lagged value as instrument
-    >>> iv = pb.PanelIV(
-    ...     "invest ~ capital + value | capital + lag_value",
-    ...     data, "firm", "year"
-    ... )
-    >>> results = iv.fit(cov_type='robust')
+    >>> iv = pb.PanelIV("invest ~ capital + value | capital + lag_value", data, "firm", "year")
+    >>> results = iv.fit(cov_type="robust")
     >>> print(results.summary())
     >>>
     >>> # Fixed Effects IV
-    >>> iv_fe = pb.PanelIV(
-    ...     "y ~ x1 + endog | x1 + z1 + z2",
-    ...     data, "firm", "year",
-    ...     model_type='fe'
-    ... )
-    >>> results = iv_fe.fit(cov_type='clustered')
+    >>> iv_fe = pb.PanelIV("y ~ x1 + endog | x1 + z1 + z2", data, "firm", "year", model_type="fe")
+    >>> results = iv_fe.fit(cov_type="clustered")
 
     Notes
     -----
@@ -105,12 +103,12 @@ class PanelIV(PanelModel):
         entity_col: str,
         time_col: str,
         model_type: str = "pooled",
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         # Parse IV formula
         if "|" not in formula:
             raise ValueError(
-                "IV formula must contain '|' separator. " "Format: 'y ~ exog + endog | instruments'"
+                "IV formula must contain '|' separator. Format: 'y ~ exog + endog | instruments'"
             )
 
         # Split formula into main and instruments parts
@@ -157,7 +155,7 @@ class PanelIV(PanelModel):
             return self.data.data
         return self.data
 
-    def _parse_instruments(self) -> List[str]:
+    def _parse_instruments(self) -> list[str]:
         """Parse instrument variables from formula."""
         # Remove whitespace and split by +
         instruments_str = self.instruments_formula.replace(" ", "")
@@ -173,7 +171,7 @@ class PanelIV(PanelModel):
 
         return instruments
 
-    def _identify_endogenous_and_exogenous(self) -> Tuple[List[str], List[str]]:
+    def _identify_endogenous_and_exogenous(self) -> tuple[list[str], list[str]]:
         """
         Identify which regressors are endogenous and which are exogenous.
 
@@ -234,7 +232,7 @@ class PanelIV(PanelModel):
 
         return X_transformed
 
-    def _first_stage(self, endogenous_vars: List[str], exogenous_vars: List[str]) -> Dict[str, Any]:
+    def _first_stage(self, endogenous_vars: list[str], exogenous_vars: list[str]) -> dict[str, Any]:
         """
         Run first stage regressions.
 
@@ -278,7 +276,7 @@ class PanelIV(PanelModel):
                 endog_data = self._apply_within_transformation(endog_data.reshape(-1, 1)).ravel()
 
             # OLS: endog = Z * gamma + error
-            gamma, residuals, rank, s = np.linalg.lstsq(Z, endog_data, rcond=None)
+            gamma, _residuals, _rank, _s = np.linalg.lstsq(Z, endog_data, rcond=None)
 
             # Fitted values
             fitted = Z @ gamma
@@ -295,10 +293,7 @@ class PanelIV(PanelModel):
             r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
             # F-statistic (if well-defined)
-            if k > 1 and r2 < 1:
-                f_stat = (r2 / (1 - r2)) * ((n - k) / (k - 1))
-            else:
-                f_stat = np.nan
+            f_stat = r2 / (1 - r2) * ((n - k) / (k - 1)) if k > 1 and r2 < 1 else np.nan
 
             first_stage_results[endog_var] = {
                 "fitted": fitted,
@@ -312,10 +307,10 @@ class PanelIV(PanelModel):
 
     def _second_stage(
         self,
-        endogenous_vars: List[str],
-        exogenous_vars: List[str],
-        first_stage_fitted: Dict[str, np.ndarray],
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        endogenous_vars: list[str],
+        exogenous_vars: list[str],
+        first_stage_fitted: dict[str, np.ndarray],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Run second stage regression.
 
@@ -365,7 +360,7 @@ class PanelIV(PanelModel):
             y = self._apply_within_transformation(y.reshape(-1, 1)).ravel()
 
         # Second stage OLS: y = X * beta + u
-        params, residuals_lstsq, rank, s = np.linalg.lstsq(X, y, rcond=None)
+        params, _residuals_lstsq, _rank, _s = np.linalg.lstsq(X, y, rcond=None)
 
         # Compute residuals and fitted values
         fittedvalues = X @ params
@@ -416,6 +411,7 @@ class PanelIV(PanelModel):
                     f"First-stage F-statistic = {f_stat:.2f} (< 10). "
                     f"Inference may be unreliable.",
                     UserWarning,
+                    stacklevel=2,
                 )
 
         # Extract fitted values for second stage
@@ -501,6 +497,7 @@ class PanelIV(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
 
         # Add first stage results to results object
@@ -580,7 +577,7 @@ class PanelIV(PanelModel):
             df = self._get_dataframe()
             entity_index = df[self.data.entity_col].values
             time_index = df[self.data.time_col].values
-            maxlags = cov_kwds.get("maxlags", None)
+            maxlags = cov_kwds.get("maxlags")
             cov_params = driscoll_kraay(X, residuals, entity_index, time_index, max_lags=maxlags)
 
         else:

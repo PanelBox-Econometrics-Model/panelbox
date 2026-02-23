@@ -1,8 +1,7 @@
-# tests/var/test_causality_validation.py
+from __future__ import annotations
 
+# tests/var/test_causality_validation.py
 import numpy as np
-import pandas as pd
-import pytest
 
 from panelbox.var.causality import dumitrescu_hurlin_test
 
@@ -11,9 +10,7 @@ class TestDumitrescuHurlinValidation:
     """Validação Dumitrescu-Hurlin (2012) contra propriedades teóricas."""
 
     def test_dh_statistics_finite(self, panel_data):
-        """
-        Estatísticas DH devem ser finitas e bem definidas.
-        """
+        """Estatísticas DH devem ser finitas e bem definidas."""
         # Testar y1 -> y2
         result = dumitrescu_hurlin_test(
             data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
@@ -76,9 +73,7 @@ class TestDumitrescuHurlinValidation:
         assert result_y3_y1.W_bar < 10, "DH test detects spurious causality y3 -> y1"
 
     def test_dh_with_multiple_lags(self, panel_data):
-        """
-        DH deve funcionar com múltiplos lags.
-        """
+        """DH deve funcionar com múltiplos lags."""
         for lags in [1, 2, 3]:
             result = dumitrescu_hurlin_test(
                 data=panel_data,
@@ -94,9 +89,7 @@ class TestDumitrescuHurlinValidation:
             assert np.isfinite(result.Z_bar_stat)
 
     def test_dh_consistency_across_samples(self):
-        """
-        DH deve dar resultados consistentes com amostras maiores.
-        """
+        """DH deve dar resultados consistentes com amostras maiores."""
         from panelbox.tests.var.fixtures.var_test_data import generate_panel_var_data
 
         # Amostra pequena
@@ -112,9 +105,9 @@ class TestDumitrescuHurlinValidation:
         )
 
         # Amostra maior deve ter mais poder (p-value menor)
-        assert (
-            result_large.Z_bar_pvalue <= result_small.Z_bar_pvalue
-        ), "Larger sample should have more power to detect causality"
+        assert result_large.Z_bar_pvalue <= result_small.Z_bar_pvalue, (
+            "Larger sample should have more power to detect causality"
+        )
 
     def test_dh_ztilde_vs_zbar(self, panel_data):
         """
@@ -134,9 +127,7 @@ class TestDumitrescuHurlinValidation:
         # Nota: Isso depende da implementação exata
 
     def test_dh_individual_statistics(self, panel_data):
-        """
-        Verificar estatísticas individuais de cada entidade.
-        """
+        """Verificar estatísticas individuais de cada entidade."""
         result = dumitrescu_hurlin_test(
             data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
         )
@@ -151,9 +142,7 @@ class TestLagSelectionValidation:
     """Validação de seleção de lags via AIC/BIC/HQIC."""
 
     def test_aic_bic_selection(self, panel_data):
-        """
-        AIC/BIC devem selecionar lag correto para DGP VAR(1).
-        """
+        """AIC/BIC devem selecionar lag correto para DGP VAR(1)."""
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
@@ -169,15 +158,15 @@ class TestLagSelectionValidation:
 
         # DGP é VAR(1), então BIC deve selecionar 1
         # AIC pode selecionar mais devido ao tradeoff bias-variance
-        assert (
-            lag_result.selected["BIC"] == 1
-        ), f"BIC selected lag={lag_result.selected['BIC']}, expected 1"
-        assert (
-            lag_result.selected["AIC"] <= 3
-        ), f"AIC selected lag={lag_result.selected['AIC']}, expected <=3"
-        assert (
-            lag_result.selected["HQIC"] <= 3
-        ), f"HQIC selected lag={lag_result.selected['HQIC']}, expected <=3"
+        assert lag_result.selected["BIC"] == 1, (
+            f"BIC selected lag={lag_result.selected['BIC']}, expected 1"
+        )
+        assert lag_result.selected["AIC"] <= 3, (
+            f"AIC selected lag={lag_result.selected['AIC']}, expected <=3"
+        )
+        assert lag_result.selected["HQIC"] <= 3, (
+            f"HQIC selected lag={lag_result.selected['HQIC']}, expected <=3"
+        )
 
     def test_bic_consistency(self, panel_data):
         """
@@ -195,14 +184,12 @@ class TestLagSelectionValidation:
         lag_result = model.select_lag_order(max_lags=5)
 
         # BIC deve selecionar 1 (ordem verdadeira)
-        assert (
-            lag_result.selected["BIC"] == 1
-        ), f"BIC should select true lag order 1, got {lag_result.selected['BIC']}"
+        assert lag_result.selected["BIC"] == 1, (
+            f"BIC should select true lag order 1, got {lag_result.selected['BIC']}"
+        )
 
     def test_aic_values_monotonic_or_unimodal(self, panel_data):
-        """
-        AIC deve ter comportamento monotônico ou unimodal.
-        """
+        """AIC deve ter comportamento monotônico ou unimodal."""
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
@@ -223,9 +210,7 @@ class TestLagSelectionValidation:
         assert np.isfinite(min_aic)
 
     def test_ic_with_different_sample_sizes(self):
-        """
-        Critérios de informação devem funcionar com diferentes tamanhos.
-        """
+        """Critérios de informação devem funcionar com diferentes tamanhos."""
         from panelbox.tests.var.fixtures.var_test_data import generate_panel_var_data
         from panelbox.var import PanelVAR, PanelVARData
 
@@ -244,9 +229,7 @@ class TestLagSelectionValidation:
             assert lag_result.selected["BIC"] > 0
 
     def test_ic_all_criteria_available(self, panel_data):
-        """
-        Todos os critérios de informação devem ser calculados.
-        """
+        """Todos os critérios de informação devem ser calculados."""
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
@@ -274,9 +257,7 @@ class TestPanelGrangerCausality:
     """Testes de causalidade de Granger para painel."""
 
     def test_pairwise_causality(self, panel_data):
-        """
-        Testar causalidade par a par entre todas as variáveis.
-        """
+        """Testar causalidade par a par entre todas as variáveis."""
         from panelbox.var.causality import panel_granger_causality
 
         result = panel_granger_causality(
@@ -297,9 +278,7 @@ class TestPanelGrangerCausality:
             assert len(result[var]) > 0
 
     def test_causality_matrix(self, panel_data):
-        """
-        Criar matriz de causalidade (p-values).
-        """
+        """Criar matriz de causalidade (p-values)."""
         from panelbox.var.causality import panel_granger_causality_matrix
 
         matrix = panel_granger_causality_matrix(
@@ -346,13 +325,14 @@ class TestPanelGrangerCausality:
 
     def test_no_instantaneous_causality(self, panel_data):
         """
-        Teste de causalidade não deve detectar correlação instantânea
-        (apenas lagged causality).
+        Teste de causalidade nao deve detectar correlacao instantanea.
+
+        Apenas lagged causality.
         """
         from panelbox.var.causality import dumitrescu_hurlin_test
 
         # Criar dados com correlação instantânea mas sem causalidade lagged
-        data_inst = panel_data.copy()
+        panel_data.copy()
         # Modificar para remover causalidade lagged
         # (isso requer manipulação específica dos dados)
 
@@ -368,9 +348,7 @@ class TestCausalityRobustness:
     """Testes de robustez para análise de causalidade."""
 
     def test_dh_with_unbalanced_panel(self):
-        """
-        DH deve funcionar com painel desbalanceado.
-        """
+        """DH deve funcionar com painel desbalanceado."""
         from panelbox.tests.var.fixtures.var_test_data import generate_panel_var_data
         from panelbox.var.causality import dumitrescu_hurlin_test
 
@@ -394,9 +372,7 @@ class TestCausalityRobustness:
         assert np.isfinite(result.Z_bar_stat)
 
     def test_lag_selection_stability(self):
-        """
-        Seleção de lags deve ser estável em diferentes rodadas.
-        """
+        """Seleção de lags deve ser estável em diferentes rodadas."""
         from panelbox.tests.var.fixtures.var_test_data import generate_panel_var_data
         from panelbox.var import PanelVAR, PanelVARData
 
@@ -415,13 +391,11 @@ class TestCausalityRobustness:
         # A maioria deve selecionar o mesmo lag
         from collections import Counter
 
-        most_common_lag, count = Counter(selected_lags).most_common(1)[0]
+        _most_common_lag, count = Counter(selected_lags).most_common(1)[0]
         assert count >= 2, f"Lag selection unstable: {selected_lags}"
 
     def test_causality_with_heterogeneous_effects(self):
-        """
-        Teste de causalidade com efeitos heterogêneos entre entidades.
-        """
+        """Teste de causalidade com efeitos heterogêneos entre entidades."""
         # Gerar dados com efeitos heterogêneos
         # (alguns grupos têm causalidade, outros não)
         # Isso requer geração customizada de dados

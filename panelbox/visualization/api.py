@@ -5,20 +5,25 @@ This module provides convenient functions for creating common chart combinations
 without needing to work directly with the factory or registry.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .factory import ChartFactory
 from .themes import Theme, get_theme
 
+logger = logging.getLogger(__name__)
+
 
 def create_validation_charts(
-    validation_data: Union[Dict, Any],
-    theme: Union[str, Theme, None] = "professional",
+    validation_data: dict | Any,
+    theme: str | Theme | None = "professional",
     interactive: bool = True,
-    charts: Optional[List[str]] = None,
+    charts: list[str] | None = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create validation charts from ValidationReport or dict.
 
@@ -71,28 +76,21 @@ def create_validation_charts(
     >>> # After running validation tests
     >>> validation_report = ValidationReport(...)
     >>>
-    >>> charts = create_validation_charts(
-    ...     validation_report,
-    ...     theme='professional'
-    ... )
+    >>> charts = create_validation_charts(validation_report, theme="professional")
     >>>
     >>> # Use in template
-    >>> overview_html = charts['test_overview'].to_html()
+    >>> overview_html = charts["test_overview"].to_html()
 
     Create specific charts only:
 
     >>> charts = create_validation_charts(
-    ...     validation_report,
-    ...     theme='academic',
-    ...     charts=['test_overview', 'pvalue_distribution']
+    ...     validation_report, theme="academic", charts=["test_overview", "pvalue_distribution"]
     ... )
 
     Get HTML strings directly:
 
     >>> html_charts = create_validation_charts(
-    ...     validation_report,
-    ...     theme='presentation',
-    ...     include_html=True
+    ...     validation_report, theme="presentation", include_html=True
     ... )
     >>> # html_charts['test_overview'] is already HTML string
     """
@@ -180,7 +178,7 @@ def create_validation_charts(
     return result_charts
 
 
-def _prepare_test_overview_data(validation_data: Dict) -> Dict:
+def _prepare_test_overview_data(validation_data: dict) -> dict:
     """Prepare data for test overview chart."""
     # Group tests by category
     categories = {}
@@ -201,7 +199,7 @@ def _prepare_test_overview_data(validation_data: Dict) -> Dict:
     }
 
 
-def _prepare_pvalue_distribution_data(validation_data: Dict, alpha: float) -> Dict:
+def _prepare_pvalue_distribution_data(validation_data: dict, alpha: float) -> dict:
     """Prepare data for p-value distribution chart."""
     tests = validation_data.get("tests", [])
 
@@ -212,7 +210,7 @@ def _prepare_pvalue_distribution_data(validation_data: Dict, alpha: float) -> Di
     }
 
 
-def _prepare_test_statistics_data(validation_data: Dict) -> Dict:
+def _prepare_test_statistics_data(validation_data: dict) -> dict:
     """Prepare data for test statistics chart."""
     tests = validation_data.get("tests", [])
 
@@ -224,7 +222,7 @@ def _prepare_test_statistics_data(validation_data: Dict) -> Dict:
     }
 
 
-def _prepare_comparison_heatmap_data(validation_data: Dict) -> Dict:
+def _prepare_comparison_heatmap_data(validation_data: dict) -> dict:
     """Prepare data for comparison heatmap."""
     models = validation_data.get("models", [])
     tests = validation_data.get("test_names", [])
@@ -233,7 +231,7 @@ def _prepare_comparison_heatmap_data(validation_data: Dict) -> Dict:
     return {"models": models, "tests": tests, "matrix": matrix}
 
 
-def _prepare_dashboard_data(validation_data: Dict, alpha: float) -> Dict:
+def _prepare_dashboard_data(validation_data: dict, alpha: float) -> dict:
     """Prepare data for validation dashboard."""
     return {
         "overview": _prepare_test_overview_data(validation_data),
@@ -257,10 +255,10 @@ def _prepare_dashboard_data(validation_data: Dict, alpha: float) -> Dict:
 
 def create_residual_diagnostics(
     results: Any,
-    theme: Union[str, Theme, None] = "professional",
-    charts: Optional[List[str]] = None,
+    theme: str | Theme | None = "professional",
+    charts: list[str] | None = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create residual diagnostic plots.
 
@@ -298,13 +296,10 @@ def create_residual_diagnostics(
     >>> model = FixedEffects(...)
     >>> results = model.fit()
     >>>
-    >>> diagnostics = create_residual_diagnostics(
-    ...     results,
-    ...     theme='academic'
-    ... )
+    >>> diagnostics = create_residual_diagnostics(results, theme="academic")
     >>>
     >>> # Export individual plots
-    >>> diagnostics['qq_plot'].to_image('qq_plot.png', width=1200, height=900)
+    >>> diagnostics["qq_plot"].to_image("qq_plot.png", width=1200, height=900)
     """
     # Import here to avoid circular imports
     from .transformers.residuals import ResidualDataTransformer
@@ -400,18 +395,18 @@ def create_residual_diagnostics(
             # Log error but continue with other charts
             import warnings
 
-            warnings.warn(f"Failed to create {chart_name}: {str(e)}")
+            warnings.warn(f"Failed to create {chart_name}: {e!s}", stacklevel=2)
 
     return result_charts
 
 
 def create_comparison_charts(
-    results_list: List[Any],
-    names: Optional[List[str]] = None,
-    theme: Union[str, Theme, None] = "professional",
-    charts: Optional[List[str]] = None,
+    results_list: list[Any],
+    names: list[str] | None = None,
+    theme: str | Theme | None = "professional",
+    charts: list[str] | None = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create model comparison charts.
 
@@ -448,8 +443,8 @@ def create_comparison_charts(
     >>>
     >>> comparisons = create_comparison_charts(
     ...     [fe_results, re_results],
-    ...     names=['Fixed Effects', 'Random Effects'],
-    ...     theme='presentation'
+    ...     names=["Fixed Effects", "Random Effects"],
+    ...     theme="presentation",
     ... )
     """
     from .factory import ChartFactory
@@ -495,7 +490,7 @@ def create_comparison_charts(
                         chart.to_html() if kwargs.get("include_html") else chart
                     )
                 else:
-                    warnings.warn("Forest plot requires single model. Skipping.")
+                    warnings.warn("Forest plot requires single model. Skipping.", stacklevel=2)
 
             elif chart_name == "fit_comparison":
                 # Model fit comparison
@@ -516,24 +511,24 @@ def create_comparison_charts(
                 )
 
             else:
-                warnings.warn(f"Unknown chart type: {chart_name}")
+                warnings.warn(f"Unknown chart type: {chart_name}", stacklevel=2)
 
         except Exception as e:
-            warnings.warn(f"Failed to create {chart_name}: {str(e)}")
+            warnings.warn(f"Failed to create {chart_name}: {e!s}", stacklevel=2)
 
     return result_charts
 
 
 def export_charts(
-    charts: Dict[str, Any],
+    charts: dict[str, Any],
     output_dir: str,
     format: str = "png",
     prefix: str = "",
-    width: Optional[int] = None,
-    height: Optional[int] = None,
+    width: int | None = None,
+    height: int | None = None,
     scale: float = 1.0,
     **kwargs,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Batch export multiple charts to image files.
 
@@ -577,19 +572,12 @@ def export_charts(
     >>>
     >>> # Export all as PNG
     >>> paths = export_charts(
-    ...     charts,
-    ...     output_dir='output/charts',
-    ...     format='png',
-    ...     width=1200,
-    ...     height=800
+    ...     charts, output_dir="output/charts", format="png", width=1200, height=800
     ... )
     >>>
     >>> # Export with prefix
     >>> paths = export_charts(
-    ...     charts,
-    ...     output_dir='output/charts',
-    ...     format='pdf',
-    ...     prefix='validation_'
+    ...     charts, output_dir="output/charts", format="pdf", prefix="validation_"
     ... )
     >>>
     >>> print(paths)
@@ -604,13 +592,14 @@ def export_charts(
 
     for chart_name, chart in charts.items():
         if chart is None:
-            warnings.warn(f"Chart '{chart_name}' is None, skipping export")
+            warnings.warn(f"Chart '{chart_name}' is None, skipping export", stacklevel=2)
             continue
 
         # Check if chart has save_image method
         if not hasattr(chart, "save_image"):
             warnings.warn(
-                f"Chart '{chart_name}' does not have save_image() method. " f"Skipping export."
+                f"Chart '{chart_name}' does not have save_image() method. Skipping export.",
+                stacklevel=2,
             )
             continue
 
@@ -627,7 +616,7 @@ def export_charts(
             exported_paths[chart_name] = str(file_path)
 
         except Exception as e:
-            warnings.warn(f"Failed to export chart '{chart_name}': {str(e)}")
+            warnings.warn(f"Failed to export chart '{chart_name}': {e!s}", stacklevel=2)
 
     return exported_paths
 
@@ -635,9 +624,9 @@ def export_charts(
 def export_chart(
     chart: Any,
     file_path: str,
-    format: Optional[str] = None,
-    width: Optional[int] = None,
-    height: Optional[int] = None,
+    format: str | None = None,
+    width: int | None = None,
+    height: int | None = None,
     scale: float = 1.0,
     **kwargs,
 ) -> str:
@@ -679,16 +668,16 @@ def export_chart(
     Examples
     --------
     >>> # Create a chart
-    >>> chart = factory.create('validation_test_overview', data=data)
+    >>> chart = factory.create("validation_test_overview", data=data)
     >>>
     >>> # Export as PNG
-    >>> export_chart(chart, 'output/test_overview.png', width=1200)
+    >>> export_chart(chart, "output/test_overview.png", width=1200)
     >>>
     >>> # Export as high-res PNG
-    >>> export_chart(chart, 'output/test_overview_2x.png', scale=2.0)
+    >>> export_chart(chart, "output/test_overview_2x.png", scale=2.0)
     >>>
     >>> # Export as SVG
-    >>> export_chart(chart, 'output/test_overview.svg')
+    >>> export_chart(chart, "output/test_overview.svg")
     """
     if not hasattr(chart, "save_image"):
         raise ValueError(
@@ -702,15 +691,15 @@ def export_chart(
 
 
 def export_charts_multiple_formats(
-    charts: Dict[str, Any],
+    charts: dict[str, Any],
     output_dir: str,
-    formats: List[str] = ["png", "svg"],
+    formats: list[str] = None,
     prefix: str = "",
-    width: Optional[int] = None,
-    height: Optional[int] = None,
+    width: int | None = None,
+    height: int | None = None,
     scale: float = 1.0,
     **kwargs,
-) -> Dict[str, Dict[str, str]]:
+) -> dict[str, dict[str, str]]:
     """
     Export multiple charts to multiple formats at once.
 
@@ -749,17 +738,19 @@ def export_charts_multiple_formats(
     >>> # Export in multiple formats
     >>> paths = export_charts_multiple_formats(
     ...     charts,
-    ...     output_dir='output/charts',
-    ...     formats=['png', 'svg', 'pdf'],
+    ...     output_dir="output/charts",
+    ...     formats=["png", "svg", "pdf"],
     ...     width=1200,
-    ...     height=800
+    ...     height=800,
     ... )
     >>>
-    >>> print(paths['png']['test_overview'])
+    >>> print(paths["png"]["test_overview"])
     'output/charts/test_overview.png'
-    >>> print(paths['svg']['test_overview'])
+    >>> print(paths["svg"]["test_overview"])
     'output/charts/test_overview.svg'
     """
+    if formats is None:
+        formats = ["png", "svg"]
     all_paths = {}
 
     for fmt in formats:
@@ -780,11 +771,11 @@ def export_charts_multiple_formats(
 
 def create_panel_charts(
     panel_results: Any,
-    chart_types: Optional[List[str]] = None,
-    theme: Union[str, Theme, None] = "professional",
+    chart_types: list[str] | None = None,
+    theme: str | Theme | None = "professional",
     include_html: bool = True,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create panel-specific charts from panel estimation results.
 
@@ -841,40 +832,36 @@ def create_panel_charts(
     >>> from panelbox.visualization import create_panel_charts
     >>>
     >>> # Estimate panel model
-    >>> model = PanelOLS.from_formula('y ~ x1 + x2 + EntityEffects', data=panel_data)
+    >>> model = PanelOLS.from_formula("y ~ x1 + x2 + EntityEffects", data=panel_data)
     >>> results = model.fit()
     >>>
     >>> # Create all panel visualizations
-    >>> charts = create_panel_charts(results, theme='academic')
+    >>> charts = create_panel_charts(results, theme="academic")
     >>>
     >>> # Access individual charts
-    >>> charts['entity_effects'].show()
-    >>> charts['time_effects'].show()
+    >>> charts["entity_effects"].show()
+    >>> charts["time_effects"].show()
 
     Create specific charts only:
 
     >>> charts = create_panel_charts(
     ...     results,
-    ...     chart_types=['entity_effects', 'structure'],
-    ...     theme='presentation',
-    ...     max_entities=20  # Limit for large panels
+    ...     chart_types=["entity_effects", "structure"],
+    ...     theme="presentation",
+    ...     max_entities=20,  # Limit for large panels
     ... )
 
     Create variance decomposition from data:
 
     >>> charts = create_panel_charts(
     ...     panel_data,
-    ...     chart_types=['between_within', 'structure'],
-    ...     chart_type='scatter'  # For between_within
+    ...     chart_types=["between_within", "structure"],
+    ...     chart_type="scatter",  # For between_within
     ... )
 
     Get HTML strings directly:
 
-    >>> html_charts = create_panel_charts(
-    ...     results,
-    ...     theme='professional',
-    ...     include_html=True
-    ... )
+    >>> html_charts = create_panel_charts(results, theme="professional", include_html=True)
     >>> # html_charts['entity_effects'] is already HTML string
 
     Use in templates:
@@ -908,17 +895,14 @@ def create_panel_charts(
     }
 
     # Get theme
-    if isinstance(theme, str):
-        theme_obj = get_theme(theme)
-    else:
-        theme_obj = theme
+    theme_obj = get_theme(theme) if isinstance(theme, str) else theme
 
     result_charts = {}
 
     for chart_type in chart_types:
         registry_name = chart_map.get(chart_type)
         if not registry_name:
-            warnings.warn(f"Unknown chart type: '{chart_type}', skipping")
+            warnings.warn(f"Unknown chart type: '{chart_type}', skipping", stacklevel=2)
             continue
 
         try:
@@ -934,13 +918,13 @@ def create_panel_charts(
                 result_charts[chart_type] = chart
 
         except Exception as e:
-            warnings.warn(f"Failed to create {chart_type}: {str(e)}")
+            warnings.warn(f"Failed to create {chart_type}: {e!s}", stacklevel=2)
 
     return result_charts
 
 
 def create_entity_effects_plot(
-    panel_results: Any, theme: Union[str, Theme, None] = "professional", **kwargs
+    panel_results: Any, theme: str | Theme | None = "professional", **kwargs
 ) -> Any:
     """
     Create entity effects visualization.
@@ -966,10 +950,7 @@ def create_entity_effects_plot(
     >>> from panelbox.visualization import create_entity_effects_plot
     >>>
     >>> chart = create_entity_effects_plot(
-    ...     panel_results,
-    ...     theme='academic',
-    ...     sort_by='magnitude',
-    ...     max_entities=20
+    ...     panel_results, theme="academic", sort_by="magnitude", max_entities=20
     ... )
     >>> chart.show()
     """
@@ -986,7 +967,7 @@ def create_entity_effects_plot(
 
 
 def create_time_effects_plot(
-    panel_results: Any, theme: Union[str, Theme, None] = "professional", **kwargs
+    panel_results: Any, theme: str | Theme | None = "professional", **kwargs
 ) -> Any:
     """
     Create time effects visualization.
@@ -1012,10 +993,7 @@ def create_time_effects_plot(
     >>> from panelbox.visualization import create_time_effects_plot
     >>>
     >>> chart = create_time_effects_plot(
-    ...     panel_results,
-    ...     theme='professional',
-    ...     show_confidence=True,
-    ...     highlight_significant=True
+    ...     panel_results, theme="professional", show_confidence=True, highlight_significant=True
     ... )
     >>> chart.show()
     """
@@ -1033,8 +1011,8 @@ def create_time_effects_plot(
 
 def create_between_within_plot(
     panel_data: Any,
-    variables: Optional[List[str]] = None,
-    theme: Union[str, Theme, None] = "professional",
+    variables: list[str] | None = None,
+    theme: str | Theme | None = "professional",
     style: str = "stacked",
     **kwargs,
 ) -> Any:
@@ -1067,10 +1045,10 @@ def create_between_within_plot(
     >>>
     >>> chart = create_between_within_plot(
     ...     panel_data,
-    ...     variables=['wage', 'education'],
-    ...     theme='academic',
-    ...     style='stacked',
-    ...     show_percentages=True
+    ...     variables=["wage", "education"],
+    ...     theme="academic",
+    ...     style="stacked",
+    ...     show_percentages=True,
     ... )
     >>> chart.show()
     """
@@ -1093,7 +1071,7 @@ def create_between_within_plot(
 
 
 def create_panel_structure_plot(
-    panel_data: Any, theme: Union[str, Theme, None] = "professional", **kwargs
+    panel_data: Any, theme: str | Theme | None = "professional", **kwargs
 ) -> Any:
     """
     Create panel structure visualization.
@@ -1119,10 +1097,7 @@ def create_panel_structure_plot(
     >>> from panelbox.visualization import create_panel_structure_plot
     >>>
     >>> chart = create_panel_structure_plot(
-    ...     panel_data,
-    ...     theme='presentation',
-    ...     show_statistics=True,
-    ...     highlight_complete=True
+    ...     panel_data, theme="presentation", show_statistics=True, highlight_complete=True
     ... )
     >>> chart.show()
     """
@@ -1145,10 +1120,10 @@ def create_panel_structure_plot(
 
 def create_acf_pacf_plot(
     residuals: Any,
-    max_lags: Optional[int] = None,
+    max_lags: int | None = None,
     confidence_level: float = 0.95,
     show_ljung_box: bool = True,
-    theme: Union[str, Theme, None] = "academic",
+    theme: str | Theme | None = "academic",
     **kwargs,
 ) -> Any:
     """
@@ -1183,19 +1158,12 @@ def create_acf_pacf_plot(
     >>>
     >>> # From residuals
     >>> chart = create_acf_pacf_plot(
-    ...     residuals,
-    ...     max_lags=20,
-    ...     confidence_level=0.95,
-    ...     show_ljung_box=True,
-    ...     theme='academic'
+    ...     residuals, max_lags=20, confidence_level=0.95, show_ljung_box=True, theme="academic"
     ... )
     >>> chart.show()
     >>>
     >>> # From PanelResults
-    >>> chart = create_acf_pacf_plot(
-    ...     panel_results.resids,
-    ...     max_lags=30
-    ... )
+    >>> chart = create_acf_pacf_plot(panel_results.resids, max_lags=30)
     """
     if isinstance(theme, str):
         theme = get_theme(theme)
@@ -1214,9 +1182,9 @@ def create_acf_pacf_plot(
 
 
 def create_unit_root_test_plot(
-    test_results: Union[Dict[str, Any], Any],
+    test_results: dict[str, Any] | Any,
     include_series: bool = False,
-    theme: Union[str, Theme, None] = "professional",
+    theme: str | Theme | None = "professional",
     **kwargs,
 ) -> Any:
     """
@@ -1252,16 +1220,13 @@ def create_unit_root_test_plot(
     >>> from panelbox.visualization import create_unit_root_test_plot
     >>>
     >>> results = {
-    ...     'test_names': ['ADF', 'PP', 'KPSS'],
-    ...     'test_stats': [-3.5, -3.8, 0.3],
-    ...     'critical_values': {'1%': -3.96, '5%': -3.41, '10%': -3.13},
-    ...     'pvalues': [0.008, 0.003, 0.15]
+    ...     "test_names": ["ADF", "PP", "KPSS"],
+    ...     "test_stats": [-3.5, -3.8, 0.3],
+    ...     "critical_values": {"1%": -3.96, "5%": -3.41, "10%": -3.13},
+    ...     "pvalues": [0.008, 0.003, 0.15],
     ... }
     >>>
-    >>> chart = create_unit_root_test_plot(
-    ...     results,
-    ...     theme='professional'
-    ... )
+    >>> chart = create_unit_root_test_plot(results, theme="professional")
     >>> chart.show()
     """
     if isinstance(theme, str):
@@ -1286,7 +1251,7 @@ def create_unit_root_test_plot(
 
 
 def create_cointegration_heatmap(
-    cointegration_results: Dict[str, Any], theme: Union[str, Theme, None] = "academic", **kwargs
+    cointegration_results: dict[str, Any], theme: str | Theme | None = "academic", **kwargs
 ) -> Any:
     """
     Create cointegration test results heatmap.
@@ -1317,11 +1282,9 @@ def create_cointegration_heatmap(
     >>> from panelbox.visualization import create_cointegration_heatmap
     >>>
     >>> results = {
-    ...     'variables': ['GDP', 'Consumption', 'Investment'],
-    ...     'pvalues': [[1.0, 0.02, 0.15],
-    ...                 [0.02, 1.0, 0.08],
-    ...                 [0.15, 0.08, 1.0]],
-    ...     'test_name': 'Engle-Granger'
+    ...     "variables": ["GDP", "Consumption", "Investment"],
+    ...     "pvalues": [[1.0, 0.02, 0.15], [0.02, 1.0, 0.08], [0.15, 0.08, 1.0]],
+    ...     "test_name": "Engle-Granger",
     ... }
     >>>
     >>> chart = create_cointegration_heatmap(results)
@@ -1336,7 +1299,7 @@ def create_cointegration_heatmap(
 
 
 def create_cross_sectional_dependence_plot(
-    cd_results: Dict[str, Any], theme: Union[str, Theme, None] = "professional", **kwargs
+    cd_results: dict[str, Any], theme: str | Theme | None = "professional", **kwargs
 ) -> Any:
     """
     Create cross-sectional dependence test visualization.
@@ -1367,10 +1330,10 @@ def create_cross_sectional_dependence_plot(
     >>> from panelbox.visualization import create_cross_sectional_dependence_plot
     >>>
     >>> results = {
-    ...     'cd_statistic': 5.23,
-    ...     'pvalue': 0.001,
-    ...     'avg_correlation': 0.42,
-    ...     'entity_correlations': [0.3, 0.5, 0.6, 0.2]
+    ...     "cd_statistic": 5.23,
+    ...     "pvalue": 0.001,
+    ...     "avg_correlation": 0.42,
+    ...     "entity_correlations": [0.3, 0.5, 0.6, 0.2],
     ... }
     >>>
     >>> chart = create_cross_sectional_dependence_plot(results)

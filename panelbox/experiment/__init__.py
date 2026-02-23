@@ -5,6 +5,8 @@ This module provides high-level interfaces for managing panel data experiments,
 fitting multiple models, and comparing results.
 """
 
+from __future__ import annotations
+
 from panelbox.experiment.panel_experiment import PanelExperiment
 
 __all__ = ["PanelExperiment"]

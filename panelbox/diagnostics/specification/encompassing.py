@@ -13,13 +13,18 @@ References
   Proceedings of the Fourth Berkeley Symposium, 1, 105-123.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -52,12 +57,12 @@ class EncompassingResult:
     test_name: str
     statistic: float
     pvalue: float
-    df: Optional[float]
+    df: float | None
     null_hypothesis: str
     alternative: str
     model1_name: str
     model2_name: str
-    additional_info: Dict[str, Any]
+    additional_info: dict[str, Any]
 
     def interpretation(self, alpha: float = 0.05) -> str:
         """
@@ -124,7 +129,7 @@ class EncompassingResult:
 
 
 def cox_test(
-    result1, result2, model1_name: Optional[str] = None, model2_name: Optional[str] = None
+    result1, result2, model1_name: str | None = None, model2_name: str | None = None
 ) -> EncompassingResult:
     """
     Perform Cox test for non-nested models.
@@ -169,9 +174,7 @@ def cox_test(
     >>> result1 = OLS(y, X1).fit()
     >>> result2 = OLS(y, X2).fit()
     >>> # Perform Cox test
-    >>> cox_result = cox_test(result1, result2,
-    ...                       model1_name='Linear',
-    ...                       model2_name='Quadratic')
+    >>> cox_result = cox_test(result1, result2, model1_name="Linear", model2_name="Quadratic")
     >>> print(cox_result.interpretation())
     """
     # Set default names
@@ -212,14 +215,16 @@ def cox_test(
     else:
         # Fallback: use simple approximation based on sample size
         se_diff = np.sqrt(2 / n)
-        warnings.warn("Could not compute exact variance. Using approximation.", UserWarning)
+        warnings.warn(
+            "Could not compute exact variance. Using approximation.", UserWarning, stacklevel=2
+        )
 
     # Test statistic
     if se_diff > 0:
         t_stat = llf_diff / se_diff
     else:
         t_stat = np.inf if llf_diff > 0 else -np.inf
-        warnings.warn("Standard error is zero. Test may be unreliable.", UserWarning)
+        warnings.warn("Standard error is zero. Test may be unreliable.", UserWarning, stacklevel=2)
 
     # P-value (two-tailed)
     p_value = 2 * (1 - stats.norm.cdf(abs(t_stat)))
@@ -230,7 +235,7 @@ def cox_test(
         pvalue=p_value,
         df=None,
         null_hypothesis=f"{model1_name} and {model2_name} fit equally well",
-        alternative=f"Models have different fit quality",
+        alternative="Models have different fit quality",
         model1_name=model1_name,
         model2_name=model2_name,
         additional_info={"llf1": llf1, "llf2": llf2, "llf_diff": llf_diff, "se_diff": se_diff},
@@ -240,8 +245,8 @@ def cox_test(
 def wald_encompassing_test(
     result_restricted,
     result_unrestricted,
-    model_restricted_name: Optional[str] = None,
-    model_unrestricted_name: Optional[str] = None,
+    model_restricted_name: str | None = None,
+    model_unrestricted_name: str | None = None,
 ) -> EncompassingResult:
     """
     Perform Wald encompassing test for nested models.
@@ -351,8 +356,8 @@ def wald_encompassing_test(
 def likelihood_ratio_test(
     result_restricted,
     result_unrestricted,
-    model_restricted_name: Optional[str] = None,
-    model_unrestricted_name: Optional[str] = None,
+    model_restricted_name: str | None = None,
+    model_unrestricted_name: str | None = None,
 ) -> EncompassingResult:
     """
     Perform likelihood ratio test for nested models.
@@ -425,6 +430,7 @@ def likelihood_ratio_test(
             f"restricted model ({llf_r:.4f}). This should not happen for nested models. "
             f"Check that models are correctly specified.",
             UserWarning,
+            stacklevel=2,
         )
 
     # Get number of parameters
@@ -450,6 +456,7 @@ def likelihood_ratio_test(
                 f"LR statistic is negative ({lr_stat:.6f}). "
                 f"Setting to 0. Check model specification.",
                 UserWarning,
+                stacklevel=2,
             )
         lr_stat = 0.0
 

@@ -19,8 +19,10 @@ Train, K. (2009). "Discrete Choice Methods with Simulation." Cambridge Universit
 Cameron, A. C., & Trivedi, P. K. (2005). "Microeconometrics: Methods and Applications."
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -29,6 +31,8 @@ from scipy.optimize import minimize
 from scipy.special import logsumexp
 
 from panelbox.models.base import NonlinearPanelModel, PanelModelResults
+
+logger = logging.getLogger(__name__)
 
 
 class MultinomialLogit(NonlinearPanelModel):
@@ -64,13 +68,13 @@ class MultinomialLogit(NonlinearPanelModel):
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series],
-        exog: Union[np.ndarray, pd.DataFrame],
-        n_alternatives: Optional[int] = None,
+        endog: np.ndarray | pd.Series,
+        exog: np.ndarray | pd.DataFrame,
+        n_alternatives: int | None = None,
         base_alternative: int = 0,
         method: str = "pooled",
-        entity_col: Optional[str] = None,
-        time_col: Optional[str] = None,
+        entity_col: str | None = None,
+        time_col: str | None = None,
     ):
         """Initialize Multinomial Logit model."""
         super().__init__(endog, exog, entity_col, time_col)
@@ -92,7 +96,7 @@ class MultinomialLogit(NonlinearPanelModel):
         # Check that endog contains valid categories
         unique_choices = np.unique(self.endog)
         if not np.all(np.isin(unique_choices, np.arange(self.n_alternatives))):
-            raise ValueError(f"endog must contain integers from 0 to {self.n_alternatives-1}")
+            raise ValueError(f"endog must contain integers from 0 to {self.n_alternatives - 1}")
 
         # Number of parameters: (J-1) sets of K coefficients
         self.K = self.exog.shape[1]  # Number of regressors
@@ -131,7 +135,8 @@ class MultinomialLogit(NonlinearPanelModel):
             # This is a simplification - in practice, entity_col should be properly passed
             warnings.warn(
                 "Entity IDs not found, generating sequential IDs. "
-                "This may not reflect true panel structure."
+                "This may not reflect true panel structure.",
+                stacklevel=2,
             )
             n = len(self.endog)
             return np.arange(n)
@@ -145,6 +150,7 @@ class MultinomialLogit(NonlinearPanelModel):
                 f"is computationally intensive. Consider using J ≤ 4 or method='pooled'. "
                 f"Estimation may be slow or fail.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Check average time periods per entity
@@ -161,12 +167,11 @@ class MultinomialLogit(NonlinearPanelModel):
                 f"Fixed Effects Multinomial becomes very slow for T > 10. "
                 f"Consider using method='random_effects' instead.",
                 UserWarning,
+                stacklevel=2,
             )
 
     def _log_likelihood(self, params: np.ndarray) -> float:
-        """
-        Required by base class - delegates to log_likelihood.
-        """
+        """Required by base class - delegates to log_likelihood."""
         return -self.log_likelihood(params)  # Return negative for minimization
 
     def log_likelihood(self, params: np.ndarray) -> float:
@@ -242,6 +247,7 @@ class MultinomialLogit(NonlinearPanelModel):
             "Fixed Effects Multinomial uses within-transformation approximation. "
             "For exact Chamberlain conditional MLE, use specialized software.",
             UserWarning,
+            stacklevel=2,
         )
 
         beta_matrix = params.reshape(self.n_alternatives - 1, self.K)
@@ -260,7 +266,7 @@ class MultinomialLogit(NonlinearPanelModel):
             entity_X = self.exog[entity_mask]
 
             # Compute log-likelihood for this entity's observations
-            for t, (y_it, X_it) in enumerate(zip(entity_choices, entity_X)):
+            for _t, (y_it, X_it) in enumerate(zip(entity_choices, entity_X)):
                 y_it = int(y_it)
 
                 # Compute utilities
@@ -396,7 +402,7 @@ class MultinomialLogit(NonlinearPanelModel):
         return -gradient.flatten()  # Negative for minimization
 
     def predict_proba(
-        self, params: np.ndarray, exog: Optional[Union[np.ndarray, pd.DataFrame]] = None
+        self, params: np.ndarray, exog: np.ndarray | pd.DataFrame | None = None
     ) -> np.ndarray:
         """
         Predict probabilities for all alternatives.
@@ -417,10 +423,7 @@ class MultinomialLogit(NonlinearPanelModel):
             X = self.exog
         else:
             # Convert to numpy array if needed
-            if isinstance(exog, pd.DataFrame):
-                X = exog.values
-            else:
-                X = np.asarray(exog)
+            X = exog.values if isinstance(exog, pd.DataFrame) else np.asarray(exog)
 
         beta_matrix = params.reshape(self.n_alternatives - 1, self.K)
         n = len(X)
@@ -446,7 +449,7 @@ class MultinomialLogit(NonlinearPanelModel):
         return probs
 
     def predict(
-        self, params: np.ndarray, exog: Optional[Union[np.ndarray, pd.DataFrame]] = None
+        self, params: np.ndarray, exog: np.ndarray | pd.DataFrame | None = None
     ) -> np.ndarray:
         """
         Predict most likely alternative.
@@ -468,11 +471,11 @@ class MultinomialLogit(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "MultinomialLogitResult":
+    ) -> MultinomialLogitResult:
         """
         Estimate multinomial logit parameters.
 
@@ -509,7 +512,7 @@ class MultinomialLogit(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         return MultinomialLogitResult(
             model=self,
@@ -560,6 +563,7 @@ class MultinomialLogitResult(PanelModelResults):
             for i in range(n_params):
 
                 def grad_i(params):
+                    """Compute individual-level gradient contributions."""
                     return self.model.gradient(params)[i]
 
                 hess[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -572,7 +576,7 @@ class MultinomialLogitResult(PanelModelResults):
             self.bse_matrix = self.bse.reshape(self.model.n_alternatives - 1, self.model.K)
 
         except Exception as e:
-            warnings.warn(f"Could not compute standard errors: {e}")
+            warnings.warn(f"Could not compute standard errors: {e}", stacklevel=2)
             self.bse = np.full(len(self.params), np.nan)
             self.bse_matrix = np.full(self.params_matrix.shape, np.nan)
             self.cov_params = np.full((len(self.params), len(self.params)), np.nan)
@@ -609,7 +613,7 @@ class MultinomialLogitResult(PanelModelResults):
 
         return matrix
 
-    def predict_proba(self, exog: Optional[Union[np.ndarray, pd.DataFrame]] = None) -> np.ndarray:
+    def predict_proba(self, exog: np.ndarray | pd.DataFrame | None = None) -> np.ndarray:
         """
         Predict probabilities for all alternatives.
 
@@ -625,7 +629,7 @@ class MultinomialLogitResult(PanelModelResults):
         """
         return self.model.predict_proba(self.params, exog)
 
-    def predict(self, exog: Optional[Union[np.ndarray, pd.DataFrame]] = None) -> np.ndarray:
+    def predict(self, exog: np.ndarray | pd.DataFrame | None = None) -> np.ndarray:
         """
         Predict most likely alternative.
 
@@ -641,9 +645,9 @@ class MultinomialLogitResult(PanelModelResults):
         """
         return self.model.predict(self.params, exog)
 
-    def marginal_effects(
-        self, at: str = "mean", variable: Optional[Union[int, str]] = None
-    ) -> Union[Dict[str, np.ndarray], np.ndarray]:
+    def marginal_effects(  # noqa: C901
+        self, at: str = "mean", variable: int | str | None = None
+    ) -> dict[str, np.ndarray] | np.ndarray:
         """
         Compute marginal effects for multinomial logit.
 
@@ -740,8 +744,8 @@ class MultinomialLogitResult(PanelModelResults):
         return marginal_effects
 
     def marginal_effects_se(
-        self, at: str = "mean", variable: Optional[Union[int, str]] = None
-    ) -> Union[Dict[str, np.ndarray], np.ndarray]:
+        self, at: str = "mean", variable: int | str | None = None
+    ) -> dict[str, np.ndarray] | np.ndarray:
         """
         Compute standard errors for marginal effects using delta method.
 
@@ -763,7 +767,9 @@ class MultinomialLogitResult(PanelModelResults):
             Standard errors of marginal effects
         """
         if not hasattr(self, "cov_params") or self.cov_params is None:
-            warnings.warn("Covariance matrix not available. Cannot compute ME standard errors.")
+            warnings.warn(
+                "Covariance matrix not available. Cannot compute ME standard errors.", stacklevel=2
+            )
             me = self.marginal_effects(at=at, variable=variable)
             return np.full_like(me, np.nan)
 
@@ -776,16 +782,16 @@ class MultinomialLogitResult(PanelModelResults):
         elif at == "overall":
             # For overall, we'd need to average gradients - simpler to use mean
             X_eval = X.mean(axis=0).reshape(1, -1)
-            warnings.warn("Standard errors at='overall' computed at mean of X")
+            warnings.warn("Standard errors at='overall' computed at mean of X", stacklevel=2)
         else:
             raise ValueError(f"Unknown 'at' value: {at}")
 
         # Get probabilities at evaluation point
-        probs = self.model.predict_proba(self.params, X_eval)[0]
+        self.model.predict_proba(self.params, X_eval)[0]
 
         J = self.model.n_alternatives
         K = self.model.K
-        n_params = len(self.params)
+        len(self.params)
 
         # Compute gradient of marginal effects w.r.t. parameters
         # ME_jk = P_j(β_jk - Σ_m P_m β_mk)
@@ -845,10 +851,10 @@ class MultinomialLogitResult(PanelModelResults):
 
     def plot_marginal_effects(
         self,
-        variable: Optional[Union[int, str]] = None,
+        variable: int | str | None = None,
         at: str = "mean",
         figsize: tuple = (10, 6),
-        colors: Optional[list] = None,
+        colors: list | None = None,
     ):
         """
         Plot marginal effects by alternative.
@@ -874,7 +880,7 @@ class MultinomialLogitResult(PanelModelResults):
         except ImportError:
             raise ImportError(
                 "matplotlib is required for plotting. Install with: pip install matplotlib"
-            )
+            ) from None
 
         # Compute marginal effects
         me = self.marginal_effects(at=at, variable=variable)
@@ -890,10 +896,10 @@ class MultinomialLogitResult(PanelModelResults):
                 colors = plt.cm.tab10(np.linspace(0, 1, J))
 
             x_pos = np.arange(J)
-            bars = ax.bar(x_pos, me, color=colors, alpha=0.7, edgecolor="black")
+            ax.bar(x_pos, me, color=colors, alpha=0.7, edgecolor="black")
 
             # Add value labels on bars
-            for i, (pos, val) in enumerate(zip(x_pos, me)):
+            for _i, (pos, val) in enumerate(zip(x_pos, me)):
                 ax.text(
                     pos,
                     val,
@@ -926,7 +932,7 @@ class MultinomialLogitResult(PanelModelResults):
                 f"Sum of MEs: {me_sum:.6f} (should ≈ 0)",
                 transform=ax.transAxes,
                 verticalalignment="top",
-                bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+                bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
                 fontsize=9,
             )
 
@@ -954,10 +960,10 @@ class MultinomialLogitResult(PanelModelResults):
                 x_pos = np.arange(J)
                 me_k = me[:, k]
 
-                bars = ax.bar(x_pos, me_k, color=colors, alpha=0.7, edgecolor="black")
+                ax.bar(x_pos, me_k, color=colors, alpha=0.7, edgecolor="black")
 
                 # Add value labels
-                for i, (pos, val) in enumerate(zip(x_pos, me_k)):
+                for _i, (pos, val) in enumerate(zip(x_pos, me_k)):
                     ax.text(
                         pos,
                         val,
@@ -989,7 +995,7 @@ class MultinomialLogitResult(PanelModelResults):
                     transform=ax.transAxes,
                     verticalalignment="top",
                     fontsize=7,
-                    bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+                    bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
                 )
 
             # Hide unused subplots
@@ -1043,13 +1049,10 @@ class MultinomialLogitResult(PanelModelResults):
                     z_stat = coef / se
                     p_val = 2 * (1 - stats.norm.cdf(abs(z_stat)))
                     lines.append(
-                        f"{'X' + str(k):<20} {coef:<12.4f} "
-                        f"{se:<12.4f} {z_stat:<8.3f} {p_val:<8.3f}"
+                        f"{'X' + str(k):<20} {coef:<12.4f} {se:<12.4f} {z_stat:<8.3f} {p_val:<8.3f}"
                     )
                 else:
-                    lines.append(
-                        f"{'X' + str(k):<20} {coef:<12.4f} " f"{'NA':<12} {'NA':<8} {'NA':<8}"
-                    )
+                    lines.append(f"{'X' + str(k):<20} {coef:<12.4f} {'NA':<12} {'NA':<8} {'NA':<8}")
             lines.append("")
 
         # Confusion matrix
@@ -1119,7 +1122,7 @@ class ConditionalLogit(NonlinearPanelModel):
         alt_col: str,
         chosen_col: str,
         alt_varying_vars: list,
-        case_varying_vars: Optional[list] = None,
+        case_varying_vars: list | None = None,
     ):
         self.data = data
         self.choice_col = choice_col
@@ -1303,11 +1306,11 @@ class ConditionalLogit(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "ConditionalLogitResult":
+    ) -> ConditionalLogitResult:
         """
         Estimate conditional logit parameters.
 
@@ -1338,7 +1341,7 @@ class ConditionalLogit(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization did not converge: {result.message}")
+            warnings.warn(f"Optimization did not converge: {result.message}", stacklevel=2)
 
         # Store fitted params for predict()
         self._fitted_params = result.x
@@ -1377,6 +1380,7 @@ class ConditionalLogitResult(PanelModelResults):
         for i in range(n_params):
 
             def grad_i(params):
+                """Compute individual-level gradient contributions."""
                 return self.model.gradient(params)[i]
 
             hess[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -1385,7 +1389,7 @@ class ConditionalLogitResult(PanelModelResults):
             self.vcov = np.linalg.inv(hess)
             self.bse = np.sqrt(np.diag(self.vcov))
         except np.linalg.LinAlgError:
-            warnings.warn("Could not compute standard errors")
+            warnings.warn("Could not compute standard errors", stacklevel=2)
             self.vcov = np.full((n_params, n_params), np.nan)
             self.bse = np.full(n_params, np.nan)
 
@@ -1419,7 +1423,7 @@ class ConditionalLogitResult(PanelModelResults):
 
         self.accuracy = correct / total
 
-    def predict_proba(self, data: Optional[pd.DataFrame] = None) -> np.ndarray:
+    def predict_proba(self, data: pd.DataFrame | None = None) -> np.ndarray:
         """
         Predict choice probabilities.
 

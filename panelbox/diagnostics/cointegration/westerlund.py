@@ -1,5 +1,5 @@
 """
-Westerlund (2007) ECM-Based Panel Cointegration Tests
+Westerlund (2007) ECM-Based Panel Cointegration Tests.
 
 Implementation of the four Westerlund (2007) error correction model-based
 tests for panel cointegration: Gt, Ga, Pt, and Pa.
@@ -10,13 +10,18 @@ Westerlund, J. (2007). "Testing for Error Correction in Panel Data."
     Oxford Bulletin of Economics and Statistics, 69(6), 709-748.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -46,9 +51,9 @@ class WesterlundResult:
         Number of time periods
     """
 
-    statistic: Dict[str, float]
-    pvalue: Dict[str, float]
-    critical_values: Dict[str, Dict[str, float]]
+    statistic: dict[str, float]
+    pvalue: dict[str, float]
+    critical_values: dict[str, dict[str, float]]
     method: str
     trend: str
     lags: int
@@ -57,8 +62,8 @@ class WesterlundResult:
     n_time: int
 
     def reject_at(
-        self, alpha: float = 0.05, test: Optional[str] = None
-    ) -> Union[bool, Dict[str, bool]]:
+        self, alpha: float = 0.05, test: str | None = None
+    ) -> bool | dict[str, bool]:
         """
         Check if null hypothesis is rejected at given significance level.
 
@@ -88,7 +93,7 @@ class WesterlundResult:
             Summary table with statistics, p-values, and critical values
         """
         rows = []
-        for test in self.statistic.keys():
+        for test in self.statistic:
             row = {
                 "Test": test,
                 "Statistic": self.statistic[test],
@@ -112,22 +117,22 @@ class WesterlundResult:
         return df
 
     def __repr__(self) -> str:
-        summary_str = f"Westerlund (2007) Cointegration Test Results\n"
-        summary_str += f"{'='*60}\n"
+        summary_str = "Westerlund (2007) Cointegration Test Results\n"
+        summary_str += f"{'=' * 60}\n"
         summary_str += f"Method: {self.method}\n"
         summary_str += f"Trend: {self.trend}\n"
         summary_str += f"Lags: {self.lags}\n"
         summary_str += f"Entities: {self.n_entities}, Time periods: {self.n_time}\n"
         summary_str += f"Bootstrap replications: {self.n_bootstrap}\n"
         summary_str += f"\n{self.summary().to_string(index=False)}\n"
-        summary_str += f"\nH0: No cointegration (alpha_i = 0 for all i)\n"
-        summary_str += f"***, **, * denote rejection at 1%, 5%, 10% level"
+        summary_str += "\nH0: No cointegration (alpha_i = 0 for all i)\n"
+        summary_str += "***, **, * denote rejection at 1%, 5%, 10% level"
         return summary_str
 
 
 def _estimate_ecm(
     y: np.ndarray, x: np.ndarray, lags: int, trend: str = "c"
-) -> Tuple[float, float, np.ndarray]:
+) -> tuple[float, float, np.ndarray]:
     """
     Estimate error correction model for a single entity.
 
@@ -155,15 +160,15 @@ def _estimate_ecm(
         Residuals from ECM
     """
     T = len(y)
-    k = x.shape[1] if x.ndim > 1 else 1
+    x.shape[1] if x.ndim > 1 else 1
 
     # Prepare data
     dy = np.diff(y)
     dx = np.diff(x, axis=0) if x.ndim > 1 else np.diff(x)
 
     # Lagged levels
-    y_lag = y[:-1]
-    x_lag = x[:-1] if x.ndim > 1 else x[:-1]
+    y[:-1]
+    x[:-1] if x.ndim > 1 else x[:-1]
 
     # Build regressor matrix
     regressors = []
@@ -243,7 +248,7 @@ def _estimate_ecm(
         return alpha, se_alpha, resid
 
     except np.linalg.LinAlgError:
-        warnings.warn("Singular matrix in ECM estimation, returning NaN")
+        warnings.warn("Singular matrix in ECM estimation, returning NaN", stacklevel=2)
         return np.nan, np.nan, np.full(len(dy), np.nan)
 
 
@@ -275,7 +280,7 @@ def _select_lags(
 
     for p in range(max_lags + 1):
         try:
-            alpha, se_alpha, resid = _estimate_ecm(y, x, p, trend)
+            alpha, _se_alpha, resid = _estimate_ecm(y, x, p, trend)
 
             if not np.isnan(alpha):
                 T = len(resid)
@@ -291,13 +296,13 @@ def _select_lags(
                 ic_values.append(ic)
             else:
                 ic_values.append(np.inf)
-        except:
+        except Exception:
             ic_values.append(np.inf)
 
     return int(np.argmin(ic_values))
 
 
-def _compute_test_statistics(alphas: np.ndarray, se_alphas: np.ndarray, T: int) -> Dict[str, float]:
+def _compute_test_statistics(alphas: np.ndarray, se_alphas: np.ndarray, T: int) -> dict[str, float]:
     """
     Compute Westerlund test statistics.
 
@@ -315,7 +320,7 @@ def _compute_test_statistics(alphas: np.ndarray, se_alphas: np.ndarray, T: int) 
     dict
         Dictionary with Gt, Ga, Pt, Pa statistics
     """
-    N = len(alphas)
+    len(alphas)
 
     # Filter out NaN values
     valid = ~(np.isnan(alphas) | np.isnan(se_alphas))
@@ -352,12 +357,12 @@ def _bootstrap_critical_values(
     entity_col: str,
     time_col: str,
     y_var: str,
-    x_vars: List[str],
+    x_vars: list[str],
     lags: int,
     trend: str,
     n_bootstrap: int = 1000,
-    random_state: Optional[int] = None,
-) -> Dict[str, Dict[str, float]]:
+    random_state: int | None = None,
+) -> dict[str, dict[str, float]]:
     """
     Bootstrap critical values under null hypothesis of no cointegration.
 
@@ -394,9 +399,9 @@ def _bootstrap_critical_values(
     boot_stats = {"Gt": [], "Ga": [], "Pt": [], "Pa": []}
 
     entities = data[entity_col].unique()
-    N = len(entities)
+    len(entities)
 
-    for b in range(n_bootstrap):
+    for _b in range(n_bootstrap):
         boot_alphas = []
         boot_se_alphas = []
 
@@ -409,7 +414,7 @@ def _bootstrap_critical_values(
 
             # Generate data under H0 (random walk, no cointegration)
             # Use resampled residuals from original data
-            alpha_orig, se_orig, resid_orig = _estimate_ecm(y, X, lags, trend)
+            alpha_orig, _se_orig, resid_orig = _estimate_ecm(y, X, lags, trend)
 
             if not np.isnan(alpha_orig):
                 # Resample residuals
@@ -461,14 +466,14 @@ def westerlund_test(
     entity_col: str,
     time_col: str,
     y_var: str,
-    x_vars: Union[str, List[str]],
+    x_vars: str | list[str],
     method: Literal["Gt", "Ga", "Pt", "Pa", "all"] = "all",
     trend: Literal["n", "c", "ct"] = "c",
-    lags: Union[int, str] = "auto",
+    lags: int | str = "auto",
     max_lags: int = 4,
     lag_criterion: Literal["aic", "bic"] = "aic",
     n_bootstrap: int = 1000,
-    random_state: Optional[int] = None,
+    random_state: int | None = None,
     use_bootstrap: bool = True,
 ) -> WesterlundResult:
     """
@@ -537,12 +542,15 @@ def westerlund_test(
     >>> from panelbox.diagnostics.cointegration import westerlund_test
     >>>
     >>> # Load panel data
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>>
     >>> # Test for cointegration
     >>> result = westerlund_test(
-    ...     data, entity_col='country', time_col='year',
-    ...     y_var='log_gdp', x_vars=['log_capital', 'log_labor']
+    ...     data,
+    ...     entity_col="country",
+    ...     time_col="year",
+    ...     y_var="log_gdp",
+    ...     x_vars=["log_capital", "log_labor"],
     ... )
     >>> print(result)
     >>>
@@ -555,6 +563,7 @@ def westerlund_test(
             f"Large bootstrap replications (n={n_bootstrap}) may take >5 minutes. "
             "Consider reducing to 1000 for exploratory analysis or use tabulated critical values.",
             UserWarning,
+            stacklevel=2,
         )
 
     n_entities = data[entity_col].nunique()
@@ -565,13 +574,14 @@ def westerlund_test(
             f"Large panel (N={n_entities}, T≈{n_periods:.0f}) with bootstrap may take considerable time. "
             "Consider using tabulated critical values (use_bootstrap=False).",
             UserWarning,
+            stacklevel=2,
         )
 
     # Input validation
     if isinstance(x_vars, str):
         x_vars = [x_vars]
 
-    required_cols = [entity_col, time_col, y_var] + x_vars
+    required_cols = [entity_col, time_col, y_var, *x_vars]
     missing_cols = set(required_cols) - set(data.columns)
     if missing_cols:
         raise ValueError(f"Missing columns: {missing_cols}")
@@ -637,7 +647,7 @@ def westerlund_test(
         # Compute p-values from critical values
         # For left-tailed test (alpha < 0 under H1), reject if stat < critical value
         pvalues = {}
-        for test in test_stats.keys():
+        for test in test_stats:
             if not np.isnan(test_stats[test]):
                 # Approximate p-value from critical values
                 # If stat is less than 1% CV, p < 0.01, etc.
@@ -656,7 +666,7 @@ def westerlund_test(
         # These are rough approximations - bootstrap is preferred
         critical_values = {}
         pvalues = {}
-        for test in test_stats.keys():
+        for test in test_stats:
             critical_values[test] = {"1%": -2.58, "5%": -1.96, "10%": -1.645}
             # Approximate p-value using normal distribution
             pvalues[test] = (

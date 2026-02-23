@@ -1,5 +1,6 @@
 """
-Continuous Updated GMM Estimator
+Continuous Updated GMM Estimator.
+
 ==================================
 
 Implements the Continuous Updated Estimator (CUE) for GMM estimation,
@@ -26,17 +27,16 @@ Examples
 --------
 >>> from panelbox.gmm import ContinuousUpdatedGMM
 >>> model = ContinuousUpdatedGMM(
-...     data=panel_data,
-...     dep_var='y',
-...     exog_vars=['x1', 'x2'],
-...     instruments=['z1', 'z2', 'z3']
+...     data=panel_data, dep_var="y", exog_vars=["x1", "x2"], instruments=["z1", "z2", "z3"]
 ... )
 >>> results = model.fit()
 >>> print(results.summary())
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -45,6 +45,8 @@ from scipy.stats import chi2
 
 from panelbox.gmm.estimator import GMMEstimator
 from panelbox.gmm.results import GMMResults
+
+logger = logging.getLogger(__name__)
 
 
 class ContinuousUpdatedGMM:
@@ -138,9 +140,9 @@ class ContinuousUpdatedGMM:
 
     >>> model = ContinuousUpdatedGMM(
     ...     data=data,
-    ...     dep_var='wage',
-    ...     exog_vars=['education', 'experience'],
-    ...     instruments=['father_education', 'mother_education', 'siblings']
+    ...     dep_var="wage",
+    ...     exog_vars=["education", "experience"],
+    ...     instruments=["father_education", "mother_education", "siblings"],
     ... )
     >>> results = model.fit()
     >>> print(f"J-statistic: {results.j_statistic:.4f}")
@@ -159,10 +161,10 @@ class ContinuousUpdatedGMM:
         self,
         data: pd.DataFrame,
         dep_var: str,
-        exog_vars: List[str],
-        instruments: List[str],
+        exog_vars: list[str],
+        instruments: list[str],
         weighting: str = "hac",
-        bandwidth: Union[str, int] = "auto",
+        bandwidth: str | int = "auto",
         se_type: str = "analytical",
         n_bootstrap: int = 999,
         bootstrap_method: str = "residual",
@@ -237,7 +239,7 @@ class ContinuousUpdatedGMM:
             raise TypeError("data must be pandas DataFrame")
 
         # Check variable names exist
-        all_vars = [self.dep_var] + self.exog_vars + self.instruments
+        all_vars = [self.dep_var, *self.exog_vars, *self.instruments]
         missing = [v for v in all_vars if v not in self.data.columns]
         if missing:
             raise ValueError(f"Variables not found in data: {missing}")
@@ -263,7 +265,7 @@ class ContinuousUpdatedGMM:
         # Check dimensions
         if self.n_instruments < self.k:
             raise ValueError(
-                f"Underidentified: {self.n_instruments} instruments < " f"{self.k} parameters"
+                f"Underidentified: {self.n_instruments} instruments < {self.k} parameters"
             )
 
         # Overidentification degree
@@ -431,7 +433,9 @@ class ContinuousUpdatedGMM:
         """
         # Check if data has MultiIndex for clustering
         if not isinstance(self.data.index, pd.MultiIndex):
-            warnings.warn("Data does not have MultiIndex, using homoskedastic variance")
+            warnings.warn(
+                "Data does not have MultiIndex, using homoskedastic variance", stacklevel=2
+            )
             return (1 / self.n) * (moment_contributions.T @ moment_contributions)
 
         # Get cluster identifiers (entity level)
@@ -439,7 +443,7 @@ class ContinuousUpdatedGMM:
 
         # Compute cluster sums
         unique_clusters = np.unique(clusters)
-        n_clusters = len(unique_clusters)
+        len(unique_clusters)
 
         # Initialize variance
         W = np.zeros((self.n_instruments, self.n_instruments))
@@ -459,7 +463,7 @@ class ContinuousUpdatedGMM:
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "L-BFGS-B",
         verbose: bool = False,
     ) -> GMMResults:
@@ -504,6 +508,7 @@ class ContinuousUpdatedGMM:
                 "CUE-GMM with >50 moments may be very slow. "
                 "Consider reducing moment conditions or using two-step GMM.",
                 UserWarning,
+                stacklevel=2,
             )
 
         if self.n > 10000:
@@ -511,15 +516,16 @@ class ContinuousUpdatedGMM:
                 "CUE-GMM with N>10,000 may take several minutes. "
                 "Consider using two-step GMM for large samples.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Get starting values
         if start_params is None:
             # Use two-step GMM as starting values
             if verbose:
-                print("Computing two-step GMM for starting values...")
+                logger.info("Computing two-step GMM for starting values...")
             estimator = GMMEstimator(tol=self.tol, max_iter=self.max_iter)
-            beta_ts, vcov_ts, _, _ = estimator.two_step(self.y, self.X, self.Z)
+            beta_ts, _vcov_ts, _, _ = estimator.two_step(self.y, self.X, self.Z)
             start_params = beta_ts.flatten()
         else:
             start_params = np.asarray(start_params).flatten()
@@ -530,7 +536,7 @@ class ContinuousUpdatedGMM:
 
         # Optimize criterion function
         if verbose:
-            print("Optimizing CUE-GMM criterion...")
+            logger.info("Optimizing CUE-GMM criterion...")
 
         result = optimize.minimize(
             self._criterion,
@@ -546,7 +552,7 @@ class ContinuousUpdatedGMM:
         self.criterion_value_ = result.fun
 
         if not self.converged_:
-            warnings.warn(f"CUE-GMM optimization did not converge: {result.message}")
+            warnings.warn(f"CUE-GMM optimization did not converge: {result.message}", stacklevel=2)
 
         # Compute variance-covariance matrix
         if self.se_type == "analytical":
@@ -554,7 +560,7 @@ class ContinuousUpdatedGMM:
             self.bse_ = np.sqrt(np.diag(self.vcov_))
         elif self.se_type == "bootstrap":
             if verbose:
-                print(f"Computing bootstrap SEs with {self.n_bootstrap} replications...")
+                logger.info("Computing bootstrap SEs with %d replications...", self.n_bootstrap)
             self.bootstrap_params_ = self._compute_bootstrap(verbose=verbose)
             self.bse_ = np.std(self.bootstrap_params_, axis=0, ddof=1)
             self.vcov_ = np.cov(self.bootstrap_params_, rowvar=False)
@@ -599,7 +605,7 @@ class ContinuousUpdatedGMM:
             GtW = G.T @ linalg.solve(W, G, assume_a="pos")
             vcov = linalg.inv(GtW)
         except linalg.LinAlgError:
-            warnings.warn("Singular variance matrix, using pseudo-inverse")
+            warnings.warn("Singular variance matrix, using pseudo-inverse", stacklevel=2)
             if self.regularize:
                 eps = 1e-8 * np.trace(W) / W.shape[0]
                 W_reg = W + eps * np.eye(W.shape[0])
@@ -649,7 +655,7 @@ class ContinuousUpdatedGMM:
 
         for b in range(self.n_bootstrap):
             if verbose and (b + 1) % 100 == 0:
-                print(f"  Bootstrap iteration {b + 1}/{self.n_bootstrap}")
+                logger.info("  Bootstrap iteration %d/%d", b + 1, self.n_bootstrap)
 
             if self.bootstrap_method == "residual":
                 # Residual bootstrap
@@ -679,7 +685,7 @@ class ContinuousUpdatedGMM:
                 bootstrap_params[b] = temp_params
             except Exception as e:
                 if verbose:
-                    warnings.warn(f"Bootstrap iteration {b + 1} failed: {str(e)}")
+                    warnings.warn(f"Bootstrap iteration {b + 1} failed: {e!s}", stacklevel=2)
                 # Use original estimates if bootstrap fails
                 bootstrap_params[b] = self.params_
 
@@ -733,7 +739,7 @@ class ContinuousUpdatedGMM:
     def _create_results(self) -> GMMResults:
         """Create GMMResults object with estimation results."""
         # Parameter names
-        param_names = ["const"] + self.exog_vars
+        param_names = ["const", *self.exog_vars]
 
         # Convert params and standard errors to pd.Series
         params_series = pd.Series(self.params_, index=param_names)
@@ -816,7 +822,7 @@ class ContinuousUpdatedGMM:
 
         return results
 
-    def j_statistic(self) -> Dict[str, Union[float, bool]]:
+    def j_statistic(self) -> dict[str, float | bool]:
         """
         Hansen J-test for overidentification.
 
@@ -844,7 +850,7 @@ class ContinuousUpdatedGMM:
         --------
         >>> results = model.fit()
         >>> j_test = results.j_statistic()
-        >>> if j_test['reject']:
+        >>> if j_test["reject"]:
         ...     print("Warning: Model rejected by J-test")
         """
         if self.params_ is None:
@@ -916,7 +922,7 @@ class ContinuousUpdatedGMM:
         efficiency = (ts_se / cue_se) ** 2
 
         # Build comparison DataFrame
-        param_names = ["const"] + self.exog_vars
+        param_names = ["const", *self.exog_vars]
         comparison = pd.DataFrame(
             {
                 "CUE Coef": cue_params,
@@ -970,7 +976,7 @@ class ContinuousUpdatedGMM:
         if self.params_ is None:
             raise RuntimeError("Must call fit() before conf_int()")
 
-        param_names = ["const"] + self.exog_vars
+        param_names = ["const", *self.exog_vars]
         ci = pd.DataFrame(index=param_names, columns=["lower", "upper"])
 
         if method == "normal":
@@ -1034,7 +1040,7 @@ class ContinuousUpdatedGMM:
         if self.bse_ is None:
             raise RuntimeError("Must call fit() before accessing bse")
 
-        param_names = ["const"] + self.exog_vars
+        param_names = ["const", *self.exog_vars]
         return pd.Series(self.bse_, index=param_names)
 
     def __repr__(self) -> str:

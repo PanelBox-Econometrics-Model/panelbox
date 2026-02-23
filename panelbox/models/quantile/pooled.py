@@ -7,18 +7,16 @@ and estimates quantile coefficients, with optional cluster-robust standard error
 
 from __future__ import annotations
 
+import logging
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from panelbox.models.quantile.base import QuantilePanelModel, QuantilePanelResult
 from panelbox.optimization.quantile.interior_point import frisch_newton_qr
-from panelbox.standard_errors import cluster_by_entity
 
-if TYPE_CHECKING:
-    pass
+logger = logging.getLogger(__name__)
 
 
 # Define ConvergenceWarning
@@ -89,8 +87,7 @@ class PooledQuantile(QuantilePanelModel):
     >>> print(results.summary())
     >>>
     >>> # Multiple quantiles
-    >>> model_multi = pb.PooledQuantile(y, X, entity_id=entity_id,
-    ...                                  quantiles=[0.25, 0.5, 0.75])
+    >>> model_multi = pb.PooledQuantile(y, X, entity_id=entity_id, quantiles=[0.25, 0.5, 0.75])
     >>> results_multi = model_multi.fit()
 
     Notes
@@ -116,12 +113,12 @@ class PooledQuantile(QuantilePanelModel):
 
     def __init__(
         self,
-        endog: Union[np.ndarray, pd.Series],
-        exog: Union[np.ndarray, pd.DataFrame],
-        entity_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        time_id: Optional[Union[np.ndarray, pd.Series]] = None,
-        quantiles: Union[float, np.ndarray] = 0.5,
-        weights: Optional[Union[np.ndarray, pd.Series]] = None,
+        endog: np.ndarray | pd.Series,
+        exog: np.ndarray | pd.DataFrame,
+        entity_id: np.ndarray | pd.Series | None = None,
+        time_id: np.ndarray | pd.Series | None = None,
+        quantiles: float | np.ndarray = 0.5,
+        weights: np.ndarray | pd.Series | None = None,
     ):
         """Initialize pooled quantile regression model."""
         # Convert to numpy arrays
@@ -219,15 +216,17 @@ class PooledQuantile(QuantilePanelModel):
         for tau in self.quantiles:
             # Get initial parameters (OLS)
             try:
-                params_init = np.linalg.lstsq(X, y, rcond=None)[0]
-            except:
-                params_init = np.zeros(n_vars)
+                np.linalg.lstsq(X, y, rcond=None)[0]
+            except Exception:
+                np.zeros(n_vars)
 
             # Fit using interior point method
             params, info = frisch_newton_qr(X, y, tau=tau, max_iter=maxiter, tol=tol, **kwargs)
 
             if not info.get("converged", False):
-                warnings.warn(f"Optimization did not converge for τ={tau}", ConvergenceWarning)
+                warnings.warn(
+                    f"Optimization did not converge for τ={tau}", ConvergenceWarning, stacklevel=2
+                )
                 self.converged = False
             else:
                 self.converged = True
@@ -245,10 +244,7 @@ class PooledQuantile(QuantilePanelModel):
 
         # Stack results
         params_arr = np.column_stack(params_list)
-        if len(vcov_list) == 1:
-            vcov_arr = vcov_list[0]
-        else:
-            vcov_arr = np.dstack(vcov_list)
+        vcov_arr = vcov_list[0] if len(vcov_list) == 1 else np.dstack(vcov_list)
 
         # Create results object
         return PooledQuantileResults(self, params_arr, vcov_arr, self.quantiles)
@@ -412,16 +408,13 @@ class PooledQuantile(QuantilePanelModel):
         # Degree of freedom adjustment
         # Degree of freedom adjustment (with protection for small samples)
         denom = n_clusters - n_vars
-        if denom <= 0:
-            dof_adj = 1.0
-        else:
-            dof_adj = (n_clusters - 1) / denom
+        dof_adj = 1.0 if denom <= 0 else (n_clusters - 1) / denom
         vcov = dof_adj * (bread_inv @ meat @ bread_inv)
 
         return vcov
 
     @staticmethod
-    def _estimate_sparsity(residuals: np.ndarray, tau: float, h: Optional[float] = None) -> float:
+    def _estimate_sparsity(residuals: np.ndarray, tau: float, h: float | None = None) -> float:
         """
         Estimate sparsity parameter (density at the quantile).
 
@@ -465,8 +458,8 @@ class PooledQuantile(QuantilePanelModel):
 
     def predict(
         self,
-        params: Optional[np.ndarray] = None,
-        exog: Optional[np.ndarray] = None,
+        params: np.ndarray | None = None,
+        exog: np.ndarray | None = None,
         quantile_idx: int = 0,
     ) -> np.ndarray:
         """
@@ -497,10 +490,7 @@ class PooledQuantile(QuantilePanelModel):
         if exog is None:
             exog = self.exog
 
-        if params.ndim == 1:
-            pred = exog @ params
-        else:
-            pred = exog @ params[:, quantile_idx]
+        pred = exog @ params if params.ndim == 1 else exog @ params[:, quantile_idx]
 
         return pred
 
@@ -545,7 +535,7 @@ class PooledQuantileResults(QuantilePanelResult):
                 [np.sqrt(np.diag(vcov[:, :, i])) for i in range(vcov.shape[2])]
             ).T
 
-    def predict(self, exog: Optional[np.ndarray] = None, quantile_idx: int = 0) -> np.ndarray:
+    def predict(self, exog: np.ndarray | None = None, quantile_idx: int = 0) -> np.ndarray:
         """
         Generate predictions.
 
@@ -564,10 +554,7 @@ class PooledQuantileResults(QuantilePanelResult):
         if exog is None:
             exog = self.model.exog
 
-        if self.params.ndim == 1:
-            pred = exog @ self.params
-        else:
-            pred = exog @ self.params[:, quantile_idx]
+        pred = exog @ self.params if self.params.ndim == 1 else exog @ self.params[:, quantile_idx]
 
         return pred
 

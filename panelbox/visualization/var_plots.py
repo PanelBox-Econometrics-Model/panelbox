@@ -4,10 +4,17 @@ Visualization functions for Panel VAR models.
 This module provides plotting functions for Panel VAR diagnostics and results.
 """
 
-from typing import Dict, Optional, Tuple
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+if TYPE_CHECKING:
+    from panelbox.var.fevd import FEVDResult
+    from panelbox.var.irf import IRFResult
 
 try:
     import plotly.graph_objects as go
@@ -16,14 +23,16 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
+logger = logging.getLogger(__name__)
+
 
 def plot_stability(
     eigenvalues: np.ndarray,
     title: str = "VAR Stability (Roots of Companion Matrix)",
     backend: str = "matplotlib",
-    figsize: Tuple[int, int] = (8, 8),
+    figsize: tuple[int, int] = (8, 8),
     show: bool = True,
-) -> Optional[object]:
+) -> object | None:
     """
     Plot eigenvalues of the companion matrix with unit circle.
 
@@ -61,7 +70,7 @@ def plot_stability(
     >>> results.plot_stability()
     >>> # Or get figure for customization
     >>> fig = results.plot_stability(show=False)
-    >>> plt.savefig('stability.png')
+    >>> plt.savefig("stability.png")
     """
     if backend == "matplotlib":
         return _plot_stability_matplotlib(eigenvalues, title, figsize, show)
@@ -76,8 +85,8 @@ def plot_stability(
 
 
 def _plot_stability_matplotlib(
-    eigenvalues: np.ndarray, title: str, figsize: Tuple[int, int], show: bool
-) -> Optional[plt.Figure]:
+    eigenvalues: np.ndarray, title: str, figsize: tuple[int, int], show: bool
+) -> plt.Figure | None:
     """Plot stability using matplotlib."""
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -123,7 +132,7 @@ def _plot_stability_matplotlib(
         )
 
     # Add labels with modulus for each eigenvalue
-    for i, (re, im, mod) in enumerate(zip(eig_real, eig_imag, moduli)):
+    for _i, (re, im, mod) in enumerate(zip(eig_real, eig_imag, moduli)):
         ax.annotate(
             f"|λ|={mod:.3f}",
             xy=(re, im),
@@ -165,7 +174,7 @@ def _plot_stability_matplotlib(
         return fig
 
 
-def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> Optional[go.Figure]:
+def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> go.Figure | None:
     """Plot stability using plotly."""
     # Unit circle
     theta = np.linspace(0, 2 * np.pi, 100)
@@ -188,7 +197,7 @@ def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> O
             y=circle_y,
             mode="lines",
             name="Unit Circle",
-            line=dict(color="blue", width=2, dash="dash"),
+            line={"color": "blue", "width": 2, "dash": "dash"},
             hoverinfo="name",
         )
     )
@@ -207,9 +216,12 @@ def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> O
                 y=eig_imag[stable_mask],
                 mode="markers",
                 name="Stable (|λ| < 1)",
-                marker=dict(
-                    color="green", size=12, symbol="circle", line=dict(color="black", width=1)
-                ),
+                marker={
+                    "color": "green",
+                    "size": 12,
+                    "symbol": "circle",
+                    "line": {"color": "black", "width": 1},
+                },
                 text=stable_hover,
                 hoverinfo="text",
             )
@@ -229,7 +241,12 @@ def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> O
                 y=eig_imag[~stable_mask],
                 mode="markers",
                 name="Unstable (|λ| ≥ 1)",
-                marker=dict(color="red", size=12, symbol="x", line=dict(color="black", width=1)),
+                marker={
+                    "color": "red",
+                    "size": 12,
+                    "symbol": "x",
+                    "line": {"color": "black", "width": 1},
+                },
                 text=unstable_hover,
                 hoverinfo="text",
             )
@@ -238,27 +255,27 @@ def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> O
     # Set layout
     max_val = max(1.2, np.max(np.abs(eigenvalues)) * 1.1)
     fig.update_layout(
-        title=dict(text=title, font=dict(size=16, weight="bold")),
-        xaxis=dict(
-            title="Real Part",
-            range=[-max_val, max_val],
-            zeroline=True,
-            zerolinecolor="black",
-            zerolinewidth=1,
-            showgrid=True,
-            gridcolor="lightgray",
-        ),
-        yaxis=dict(
-            title="Imaginary Part",
-            range=[-max_val, max_val],
-            zeroline=True,
-            zerolinecolor="black",
-            zerolinewidth=1,
-            showgrid=True,
-            gridcolor="lightgray",
-            scaleanchor="x",
-            scaleratio=1,
-        ),
+        title={"text": title, "font": {"size": 16, "weight": "bold"}},
+        xaxis={
+            "title": "Real Part",
+            "range": [-max_val, max_val],
+            "zeroline": True,
+            "zerolinecolor": "black",
+            "zerolinewidth": 1,
+            "showgrid": True,
+            "gridcolor": "lightgray",
+        },
+        yaxis={
+            "title": "Imaginary Part",
+            "range": [-max_val, max_val],
+            "zeroline": True,
+            "zerolinecolor": "black",
+            "zerolinewidth": 1,
+            "showgrid": True,
+            "gridcolor": "lightgray",
+            "scaleanchor": "x",
+            "scaleratio": 1,
+        },
         hovermode="closest",
         showlegend=True,
         plot_bgcolor="white",
@@ -274,13 +291,13 @@ def _plot_stability_plotly(eigenvalues: np.ndarray, title: str, show: bool) -> O
 
 
 def plot_instrument_sensitivity(
-    sensitivity_results: Dict,
+    sensitivity_results: dict,
     title: str = "Instrument Sensitivity Analysis",
     backend: str = "matplotlib",
-    figsize: Tuple[int, int] = (12, 6),
+    figsize: tuple[int, int] = (12, 6),
     show: bool = True,
     max_coefs_to_plot: int = 6,
-) -> Optional[object]:
+) -> object | None:
     """
     Plot coefficient stability across different instrument counts.
 
@@ -321,7 +338,7 @@ def plot_instrument_sensitivity(
     >>> from panelbox.var.diagnostics import instrument_sensitivity_analysis
     >>> sensitivity = instrument_sensitivity_analysis(
     ...     model_func=lambda **kw: estimate_panelvar_gmm(data, **kw),
-    ...     max_instruments_list=[6, 12, 24, 48]
+    ...     max_instruments_list=[6, 12, 24, 48],
     ... )
     >>> plot_instrument_sensitivity(sensitivity)
     """
@@ -340,12 +357,12 @@ def plot_instrument_sensitivity(
 
 
 def _plot_sensitivity_matplotlib(
-    sensitivity_results: Dict,
+    sensitivity_results: dict,
     title: str,
-    figsize: Tuple[int, int],
+    figsize: tuple[int, int],
     show: bool,
     max_coefs: int,
-) -> Optional[plt.Figure]:
+) -> plt.Figure | None:
     """Plot sensitivity analysis using matplotlib."""
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -385,7 +402,7 @@ def _plot_sensitivity_matplotlib(
             ha="center",
             fontsize=10,
             style="italic",
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.3),
+            bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.3},
         )
 
     plt.tight_layout()
@@ -398,11 +415,11 @@ def _plot_sensitivity_matplotlib(
 
 
 def _plot_sensitivity_plotly(
-    sensitivity_results: Dict,
+    sensitivity_results: dict,
     title: str,
     show: bool,
     max_coefs: int,
-) -> Optional[go.Figure]:
+) -> go.Figure | None:
     """Plot sensitivity analysis using plotly."""
     coefficients = sensitivity_results["coefficients"]
     n_instruments = sensitivity_results["n_instruments_actual"]
@@ -438,17 +455,17 @@ def _plot_sensitivity_plotly(
                 name=f"{coef_name} ({change_pct:.1f}%)",
                 text=hover_text,
                 hoverinfo="text",
-                line=dict(width=2),
-                marker=dict(size=8),
+                line={"width": 2},
+                marker={"size": 8},
             )
         )
 
     # Layout
     interpretation = sensitivity_results.get("interpretation", "")
     fig.update_layout(
-        title=dict(text=title, font=dict(size=16)),
-        xaxis=dict(title="Number of Instruments", showgrid=True),
-        yaxis=dict(title="Coefficient Value", showgrid=True),
+        title={"text": title, "font": {"size": 16}},
+        xaxis={"title": "Number of Instruments", "showgrid": True},
+        yaxis={"title": "Coefficient Value", "showgrid": True},
         hovermode="closest",
         showlegend=True,
         plot_bgcolor="white",
@@ -465,9 +482,10 @@ def _plot_sensitivity_plotly(
             x=0.5,
             y=-0.15,
             showarrow=False,
-            font=dict(
-                size=12, color="darkgreen" if "stable" in interpretation.lower() else "darkred"
-            ),
+            font={
+                "size": 12,
+                "color": "darkgreen" if "stable" in interpretation.lower() else "darkred",
+            },
             bgcolor="lightyellow",
             bordercolor="gray",
             borderwidth=1,
@@ -481,16 +499,16 @@ def _plot_sensitivity_plotly(
 
 
 def plot_irf(
-    irf_result: "IRFResult",
-    impulse: Optional[str] = None,
-    response: Optional[str] = None,
-    variables: Optional[list] = None,
+    irf_result: IRFResult,
+    impulse: str | None = None,
+    response: str | None = None,
+    variables: list | None = None,
     ci: bool = True,
     backend: str = "matplotlib",
-    figsize: Optional[Tuple[int, int]] = None,
+    figsize: tuple[int, int] | None = None,
     theme: str = "academic",
     show: bool = True,
-) -> Optional[object]:
+) -> object | None:
     """
     Plot Impulse Response Functions in a grid layout.
 
@@ -523,13 +541,13 @@ def plot_irf(
     Examples
     --------
     >>> result = model.fit()
-    >>> irf = result.irf(periods=20, ci_method='bootstrap')
+    >>> irf = result.irf(periods=20, ci_method="bootstrap")
     >>> # Plot all IRFs
     >>> irf.plot()
     >>> # Plot only responses to GDP shock
-    >>> irf.plot(impulse='gdp')
+    >>> irf.plot(impulse="gdp")
     >>> # Plot only how inflation responds
-    >>> irf.plot(response='inflation')
+    >>> irf.plot(response="inflation")
     """
     if backend == "matplotlib":
         return _plot_irf_matplotlib(
@@ -545,22 +563,19 @@ def plot_irf(
         raise ValueError(f"backend must be 'matplotlib' or 'plotly', got '{backend}'")
 
 
-def _plot_irf_matplotlib(
-    irf_result: "IRFResult",
-    impulse: Optional[str],
-    response: Optional[str],
-    variables: Optional[list],
+def _plot_irf_matplotlib(  # noqa: C901
+    irf_result: IRFResult,
+    impulse: str | None,
+    response: str | None,
+    variables: list | None,
     ci: bool,
-    figsize: Optional[Tuple[int, int]],
+    figsize: tuple[int, int] | None,
     theme: str,
     show: bool,
-) -> Optional[plt.Figure]:
+) -> plt.Figure | None:
     """Plot IRFs using matplotlib."""
     # Determine which variables to plot
-    if variables is not None:
-        var_names = variables
-    else:
-        var_names = irf_result.var_names
+    var_names = variables if variables is not None else irf_result.var_names
 
     # Determine grid size
     if impulse is not None and response is not None:
@@ -636,7 +651,7 @@ def _plot_irf_matplotlib(
                 ci_upper,
                 alpha=0.3,
                 color=theme_config["ci_color"],
-                label=f"{int(irf_result.ci_level*100)}% CI",
+                label=f"{int(irf_result.ci_level * 100)}% CI",
             )
 
         # Zero line
@@ -664,25 +679,22 @@ def _plot_irf_matplotlib(
 
 
 def _plot_irf_plotly(
-    irf_result: "IRFResult",
-    impulse: Optional[str],
-    response: Optional[str],
-    variables: Optional[list],
+    irf_result: IRFResult,
+    impulse: str | None,
+    response: str | None,
+    variables: list | None,
     ci: bool,
     theme: str,
     show: bool,
-) -> Optional[go.Figure]:
+) -> go.Figure | None:
     """Plot IRFs using Plotly."""
     try:
         from plotly.subplots import make_subplots
     except ImportError:
-        raise ImportError("Plotly is required. Install with: pip install plotly")
+        raise ImportError("Plotly is required. Install with: pip install plotly") from None
 
     # Determine which variables to plot
-    if variables is not None:
-        var_names = variables
-    else:
-        var_names = irf_result.var_names
+    var_names = variables if variables is not None else irf_result.var_names
 
     # Determine grid size
     if impulse is not None and response is not None:
@@ -739,7 +751,7 @@ def _plot_irf_plotly(
                 y=irf_values,
                 mode="lines",
                 name="IRF",
-                line=dict(color=theme_config["line_color"], width=theme_config["linewidth"]),
+                line={"color": theme_config["line_color"], "width": theme_config["linewidth"]},
                 showlegend=(idx == 0),
             ),
             row=row,
@@ -758,7 +770,7 @@ def _plot_irf_plotly(
                     x=horizons,
                     y=ci_upper,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     showlegend=False,
                     hoverinfo="skip",
                 ),
@@ -771,10 +783,10 @@ def _plot_irf_plotly(
                     x=horizons,
                     y=ci_lower,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     fillcolor=theme_config["ci_color"],
                     fill="tonexty",
-                    name=f"{int(irf_result.ci_level*100)}% CI",
+                    name=f"{int(irf_result.ci_level * 100)}% CI",
                     showlegend=(idx == 0),
                 ),
                 row=row,
@@ -803,7 +815,7 @@ def _plot_irf_plotly(
         return fig
 
 
-def _get_theme_config(theme: str) -> Dict:
+def _get_theme_config(theme: str) -> dict:
     """Get theme configuration for plots."""
     themes = {
         "academic": {
@@ -838,15 +850,15 @@ def _get_theme_config(theme: str) -> Dict:
 
 
 def plot_fevd(
-    fevd_result: "FEVDResult",
+    fevd_result: FEVDResult,
     kind: str = "area",
-    variables: Optional[list] = None,
-    horizons: Optional[list] = None,
+    variables: list | None = None,
+    horizons: list | None = None,
     backend: str = "matplotlib",
-    figsize: Optional[Tuple[int, int]] = None,
+    figsize: tuple[int, int] | None = None,
     theme: str = "academic",
     show: bool = True,
-) -> Optional[object]:
+) -> object | None:
     """
     Plot Forecast Error Variance Decomposition.
 
@@ -878,7 +890,7 @@ def plot_fevd(
     --------
     >>> fevd = result.fevd(periods=20)
     >>> fevd.plot()
-    >>> fevd.plot(kind='bar', horizons=[1, 5, 10, 20])
+    >>> fevd.plot(kind="bar", horizons=[1, 5, 10, 20])
     """
     if backend == "matplotlib":
         return _plot_fevd_matplotlib(fevd_result, kind, variables, horizons, figsize, theme, show)
@@ -891,29 +903,23 @@ def plot_fevd(
 
 
 def _plot_fevd_matplotlib(
-    fevd_result: "FEVDResult",
+    fevd_result: FEVDResult,
     kind: str,
-    variables: Optional[list],
-    horizons: Optional[list],
-    figsize: Optional[Tuple[int, int]],
+    variables: list | None,
+    horizons: list | None,
+    figsize: tuple[int, int] | None,
     theme: str,
     show: bool,
-) -> Optional[plt.Figure]:
+) -> plt.Figure | None:
     """Plot FEVD using matplotlib."""
     # Determine which variables to plot
-    if variables is not None:
-        var_names = variables
-    else:
-        var_names = fevd_result.var_names
+    var_names = variables if variables is not None else fevd_result.var_names
 
     K_plot = len(var_names)
 
     # Auto-size figure
     if figsize is None:
-        if kind == "area":
-            figsize = (10, 3 * K_plot)
-        else:
-            figsize = (12, 3 * K_plot)
+        figsize = (10, 3 * K_plot) if kind == "area" else (12, 3 * K_plot)
 
     theme_config = _get_theme_config(theme)
 
@@ -1020,24 +1026,21 @@ def _plot_fevd_matplotlib(
 
 
 def _plot_fevd_plotly(
-    fevd_result: "FEVDResult",
+    fevd_result: FEVDResult,
     kind: str,
-    variables: Optional[list],
-    horizons: Optional[list],
+    variables: list | None,
+    horizons: list | None,
     theme: str,
     show: bool,
-) -> Optional[go.Figure]:
+) -> go.Figure | None:
     """Plot FEVD using Plotly."""
     try:
         from plotly.subplots import make_subplots
     except ImportError:
-        raise ImportError("Plotly is required. Install with: pip install plotly")
+        raise ImportError("Plotly is required. Install with: pip install plotly") from None
 
     # Determine which variables to plot
-    if variables is not None:
-        var_names = variables
-    else:
-        var_names = fevd_result.var_names
+    var_names = variables if variables is not None else fevd_result.var_names
 
     K_plot = len(var_names)
 
@@ -1079,7 +1082,7 @@ def _plot_fevd_plotly(
                         mode="lines",
                         name=fevd_result.var_names[j],
                         stackgroup="one",
-                        line=dict(width=0.5, color=colors[j % len(colors)]),
+                        line={"width": 0.5, "color": colors[j % len(colors)]},
                         fillcolor=colors[j % len(colors)],
                         showlegend=(idx == 0),
                     ),
@@ -1107,7 +1110,7 @@ def _plot_fevd_plotly(
                         x=horizons,
                         y=data[:, j] * 100,
                         name=fevd_result.var_names[j],
-                        marker=dict(color=colors[j % len(colors)]),
+                        marker={"color": colors[j % len(colors)]},
                         showlegend=(idx == 0),
                     ),
                     row=idx + 1,

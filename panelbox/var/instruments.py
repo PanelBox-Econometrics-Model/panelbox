@@ -1,10 +1,11 @@
 """
-Instrument matrix construction for Panel VAR GMM estimation
+Instrument matrix construction for Panel VAR GMM estimation.
 
 This module implements the construction of GMM instrument matrices following
 Holtz-Eakin, Newey & Rosen (1988) and Abrigo & Love (2016).
 
-References:
+References
+----------
 - Holtz-Eakin, D., Newey, W., & Rosen, H. S. (1988). Estimating vector autoregressions
   with panel data. Econometrica, 1371-1395.
 - Abrigo, M. R., & Love, I. (2016). Estimation of panel vector autoregression in Stata.
@@ -13,11 +14,15 @@ References:
   in Stata. The Stata Journal, 9(1), 86-136.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class PanelVARInstruments:
@@ -49,7 +54,7 @@ class PanelVARInstruments:
         var_lags: int,
         n_vars: int,
         instrument_type: str = "all",
-        max_instruments: Optional[int] = None,
+        max_instruments: int | None = None,
     ):
         self.var_lags = var_lags
         self.n_vars = n_vars
@@ -64,8 +69,8 @@ class PanelVARInstruments:
         data: pd.DataFrame,
         entity_col: str = "entity",
         time_col: str = "time",
-        value_cols: Optional[List[str]] = None,
-    ) -> Tuple[np.ndarray, Dict]:
+        value_cols: list[str] | None = None,
+    ) -> tuple[np.ndarray, dict]:
         """
         Construct GMM instrument matrix Z.
 
@@ -108,7 +113,7 @@ class PanelVARInstruments:
             raise ValueError(f"Expected {self.n_vars} variables, got {len(value_cols)}")
 
         # Sort data
-        df = data[[entity_col, time_col] + value_cols].copy()
+        df = data[[entity_col, time_col, *value_cols]].copy()
         df = df.sort_values([entity_col, time_col]).reset_index(drop=True)
 
         # Build instrument matrix
@@ -124,13 +129,14 @@ class PanelVARInstruments:
                 f"Number of instruments ({meta['total_instruments']}) exceeds number of entities "
                 f"({n_entities}). Consider using instrument_type='collapsed' or setting max_instruments.",
                 UserWarning,
+                stacklevel=2,
             )
 
         return Z, meta
 
     def _construct_all_instruments(
-        self, data: pd.DataFrame, entity_col: str, time_col: str, value_cols: List[str]
-    ) -> Tuple[np.ndarray, Dict]:
+        self, data: pd.DataFrame, entity_col: str, time_col: str, value_cols: list[str]
+    ) -> tuple[np.ndarray, dict]:
         """
         Construct instrument matrix using all available lags.
 
@@ -144,9 +150,9 @@ class PanelVARInstruments:
         """
         # First pass: determine maximum lag depth across all observations
         max_lag_depth_global = 0
-        for entity_id, group in data.groupby(entity_col):
+        for _entity_id, group in data.groupby(entity_col):
             times = sorted(group[time_col].values)
-            for t_idx, t in enumerate(times):
+            for _t_idx, t in enumerate(times):
                 min_valid_lag = t - self.var_lags - 1
                 available_lags = [lag_t for lag_t in times if lag_t <= min_valid_lag]
                 if available_lags:
@@ -170,7 +176,7 @@ class PanelVARInstruments:
             times = sorted(group[time_col].values)
             var_data_dict = {var: group.set_index(time_col)[var] for var in value_cols}
 
-            for t_idx, t in enumerate(times):
+            for _t_idx, t in enumerate(times):
                 # Minimum valid lag for instruments: t - p - 1
                 min_valid_lag = t - self.var_lags - 1
 
@@ -225,8 +231,8 @@ class PanelVARInstruments:
         return Z, metadata
 
     def _construct_collapsed_instruments(
-        self, data: pd.DataFrame, entity_col: str, time_col: str, value_cols: List[str]
-    ) -> Tuple[np.ndarray, Dict]:
+        self, data: pd.DataFrame, entity_col: str, time_col: str, value_cols: list[str]
+    ) -> tuple[np.ndarray, dict]:
         """
         Construct collapsed instrument matrix (Roodman 2009).
 
@@ -244,7 +250,7 @@ class PanelVARInstruments:
 
         # Determine maximum lag depth across all entities
         max_lag_depth = 0
-        for entity_id, group in data.groupby(entity_col):
+        for _entity_id, group in data.groupby(entity_col):
             times = sorted(group[time_col].values)
             if times:
                 max_lag_depth = max(max_lag_depth, len(times))
@@ -260,7 +266,7 @@ class PanelVARInstruments:
         for entity_id, group in data.groupby(entity_col):
             times = sorted(group[time_col].values)
 
-            for t_idx, t in enumerate(times):
+            for _t_idx, t in enumerate(times):
                 instrument_row = []
 
                 # For each variable
@@ -306,7 +312,7 @@ class PanelVARInstruments:
 
         return Z, metadata
 
-    def get_instrument_count_summary(self, metadata: Dict) -> str:
+    def get_instrument_count_summary(self, metadata: dict) -> str:
         """
         Generate human-readable summary of instrument construction.
 
@@ -346,10 +352,10 @@ def build_gmm_instruments(
     n_vars: int,
     entity_col: str = "entity",
     time_col: str = "time",
-    value_cols: Optional[List[str]] = None,
+    value_cols: list[str] | None = None,
     instrument_type: str = "all",
-    max_instruments: Optional[int] = None,
-) -> Tuple[np.ndarray, Dict]:
+    max_instruments: int | None = None,
+) -> tuple[np.ndarray, dict]:
     """
     Convenience function to build GMM instrument matrix.
 
@@ -381,14 +387,16 @@ def build_gmm_instruments(
 
     Examples
     --------
-    >>> df = pd.DataFrame({
-    ...     'entity': [1, 1, 1, 1, 2, 2, 2, 2],
-    ...     'time': [1, 2, 3, 4, 1, 2, 3, 4],
-    ...     'y1': [1, 2, 3, 4, 5, 6, 7, 8],
-    ...     'y2': [10, 20, 30, 40, 50, 60, 70, 80]
-    ... })
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "entity": [1, 1, 1, 1, 2, 2, 2, 2],
+    ...         "time": [1, 2, 3, 4, 1, 2, 3, 4],
+    ...         "y1": [1, 2, 3, 4, 5, 6, 7, 8],
+    ...         "y2": [10, 20, 30, 40, 50, 60, 70, 80],
+    ...     }
+    ... )
     >>> Z, meta = build_gmm_instruments(df, var_lags=1, n_vars=2)
-    >>> print(meta['total_instruments'])
+    >>> print(meta["total_instruments"])
     """
     builder = PanelVARInstruments(
         var_lags=var_lags,

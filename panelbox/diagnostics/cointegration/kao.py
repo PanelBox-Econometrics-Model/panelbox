@@ -1,5 +1,5 @@
 """
-Kao (1999) DF and ADF-Based Panel Cointegration Tests
+Kao (1999) DF and ADF-Based Panel Cointegration Tests.
 
 Implementation of Kao's Dickey-Fuller and Augmented Dickey-Fuller tests
 for panel cointegration, assuming a homogeneous cointegrating vector.
@@ -10,13 +10,17 @@ Kao, C. (1999). "Spurious Regression and Residual-Based Tests for
     Cointegration in Panel Data." Journal of Econometrics, 90(1), 1-44.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,9 +48,9 @@ class KaoResult:
         Average number of time periods
     """
 
-    statistic: Dict[str, float]
-    pvalue: Dict[str, float]
-    critical_values: Dict[str, Dict[str, float]]
+    statistic: dict[str, float]
+    pvalue: dict[str, float]
+    critical_values: dict[str, dict[str, float]]
     method: str
     trend: str
     lags: int
@@ -54,8 +58,8 @@ class KaoResult:
     n_time: int
 
     def reject_at(
-        self, alpha: float = 0.05, test: Optional[str] = None
-    ) -> Union[bool, Dict[str, bool]]:
+        self, alpha: float = 0.05, test: str | None = None
+    ) -> bool | dict[str, bool]:
         """
         Check if null hypothesis is rejected at given significance level.
 
@@ -85,7 +89,7 @@ class KaoResult:
             Summary table with statistics, p-values, and critical values
         """
         rows = []
-        for test in self.statistic.keys():
+        for test in self.statistic:
             row = {
                 "Test": test,
                 "Statistic": self.statistic[test],
@@ -109,15 +113,15 @@ class KaoResult:
         return df
 
     def __repr__(self) -> str:
-        summary_str = f"Kao (1999) Cointegration Test Results\n"
-        summary_str += f"{'='*60}\n"
+        summary_str = "Kao (1999) Cointegration Test Results\n"
+        summary_str += f"{'=' * 60}\n"
         summary_str += f"Method: {self.method}\n"
         summary_str += f"Trend: {self.trend}\n"
         summary_str += f"Lags: {self.lags}\n"
         summary_str += f"Entities: {self.n_entities}, Time periods: {self.n_time}\n"
         summary_str += f"\n{self.summary().to_string(index=False)}\n"
-        summary_str += f"\nH0: No cointegration (homogeneous cointegrating vector)\n"
-        summary_str += f"***, **, * denote rejection at 1%, 5%, 10% level"
+        summary_str += "\nH0: No cointegration (homogeneous cointegrating vector)\n"
+        summary_str += "***, **, * denote rejection at 1%, 5%, 10% level"
         return summary_str
 
 
@@ -126,9 +130,9 @@ def _estimate_pooled_cointegrating_regression(
     entity_col: str,
     time_col: str,
     y_var: str,
-    x_vars: List[str],
+    x_vars: list[str],
     trend: str = "c",
-) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray]]:
+) -> tuple[np.ndarray, np.ndarray, list[np.ndarray]]:
     """
     Estimate pooled cointegrating regression with entity fixed effects.
 
@@ -213,11 +217,11 @@ def _estimate_pooled_cointegrating_regression(
         return beta, pooled_resid, entity_resids
 
     except np.linalg.LinAlgError:
-        warnings.warn("Singular matrix in pooled cointegrating regression")
+        warnings.warn("Singular matrix in pooled cointegrating regression", stacklevel=2)
         return np.full(X_pooled.shape[1], np.nan), np.full(len(y_pooled), np.nan), []
 
 
-def _compute_long_run_variance_pooled(resids: List[np.ndarray], lags: int = 4) -> float:
+def _compute_long_run_variance_pooled(resids: list[np.ndarray], lags: int = 4) -> float:
     """
     Compute long-run variance for pooled residuals.
 
@@ -236,7 +240,7 @@ def _compute_long_run_variance_pooled(resids: List[np.ndarray], lags: int = 4) -
     # Stack residuals
     resid_pooled = np.concatenate(resids)
     N = len(resids)
-    T = len(resids[0])
+    len(resids[0])
 
     # Variance
     gamma0 = np.mean(resid_pooled**2)
@@ -260,7 +264,7 @@ def _compute_long_run_variance_pooled(resids: List[np.ndarray], lags: int = 4) -
     return sigma2_lr
 
 
-def _kao_df_test(resids: List[np.ndarray]) -> float:
+def _kao_df_test(resids: list[np.ndarray]) -> float:
     """
     Compute Kao DF test statistic.
 
@@ -303,7 +307,7 @@ def _kao_df_test(resids: List[np.ndarray]) -> float:
         # Compute standard error
         resid_df = delta_resid_pooled - rho * resid_lag_pooled
         sigma2 = np.sum(resid_df**2) / (len(resid_df) - 1)
-        se_rho = np.sqrt(sigma2 / np.sum(resid_lag_pooled**2))
+        np.sqrt(sigma2 / np.sum(resid_lag_pooled**2))
 
         # Standardize using Kao's adjustment
         # Kao (1999) provides modified statistics
@@ -311,11 +315,11 @@ def _kao_df_test(resids: List[np.ndarray]) -> float:
 
         return t_kao
 
-    except:
+    except Exception:
         return np.nan
 
 
-def _kao_adf_test(resids: List[np.ndarray], lags: int = 1) -> float:
+def _kao_adf_test(resids: list[np.ndarray], lags: int = 1) -> float:
     """
     Compute Kao ADF test statistic.
 
@@ -374,14 +378,14 @@ def _kao_adf_test(resids: List[np.ndarray], lags: int = 1) -> float:
         resid_adf = y_pooled - X_pooled @ params
         sigma2 = np.sum(resid_adf**2) / (len(y_pooled) - len(params))
         var_cov = sigma2 * np.linalg.inv(X_pooled.T @ X_pooled)
-        se_rho = np.sqrt(var_cov[0, 0])
+        np.sqrt(var_cov[0, 0])
 
         # Kao's standardized statistic
         t_kao = (rho * np.sqrt(N * T)) / np.sqrt(sigma2)
 
         return t_kao
 
-    except:
+    except Exception:
         return np.nan
 
 
@@ -390,7 +394,7 @@ def kao_test(
     entity_col: str,
     time_col: str,
     y_var: str,
-    x_vars: Union[str, List[str]],
+    x_vars: str | list[str],
     method: str = "adf",
     trend: str = "c",
     lags: int = 1,
@@ -441,9 +445,13 @@ def kao_test(
     >>> from panelbox.diagnostics.cointegration import kao_test
     >>>
     >>> result = kao_test(
-    ...     data, entity_col='country', time_col='year',
-    ...     y_var='log_gdp', x_vars=['log_capital', 'log_labor'],
-    ...     method='adf', lags=2
+    ...     data,
+    ...     entity_col="country",
+    ...     time_col="year",
+    ...     y_var="log_gdp",
+    ...     x_vars=["log_capital", "log_labor"],
+    ...     method="adf",
+    ...     lags=2,
     ... )
     >>> print(result)
     """
@@ -451,7 +459,7 @@ def kao_test(
     if isinstance(x_vars, str):
         x_vars = [x_vars]
 
-    required_cols = [entity_col, time_col, y_var] + x_vars
+    required_cols = [entity_col, time_col, y_var, *x_vars]
     missing_cols = set(required_cols) - set(data.columns)
     if missing_cols:
         raise ValueError(f"Missing columns: {missing_cols}")
@@ -462,7 +470,7 @@ def kao_test(
     T_avg = len(data[data[entity_col] == entities[0]])
 
     # Estimate pooled cointegrating regression
-    beta, pooled_resid, entity_resids = _estimate_pooled_cointegrating_regression(
+    _beta, _pooled_resid, entity_resids = _estimate_pooled_cointegrating_regression(
         data, entity_col, time_col, y_var, x_vars, trend
     )
 
@@ -482,7 +490,7 @@ def kao_test(
     critical_values = {}
     pvalues = {}
 
-    for test in test_stats.keys():
+    for test in test_stats:
         critical_values[test] = critical_values_common.copy()
 
         # P-value using standard normal (left-tailed)

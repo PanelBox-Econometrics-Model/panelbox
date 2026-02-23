@@ -6,15 +6,16 @@ exploring how quantile regression coefficients vary across quantiles
 and covariate space.
 """
 
-import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import griddata, interp1d
+from scipy.interpolate import interp1d
+
+logger = logging.getLogger(__name__)
 
 
 class SurfacePlotter:
@@ -34,23 +35,23 @@ class SurfacePlotter:
     Examples
     --------
     >>> plotter = SurfacePlotter()
-    >>> fig = plotter.plot_surface(result, ['education', 'experience'])
+    >>> fig = plotter.plot_surface(result, ["education", "experience"])
     >>> fig_interactive = plotter.plot_interactive(result)
     """
 
-    def __init__(self, figsize: Tuple[float, float] = (12, 8), colormap: str = "viridis"):
+    def __init__(self, figsize: tuple[float, float] = (12, 8), colormap: str = "viridis"):
         """Initialize surface plotter with default settings."""
         self.figsize = figsize
         self.colormap = colormap
 
-    def plot_surface(
+    def plot_surface(  # noqa: C901
         self,
         result,
-        var_names: List[str],
-        tau_grid: Optional[np.ndarray] = None,
-        X_grid: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+        var_names: list[str],
+        tau_grid: np.ndarray | None = None,
+        X_grid: tuple[np.ndarray, np.ndarray] | None = None,
         projection: str = "3d",
-        figsize: Optional[Tuple[float, float]] = None,
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Create 3D surface plot showing β(τ, X).
@@ -105,7 +106,7 @@ class SurfacePlotter:
         Z = np.zeros((len(tau_grid), X1_mesh.shape[0], X1_mesh.shape[1]))
 
         # Get number of parameters from first result
-        first_tau = list(result.results.keys())[0]
+        first_tau = next(iter(result.results.keys()))
         first_result = result.results[first_tau]
         if hasattr(first_result, "params"):
             n_params = len(first_result.params)
@@ -140,6 +141,8 @@ class SurfacePlotter:
                     coef_interp.append(f(tau))
 
                 class InterpolatedResult:
+                    """Container for interpolated quantile regression results."""
+
                     def __init__(self, params):
                         self.params = params
 
@@ -182,8 +185,8 @@ class SurfacePlotter:
         X2_mesh: np.ndarray,
         Z: np.ndarray,
         tau_grid: np.ndarray,
-        var_names: List[str],
-        figsize: Tuple[float, float],
+        var_names: list[str],
+        figsize: tuple[float, float],
     ) -> plt.Figure:
         """Create matplotlib 3D surface plot."""
         fig = plt.figure(figsize=figsize)
@@ -241,8 +244,8 @@ class SurfacePlotter:
         X2_mesh: np.ndarray,
         Z: np.ndarray,
         tau_grid: np.ndarray,
-        var_names: List[str],
-        figsize: Tuple[float, float],
+        var_names: list[str],
+        figsize: tuple[float, float],
     ) -> plt.Figure:
         """Create contour plots for selected quantiles."""
         # Select representative quantiles
@@ -294,9 +297,9 @@ class SurfacePlotter:
     def plot_interactive(
         self,
         result,
-        var_names: Optional[List[str]] = None,
-        tau_list: Optional[List[float]] = None,
-        X_grid: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+        var_names: list[str] | None = None,
+        tau_list: list[float] | None = None,
+        X_grid: tuple[np.ndarray, np.ndarray] | None = None,
     ) -> go.Figure:
         """
         Create interactive 3D surface plot using Plotly.
@@ -333,7 +336,7 @@ class SurfacePlotter:
         X1_mesh, X2_mesh = np.meshgrid(X1_range, X2_range)
 
         # Get number of parameters
-        first_tau = list(result.results.keys())[0]
+        first_tau = next(iter(result.results.keys()))
         first_result = result.results[first_tau]
         if hasattr(first_result, "params"):
             n_params = len(first_result.params)
@@ -372,6 +375,8 @@ class SurfacePlotter:
                     coef_interp.append(f(tau))
 
                 class InterpolatedResult:
+                    """Container for interpolated quantile regression results."""
+
                     def __init__(self, params):
                         self.params = params
 
@@ -421,59 +426,59 @@ class SurfacePlotter:
                 "xanchor": "center",
                 "font": {"size": 16, "family": "Arial Black"},
             },
-            scene=dict(
-                xaxis=dict(
-                    title=var_names[0],
-                    titlefont=dict(size=12),
-                    gridcolor="lightgray",
-                    showbackground=True,
-                    backgroundcolor="rgba(230, 230, 230, 0.5)",
-                ),
-                yaxis=dict(
-                    title=var_names[1],
-                    titlefont=dict(size=12),
-                    gridcolor="lightgray",
-                    showbackground=True,
-                    backgroundcolor="rgba(230, 230, 230, 0.5)",
-                ),
-                zaxis=dict(
-                    title="Predicted Value",
-                    titlefont=dict(size=12),
-                    gridcolor="lightgray",
-                    showbackground=True,
-                    backgroundcolor="rgba(230, 230, 230, 0.5)",
-                ),
-                camera=dict(eye=dict(x=1.5, y=1.5, z=1.5)),
-            ),
+            scene={
+                "xaxis": {
+                    "title": var_names[0],
+                    "titlefont": {"size": 12},
+                    "gridcolor": "lightgray",
+                    "showbackground": True,
+                    "backgroundcolor": "rgba(230, 230, 230, 0.5)",
+                },
+                "yaxis": {
+                    "title": var_names[1],
+                    "titlefont": {"size": 12},
+                    "gridcolor": "lightgray",
+                    "showbackground": True,
+                    "backgroundcolor": "rgba(230, 230, 230, 0.5)",
+                },
+                "zaxis": {
+                    "title": "Predicted Value",
+                    "titlefont": {"size": 12},
+                    "gridcolor": "lightgray",
+                    "showbackground": True,
+                    "backgroundcolor": "rgba(230, 230, 230, 0.5)",
+                },
+                "camera": {"eye": {"x": 1.5, "y": 1.5, "z": 1.5}},
+            },
             showlegend=True,
-            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+            legend={"yanchor": "top", "y": 0.99, "xanchor": "left", "x": 0.01},
             width=900,
             height=700,
-            margin=dict(l=65, r=50, b=65, t=90),
+            margin={"l": 65, "r": 50, "b": 65, "t": 90},
         )
 
         # Add dropdown menu for different viewing angles
         camera_views = {
-            "Default": dict(eye=dict(x=1.5, y=1.5, z=1.5)),
-            "Top View": dict(eye=dict(x=0, y=0, z=2.5)),
-            "Side View": dict(eye=dict(x=2.5, y=0, z=0)),
-            "Front View": dict(eye=dict(x=0, y=2.5, z=0)),
+            "Default": {"eye": {"x": 1.5, "y": 1.5, "z": 1.5}},
+            "Top View": {"eye": {"x": 0, "y": 0, "z": 2.5}},
+            "Side View": {"eye": {"x": 2.5, "y": 0, "z": 0}},
+            "Front View": {"eye": {"x": 0, "y": 2.5, "z": 0}},
         }
 
         updatemenus = [
-            dict(
-                buttons=[
-                    dict(args=[{"scene.camera": camera}], label=name, method="relayout")
+            {
+                "buttons": [
+                    {"args": [{"scene.camera": camera}], "label": name, "method": "relayout"}
                     for name, camera in camera_views.items()
                 ],
-                direction="down",
-                pad={"r": 10, "t": 10},
-                showactive=True,
-                x=0.1,
-                xanchor="left",
-                y=1.1,
-                yanchor="top",
-            )
+                "direction": "down",
+                "pad": {"r": 10, "t": 10},
+                "showactive": True,
+                "x": 0.1,
+                "xanchor": "left",
+                "y": 1.1,
+                "yanchor": "top",
+            }
         ]
 
         fig.update_layout(updatemenus=updatemenus)
@@ -483,8 +488,8 @@ class SurfacePlotter:
     def coefficient_heatmap(
         self,
         result,
-        var_names: Optional[List[str]] = None,
-        figsize: Optional[Tuple[float, float]] = None,
+        var_names: list[str] | None = None,
+        figsize: tuple[float, float] | None = None,
     ) -> plt.Figure:
         """
         Create heatmap showing coefficient values across quantiles.

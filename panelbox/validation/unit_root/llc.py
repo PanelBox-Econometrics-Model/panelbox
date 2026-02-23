@@ -10,12 +10,17 @@ Reference:
     108(1), 1-24.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -125,12 +130,12 @@ class LLCTest:
     >>> data = pb.load_grunfeld()
     >>>
     >>> # Test for unit root in 'invest'
-    >>> llc = pb.LLCTest(data, 'invest', 'firm', 'year')
+    >>> llc = pb.LLCTest(data, "invest", "firm", "year")
     >>> result = llc.run()
     >>> print(result)
     >>>
     >>> # With trend
-    >>> llc_trend = pb.LLCTest(data, 'invest', 'firm', 'year', trend='ct')
+    >>> llc_trend = pb.LLCTest(data, "invest", "firm", "year", trend="ct")
     >>> result = llc_trend.run()
 
     Notes
@@ -307,6 +312,116 @@ class LLCTest:
 
         return X_demeaned
 
+    def _process_entity(
+        self,
+        entity,
+    ) -> Optional[tuple[np.ndarray, np.ndarray, float, int]]:
+        """Process a single entity for the LLC test.
+
+        Returns (e_tilde, v_tilde, sigma_i, T_i) or None if entity is skipped.
+        """
+        entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values
+
+        if len(entity_data) < self.lags + 3:
+            return None
+
+        dy = np.diff(entity_data)
+        T_i = len(dy) - self.lags
+        y_lag = entity_data[self.lags : -1]
+        dy_dep = dy[self.lags :]
+
+        Z = self._build_regressors(dy, T_i)
+
+        if len(Z) > 0 and len(y_lag) == T_i and len(dy_dep) == T_i:
+            return self._orthogonalize(Z, dy_dep, y_lag, T_i)
+
+        if len(y_lag) == T_i and len(dy_dep) == T_i:
+            return (dy_dep, y_lag, np.std(dy_dep, ddof=1), T_i)
+
+        return None
+
+    def _build_regressors(self, dy: np.ndarray, T_i: int) -> list[np.ndarray]:
+        """Build regressor matrix (lagged differences + deterministics)."""
+        Z = []
+        for j in range(1, self.lags + 1):
+            if self.lags - j >= 0 and len(dy) > self.lags:
+                lag_idx_start = self.lags - j
+                lag_idx_end = len(dy) - j if j > 0 else len(dy)
+                if lag_idx_end > lag_idx_start:
+                    dy_lag = dy[lag_idx_start:lag_idx_end]
+                    if len(dy_lag) == T_i:
+                        Z.append(dy_lag)
+
+        if self.trend == "c":
+            Z.append(np.ones(T_i))
+        elif self.trend == "ct":
+            Z.append(np.ones(T_i))
+            Z.append(np.arange(T_i))
+
+        return Z
+
+    def _orthogonalize(
+        self,
+        Z: list[np.ndarray],
+        dy_dep: np.ndarray,
+        y_lag: np.ndarray,
+        T_i: int,
+    ) -> Optional[tuple[np.ndarray, float, float, int]]:
+        """Orthogonalize Δy and y_{t-1} w.r.t. regressors Z."""
+        try:
+            Z_mat = np.column_stack(Z)
+            beta_dy = np.linalg.lstsq(Z_mat, dy_dep, rcond=None)[0]
+            e_tilde = dy_dep - Z_mat @ beta_dy
+            beta_y = np.linalg.lstsq(Z_mat, y_lag, rcond=None)[0]
+            v_tilde = y_lag - Z_mat @ beta_y
+            sigma_i = np.std(e_tilde, ddof=1)
+            if sigma_i > 0 and len(e_tilde) > 0:
+                return (e_tilde, v_tilde, sigma_i, T_i)
+        except Exception:
+            pass
+        return None
+
+    def _pooled_regression(
+        self,
+        e_tilde_list: list[np.ndarray],
+        v_tilde_list: list[np.ndarray],
+        sigma_list: list[float],
+        T_list: list[int],
+    ) -> LLCTestResult:
+        """Normalize, pool, and run regression to compute the LLC test statistic."""
+        e_normalized_list = []
+        v_normalized_list = []
+        for e_tilde, v_tilde, sigma_i, T_i in zip(e_tilde_list, v_tilde_list, sigma_list, T_list):
+            e_normalized_list.append(e_tilde / sigma_i)
+            v_normalized_list.append(v_tilde / (sigma_i * np.sqrt(T_i)))
+
+        e_pooled = np.concatenate(e_normalized_list)
+        v_pooled = np.concatenate(v_normalized_list)
+
+        rho = np.sum(e_pooled * v_pooled) / np.sum(v_pooled**2)
+        resid = e_pooled - rho * v_pooled
+        n_total = len(e_pooled)
+        sigma2 = np.sum(resid**2) / (n_total - 1)
+        se_rho = np.sqrt(sigma2 / np.sum(v_pooled**2))
+
+        # Simplified approach: use the t-statistic directly.
+        # For moderate/large N and T the distribution is approximately normal.
+        t_adj = rho / se_rho
+        pvalue = stats.norm.cdf(t_adj)
+
+        det_map = {"n": "None", "c": "Constant", "ct": "Constant and Trend"}
+
+        self.result = LLCTestResult(
+            statistic=t_adj,
+            pvalue=pvalue,
+            lags=self.lags,
+            n_obs=n_total,
+            n_entities=len(e_tilde_list),
+            test_type="LLC",
+            deterministics=det_map[self.trend],
+        )
+        return self.result
+
     def run(self) -> LLCTestResult:
         """
         Run the LLC panel unit root test.
@@ -325,174 +440,24 @@ class LLCTest:
         4. Pool and run regression to get t-statistic
         5. Adjust using mean and std from asymptotic distribution
         """
-        # Select lags if not specified
         if self.lags is None:
             self.lags = self._select_lags()
 
-        # Lists to collect adjusted residuals
-        e_tilde_list = []  # Orthogonalized Δy
-        v_tilde_list = []  # Orthogonalized y_{t-1}
-        sigma_list = []  # Long-run std deviations
-        T_list = []  # Sample sizes per entity
+        e_tilde_list = []
+        v_tilde_list = []
+        sigma_list = []
+        T_list = []
 
         for entity in self.entities:
-            entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values
-
-            if len(entity_data) < self.lags + 3:
-                continue
-
-            # First differences
-            dy = np.diff(entity_data)
-            T_i = len(dy) - self.lags
-
-            # Construct ADF regression variables
-            y_lag = entity_data[self.lags : -1]  # y_{t-1}
-            dy_dep = dy[self.lags :]  # Δy_t
-
-            # Build regressor matrix for orthogonalization
-            Z = []
-
-            # Add lagged differences
-            for j in range(1, self.lags + 1):
-                if self.lags - j >= 0 and len(dy) > self.lags:
-                    lag_idx_start = self.lags - j
-                    lag_idx_end = len(dy) - j if j > 0 else len(dy)
-                    if lag_idx_end > lag_idx_start:
-                        dy_lag = dy[lag_idx_start:lag_idx_end]
-                        if len(dy_lag) == T_i:
-                            Z.append(dy_lag)
-
-            # Add deterministics
-            if self.trend == "c":
-                Z.append(np.ones(T_i))
-            elif self.trend == "ct":
-                Z.append(np.ones(T_i))
-                Z.append(np.arange(T_i))
-
-            # Orthogonalize if we have regressors
-            if len(Z) > 0 and len(y_lag) == T_i and len(dy_dep) == T_i:
-                try:
-                    Z_mat = np.column_stack(Z)
-
-                    # Orthogonalize Δy (get residuals)
-                    beta_dy = np.linalg.lstsq(Z_mat, dy_dep, rcond=None)[0]
-                    e_tilde = dy_dep - Z_mat @ beta_dy
-
-                    # Orthogonalize y_{t-1} (get residuals)
-                    beta_y = np.linalg.lstsq(Z_mat, y_lag, rcond=None)[0]
-                    v_tilde = y_lag - Z_mat @ beta_y
-
-                    # Estimate long-run variance (simplified - using residual variance)
-                    sigma_i = np.std(e_tilde, ddof=1)
-
-                    if sigma_i > 0 and len(e_tilde) > 0:
-                        e_tilde_list.append(e_tilde)
-                        v_tilde_list.append(v_tilde)
-                        sigma_list.append(sigma_i)
-                        T_list.append(T_i)
-                except Exception:
-                    continue
-            else:
-                # No regressors - use raw values
-                if len(y_lag) == T_i and len(dy_dep) == T_i:
-                    e_tilde_list.append(dy_dep)
-                    v_tilde_list.append(y_lag)
-                    sigma_list.append(np.std(dy_dep, ddof=1))
-                    T_list.append(T_i)
+            result = self._process_entity(entity)
+            if result is not None:
+                e_tilde, v_tilde, sigma_i, T_i = result
+                e_tilde_list.append(e_tilde)
+                v_tilde_list.append(v_tilde)
+                sigma_list.append(sigma_i)
+                T_list.append(T_i)
 
         if len(e_tilde_list) == 0:
             raise ValueError("Insufficient data for LLC test")
 
-        # Step 2: Normalize and pool
-        # Normalize by individual long-run std deviations and sqrt(T)
-        e_normalized_list = []
-        v_normalized_list = []
-
-        for e_tilde, v_tilde, sigma_i, T_i in zip(e_tilde_list, v_tilde_list, sigma_list, T_list):
-            e_normalized_list.append(e_tilde / sigma_i)
-            v_normalized_list.append(v_tilde / (sigma_i * np.sqrt(T_i)))
-
-        # Pool the normalized series
-        e_pooled = np.concatenate(e_normalized_list)
-        v_pooled = np.concatenate(v_normalized_list)
-
-        # Step 3: Run pooled regression (no intercept)
-        # e_pooled = ρ * v_pooled + error
-        rho = np.sum(e_pooled * v_pooled) / np.sum(v_pooled**2)
-
-        # Standard error
-        resid = e_pooled - rho * v_pooled
-        n_total = len(e_pooled)
-        sigma2 = np.sum(resid**2) / (n_total - 1)
-        se_rho = np.sqrt(sigma2 / np.sum(v_pooled**2))
-
-        # t-statistic
-        t_stat = rho / se_rho
-
-        # Step 4: Adjust t-statistic using LLC adjustment
-        N = len(e_tilde_list)
-        np.mean(T_list)
-
-        # Asymptotic mean and std from LLC Table 2
-        # Note: mu and sigma are for the distribution of the test under H0
-        if self.trend == "n":
-            pass
-        elif self.trend == "c":
-            pass
-        else:  # 'ct'
-            pass
-
-        # LLC adjustment formula from LLC (2002):
-        # The raw t-statistic needs to be standardized to follow N(0,1) under H0
-        #
-        # Under H0, the t-statistic distribution has:
-        # - Mean: √(NT) · μ* (where μ* < 0)
-        # - Std dev: σ*
-        #
-        # To standardize: t_adj = (t - E[t|H0]) / SD[t|H0]
-        # t_adj = (t_stat - √(NT) · μ*) / σ*
-        #
-        # Since we already normalized by individual sigmas and sqrt(T_i),
-        # the formula becomes:
-        # t_adj = (t_stat - √(N·T_avg) · μ*) / (√N · σ*)
-        #
-        # For stationary data: t_stat is large negative → t_adj should be large negative
-        # Example: t_stat = -10, μ* = -1.38, N=10, T=50
-        #   → t_adj = (-10 - √500·(-1.38)) / (√10·1.02)
-        #   → t_adj = (-10 + 30.9) / 3.23 = +6.46 ✗ WRONG!
-        #
-        # The issue is that μ* is already the expected value of the statistic,
-        # so we need: t_adj = (t_stat - mean) / std
-        # where mean = μ* · √(N·T) and std = σ* · √N
-        #
-        # Wait - let me reconsider. The mean under H0 should make the statistic
-        # close to zero when there's a unit root. Since μ* < 0 and represents
-        # the ADF distribution mean, and we want t_adj < 0 to reject H0...
-        #
-        # Actually, the correct insight: μ* and σ* are for a DIFFERENT statistic!
-        # They're from simulations of the ADF distribution, not for our pooled t.
-        # The LLC paper uses a bias adjustment.
-        #
-        # Simplified approach: Just use the t-statistic directly
-        # For moderate/large N and T, the distribution is approximately normal
-        # Critical value at 5%: -1.645 (one-sided)
-        t_adj = t_stat
-
-        # P-value (one-sided test, left tail)
-        pvalue = stats.norm.cdf(t_adj)
-
-        # Deterministics string
-        det_map = {"n": "None", "c": "Constant", "ct": "Constant and Trend"}
-
-        # Create result
-        self.result = LLCTestResult(
-            statistic=t_adj,
-            pvalue=pvalue,
-            lags=self.lags,
-            n_obs=n_total,
-            n_entities=N,
-            test_type="LLC",
-            deterministics=det_map[self.trend],
-        )
-
-        return self.result
+        return self._pooled_regression(e_tilde_list, v_tilde_list, sigma_list, T_list)

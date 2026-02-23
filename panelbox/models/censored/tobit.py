@@ -8,17 +8,24 @@ Author: PanelBox Developers
 License: MIT
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
+import pandas as pd
 from scipy import optimize, stats
 from scipy.special import logsumexp
 
+from panelbox.core.serialization import SerializableMixin
 from panelbox.optimization.quadrature import gauss_hermite_quadrature
 
+logger = logging.getLogger(__name__)
 
-class NonlinearPanelModel:
+
+class NonlinearPanelModel(SerializableMixin):
     """Simple base class for nonlinear panel models."""
 
     def __init__(self, endog, exog, groups, time=None):
@@ -76,11 +83,11 @@ class RandomEffectsTobit(NonlinearPanelModel):
         endog: np.ndarray,
         exog: np.ndarray,
         groups: np.ndarray,
-        time: Optional[np.ndarray] = None,
+        time: np.ndarray | None = None,
         censoring_point: float = 0.0,
         censoring_type: Literal["left", "right", "both"] = "left",
-        lower_limit: Optional[float] = None,
-        upper_limit: Optional[float] = None,
+        lower_limit: float | None = None,
+        upper_limit: float | None = None,
         quadrature_points: int = 12,
     ):
         super().__init__(endog, exog, groups, time)
@@ -114,9 +121,7 @@ class RandomEffectsTobit(NonlinearPanelModel):
 
     def _is_censored(self, y: float) -> bool:
         """Check if observation is censored."""
-        if self.censoring_type == "left":
-            return np.abs(y - self.censoring_point) < 1e-10
-        elif self.censoring_type == "right":
+        if self.censoring_type == "left" or self.censoring_type == "right":
             return np.abs(y - self.censoring_point) < 1e-10
         elif self.censoring_type == "both":
             return np.abs(y - self.lower_limit) < 1e-10 or np.abs(y - self.upper_limit) < 1e-10
@@ -216,11 +221,11 @@ class RandomEffectsTobit(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "RandomEffectsTobit":
+    ) -> RandomEffectsTobit:
         """
         Fit the Random Effects Tobit model.
 
@@ -275,7 +280,7 @@ class RandomEffectsTobit(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning)
+            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning, stacklevel=2)
 
         # Store results
         self.params = result.x
@@ -306,6 +311,7 @@ class RandomEffectsTobit(NonlinearPanelModel):
         for i in range(n_params):
 
             def grad_i(params):
+                """Compute individual-level gradient contributions."""
                 return approx_fprime(params, self._negative_log_likelihood, eps)[i]
 
             hessian[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -318,14 +324,18 @@ class RandomEffectsTobit(NonlinearPanelModel):
             self.cov_params = np.linalg.inv(hessian)
             self.bse = np.sqrt(np.diag(self.cov_params))
         except np.linalg.LinAlgError:
-            warnings.warn("Singular Hessian matrix, cannot compute standard errors", RuntimeWarning)
+            warnings.warn(
+                "Singular Hessian matrix, cannot compute standard errors",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             self.cov_params = np.full((n_params, n_params), np.nan)
             self.bse = np.full(n_params, np.nan)
 
     def predict(
         self,
-        exog: Optional[np.ndarray] = None,
-        groups: Optional[np.ndarray] = None,
+        exog: np.ndarray | pd.DataFrame | None = None,
+        groups: np.ndarray | None = None,
         pred_type: Literal["latent", "censored"] = "censored",
     ) -> np.ndarray:
         """
@@ -333,8 +343,9 @@ class RandomEffectsTobit(NonlinearPanelModel):
 
         Parameters
         ----------
-        exog : array-like, optional
-            Explanatory variables for prediction (uses training data if None)
+        exog : array-like, pd.DataFrame, or None
+            Explanatory variables for prediction (uses training data if None).
+            If pd.DataFrame, extracts columns matching exog_names.
         groups : array-like, optional
             Group identifiers for random effects
         pred_type : str, default='censored'
@@ -353,9 +364,18 @@ class RandomEffectsTobit(NonlinearPanelModel):
         if exog is None:
             exog = self.exog
             groups = self.groups
-        elif groups is None:
-            # If no groups specified, use population-average prediction
-            groups = np.zeros(len(exog))
+        else:
+            if isinstance(exog, pd.DataFrame):
+                if hasattr(self, "exog_names") and self.exog_names:
+                    missing = [c for c in self.exog_names if c not in exog.columns]
+                    if missing:
+                        raise ValueError(f"Missing columns in new_data: {missing}")
+                    exog = exog[self.exog_names].values
+                else:
+                    exog = exog.values
+            if groups is None:
+                # If no groups specified, use population-average prediction
+                groups = np.zeros(len(exog))
 
         linear_pred = exog @ self.beta
 
@@ -419,7 +439,7 @@ class RandomEffectsTobit(NonlinearPanelModel):
         self,
         at: str = "overall",
         which: str = "conditional",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Tobit model.
@@ -450,11 +470,11 @@ class RandomEffectsTobit(NonlinearPanelModel):
         >>> result = model.fit()
         >>>
         >>> # Average marginal effects on conditional mean
-        >>> ame = result.marginal_effects(at='overall', which='conditional')
+        >>> ame = result.marginal_effects(at="overall", which="conditional")
         >>> print(ame.summary())
         >>>
         >>> # Marginal effects at means on probability of non-censoring
-        >>> mem = result.marginal_effects(at='mean', which='probability')
+        >>> mem = result.marginal_effects(at="mean", which="probability")
         >>> print(mem.summary())
 
         Notes
@@ -560,11 +580,11 @@ class PooledTobit(NonlinearPanelModel):
         self,
         endog: np.ndarray,
         exog: np.ndarray,
-        groups: Optional[np.ndarray] = None,
+        groups: np.ndarray | None = None,
         censoring_point: float = 0.0,
         censoring_type: Literal["left", "right", "both"] = "left",
-        lower_limit: Optional[float] = None,
-        upper_limit: Optional[float] = None,
+        lower_limit: float | None = None,
+        upper_limit: float | None = None,
     ):
         """Initialize Pooled Tobit model."""
         if groups is None:
@@ -590,9 +610,7 @@ class PooledTobit(NonlinearPanelModel):
 
     def _is_censored(self, y: float) -> bool:
         """Check if observation is censored."""
-        if self.censoring_type == "left":
-            return np.abs(y - self.censoring_point) < 1e-10
-        elif self.censoring_type == "right":
+        if self.censoring_type == "left" or self.censoring_type == "right":
             return np.abs(y - self.censoring_point) < 1e-10
         elif self.censoring_type == "both":
             return np.abs(y - self.lower_limit) < 1e-10 or np.abs(y - self.upper_limit) < 1e-10
@@ -652,11 +670,11 @@ class PooledTobit(NonlinearPanelModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "PooledTobit":
+    ) -> PooledTobit:
         """
         Fit the Pooled Tobit model.
 
@@ -705,7 +723,7 @@ class PooledTobit(NonlinearPanelModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning)
+            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning, stacklevel=2)
 
         # Store results
         self.params = result.x
@@ -735,6 +753,7 @@ class PooledTobit(NonlinearPanelModel):
         for i in range(n_params):
 
             def grad_i(params):
+                """Compute individual-level gradient contributions."""
                 return approx_fprime(params, self._negative_log_likelihood, eps)[i]
 
             hessian[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -747,13 +766,17 @@ class PooledTobit(NonlinearPanelModel):
             self.cov_params = np.linalg.inv(hessian)
             self.bse = np.sqrt(np.diag(self.cov_params))
         except np.linalg.LinAlgError:
-            warnings.warn("Singular Hessian matrix, cannot compute standard errors", RuntimeWarning)
+            warnings.warn(
+                "Singular Hessian matrix, cannot compute standard errors",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             self.cov_params = np.full((n_params, n_params), np.nan)
             self.bse = np.full(n_params, np.nan)
 
     def predict(
         self,
-        exog: Optional[np.ndarray] = None,
+        exog: np.ndarray | pd.DataFrame | None = None,
         pred_type: Literal["latent", "censored", "probability"] = "censored",
     ) -> np.ndarray:
         """
@@ -761,8 +784,9 @@ class PooledTobit(NonlinearPanelModel):
 
         Parameters
         ----------
-        exog : ndarray, optional
-            Exogenous variables for prediction
+        exog : ndarray, pd.DataFrame, or None
+            Exogenous variables for prediction.
+            If pd.DataFrame, extracts columns matching exog_names.
         pred_type : {'latent', 'censored', 'probability'}
             Type of prediction
 
@@ -776,6 +800,14 @@ class PooledTobit(NonlinearPanelModel):
 
         if exog is None:
             exog = self.exog
+        elif isinstance(exog, pd.DataFrame):
+            if hasattr(self, "exog_names") and self.exog_names:
+                missing = [c for c in self.exog_names if c not in exog.columns]
+                if missing:
+                    raise ValueError(f"Missing columns in new_data: {missing}")
+                exog = exog[self.exog_names].values
+            else:
+                exog = exog.values
 
         linear_pred = exog @ self.beta
 
@@ -848,7 +880,7 @@ class PooledTobit(NonlinearPanelModel):
         self,
         at: str = "overall",
         which: str = "conditional",
-        varlist: Optional[List[str]] = None,
+        varlist: list[str] | None = None,
     ):
         """
         Compute marginal effects for Tobit model.
@@ -879,11 +911,11 @@ class PooledTobit(NonlinearPanelModel):
         >>> result = model.fit()
         >>>
         >>> # Average marginal effects on conditional mean
-        >>> ame = result.marginal_effects(at='overall', which='conditional')
+        >>> ame = result.marginal_effects(at="overall", which="conditional")
         >>> print(ame.summary())
         >>>
         >>> # Marginal effects at means on probability of non-censoring
-        >>> mem = result.marginal_effects(at='mean', which='probability')
+        >>> mem = result.marginal_effects(at="mean", which="probability")
         >>> print(mem.summary())
 
         Notes

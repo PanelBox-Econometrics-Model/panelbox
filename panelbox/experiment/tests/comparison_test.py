@@ -5,7 +5,9 @@ This module provides a test runner that compares multiple fitted panel
 models and returns ComparisonResult objects.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+from typing import Any
 
 import pandas as pd
 
@@ -28,23 +30,17 @@ class ComparisonTest:
     >>> # Fit multiple models
     >>> data = pb.load_grunfeld()
     >>> experiment = pb.PanelExperiment(
-    ...     data=data,
-    ...     formula="invest ~ value + capital",
-    ...     entity_col="firm",
-    ...     time_col="year"
+    ...     data=data, formula="invest ~ value + capital", entity_col="firm", time_col="year"
     ... )
-    >>> ols_res = experiment.fit_model('pooled_ols', name='ols')
-    >>> fe_res = experiment.fit_model('fixed_effects', name='fe')
+    >>> ols_res = experiment.fit_model("pooled_ols", name="ols")
+    >>> fe_res = experiment.fit_model("fixed_effects", name="fe")
     >>>
     >>> # Compare models
     >>> test_runner = ComparisonTest()
-    >>> comparison_result = test_runner.run({
-    ...     'ols': ols_res,
-    ...     'fe': fe_res
-    ... })
+    >>> comparison_result = test_runner.run({"ols": ols_res, "fe": fe_res})
     >>>
     >>> # Save report
-    >>> comparison_result.save_html('comparison.html', test_type='comparison')
+    >>> comparison_result.save_html("comparison.html", test_type="comparison")
     """
 
     def __init__(self):
@@ -53,7 +49,7 @@ class ComparisonTest:
 
     def run(
         self,
-        models: Dict[str, Any],
+        models: dict[str, Any],
         include_coefficients: bool = True,
         include_statistics: bool = True,
     ) -> ComparisonResult:
@@ -87,19 +83,15 @@ class ComparisonTest:
         >>> runner = ComparisonTest()
         >>>
         >>> # Compare two models
-        >>> models = {'ols': ols_results, 'fe': fe_results}
+        >>> models = {"ols": ols_results, "fe": fe_results}
         >>> result = runner.run(models)
         >>>
         >>> # Compare three models
-        >>> models = {
-        ...     'ols': ols_results,
-        ...     'fe': fe_results,
-        ...     're': re_results
-        ... }
+        >>> models = {"ols": ols_results, "fe": fe_results, "re": re_results}
         >>> result = runner.run(models)
         >>>
         >>> # Get best model by AIC
-        >>> best = result.best_model('aic', prefer_lower=True)
+        >>> best = result.best_model("aic", prefer_lower=True)
         """
         # Validate inputs
         if not isinstance(models, dict):
@@ -107,7 +99,7 @@ class ComparisonTest:
 
         if len(models) < 2:
             raise ValueError(
-                "ComparisonTest requires at least 2 models for comparison, " f"got {len(models)}"
+                f"ComparisonTest requires at least 2 models for comparison, got {len(models)}"
             )
 
         # ComparisonResult will auto-compute metrics
@@ -124,7 +116,7 @@ class ComparisonTest:
 
         return comparison_result
 
-    def _extract_metrics(self, models: Dict[str, Any]) -> pd.DataFrame:
+    def _extract_metrics(self, models: dict[str, Any]) -> pd.DataFrame:
         """
         Extract goodness-of-fit metrics from all models.
 
@@ -203,7 +195,7 @@ class ComparisonTest:
 
         return metrics_df
 
-    def _extract_coefficients(self, models: Dict[str, Any]) -> pd.DataFrame:
+    def _extract_coefficients(self, models: dict[str, Any]) -> pd.DataFrame:
         """
         Extract parameter estimates from all models.
 

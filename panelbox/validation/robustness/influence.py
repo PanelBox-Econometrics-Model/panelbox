@@ -12,6 +12,9 @@ Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). Regression Diagnostics:
     Identifying Influential Data and Sources of Collinearity.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Optional
@@ -20,6 +23,8 @@ import numpy as np
 import pandas as pd
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -109,9 +114,9 @@ class InfluenceDiagnostics:
         self.results = results
         self.verbose = verbose
         self.model = results._model
-        assert (
-            self.model is not None
-        ), "Results must have a model reference for influence diagnostics"
+        assert self.model is not None, (
+            "Results must have a model reference for influence diagnostics"
+        )
         self.data = self.model.data.data
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
@@ -128,7 +133,7 @@ class InfluenceDiagnostics:
             Complete influence diagnostics
         """
         if self.verbose:
-            print("Computing influence diagnostics...")
+            logger.info("Computing influence diagnostics...")
 
         # Get residuals and fitted values
         residuals = self.results.resid
@@ -165,7 +170,7 @@ class InfluenceDiagnostics:
         )
 
         if self.verbose:
-            print("Influence diagnostics computed successfully")
+            logger.info("Influence diagnostics computed successfully")
 
         return self.influence_results_
 
@@ -397,7 +402,10 @@ class InfluenceDiagnostics:
         ax4.stem(self.influence_results_.leverage.values, basefmt=" ")
         avg_leverage = self.influence_results_.leverage.mean()
         ax4.axhline(
-            y=2 * avg_leverage, color="r", linestyle="--", label=f"2 × mean ({2*avg_leverage:.4f})"
+            y=2 * avg_leverage,
+            color="r",
+            linestyle="--",
+            label=f"2 × mean ({2 * avg_leverage:.4f})",
         )
         ax4.set_xlabel("Observation")
         ax4.set_ylabel("Leverage")
@@ -410,6 +418,6 @@ class InfluenceDiagnostics:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
             if self.verbose:
-                print(f"Plot saved to {save_path}")
+                logger.info(f"Plot saved to {save_path}")
         else:
             plt.show()

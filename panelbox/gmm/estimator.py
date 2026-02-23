@@ -1,5 +1,6 @@
 """
-GMM Estimation Algorithms
+GMM Estimation Algorithms.
+
 ==========================
 
 Low-level GMM estimation routines implementing one-step, two-step,
@@ -25,11 +26,15 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 from scipy import linalg
+
+logger = logging.getLogger(__name__)
 
 
 class GMMEstimator:
@@ -57,11 +62,11 @@ class GMMEstimator:
         self.max_iter = max_iter
 
         # Results stored after estimation (used by Hansen J test)
-        self.N: Optional[int] = None
-        self.zs: Optional[np.ndarray] = None
-        self.W2: Optional[np.ndarray] = None
-        self.W2_inv: Optional[np.ndarray] = None
-        self._step1_M_XZ_W: Optional[np.ndarray] = None
+        self.N: int | None = None
+        self.zs: np.ndarray | None = None
+        self.W2: np.ndarray | None = None
+        self.W2_inv: np.ndarray | None = None
+        self._step1_M_XZ_W: np.ndarray | None = None
 
     @staticmethod
     def build_H_matrix(T: int, transformation: str = "fd") -> np.ndarray:
@@ -99,10 +104,9 @@ class GMMEstimator:
         y: np.ndarray,
         X: np.ndarray,
         Z: np.ndarray,
-        ids: Optional[np.ndarray] = None,
-        H_blocks: Optional[Dict] = None,
-        skip_instrument_cleaning: bool = False,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        ids: np.ndarray | None = None,
+        H_blocks: dict | None = None,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         One-step GMM estimation.
 
@@ -243,10 +247,10 @@ class GMMEstimator:
         y: np.ndarray,
         X: np.ndarray,
         Z: np.ndarray,
-        ids: Optional[np.ndarray] = None,
-        H_blocks: Optional[Dict] = None,
+        ids: np.ndarray | None = None,
+        H_blocks: dict | None = None,
         robust: bool = True,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Two-step GMM estimation with Windmeijer (2005) correction.
 
@@ -289,7 +293,7 @@ class GMMEstimator:
                 Z = Z[valid_mask]
 
         # Step 1: One-step GMM
-        beta_1, W1_inv, resid_1_full = self.one_step(y, X, Z, ids, H_blocks)
+        beta_1, _W1_inv, _resid_1_full = self.one_step(y, X, Z, ids, H_blocks)
         step1_M_XZ_W = self._step1_M_XZ_W.copy()
         # Get clean residuals (without NaN padding)
         resid_1 = y - X @ beta_1
@@ -356,9 +360,9 @@ class GMMEstimator:
         y: np.ndarray,
         X: np.ndarray,
         Z: np.ndarray,
-        ids: Optional[np.ndarray] = None,
-        H_blocks: Optional[Dict] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
+        ids: np.ndarray | None = None,
+        H_blocks: dict | None = None,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
         """
         Iterated GMM (Continuously Updated Estimator).
 
@@ -391,7 +395,7 @@ class GMMEstimator:
                 Z = Z[valid_mask]
 
         # Initialize with one-step (pass ids so it uses per-individual weight)
-        beta_old, _, resid_full = self.one_step(y, X, Z, ids, H_blocks)
+        beta_old, _, _resid_full = self.one_step(y, X, Z, ids, H_blocks)
         # For legacy mode, one_step returns full-length residuals with NaN;
         # we need the clean version for iterative updates
         resid_old = y - X @ beta_old
@@ -426,7 +430,9 @@ class GMMEstimator:
             resid_old = y - X @ beta_new
 
         if not converged:
-            warnings.warn(f"Iterative GMM did not converge in {self.max_iter} iterations")
+            warnings.warn(
+                f"Iterative GMM did not converge in {self.max_iter} iterations", stacklevel=2
+            )
 
         residuals = y - X @ beta_new
 
@@ -453,7 +459,7 @@ class GMMEstimator:
         Z: np.ndarray,
         residuals: np.ndarray,
         ids: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute clustered (per-individual) weight matrix.
 
@@ -638,7 +644,7 @@ class GMMEstimator:
         y: np.ndarray,
         X: np.ndarray,
         Z: np.ndarray,
-        min_instruments: Optional[int] = None,
+        min_instruments: int | None = None,
     ) -> np.ndarray:
         """
         Get mask of observations with sufficient valid data.

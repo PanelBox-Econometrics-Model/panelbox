@@ -5,9 +5,13 @@ This module provides common functions for computing sandwich covariance
 matrices and their components (bread and meat).
 """
 
-from typing import Optional
+from __future__ import annotations
+
+import logging
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def compute_leverage(X: np.ndarray) -> np.ndarray:
@@ -36,7 +40,7 @@ def compute_leverage(X: np.ndarray) -> np.ndarray:
 
     High leverage points (h_i > 2k/n or 3k/n) may be influential.
     """
-    n, k = X.shape
+    _n, _k = X.shape
 
     # Compute hat values
     # h_i = X_i (X'X)^{-1} X_i'
@@ -80,7 +84,7 @@ def compute_bread(X: np.ndarray) -> np.ndarray:
 
 
 def compute_meat_hc(
-    X: np.ndarray, resid: np.ndarray, method: str = "HC1", leverage: Optional[np.ndarray] = None
+    X: np.ndarray, resid: np.ndarray, method: str = "HC1", leverage: np.ndarray | None = None
 ) -> np.ndarray:
     """
     Compute the "meat" of the sandwich for heteroskedasticity-robust SEs.

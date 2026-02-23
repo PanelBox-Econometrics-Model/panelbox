@@ -1,0 +1,48 @@
+name: professional
+color_scheme:
+- '#1f77b4'
+- '#ff7f0e'
+- '#2ca02c'
+- '#d62728'
+- '#9467bd'
+- '#8c564b'
+- '#e377c2'
+- '#7f7f7f'
+- '#bcbd22'
+- '#17becf'
+font_config:
+  family: Arial, Helvetica, sans-serif
+  size: 12
+  color: '#2c3e50'
+layout_config:
+  paper_bgcolor: '#FFFFFF'
+  plot_bgcolor: '#F8F9FA'
+  hovermode: x unified
+  showlegend: true
+  legend:
+    bgcolor: rgba(255, 255, 255, 0.9)
+    bordercolor: '#dee2e6'
+    borderwidth: 1
+  margin:
+    l: 60
+    r: 40
+    t: 80
+    b: 60
+  xaxis:
+    gridcolor: '#dee2e6'
+    gridwidth: 1
+    zeroline: true
+    zerolinecolor: '#495057'
+    zerolinewidth: 1.5
+  yaxis:
+    gridcolor: '#dee2e6'
+    gridwidth: 1
+    zeroline: true
+    zerolinecolor: '#495057'
+    zerolinewidth: 1.5
+plotly_template: plotly_white
+matplotlib_style: seaborn-v0_8-whitegrid
+success_color: '#28a745'
+warning_color: '#ffc107'
+danger_color: '#dc3545'
+info_color: '#17a2b8'

@@ -15,20 +15,22 @@ References
        24(1-2), 3-61.
 """
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
-import pandas as pd
-from scipy import stats
 from scipy.stats import norm
 
-from panelbox.marginal_effects.delta_method import delta_method_se, numerical_gradient
+from panelbox.marginal_effects.delta_method import delta_method_se
 from panelbox.marginal_effects.discrete_me import MarginalEffectsResult
 
+logger = logging.getLogger(__name__)
 
-def _inverse_mills_ratio(z: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+
+def _inverse_mills_ratio(z: float | np.ndarray) -> float | np.ndarray:
     """
-    Compute inverse Mills ratio: λ(z) = φ(z)/Φ(z)
+    Compute inverse Mills ratio: λ(z) = φ(z)/Φ(z).
 
     The inverse Mills ratio is used extensively in Tobit models for
     computing marginal effects on the conditional mean.
@@ -64,7 +66,7 @@ def _inverse_mills_ratio(z: Union[float, np.ndarray]) -> Union[float, np.ndarray
     return result
 
 
-def _mills_ratio_derivative(z: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+def _mills_ratio_derivative(z: float | np.ndarray) -> float | np.ndarray:
     """
     Compute derivative of inverse Mills ratio.
 
@@ -92,8 +94,8 @@ def _mills_ratio_derivative(z: Union[float, np.ndarray]) -> Union[float, np.ndar
     return -lambda_z * (z + lambda_z)
 
 
-def compute_tobit_ame(
-    result, which: str = "conditional", varlist: Optional[List[str]] = None
+def compute_tobit_ame(  # noqa: C901
+    result, which: str = "conditional", varlist: list[str] | None = None
 ) -> MarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME) for Tobit models.
@@ -290,8 +292,8 @@ def compute_tobit_ame(
     )
 
 
-def compute_tobit_mem(
-    result, which: str = "conditional", varlist: Optional[List[str]] = None
+def compute_tobit_mem(  # noqa: C901
+    result, which: str = "conditional", varlist: list[str] | None = None
 ) -> MarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM) for Tobit models.

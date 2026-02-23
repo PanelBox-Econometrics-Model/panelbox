@@ -5,8 +5,10 @@ This module implements one-way and two-way cluster-robust covariance
 estimators commonly used in panel data applications.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import numpy as np
 
@@ -16,6 +18,8 @@ from .utils import (
     compute_twoway_clustered_meat,
     sandwich_covariance,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -43,7 +47,7 @@ class ClusteredCovarianceResult:
 
     cov_matrix: np.ndarray
     std_errors: np.ndarray
-    n_clusters: Union[int, tuple]
+    n_clusters: int | tuple
     n_obs: int
     n_params: int
     cluster_dims: int
@@ -107,7 +111,7 @@ class ClusteredStandardErrors:
         self,
         X: np.ndarray,
         resid: np.ndarray,
-        clusters: Union[np.ndarray, tuple],
+        clusters: np.ndarray | tuple,
         df_correction: bool = True,
     ):
         self.X = X
@@ -130,8 +134,7 @@ class ClusteredStandardErrors:
         if self.cluster_dims == 1:
             if len(self.clusters) != self.n_obs:
                 raise ValueError(
-                    f"Cluster dimension mismatch: expected {self.n_obs}, "
-                    f"got {len(self.clusters)}"
+                    f"Cluster dimension mismatch: expected {self.n_obs}, got {len(self.clusters)}"
                 )
         else:
             if len(self.clusters1) != self.n_obs or len(self.clusters2) != self.n_obs:
@@ -140,7 +143,7 @@ class ClusteredStandardErrors:
                 )
 
         # Cache
-        self._bread: Optional[np.ndarray] = None
+        self._bread: np.ndarray | None = None
 
     @property
     def bread(self) -> np.ndarray:
@@ -150,7 +153,7 @@ class ClusteredStandardErrors:
         return self._bread
 
     @property
-    def n_clusters(self) -> Union[int, tuple]:
+    def n_clusters(self) -> int | tuple:
         """Number of clusters."""
         if self.cluster_dims == 1:
             return len(np.unique(self.clusters))
@@ -179,7 +182,7 @@ class ClusteredStandardErrors:
         where V_1 and V_2 are one-way clustered, and V_12 is clustered
         by the intersection.
         """
-        n_clust: Union[int, tuple[int, int]]
+        n_clust: int | tuple[int, int]
 
         if self.cluster_dims == 1:
             # One-way clustering

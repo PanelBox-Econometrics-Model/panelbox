@@ -14,12 +14,16 @@ References
        in linear multivariate models. Economics letters, 58(1), 17-29.
 """
 
-from typing import Dict, List, Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class FEVDResult:
@@ -69,10 +73,10 @@ class FEVDResult:
     def __init__(
         self,
         decomposition: np.ndarray,
-        var_names: List[str],
+        var_names: list[str],
         periods: int,
         method: str,
-        ordering: Optional[List[str]] = None,
+        ordering: list[str] | None = None,
     ):
         self.decomposition = decomposition
         self.var_names = var_names
@@ -101,6 +105,7 @@ class FEVDResult:
                         f"FEVD for variable {i} at horizon {h} sums to {row_sum:.6f}, not 1.0. "
                         "This may indicate numerical issues.",
                         UserWarning,
+                        stacklevel=2,
                     )
 
     def __getitem__(self, key: str) -> np.ndarray:
@@ -121,7 +126,7 @@ class FEVDResult:
         Examples
         --------
         >>> fevd = result.fevd(periods=10)
-        >>> fevd['gdp']  # FEVD of GDP across all shocks
+        >>> fevd["gdp"]  # FEVD of GDP across all shocks
         array([[1.0, 0.0, 0.0],
                [0.95, 0.03, 0.02],
                ...])
@@ -129,12 +134,12 @@ class FEVDResult:
         try:
             var_idx = self.var_names.index(key)
         except ValueError:
-            raise KeyError(f"Variable '{key}' not found")
+            raise KeyError(f"Variable '{key}' not found") from None
 
         return self.decomposition[:, var_idx, :]
 
     def to_dataframe(
-        self, variable: Optional[str] = None, horizons: Optional[List[int]] = None
+        self, variable: str | None = None, horizons: list[int] | None = None
     ) -> pd.DataFrame:
         """
         Convert FEVD to DataFrame format.
@@ -154,7 +159,7 @@ class FEVDResult:
         Examples
         --------
         >>> # Get FEVD for GDP at all horizons
-        >>> df = fevd.to_dataframe(variable='gdp')
+        >>> df = fevd.to_dataframe(variable="gdp")
         >>> # Get FEVD for all variables at selected horizons
         >>> df = fevd.to_dataframe(horizons=[0, 1, 5, 10])
         """
@@ -179,7 +184,7 @@ class FEVDResult:
                     rows.append(row)
             return pd.DataFrame(rows)
 
-    def summary(self, horizons: Optional[List[int]] = None) -> str:
+    def summary(self, horizons: list[int] | None = None) -> str:
         """
         Generate summary table of FEVD at selected horizons.
 
@@ -233,10 +238,10 @@ class FEVDResult:
     def plot(
         self,
         kind: str = "area",
-        variables: Optional[List[str]] = None,
-        horizons: Optional[List[int]] = None,
+        variables: list[str] | None = None,
+        horizons: list[int] | None = None,
         backend: str = "matplotlib",
-        figsize: Optional[tuple] = None,
+        figsize: tuple | None = None,
         theme: str = "academic",
         show: bool = True,
     ):
@@ -269,8 +274,8 @@ class FEVDResult:
         --------
         >>> fevd = result.fevd(periods=20)
         >>> fevd.plot()
-        >>> fevd.plot(kind='bar', horizons=[1, 5, 10, 20])
-        >>> fevd.plot(backend='plotly', variables=['gdp', 'inflation'])
+        >>> fevd.plot(kind="bar", horizons=[1, 5, 10, 20])
+        >>> fevd.plot(backend="plotly", variables=["gdp", "inflation"])
         """
         from panelbox.visualization.var_plots import plot_fevd
 
@@ -416,7 +421,7 @@ def compute_fevd_generalized(Phi: np.ndarray, Sigma: np.ndarray, periods: int) -
 
 
 def _bootstrap_fevd_iteration(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     residuals: np.ndarray,
     periods: int,
@@ -522,7 +527,7 @@ def _bootstrap_fevd_iteration(
 
 
 def bootstrap_fevd(
-    A_matrices: List[np.ndarray],
+    A_matrices: list[np.ndarray],
     Sigma: np.ndarray,
     residuals: np.ndarray,
     periods: int,
@@ -530,9 +535,9 @@ def bootstrap_fevd(
     n_bootstrap: int = 500,
     ci_level: float = 0.95,
     n_jobs: int = -1,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     verbose: bool = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute bootstrap confidence intervals for FEVD.
 
@@ -582,7 +587,7 @@ def bootstrap_fevd(
 
     # Parallel bootstrap
     if verbose:
-        print(f"Running {n_bootstrap} bootstrap iterations for FEVD...")
+        logger.info(f"Running {n_bootstrap} bootstrap iterations for FEVD...")
 
     bootstrap_fevds = Parallel(n_jobs=n_jobs)(
         delayed(_bootstrap_fevd_iteration)(A_matrices, Sigma, residuals, periods, method, seeds[i])

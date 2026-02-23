@@ -1,5 +1,5 @@
 """
-Pedroni (1999, 2004) Residual-Based Panel Cointegration Tests
+Pedroni (1999, 2004) Residual-Based Panel Cointegration Tests.
 
 Implementation of the seven Pedroni residual-based tests for panel cointegration,
 including both within-dimension (panel) and between-dimension (group) statistics.
@@ -15,13 +15,17 @@ Pedroni, P. (2004). "Panel Cointegration: Asymptotic and Finite Sample Propertie
     Econometric Theory, 20(3), 597-625.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -50,9 +54,9 @@ class PedroniResult:
         Average number of time periods
     """
 
-    statistic: Dict[str, float]
-    pvalue: Dict[str, float]
-    critical_values: Dict[str, Dict[str, float]]
+    statistic: dict[str, float]
+    pvalue: dict[str, float]
+    critical_values: dict[str, dict[str, float]]
     method: str
     trend: str
     lags: int
@@ -60,8 +64,8 @@ class PedroniResult:
     n_time: int
 
     def reject_at(
-        self, alpha: float = 0.05, test: Optional[str] = None
-    ) -> Union[bool, Dict[str, bool]]:
+        self, alpha: float = 0.05, test: str | None = None
+    ) -> bool | dict[str, bool]:
         """
         Check if null hypothesis is rejected at given significance level.
 
@@ -91,7 +95,7 @@ class PedroniResult:
             Summary table with statistics, p-values, and critical values
         """
         rows = []
-        for test in self.statistic.keys():
+        for test in self.statistic:
             row = {
                 "Test": test,
                 "Statistic": self.statistic[test],
@@ -115,21 +119,21 @@ class PedroniResult:
         return df
 
     def __repr__(self) -> str:
-        summary_str = f"Pedroni (1999) Cointegration Test Results\n"
-        summary_str += f"{'='*60}\n"
+        summary_str = "Pedroni (1999) Cointegration Test Results\n"
+        summary_str += f"{'=' * 60}\n"
         summary_str += f"Method: {self.method}\n"
         summary_str += f"Trend: {self.trend}\n"
         summary_str += f"Lags: {self.lags}\n"
         summary_str += f"Entities: {self.n_entities}, Time periods: {self.n_time}\n"
         summary_str += f"\n{self.summary().to_string(index=False)}\n"
-        summary_str += f"\nH0: No cointegration\n"
-        summary_str += f"***, **, * denote rejection at 1%, 5%, 10% level"
+        summary_str += "\nH0: No cointegration\n"
+        summary_str += "***, **, * denote rejection at 1%, 5%, 10% level"
         return summary_str
 
 
 def _estimate_cointegrating_regression(
     y: np.ndarray, x: np.ndarray, trend: str = "c"
-) -> Tuple[np.ndarray, np.ndarray, float]:
+) -> tuple[np.ndarray, np.ndarray, float]:
     """
     Estimate cointegrating regression and extract residuals.
 
@@ -175,11 +179,11 @@ def _estimate_cointegrating_regression(
 
         return beta, resid, sigma2
     except np.linalg.LinAlgError:
-        warnings.warn("Singular matrix in cointegrating regression")
+        warnings.warn("Singular matrix in cointegrating regression", stacklevel=2)
         return np.full(X.shape[1], np.nan), np.full(T, np.nan), np.nan
 
 
-def _compute_long_run_variance(resid: np.ndarray, lags: int = 4) -> Tuple[float, float]:
+def _compute_long_run_variance(resid: np.ndarray, lags: int = 4) -> tuple[float, float]:
     """
     Compute long-run variance using Newey-West HAC estimator.
 
@@ -197,7 +201,7 @@ def _compute_long_run_variance(resid: np.ndarray, lags: int = 4) -> Tuple[float,
     lambda2 : float
         One-sided long-run variance
     """
-    T = len(resid)
+    len(resid)
 
     # Variance
     gamma0 = np.mean(resid**2)
@@ -218,7 +222,7 @@ def _compute_long_run_variance(resid: np.ndarray, lags: int = 4) -> Tuple[float,
     return sigma2_lr, lambda2
 
 
-def _panel_variance_test(residuals: List[np.ndarray], sigma2s: List[float]) -> float:
+def _panel_variance_test(residuals: list[np.ndarray], sigma2s: list[float]) -> float:
     """
     Compute panel variance test statistic (panel-ν).
 
@@ -249,7 +253,7 @@ def _panel_variance_test(residuals: List[np.ndarray], sigma2s: List[float]) -> f
     return panel_v
 
 
-def _panel_rho_test(residuals: List[np.ndarray], sigma2s: List[float]) -> float:
+def _panel_rho_test(residuals: list[np.ndarray], sigma2s: list[float]) -> float:
     """
     Compute panel-ρ test statistic.
 
@@ -282,10 +286,10 @@ def _panel_rho_test(residuals: List[np.ndarray], sigma2s: List[float]) -> float:
 
 
 def _panel_pp_test(
-    residuals: List[np.ndarray],
-    sigma2s: List[float],
-    sigma2_lrs: List[float],
-    lambda2s: List[float],
+    residuals: list[np.ndarray],
+    sigma2s: list[float],
+    sigma2_lrs: list[float],
+    lambda2s: list[float],
 ) -> float:
     """
     Compute panel-PP (Phillips-Perron) test statistic.
@@ -329,7 +333,7 @@ def _panel_pp_test(
     return panel_pp
 
 
-def _panel_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int = 1) -> float:
+def _panel_adf_test(residuals: list[np.ndarray], sigma2s: list[float], lags: int = 1) -> float:
     """
     Compute panel-ADF (Augmented Dickey-Fuller) test statistic.
 
@@ -348,7 +352,7 @@ def _panel_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int
         Panel-ADF statistic
     """
     N = len(residuals)
-    T = len(residuals[0])
+    len(residuals[0])
 
     numerator = 0
     denominator = 0
@@ -384,7 +388,7 @@ def _panel_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int
 
             numerator += rho / se_rho
             denominator += 1
-        except:
+        except Exception:  # noqa: S110 — skip units where ADF regression fails
             pass
 
     panel_adf = numerator / np.sqrt(N) if denominator > 0 else np.nan
@@ -392,7 +396,7 @@ def _panel_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int
     return panel_adf
 
 
-def _group_rho_test(residuals: List[np.ndarray], sigma2s: List[float]) -> float:
+def _group_rho_test(residuals: list[np.ndarray], sigma2s: list[float]) -> float:
     """
     Compute group-ρ test statistic.
 
@@ -425,10 +429,10 @@ def _group_rho_test(residuals: List[np.ndarray], sigma2s: List[float]) -> float:
 
 
 def _group_pp_test(
-    residuals: List[np.ndarray],
-    sigma2s: List[float],
-    sigma2_lrs: List[float],
-    lambda2s: List[float],
+    residuals: list[np.ndarray],
+    sigma2s: list[float],
+    sigma2_lrs: list[float],
+    lambda2s: list[float],
 ) -> float:
     """
     Compute group-PP test statistic.
@@ -470,7 +474,7 @@ def _group_pp_test(
     return group_pp
 
 
-def _group_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int = 1) -> float:
+def _group_adf_test(residuals: list[np.ndarray], sigma2s: list[float], lags: int = 1) -> float:
     """
     Compute group-ADF test statistic.
 
@@ -520,7 +524,7 @@ def _group_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int
             )
 
             group_stats.append(rho / se_rho)
-        except:
+        except Exception:  # noqa: S110 — skip units where ADF regression fails
             pass
 
     group_adf = np.sqrt(N) * np.mean(group_stats) if len(group_stats) > 0 else np.nan
@@ -528,7 +532,7 @@ def _group_adf_test(residuals: List[np.ndarray], sigma2s: List[float], lags: int
     return group_adf
 
 
-def _get_critical_values(test: str, trend: str = "c") -> Dict[str, float]:
+def _get_critical_values(test: str, trend: str = "c") -> dict[str, float]:
     """
     Get tabulated critical values from Pedroni (2004).
 
@@ -580,7 +584,7 @@ def pedroni_test(
     entity_col: str,
     time_col: str,
     y_var: str,
-    x_vars: Union[str, List[str]],
+    x_vars: str | list[str],
     method: str = "all",
     trend: str = "c",
     lags: int = 4,
@@ -632,8 +636,11 @@ def pedroni_test(
     >>> from panelbox.diagnostics.cointegration import pedroni_test
     >>>
     >>> result = pedroni_test(
-    ...     data, entity_col='country', time_col='year',
-    ...     y_var='log_gdp', x_vars=['log_capital', 'log_labor']
+    ...     data,
+    ...     entity_col="country",
+    ...     time_col="year",
+    ...     y_var="log_gdp",
+    ...     x_vars=["log_capital", "log_labor"],
     ... )
     >>> print(result)
     """
@@ -641,7 +648,7 @@ def pedroni_test(
     if isinstance(x_vars, str):
         x_vars = [x_vars]
 
-    required_cols = [entity_col, time_col, y_var] + x_vars
+    required_cols = [entity_col, time_col, y_var, *x_vars]
     missing_cols = set(required_cols) - set(data.columns)
     if missing_cols:
         raise ValueError(f"Missing columns: {missing_cols}")
@@ -665,7 +672,7 @@ def pedroni_test(
         T_avg += len(y)
 
         # Estimate cointegrating regression
-        beta, resid, sigma2 = _estimate_cointegrating_regression(y, X, trend)
+        _beta, resid, sigma2 = _estimate_cointegrating_regression(y, X, trend)
 
         if not np.isnan(sigma2):
             # Compute long-run variance
@@ -706,7 +713,7 @@ def pedroni_test(
     critical_values = {}
     pvalues = {}
 
-    for test in test_stats.keys():
+    for test in test_stats:
         critical_values[test] = _get_critical_values(test, trend)
 
         # Approximate p-value using normal distribution

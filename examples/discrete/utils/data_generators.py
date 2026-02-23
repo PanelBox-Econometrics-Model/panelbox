@@ -20,7 +20,7 @@ Author: PanelBox Contributors
 Date: 2026-02-16
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -60,7 +60,7 @@ def generate_labor_data(
     Examples
     --------
     >>> data = generate_labor_data(n_individuals=500, n_periods=4, seed=42)
-    >>> data.groupby('id').size().unique()
+    >>> data.groupby("id").size().unique()
     array([4])
     """
     if seed is not None:
@@ -120,7 +120,7 @@ def generate_multinomial_choice_data(
     n_alternatives: int = 4,
     choice_specific_vars: bool = True,
     seed: Optional[int] = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Generate synthetic multinomial choice data.
 
@@ -284,7 +284,7 @@ def generate_ordered_data(
     Examples
     --------
     >>> data = generate_ordered_data(n_individuals=500, n_categories=5, seed=42)
-    >>> data['rating'].nunique()
+    >>> data["rating"].nunique()
     5
     """
     if seed is not None:
@@ -376,7 +376,7 @@ def generate_dynamic_binary_data(
     Examples
     --------
     >>> data = generate_dynamic_binary_data(n_individuals=300, seed=42)
-    >>> data[data['year'] > 1]['y_lag'].isna().sum()
+    >>> data[data["year"] > 1]["y_lag"].isna().sum()
     0
     """
     if seed is not None:
@@ -468,14 +468,14 @@ def generate_transportation_choice_data(
     Examples
     --------
     >>> data = generate_transportation_choice_data(n_individuals=100, n_periods=3, seed=42)
-    >>> data.groupby(['id', 'year'])['choice'].sum().eq(1).all()
+    >>> data.groupby(["id", "year"])["choice"].sum().eq(1).all()
     True
     """
     if seed is not None:
         np.random.seed(seed)
 
     modes = ["car", "bus", "metro", "bike"]
-    n_modes = len(modes)
+    len(modes)
 
     # Alternative-specific constants (relative to bike=reference)
     asc = {"car": 0.2, "bus": 0.8, "metro": -0.1, "bike": 0.0}
@@ -617,7 +617,7 @@ def generate_career_choice_data(
     Examples
     --------
     >>> data = generate_career_choice_data(n_individuals=500, n_periods=4, seed=42)
-    >>> data['career'].value_counts().sort_index()
+    >>> data["career"].value_counts().sort_index()
     0    ...
     1    ...
     2    ...
@@ -758,7 +758,7 @@ def generate_credit_rating_data(
     Examples
     --------
     >>> df = generate_credit_rating_data(n_firms=600, n_periods=5, seed=42)
-    >>> df['rating'].value_counts().sort_index()
+    >>> df["rating"].value_counts().sort_index()
     0    ...
     1    ...
     2    ...
@@ -893,7 +893,7 @@ def generate_labor_dynamics_data(
     >>> data = generate_labor_dynamics_data(n_individuals=500, n_periods=8, seed=42)
     >>> data.shape
     (4000, 9)
-    >>> data.groupby('id').size().unique()
+    >>> data.groupby("id").size().unique()
     array([8])
     """
     if seed is not None:
@@ -1033,7 +1033,7 @@ def generate_work_mode_data(
     >>> data = generate_work_mode_data(n_workers=500, n_years=5, seed=42)
     >>> data.shape
     (2500, 12)
-    >>> data['mode'].value_counts().sort_index()
+    >>> data["mode"].value_counts().sort_index()
     0    ...
     1    ...
     2    ...
@@ -1210,5 +1210,5 @@ if __name__ == "__main__":
     transport = generate_transportation_choice_data(n_individuals=100, n_periods=3, seed=42)
     print(f"\nTransportation data: {transport.shape}")
     print(f"Modes: {transport['mode'].unique()}")
-    print(f"Choice shares:")
+    print("Choice shares:")
     print(transport[transport["choice"] == 1]["mode"].value_counts(normalize=True))

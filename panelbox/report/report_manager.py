@@ -4,10 +4,13 @@ Report Manager for PanelBox.
 Main orchestrator for report generation across all report types.
 """
 
+from __future__ import annotations
+
 import datetime
+import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .asset_manager import AssetManager
 from .css_manager import CSSManager
@@ -18,6 +21,8 @@ try:
     from .. import __version__ as PANELBOX_VERSION
 except ImportError:
     PANELBOX_VERSION = "0.1.0-dev"
+
+logger = logging.getLogger(__name__)
 
 
 class ReportManager:
@@ -55,13 +60,13 @@ class ReportManager:
     ...     template='validation/interactive/index.html',
     ...     context={'title': 'My Report', ...}
     ... )
-    >>> report_mgr.save_report(html, 'report.html')
+    >>> report_mgr.save_report(html, "report.html")
     """
 
     def __init__(
         self,
-        template_dir: Optional[Path] = None,
-        asset_dir: Optional[Path] = None,
+        template_dir: Path | None = None,
+        asset_dir: Path | None = None,
         enable_cache: bool = True,
         minify: bool = False,
     ):
@@ -82,11 +87,11 @@ class ReportManager:
         self,
         report_type: str,
         template: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         embed_assets: bool = True,
         include_plotly: bool = True,
-        custom_css: Optional[List[str]] = None,
-        custom_js: Optional[List[str]] = None,
+        custom_css: list[str] | None = None,
+        custom_js: list[str] | None = None,
     ) -> str:
         """
         Generate a complete HTML report.
@@ -116,9 +121,9 @@ class ReportManager:
         Examples
         --------
         >>> html = report_mgr.generate_report(
-        ...     report_type='validation',
-        ...     template='validation/interactive/index.html',
-        ...     context={'title': 'Panel Validation', 'data': {...}}
+        ...     report_type="validation",
+        ...     template="validation/interactive/index.html",
+        ...     context={"title": "Panel Validation", "data": {...}},
         ... )
         """
         # Prepare base context
@@ -160,10 +165,10 @@ class ReportManager:
 
     def generate_validation_report(
         self,
-        validation_data: Dict[str, Any],
+        validation_data: dict[str, Any],
         interactive: bool = True,
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
+        title: str | None = None,
+        subtitle: str | None = None,
     ) -> str:
         """
         Generate a validation report.
@@ -189,8 +194,7 @@ class ReportManager:
         Examples
         --------
         >>> html = report_mgr.generate_validation_report(
-        ...     validation_data={'tests': [...], 'model_info': {...}},
-        ...     title='Panel Data Validation'
+        ...     validation_data={"tests": [...], "model_info": {...}}, title="Panel Data Validation"
         ... )
         """
         # Determine template
@@ -218,9 +222,9 @@ class ReportManager:
 
     def generate_regression_report(
         self,
-        regression_data: Dict[str, Any],
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
+        regression_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
     ) -> str:
         """
         Generate a regression results report.
@@ -244,8 +248,8 @@ class ReportManager:
         Examples
         --------
         >>> html = report_mgr.generate_regression_report(
-        ...     regression_data={'coefficients': [...], 'diagnostics': {...}},
-        ...     title='Fixed Effects Results'
+        ...     regression_data={"coefficients": [...], "diagnostics": {...}},
+        ...     title="Fixed Effects Results",
         ... )
         """
         template = "regression/index.html"
@@ -261,7 +265,7 @@ class ReportManager:
         )
 
     def generate_gmm_report(
-        self, gmm_data: Dict[str, Any], title: Optional[str] = None, subtitle: Optional[str] = None
+        self, gmm_data: dict[str, Any], title: str | None = None, subtitle: str | None = None
     ) -> str:
         """
         Generate a GMM results report.
@@ -285,8 +289,7 @@ class ReportManager:
         Examples
         --------
         >>> html = report_mgr.generate_gmm_report(
-        ...     gmm_data={'coefficients': [...], 'hansen_test': {...}},
-        ...     title='System GMM Results'
+        ...     gmm_data={"coefficients": [...], "hansen_test": {...}}, title="System GMM Results"
         ... )
         """
         template = "gmm/index.html"
@@ -299,9 +302,9 @@ class ReportManager:
 
     def generate_residual_report(
         self,
-        residual_data: Dict[str, Any],
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
+        residual_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
         interactive: bool = True,
     ) -> str:
         """
@@ -334,21 +337,17 @@ class ReportManager:
         >>> from panelbox.visualization import create_residual_diagnostics
         >>> # After model estimation
         >>> results = model.fit()
-        >>> diagnostics = create_residual_diagnostics(results, theme='professional')
+        >>> diagnostics = create_residual_diagnostics(results, theme="professional")
         >>>
         >>> residual_data = {
-        ...     'residual_charts': diagnostics,
-        ...     'model_info': {
-        ...         'estimator': 'FixedEffects',
-        ...         'nobs': 1000,
-        ...         'n_entities': 100
-        ...     }
+        ...     "residual_charts": diagnostics,
+        ...     "model_info": {"estimator": "FixedEffects", "nobs": 1000, "n_entities": 100},
         ... }
         >>>
         >>> html = report_mgr.generate_residual_report(
         ...     residual_data=residual_data,
-        ...     title='Residual Diagnostics',
-        ...     subtitle='Model specification checks'
+        ...     title="Residual Diagnostics",
+        ...     subtitle="Model specification checks",
         ... )
         """
         # Determine template
@@ -388,9 +387,9 @@ class ReportManager:
 
     def generate_comparison_report(
         self,
-        comparison_data: Dict[str, Any],
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
+        comparison_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
         interactive: bool = True,
     ) -> str:
         """
@@ -425,32 +424,48 @@ class ReportManager:
         >>> from panelbox.visualization import create_comparison_charts
         >>> # After estimating multiple models
         >>> results_list = [model1.fit(), model2.fit(), model3.fit()]
-        >>> model_names = ['Pooled OLS', 'Fixed Effects', 'Random Effects']
+        >>> model_names = ["Pooled OLS", "Fixed Effects", "Random Effects"]
         >>>
         >>> charts = create_comparison_charts(
-        ...     results_list=results_list,
-        ...     model_names=model_names,
-        ...     theme='professional'
+        ...     results_list=results_list, model_names=model_names, theme="professional"
         ... )
         >>>
         >>> comparison_data = {
-        ...     'comparison_charts': charts,
-        ...     'models_info': [
-        ...         {'name': 'Pooled OLS', 'estimator': 'PooledOLS', 'nobs': 1000,
-        ...          'r_squared': 0.65, 'aic': 2500, 'bic': 2550},
-        ...         {'name': 'Fixed Effects', 'estimator': 'PanelOLS', 'nobs': 1000,
-        ...          'r_squared': 0.78, 'aic': 2300, 'bic': 2400},
-        ...         {'name': 'Random Effects', 'estimator': 'RandomEffects', 'nobs': 1000,
-        ...          'r_squared': 0.72, 'aic': 2350, 'bic': 2420}
+        ...     "comparison_charts": charts,
+        ...     "models_info": [
+        ...         {
+        ...             "name": "Pooled OLS",
+        ...             "estimator": "PooledOLS",
+        ...             "nobs": 1000,
+        ...             "r_squared": 0.65,
+        ...             "aic": 2500,
+        ...             "bic": 2550,
+        ...         },
+        ...         {
+        ...             "name": "Fixed Effects",
+        ...             "estimator": "PanelOLS",
+        ...             "nobs": 1000,
+        ...             "r_squared": 0.78,
+        ...             "aic": 2300,
+        ...             "bic": 2400,
+        ...         },
+        ...         {
+        ...             "name": "Random Effects",
+        ...             "estimator": "RandomEffects",
+        ...             "nobs": 1000,
+        ...             "r_squared": 0.72,
+        ...             "aic": 2350,
+        ...             "bic": 2420,
+        ...         },
         ...     ],
-        ...     'best_model_aic': 'Fixed Effects',
-        ...     'best_model_bic': 'Fixed Effects'
+        ...     "best_model_aic": "Fixed Effects",
+        ...     "best_model_bic": "Fixed Effects",
         ... }
         >>>
         >>> html = report_mgr.generate_comparison_report(
         ...     comparison_data=comparison_data,
-        ...     title='Model Comparison',
-        ...     subtitle='Pooled vs Fixed vs Random Effects'
+        ...     title="Model Comparison",
+        ...     subtitle="Pooled vs Fixed vs Random Effects",
         ... )
         """
         # Determine template
@@ -491,7 +506,7 @@ class ReportManager:
         )
 
     def save_report(
-        self, html: str, output_path: Union[str, Path], overwrite: bool = False
+        self, html: str, output_path: str | Path, overwrite: bool = False
     ) -> Path:
         """
         Save HTML report to file.
@@ -513,7 +528,7 @@ class ReportManager:
         Examples
         --------
         >>> html = report_mgr.generate_report(...)
-        >>> path = report_mgr.save_report(html, 'report.html')
+        >>> path = report_mgr.save_report(html, "report.html")
         >>> print(f"Report saved to {path}")
         """
         output_path = Path(output_path)
@@ -521,7 +536,7 @@ class ReportManager:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. " "Use overwrite=True to replace."
+                f"File already exists: {output_path}. Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -532,7 +547,7 @@ class ReportManager:
 
         return output_path
 
-    def _prepare_context(self, report_type: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_context(self, report_type: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Prepare base context with metadata.
 
@@ -572,7 +587,7 @@ class ReportManager:
 
         return base_context
 
-    def _get_css_files(self) -> List[str]:
+    def _get_css_files(self) -> list[str]:
         """
         Get list of CSS files (for non-embedded mode).
 
@@ -588,7 +603,7 @@ class ReportManager:
 
         return css_files
 
-    def _get_js_files(self, custom_js: Optional[List[str]] = None) -> List[str]:
+    def _get_js_files(self, custom_js: list[str] | None = None) -> list[str]:
         """
         Get list of JS files (for non-embedded mode).
 
@@ -621,7 +636,7 @@ class ReportManager:
         self.asset_manager.clear_cache()
         self.css_manager.clear_cache()
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """
         Get information about report manager state.
 

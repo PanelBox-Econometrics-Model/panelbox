@@ -9,6 +9,7 @@ and a direct test for heteroskedasticity. Econometrica, 48(4), 817-838.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -20,6 +21,8 @@ import numpy as np
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class WhiteTest(ValidationTest):
@@ -56,7 +59,7 @@ class WhiteTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize White test.
 
@@ -68,9 +71,9 @@ class WhiteTest(ValidationTest):
         super().__init__(results)
         self._X: Optional[np.ndarray] = None
         if hasattr(results, "_model") and results._model is not None:
-            assert (
-                results._model is not None
-            ), "Model reference should be non-None after hasattr check"
+            assert results._model is not None, (
+                "Model reference should be non-None after hasattr check"
+            )
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 

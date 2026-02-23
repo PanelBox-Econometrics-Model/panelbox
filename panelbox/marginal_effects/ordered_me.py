@@ -8,7 +8,9 @@ Author: PanelBox Developers
 License: MIT
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -17,6 +19,8 @@ from scipy.special import expit
 from scipy.stats import norm
 
 from panelbox.marginal_effects.delta_method import delta_method_se, numerical_gradient
+
+logger = logging.getLogger(__name__)
 
 
 class OrderedMarginalEffectsResult:
@@ -46,7 +50,7 @@ class OrderedMarginalEffectsResult:
         std_errors: pd.DataFrame,
         parent_result,
         me_type: str = "ame",
-        at_values: Optional[dict] = None,
+        at_values: dict | None = None,
     ):
         """Initialize ordered marginal effects result."""
         self.marginal_effects = marginal_effects
@@ -108,7 +112,7 @@ class OrderedMarginalEffectsResult:
         import matplotlib.pyplot as plt
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(8, 6))
+            _fig, ax = plt.subplots(figsize=(8, 6))
 
         if var not in self.marginal_effects.index:
             raise ValueError(f"Variable '{var}' not found in marginal effects")
@@ -166,6 +170,7 @@ class OrderedMarginalEffectsResult:
 
         # Add significance stars
         def add_stars(pval):
+            """Add significance stars to a numeric value."""
             if pval < 0.001:
                 return "***"
             elif pval < 0.01:
@@ -209,7 +214,7 @@ class OrderedMarginalEffectsResult:
 
 
 def compute_ordered_ame(
-    result, varlist: Optional[List[str]] = None
+    result, varlist: list[str] | None = None
 ) -> OrderedMarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME) for ordered models.
@@ -249,7 +254,10 @@ def compute_ordered_ame(
     if hasattr(model, "_pdf"):
         pdf_func = model._pdf
     elif "Logit" in model.__class__.__name__:
-        pdf_func = lambda z: expit(z) * (1 - expit(z))
+
+        def pdf_func(z):
+            """Compute the probability density function."""
+            return expit(z) * (1 - expit(z))
     else:  # Probit
         pdf_func = stats.norm.pdf
 
@@ -296,6 +304,7 @@ def compute_ordered_ame(
             # Compute standard error via delta method
             # Define function for this specific category effect
             def category_j_ame(params):
+                """Compute average marginal effect for category j."""
                 beta_temp = params[:n_vars]
                 cutpoint_params_temp = params[n_vars : n_vars + len(cutpoints)]
 
@@ -348,7 +357,7 @@ def compute_ordered_ame(
 
 
 def compute_ordered_mem(
-    result, varlist: Optional[List[str]] = None
+    result, varlist: list[str] | None = None
 ) -> OrderedMarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM) for ordered models.
@@ -391,7 +400,10 @@ def compute_ordered_mem(
     if hasattr(model, "_pdf"):
         pdf_func = model._pdf
     elif "Logit" in model.__class__.__name__:
-        pdf_func = lambda z: expit(z) * (1 - expit(z))
+
+        def pdf_func(z):
+            """Compute the probability density function."""
+            return expit(z) * (1 - expit(z))
     else:  # Probit
         pdf_func = stats.norm.pdf
 
@@ -426,6 +438,7 @@ def compute_ordered_mem(
 
             # Standard error computation
             def category_j_mem(params):
+                """Compute marginal effect at mean for category j."""
                 beta_temp = params[:n_vars]
                 cutpoint_params_temp = params[n_vars : n_vars + len(cutpoints)]
 

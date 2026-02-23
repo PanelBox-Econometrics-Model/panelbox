@@ -4,8 +4,13 @@ Chart configuration dataclass.
 Provides a structured way to configure individual charts.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -49,19 +54,12 @@ class ChartConfig:
     --------
     Create basic config:
 
-    >>> config = ChartConfig(
-    ...     title="Residuals vs Fitted Values",
-    ...     width=1000,
-    ...     height=700
-    ... )
+    >>> config = ChartConfig(title="Residuals vs Fitted Values", width=1000, height=700)
 
     Config for static export:
 
     >>> config = ChartConfig(
-    ...     width=1200,
-    ...     height=900,
-    ...     static_plot=True,
-    ...     title="Q-Q Plot for Normality"
+    ...     width=1200, height=900, static_plot=True, title="Q-Q Plot for Normality"
     ... )
 
     Config with custom Plotly settings:
@@ -69,16 +67,16 @@ class ChartConfig:
     >>> config = ChartConfig(
     ...     title="Interactive Dashboard",
     ...     plotly_config={
-    ...         'displayModeBar': True,
-    ...         'displaylogo': False,
-    ...         'toImageButtonOptions': {
-    ...             'format': 'png',
-    ...             'filename': 'chart',
-    ...             'height': 1080,
-    ...             'width': 1920,
-    ...             'scale': 2
-    ...         }
-    ...     }
+    ...         "displayModeBar": True,
+    ...         "displaylogo": False,
+    ...         "toImageButtonOptions": {
+    ...             "format": "png",
+    ...             "filename": "chart",
+    ...             "height": 1080,
+    ...             "width": 1920,
+    ...             "scale": 2,
+    ...         },
+    ...     },
     ... )
     """
 
@@ -87,10 +85,10 @@ class ChartConfig:
     height: int = 600
 
     # Titles and labels
-    title: Optional[str] = None
+    title: str | None = None
     title_font_size: int = 16
-    xaxis_title: Optional[str] = None
-    yaxis_title: Optional[str] = None
+    xaxis_title: str | None = None
+    yaxis_title: str | None = None
 
     # Legend
     show_legend: bool = True
@@ -102,7 +100,7 @@ class ChartConfig:
     hover_mode: str = "x unified"  # 'x unified', 'closest', 'x', 'y', False
 
     # Plotly-specific configuration
-    plotly_config: Dict[str, Any] = field(
+    plotly_config: dict[str, Any] = field(
         default_factory=lambda: {
             "displayModeBar": True,
             "displaylogo": False,
@@ -118,9 +116,9 @@ class ChartConfig:
     )
 
     # Layout
-    margin: Optional[Dict[str, int]] = None
+    margin: dict[str, int] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert config to dictionary.
 
@@ -145,7 +143,7 @@ class ChartConfig:
             "margin": self.margin,
         }
 
-    def get_legend_config(self) -> Dict[str, Any]:
+    def get_legend_config(self) -> dict[str, Any]:
         """
         Get Plotly legend configuration based on position.
 
@@ -166,7 +164,7 @@ class ChartConfig:
 
         return legend_config
 
-    def merge(self, other: "ChartConfig") -> "ChartConfig":
+    def merge(self, other: ChartConfig) -> ChartConfig:
         """
         Merge with another config (other takes precedence).
 

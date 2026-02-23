@@ -5,14 +5,21 @@ This module provides a concrete implementation of BaseResult for
 model comparison results.
 """
 
+from __future__ import annotations
+
+import logging
 import math
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 
 from panelbox.experiment.results.base import BaseResult
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class ComparisonResult(BaseResult):
@@ -54,32 +61,30 @@ class ComparisonResult(BaseResult):
     >>>
     >>> # Create ComparisonResult
     >>> comp_result = ComparisonResult(
-    ...     models={'Fixed Effects': fe_results, 'Random Effects': re_results}
+    ...     models={"Fixed Effects": fe_results, "Random Effects": re_results}
     ... )
     >>>
     >>> # Save as HTML
     >>> comp_result.save_html(
-    ...     'comparison_report.html',
-    ...     test_type='comparison',
-    ...     theme='professional'
+    ...     "comparison_report.html", test_type="comparison", theme="professional"
     ... )
     >>>
     >>> # Save as JSON
-    >>> comp_result.save_json('comparison_result.json')
+    >>> comp_result.save_json("comparison_result.json")
     >>>
     >>> # Get summary
     >>> print(comp_result.summary())
     >>>
     >>> # Find best model
-    >>> best = comp_result.best_model('rsquared')
+    >>> best = comp_result.best_model("rsquared")
     """
 
     def __init__(
         self,
-        models: Dict[str, Any],
-        comparison_metrics: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        models: dict[str, Any],
+        comparison_metrics: dict[str, Any] | None = None,
+        timestamp: datetime | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize ComparisonResult.
@@ -103,7 +108,7 @@ class ComparisonResult(BaseResult):
         self.models = models
         self.comparison_metrics = comparison_metrics or self._compute_metrics()
 
-    def _compute_metrics(self) -> Dict[str, Dict[str, float]]:
+    def _compute_metrics(self) -> dict[str, dict[str, float]]:
         """
         Compute comparison metrics for all models.
 
@@ -170,7 +175,7 @@ class ComparisonResult(BaseResult):
 
         return metrics
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert comparison result to dictionary.
 
@@ -298,7 +303,7 @@ class ComparisonResult(BaseResult):
 
         return "\n".join(lines)
 
-    def as_dataframe(self) -> "pd.DataFrame":
+    def as_dataframe(self) -> pd.DataFrame:
         """
         Return comparison metrics as a pandas DataFrame.
 
@@ -317,7 +322,7 @@ class ComparisonResult(BaseResult):
         """
         return pd.DataFrame(self.comparison_metrics).T
 
-    def best_model(self, metric: str, prefer_lower: Optional[bool] = None) -> Optional[str]:
+    def best_model(self, metric: str, prefer_lower: bool | None = None) -> str | None:
         """
         Find the best model according to a specific metric.
 
@@ -340,11 +345,11 @@ class ComparisonResult(BaseResult):
 
         Examples
         --------
-        >>> comp_result.best_model('r2')
+        >>> comp_result.best_model("r2")
         'fe'
-        >>> comp_result.best_model('aic')
+        >>> comp_result.best_model("aic")
         'fe'
-        >>> comp_result.best_model('aic', prefer_lower=True)
+        >>> comp_result.best_model("aic", prefer_lower=True)
         'fe'
         """
         # Determine prefer_lower automatically for common metrics
@@ -369,7 +374,7 @@ class ComparisonResult(BaseResult):
         return best_model[0]
 
     @property
-    def model_names(self) -> List[str]:
+    def model_names(self) -> list[str]:
         """
         Get list of model names.
 
@@ -403,7 +408,7 @@ class ComparisonResult(BaseResult):
         return len(self.models)
 
     @classmethod
-    def from_experiment(cls, experiment, model_names: Optional[List[str]] = None, **kwargs):
+    def from_experiment(cls, experiment, model_names: list[str] | None = None, **kwargs):
         """
         Create ComparisonResult from a PanelExperiment.
 
@@ -427,18 +432,15 @@ class ComparisonResult(BaseResult):
         Examples
         --------
         >>> experiment = PanelExperiment(data, "y ~ x1 + x2", "firm", "year")
-        >>> experiment.fit_model('pooled_ols', name='pooled')
-        >>> experiment.fit_model('fixed_effects', name='fe')
-        >>> experiment.fit_model('random_effects', name='re')
+        >>> experiment.fit_model("pooled_ols", name="pooled")
+        >>> experiment.fit_model("fixed_effects", name="fe")
+        >>> experiment.fit_model("random_effects", name="re")
         >>>
         >>> # Compare all models
         >>> comp_result = ComparisonResult.from_experiment(experiment)
         >>>
         >>> # Compare specific models
-        >>> comp_result = ComparisonResult.from_experiment(
-        ...     experiment,
-        ...     model_names=['fe', 're']
-        ... )
+        >>> comp_result = ComparisonResult.from_experiment(experiment, model_names=["fe", "re"])
         """
         all_models = experiment.list_models()
 

@@ -1,5 +1,6 @@
 """
-Dataset Loading Functions
+Dataset Loading Functions.
+
 ==========================
 
 Functions for loading example panel datasets.
@@ -11,13 +12,18 @@ Each dataset includes:
 - Citation information
 """
 
+from __future__ import annotations
+
+import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from panelbox.core.panel_data import PanelData
+
+logger = logging.getLogger(__name__)
 
 
 def _get_data_path() -> str:
@@ -25,7 +31,7 @@ def _get_data_path() -> str:
     return os.path.join(os.path.dirname(__file__), "data")
 
 
-def load_grunfeld(return_panel_data: bool = False) -> Union[pd.DataFrame, "PanelData"]:
+def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame | PanelData:
     """
     Load Grunfeld investment data.
 
@@ -113,7 +119,7 @@ def load_grunfeld(return_panel_data: bool = False) -> Union[pd.DataFrame, "Panel
     return df
 
 
-def load_abdata(return_panel_data: bool = False) -> Optional[Union[pd.DataFrame, "PanelData"]]:
+def load_abdata(return_panel_data: bool = False) -> pd.DataFrame | PanelData | None:
     """
     Load Arellano-Bond employment data.
 
@@ -172,12 +178,7 @@ def load_abdata(return_panel_data: bool = False) -> Optional[Union[pd.DataFrame,
     >>> if data is not None:
     ...     # Estimate Difference GMM
     ...     gmm = pb.DifferenceGMM(
-    ...         data=data,
-    ...         dep_var='n',
-    ...         lags=1,
-    ...         exog_vars=['w', 'k'],
-    ...         id_var='id',
-    ...         time_var='year'
+    ...         data=data, dep_var="n", lags=1, exog_vars=["w", "k"], id_var="id", time_var="year"
     ...     )
     ...     results = gmm.fit()
     """
@@ -199,7 +200,7 @@ def load_abdata(return_panel_data: bool = False) -> Optional[Union[pd.DataFrame,
     return df
 
 
-def list_datasets() -> List[str]:
+def list_datasets() -> list[str]:
     """
     List all available datasets.
 
@@ -228,7 +229,7 @@ def list_datasets() -> List[str]:
     return sorted(datasets)
 
 
-def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
+def get_dataset_info(dataset_name: str) -> dict[str, Any]:
     """
     Get information about a specific dataset.
 
@@ -253,7 +254,7 @@ def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
     Examples
     --------
     >>> import panelbox as pb
-    >>> info = pb.get_dataset_info('grunfeld')
+    >>> info = pb.get_dataset_info("grunfeld")
     >>> print(f"Dataset: {info['name']}")
     >>> print(f"Description: {info['description']}")
     >>> print(f"Variables: {', '.join(info['variables'])}")
@@ -277,7 +278,7 @@ def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
         },
     }
 
-    base_info: Dict[str, Any] = dict(
+    base_info: dict[str, Any] = dict(
         dataset_info.get(
             dataset_name,
             {
@@ -289,7 +290,7 @@ def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
     )
 
     # Try to load dataset and add statistics
-    df: Optional[pd.DataFrame] = None
+    df: pd.DataFrame | None = None
     try:
         if dataset_name == "grunfeld":
             df = load_grunfeld()
@@ -322,7 +323,7 @@ def get_dataset_info(dataset_name: str) -> Dict[str, Any]:
 
 
 # Convenience function for backwards compatibility
-def load_dataset(name: str, **kwargs) -> Optional[pd.DataFrame]:
+def load_dataset(name: str, **kwargs) -> pd.DataFrame | None:
     """
     Load a dataset by name.
 
@@ -348,6 +349,6 @@ def load_dataset(name: str, **kwargs) -> Optional[pd.DataFrame]:
         if os.path.exists(data_path):
             return pd.read_csv(data_path)
         else:
-            print(f"Dataset '{name}' not found.")
-            print(f"Available datasets: {', '.join(list_datasets())}")
+            logger.warning(f"Dataset '{name}' not found.")
+            logger.warning(f"Available datasets: {', '.join(list_datasets())}")
             return None

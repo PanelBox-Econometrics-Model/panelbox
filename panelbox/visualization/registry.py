@@ -8,9 +8,13 @@ The registry pattern decouples chart creation from chart usage, making it
 easy to add new chart types without modifying existing code.
 """
 
-from typing import Dict, List, Type
+from __future__ import annotations
+
+import logging
 
 from .base import BaseChart
+
+logger = logging.getLogger(__name__)
 
 
 class ChartRegistry:
@@ -28,7 +32,7 @@ class ChartRegistry:
 
     >>> from panelbox.visualization import register_chart, PlotlyChartBase
     >>>
-    >>> @register_chart('my_custom_chart')
+    >>> @register_chart("my_custom_chart")
     ... class MyCustomChart(PlotlyChartBase):
     ...     def _create_figure(self, data, **kwargs):
     ...         # Implementation
@@ -36,9 +40,9 @@ class ChartRegistry:
 
     Retrieve and use a registered chart:
 
-    >>> chart_class = ChartRegistry.get('my_custom_chart')
-    >>> chart = chart_class(theme='professional')
-    >>> chart.create(data={'x': [1, 2, 3], 'y': [4, 5, 6]})
+    >>> chart_class = ChartRegistry.get("my_custom_chart")
+    >>> chart = chart_class(theme="professional")
+    >>> chart.create(data={"x": [1, 2, 3], "y": [4, 5, 6]})
 
     List all registered charts:
 
@@ -48,10 +52,10 @@ class ChartRegistry:
     """
 
     # Class-level registry dictionary
-    _registry: Dict[str, Type[BaseChart]] = {}
+    _registry: dict[str, type[BaseChart]] = {}
 
     @classmethod
-    def register(cls, name: str, chart_class: Type[BaseChart]) -> None:
+    def register(cls, name: str, chart_class: type[BaseChart]) -> None:
         """
         Register a chart class.
 
@@ -71,7 +75,7 @@ class ChartRegistry:
 
         Examples
         --------
-        >>> ChartRegistry.register('my_chart', MyChartClass)
+        >>> ChartRegistry.register("my_chart", MyChartClass)
         """
         # Validation
         if not isinstance(chart_class, type):
@@ -96,7 +100,7 @@ class ChartRegistry:
         cls._registry[name] = chart_class
 
     @classmethod
-    def get(cls, name: str) -> Type[BaseChart]:
+    def get(cls, name: str) -> type[BaseChart]:
         """
         Get a registered chart class.
 
@@ -117,20 +121,19 @@ class ChartRegistry:
 
         Examples
         --------
-        >>> chart_class = ChartRegistry.get('qq_plot')
+        >>> chart_class = ChartRegistry.get("qq_plot")
         >>> chart = chart_class()
         """
         if name not in cls._registry:
             available = ", ".join(sorted(cls._registry.keys()))
             raise ValueError(
-                f"Chart type '{name}' is not registered. "
-                f"Available charts: {available or 'none'}"
+                f"Chart type '{name}' is not registered. Available charts: {available or 'none'}"
             )
 
         return cls._registry[name]
 
     @classmethod
-    def list_charts(cls) -> List[str]:
+    def list_charts(cls) -> list[str]:
         """
         List all registered chart types.
 
@@ -163,8 +166,8 @@ class ChartRegistry:
 
         Examples
         --------
-        >>> if ChartRegistry.is_registered('qq_plot'):
-        ...     chart = ChartRegistry.get('qq_plot')
+        >>> if ChartRegistry.is_registered("qq_plot"):
+        ...     chart = ChartRegistry.get("qq_plot")
         """
         return name in cls._registry
 
@@ -187,7 +190,7 @@ class ChartRegistry:
 
         Examples
         --------
-        >>> ChartRegistry.unregister('my_test_chart')
+        >>> ChartRegistry.unregister("my_test_chart")
         """
         if name not in cls._registry:
             raise ValueError(f"Chart type '{name}' is not registered, cannot unregister")
@@ -209,7 +212,7 @@ class ChartRegistry:
         cls._registry.clear()
 
     @classmethod
-    def get_chart_info(cls, name: str) -> Dict[str, str]:
+    def get_chart_info(cls, name: str) -> dict[str, str]:
         """
         Get information about a registered chart.
 
@@ -230,8 +233,8 @@ class ChartRegistry:
 
         Examples
         --------
-        >>> info = ChartRegistry.get_chart_info('qq_plot')
-        >>> print(info['description'])
+        >>> info = ChartRegistry.get_chart_info("qq_plot")
+        >>> print(info["description"])
         """
         chart_class = cls.get(name)
 
@@ -268,34 +271,31 @@ def register_chart(name: str):
 
     >>> from panelbox.visualization import register_chart, PlotlyChartBase
     >>>
-    >>> @register_chart('my_scatter_plot')
+    >>> @register_chart("my_scatter_plot")
     ... class ScatterPlot(PlotlyChartBase):
     ...     '''Interactive scatter plot.'''
     ...
     ...     def _create_figure(self, data, **kwargs):
     ...         import plotly.graph_objects as go
+    ...
     ...         fig = go.Figure()
-    ...         fig.add_trace(go.Scatter(
-    ...             x=data['x'],
-    ...             y=data['y'],
-    ...             mode='markers'
-    ...         ))
+    ...         fig.add_trace(go.Scatter(x=data["x"], y=data["y"], mode="markers"))
     ...         return fig
 
     Use the registered chart:
 
     >>> from panelbox.visualization import ChartRegistry
-    >>> ScatterPlot = ChartRegistry.get('my_scatter_plot')
+    >>> ScatterPlot = ChartRegistry.get("my_scatter_plot")
     >>> chart = ScatterPlot()
-    >>> chart.create(data={'x': [1, 2, 3], 'y': [4, 5, 6]})
+    >>> chart.create(data={"x": [1, 2, 3], "y": [4, 5, 6]})
 
     Or use the factory:
 
     >>> from panelbox.visualization import ChartFactory
-    >>> chart = ChartFactory.create('my_scatter_plot', data={'x': [1, 2, 3], 'y': [4, 5, 6]})
+    >>> chart = ChartFactory.create("my_scatter_plot", data={"x": [1, 2, 3], "y": [4, 5, 6]})
     """
 
-    def decorator(chart_class: Type[BaseChart]) -> Type[BaseChart]:
+    def decorator(chart_class: type[BaseChart]) -> type[BaseChart]:
         """Register the chart class."""
         ChartRegistry.register(name, chart_class)
         # Add registry name as class attribute for introspection

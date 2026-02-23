@@ -16,6 +16,9 @@ Rousseeuw, P. J., & Leroy, A. M. (1987). Robust Regression and Outlier Detection
     John Wiley & Sons.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Optional
@@ -25,6 +28,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -108,7 +113,7 @@ class OutlierDetector:
     >>> import pandas as pd
     >>>
     >>> # Fit model
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "entity_id", "time")
     >>> results = fe.fit()
     >>>
@@ -116,14 +121,14 @@ class OutlierDetector:
     >>> detector = pb.OutlierDetector(results)
     >>>
     >>> # Univariate methods
-    >>> outliers_iqr = detector.detect_outliers_univariate(method='iqr')
-    >>> outliers_zscore = detector.detect_outliers_univariate(method='zscore')
+    >>> outliers_iqr = detector.detect_outliers_univariate(method="iqr")
+    >>> outliers_zscore = detector.detect_outliers_univariate(method="zscore")
     >>>
     >>> # Multivariate method
     >>> outliers_mahal = detector.detect_outliers_multivariate()
     >>>
     >>> # Regression diagnostics
-    >>> outliers_resid = detector.detect_outliers_residuals(method='standardized')
+    >>> outliers_resid = detector.detect_outliers_residuals(method="standardized")
     >>>
     >>> # Leverage points
     >>> leverage = detector.detect_leverage_points()
@@ -237,7 +242,7 @@ class OutlierDetector:
         )
 
         if self.verbose:
-            print(f"Detected {n_outliers} outliers using {method_name}")
+            logger.info(f"Detected {n_outliers} outliers using {method_name}")
 
         return self.outlier_results_
 
@@ -309,7 +314,7 @@ class OutlierDetector:
         )
 
         if self.verbose:
-            print(f"Detected {n_outliers} outliers using Mahalanobis distance")
+            logger.info(f"Detected {n_outliers} outliers using Mahalanobis distance")
 
         return self.outlier_results_
 
@@ -390,13 +395,13 @@ class OutlierDetector:
         )
 
         if self.verbose:
-            print(f"Detected {n_outliers} outliers using {method} residuals")
+            logger.info(f"Detected {n_outliers} outliers using {method} residuals")
 
         return self.outlier_results_
 
     def detect_outliers(
         self, method: str = "standardized", threshold: float = 3.0
-    ) -> "OutlierResults":
+    ) -> OutlierResults:
         """
         Detect outliers using residual-based methods.
 
@@ -482,7 +487,9 @@ class OutlierDetector:
         n_high_leverage = is_high_leverage.sum()
 
         if self.verbose:
-            print(f"Detected {n_high_leverage} high-leverage points (threshold={threshold:.4f})")
+            logger.info(
+                f"Detected {n_high_leverage} high-leverage points (threshold={threshold:.4f})"
+            )
 
         return leverage_df
 
@@ -504,7 +511,7 @@ class OutlierDetector:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "matplotlib is required for plotting. " "Install with: pip install matplotlib"
+                "matplotlib is required for plotting. Install with: pip install matplotlib"
             )
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -556,6 +563,6 @@ class OutlierDetector:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
             if self.verbose:
-                print(f"Plot saved to {save_path}")
+                logger.info(f"Plot saved to {save_path}")
         else:
             plt.show()

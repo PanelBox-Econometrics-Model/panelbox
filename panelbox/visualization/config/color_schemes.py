@@ -8,13 +8,17 @@ Provides curated color palettes for different use cases:
 - Diverging color scales
 """
 
-from typing import List
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Colorblind-Friendly Palettes
 # ============================================================================
 
-COLORBLIND_FRIENDLY: List[str] = [
+COLORBLIND_FRIENDLY: list[str] = [
     "#0173B2",  # Blue
     "#DE8F05",  # Orange
     "#029E73",  # Green
@@ -38,7 +42,7 @@ Wong, B. (2011). Color blindness. Nature Methods, 8(6), 441.
 # Monochrome Palettes
 # ============================================================================
 
-MONOCHROME: List[str] = [
+MONOCHROME: list[str] = [
     "#000000",  # Black
     "#2D2D2D",  # Very dark gray
     "#5A5A5A",  # Dark gray
@@ -52,7 +56,7 @@ MONOCHROME: List[str] = [
 # Sequential Color Scales
 # ============================================================================
 
-SEQUENTIAL_BLUE: List[str] = [
+SEQUENTIAL_BLUE: list[str] = [
     "#F7FBFF",  # Very light blue
     "#DEEBF7",  # Light blue
     "#C6DBEF",  # Light-medium blue
@@ -65,7 +69,7 @@ SEQUENTIAL_BLUE: List[str] = [
 ]
 """Sequential blue color scale for continuous data."""
 
-SEQUENTIAL_GREEN: List[str] = [
+SEQUENTIAL_GREEN: list[str] = [
     "#F7FCF5",  # Very light green
     "#E5F5E0",  # Light green
     "#C7E9C0",  # Light-medium green
@@ -78,7 +82,7 @@ SEQUENTIAL_GREEN: List[str] = [
 ]
 """Sequential green color scale for continuous data."""
 
-SEQUENTIAL_RED: List[str] = [
+SEQUENTIAL_RED: list[str] = [
     "#FFF5F0",  # Very light red
     "#FEE0D2",  # Light red
     "#FCBBA1",  # Light-medium red
@@ -95,7 +99,7 @@ SEQUENTIAL_RED: List[str] = [
 # Diverging Color Scales
 # ============================================================================
 
-DIVERGING_RED_BLUE: List[str] = [
+DIVERGING_RED_BLUE: list[str] = [
     "#67001F",  # Dark red
     "#B2182B",  # Red
     "#D6604D",  # Light red
@@ -110,7 +114,7 @@ DIVERGING_RED_BLUE: List[str] = [
 ]
 """Diverging red-blue color scale (for positive/negative values)."""
 
-DIVERGING_BROWN_TEAL: List[str] = [
+DIVERGING_BROWN_TEAL: list[str] = [
     "#8C510A",  # Dark brown
     "#BF812D",  # Brown
     "#DFC27D",  # Light brown
@@ -127,7 +131,7 @@ DIVERGING_BROWN_TEAL: List[str] = [
 # Categorical Palettes
 # ============================================================================
 
-CATEGORICAL_VIBRANT: List[str] = [
+CATEGORICAL_VIBRANT: list[str] = [
     "#EE7733",  # Orange
     "#0077BB",  # Blue
     "#33BBEE",  # Cyan
@@ -138,7 +142,7 @@ CATEGORICAL_VIBRANT: List[str] = [
 ]
 """Vibrant categorical palette (Paul Tol)."""
 
-CATEGORICAL_MUTED: List[str] = [
+CATEGORICAL_MUTED: list[str] = [
     "#CC6677",  # Rose
     "#332288",  # Indigo
     "#DDCC77",  # Sand
@@ -209,7 +213,7 @@ def get_color_for_pvalue(pvalue: float, alpha: float = 0.05) -> str:
         return SIGNIFICANCE_COLORS["not_significant"]
 
 
-def interpolate_color_scale(colors: List[str], n_colors: int) -> List[str]:
+def interpolate_color_scale(colors: list[str], n_colors: int) -> list[str]:
     """
     Interpolate a color scale to a specific number of colors.
 

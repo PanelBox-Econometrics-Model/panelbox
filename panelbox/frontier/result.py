@@ -5,20 +5,25 @@ This module defines the SFResult class which stores and presents
 estimation results from SFA models.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-from .data import DistributionType, FrontierType, ModelType
+from panelbox.core.serialization import SerializableMixin
+
+logger = logging.getLogger(__name__)
 
 
-class SFResult:
+class SFResult(SerializableMixin):
     """Results from stochastic frontier estimation.
 
-    Attributes:
+    Attributes
+    ----------
         params: Estimated parameters as Series
         se: Standard errors
         tvalues: t-statistics
@@ -41,15 +46,16 @@ class SFResult:
         self,
         params: np.ndarray,
         param_names: list,
-        hessian: Optional[np.ndarray],
+        hessian: np.ndarray | None,
         converged: bool,
         model: Any,
-        loglik: Optional[float] = None,
+        loglik: float | None = None,
         optimization_result: Any = None,
     ):
         """Initialize SFResult.
 
-        Parameters:
+        Parameters
+        ----------
             params: Parameter estimates (transformed to natural scale)
             param_names: Parameter names
             hessian: Hessian matrix at optimum (for standard errors)
@@ -87,12 +93,12 @@ class SFResult:
         self._efficiency_cache = {}
 
     @property
-    def vcov(self) -> Optional[np.ndarray]:
+    def vcov(self) -> np.ndarray | None:
         """Variance-covariance matrix (alias for cov)."""
         return self.cov
 
     def _compute_inference(
-        self, hessian: Optional[np.ndarray], params: np.ndarray, param_names: list
+        self, hessian: np.ndarray | None, params: np.ndarray, param_names: list
     ) -> None:
         """Compute standard errors and inference statistics."""
         if hessian is not None:
@@ -103,7 +109,7 @@ class SFResult:
                 # Check if we have fixed parameters (e.g., normalized delta_tT in Lee-Schmidt)
                 if cov_matrix.shape[0] < len(params):
                     # Expand covariance matrix with NaNs for fixed parameters
-                    n_fixed = len(params) - cov_matrix.shape[0]
+                    len(params) - cov_matrix.shape[0]
                     n_params = len(params)
 
                     # Create expanded matrix with NaNs in the extra rows/columns
@@ -126,7 +132,7 @@ class SFResult:
                 self.pvalues = pd.Series(pvalues, index=param_names, name="p_value")
 
             except np.linalg.LinAlgError:
-                print("Warning: Could not invert Hessian. " "Standard errors not available.")
+                logger.warning("Could not invert Hessian. Standard errors not available.")
                 self.cov = None
                 self.se = pd.Series(np.nan, index=param_names, name="std_err")
                 self.tvalues = pd.Series(np.nan, index=param_names, name="t_stat")
@@ -223,20 +229,22 @@ class SFResult:
                 self.gamma_theta = self.params[name]
 
     def summary(
-        self, alpha: float = 0.05, title: Optional[str] = None, include_diagnostics: bool = True
+        self, alpha: float = 0.05, title: str | None = None, include_diagnostics: bool = True
     ) -> str:
         """Generate summary table of results.
 
-        Parameters:
+        Parameters
+        ----------
             alpha: Significance level for confidence intervals
             title: Optional title for summary table
             include_diagnostics: If True, include diagnostic tests in summary
 
-        Returns:
+        Returns
+        -------
             Formatted summary string
         """
         if title is None:
-            title = f"Stochastic Frontier Analysis Results"
+            title = "Stochastic Frontier Analysis Results"
 
         # Critical value for CI
         z_crit = stats.norm.ppf(1 - alpha / 2)
@@ -301,8 +309,8 @@ class SFResult:
             lines.append("Gamma Distribution Parameters:")
             lines.append(f"  P (shape):            {self.gamma_P:.6f}")
             lines.append(f"  θ (rate):             {self.gamma_theta:.6f}")
-            lines.append(f"  E[u] = P/θ:           {self.gamma_P/self.gamma_theta:.6f}")
-            lines.append(f"  Var[u] = P/θ²:        {self.gamma_P/(self.gamma_theta**2):.6f}")
+            lines.append(f"  E[u] = P/θ:           {self.gamma_P / self.gamma_theta:.6f}")
+            lines.append(f"  Var[u] = P/θ²:        {self.gamma_P / (self.gamma_theta**2):.6f}")
 
         lines.append("-" * 78)
 
@@ -325,8 +333,8 @@ class SFResult:
         lines.append("Parameter Estimates:")
         lines.append(
             f"{'Variable':<20} {'Coef.':<12} {'Std.Err.':<12} "
-            f"{'t':<10} {'P>|t|':<10} {'[' + f'{alpha/2:.3f}':<10} "
-            f"{1-alpha/2:.3f}]"
+            f"{'t':<10} {'P>|t|':<10} {'[' + f'{alpha / 2:.3f}':<10} "
+            f"{1 - alpha / 2:.3f}]"
         )
         lines.append("-" * 78)
 
@@ -352,17 +360,20 @@ class SFResult:
     def efficiency(self, estimator: str = "bc", ci_level: float = 0.95) -> pd.DataFrame:
         """Estimate technical/cost efficiency.
 
-        Parameters:
+        Parameters
+        ----------
             estimator: Efficiency estimator type
                       'jlms' - Jondrow et al. (1982) E[u|ε]
                       'bc' - Battese & Coelli (1988) E[exp(-u)|ε]
                       'mode' - Modal estimator M[u|ε]
             ci_level: Confidence level for intervals (0-1)
 
-        Returns:
+        Returns
+        -------
             DataFrame with efficiency estimates and confidence intervals
 
-        Raises:
+        Raises
+        ------
             ValueError: If estimator not recognized
         """
         # Check cache
@@ -410,17 +421,19 @@ class SFResult:
         return epsilon
 
     def compare_distributions(
-        self, other_results: Optional[list] = None, distributions: Optional[list] = None
+        self, other_results: list | None = None, distributions: list | None = None
     ) -> pd.DataFrame:
         """Compare this model with other distributional specifications.
 
-        Parameters:
+        Parameters
+        ----------
             other_results: List of other SFResult objects to compare
                           If None and distributions is provided, will estimate models automatically
             distributions: List of distribution names to compare (e.g., ['half_normal', 'exponential', 'truncated_normal'])
                           Only used if other_results is None
 
-        Returns:
+        Returns
+        -------
             DataFrame with comparison statistics and recommendation
 
         Example:
@@ -428,7 +441,9 @@ class SFResult:
             >>> result.compare_distributions(other_results=[result2, result3])
 
             # Auto-estimate and compare distributions
-            >>> result.compare_distributions(distributions=['half_normal', 'exponential', 'truncated_normal'])
+            >>> result.compare_distributions(
+            ...     distributions=["half_normal", "exponential", "truncated_normal"]
+            ... )
         """
         if other_results is None and distributions is not None:
             # Auto-estimate models with different distributions
@@ -455,13 +470,13 @@ class SFResult:
                     new_result = new_model.fit()
                     other_results.append(new_result)
                 except Exception as e:
-                    print(f"Warning: Failed to estimate {dist_name} distribution: {e}")
+                    logger.warning(f"Failed to estimate {dist_name} distribution: {e}")
                     continue
 
         if other_results is None:
             other_results = []
 
-        models = [self] + other_results
+        models = [self, *other_results]
 
         comparison = {
             "Distribution": [m.model.dist.value for m in models],
@@ -492,7 +507,7 @@ class SFResult:
 
     def variance_decomposition(
         self, ci_level: float = 0.95, method: str = "delta"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Decompose variance into noise and inefficiency components.
 
         Computes variance decomposition measures with confidence intervals:
@@ -500,11 +515,13 @@ class SFResult:
             λ = σ_u / σ_v - ratio of standard deviations
             σ² = σ²_v + σ²_u - total variance
 
-        Parameters:
+        Parameters
+        ----------
             ci_level: Confidence level for intervals (default 0.95)
             method: Method for computing CIs ('delta' or 'bootstrap')
 
-        Returns:
+        Returns
+        -------
             Dictionary with decomposition results:
                 - gamma: Proportion of variance due to inefficiency
                 - gamma_ci: Confidence interval for gamma
@@ -515,7 +532,8 @@ class SFResult:
                 - sigma_sq_v: Noise variance
                 - interpretation: Interpretation of results
 
-        Notes:
+        Notes
+        -----
             γ → 0: Variation is primarily noise (OLS may be adequate)
             γ → 1: Variation is primarily inefficiency (deterministic frontier)
             γ ∈ [0.3, 0.7]: Both components are important
@@ -529,19 +547,19 @@ class SFResult:
         gamma = sigma_u_sq / sigma_sq if sigma_sq > 0 else 0
         lambda_param = np.sqrt(sigma_u_sq / sigma_v_sq) if sigma_v_sq > 0 else np.inf
 
+        # Find parameter indices for variance parameters
+        param_names = self.params.index.tolist()
+        idx_sigma_v = None
+        idx_sigma_u = None
+
+        for i, name in enumerate(param_names):
+            if "sigma_v" in name.lower():
+                idx_sigma_v = i
+            elif "sigma_u" in name.lower():
+                idx_sigma_u = i
+
         # Compute confidence intervals using delta method
         if method == "delta":
-            # Find parameter indices for variance parameters
-            param_names = self.params.index.tolist()
-            idx_sigma_v = None
-            idx_sigma_u = None
-
-            for i, name in enumerate(param_names):
-                if "sigma_v" in name.lower():
-                    idx_sigma_v = i
-                elif "sigma_u" in name.lower():
-                    idx_sigma_u = i
-
             if idx_sigma_v is not None and idx_sigma_u is not None and self.cov is not None:
                 # Delta method for gamma
                 # γ = σ²_u / (σ²_v + σ²_u)
@@ -641,7 +659,7 @@ class SFResult:
                 )
 
             except Exception as e:
-                print(f"Warning: Bootstrap failed ({e}). Using delta method instead.")
+                logger.warning(f"Bootstrap failed ({e}). Using delta method instead.")
                 # Fallback to delta method
                 return self.variance_decomposition(ci_level=ci_level, method="delta")
 
@@ -651,18 +669,18 @@ class SFResult:
         # Interpretation
         if gamma < 0.1:
             interpretation = (
-                f"γ = {gamma:.4f} indicates that inefficiency accounts for only {100*gamma:.1f}% "
+                f"γ = {gamma:.4f} indicates that inefficiency accounts for only {100 * gamma:.1f}% "
                 "of total variance. OLS regression may be adequate."
             )
         elif gamma > 0.9:
             interpretation = (
-                f"γ = {gamma:.4f} indicates that inefficiency accounts for {100*gamma:.1f}% "
+                f"γ = {gamma:.4f} indicates that inefficiency accounts for {100 * gamma:.1f}% "
                 "of total variance. Frontier is nearly deterministic. "
                 "Consider checking model specification."
             )
         else:
             interpretation = (
-                f"γ = {gamma:.4f} indicates that inefficiency accounts for {100*gamma:.1f}% "
+                f"γ = {gamma:.4f} indicates that inefficiency accounts for {100 * gamma:.1f}% "
                 "of total variance, while noise accounts for {100*(1-gamma):.1f}%. "
                 "Both components are important."
             )
@@ -681,8 +699,8 @@ class SFResult:
         }
 
     def returns_to_scale_test(
-        self, input_vars: Optional[list] = None, alpha: float = 0.05
-    ) -> Dict[str, Any]:
+        self, input_vars: list | None = None, alpha: float = 0.05
+    ) -> dict[str, Any]:
         """Test for constant returns to scale (CRS).
 
         For Cobb-Douglas production function in logs:
@@ -693,12 +711,14 @@ class SFResult:
         H0: RTS = 1 (constant returns to scale)
         H1: RTS ≠ 1
 
-        Parameters:
+        Parameters
+        ----------
             input_vars: List of input variable names (exclude intercept and time)
                        If None, uses all frontier parameters except intercept
             alpha: Significance level for test
 
-        Returns:
+        Returns
+        -------
             Dictionary with test results:
                 - rts: Returns to scale estimate
                 - rts_se: Standard error of RTS
@@ -707,7 +727,8 @@ class SFResult:
                 - conclusion: 'CRS', 'IRS', or 'DRS'
                 - ci: Confidence interval for RTS
 
-        Notes:
+        Notes
+        -----
             - RTS > 1: Increasing returns to scale (IRS)
             - RTS = 1: Constant returns to scale (CRS)
             - RTS < 1: Decreasing returns to scale (DRS)
@@ -803,35 +824,38 @@ class SFResult:
 
     def elasticities(
         self,
-        input_vars: Optional[list] = None,
+        input_vars: list | None = None,
         translog: bool = False,
-        translog_vars: Optional[list] = None,
-    ) -> Union[pd.Series, pd.DataFrame]:
+        translog_vars: list | None = None,
+    ) -> pd.Series | pd.DataFrame:
         """Calculate production elasticities.
 
         For Cobb-Douglas (log-linear): elasticities are constant (= β_j)
         For Translog: elasticities vary by observation
 
-        Parameters:
+        Parameters
+        ----------
             input_vars: List of input variable names
                        If None, uses all frontier parameters except intercept
             translog: Whether this is a Translog specification
             translog_vars: For Translog, list of base variable names (e.g., ['ln_K', 'ln_L'])
                           Squared and interaction terms will be identified automatically
 
-        Returns:
+        Returns
+        -------
             For Cobb-Douglas: Series with constant elasticities
             For Translog: DataFrame with elasticities for each observation
 
         Example (Cobb-Douglas):
-            >>> result.elasticities(input_vars=['ln_K', 'ln_L'])
+            >>> result.elasticities(input_vars=["ln_K", "ln_L"])
             # Returns: Series([ε_K, ε_L])
 
         Example (Translog):
-            >>> result.elasticities(translog=True, translog_vars=['ln_K', 'ln_L'])
+            >>> result.elasticities(translog=True, translog_vars=["ln_K", "ln_L"])
             # Returns: DataFrame with columns ['ε_K', 'ε_L'] and rows for each obs
 
-        Notes:
+        Notes
+        -----
             For Translog: ε_j = β_j + Σ_k β_{jk} × ln(x_k)
             Elasticities depend on input levels (vary across observations)
         """
@@ -869,10 +893,7 @@ class SFResult:
             # For each input variable, calculate elasticity
             for j, var_j in enumerate(translog_vars):
                 # Base coefficient β_j
-                if var_j in param_names:
-                    beta_j = self.params[var_j]
-                else:
-                    beta_j = 0
+                beta_j = self.params[var_j] if var_j in param_names else 0
 
                 # Start with linear term
                 elas_j = np.full(n_obs, beta_j)
@@ -908,38 +929,41 @@ class SFResult:
 
     def efficient_scale(
         self,
-        translog_vars: Optional[list] = None,
-        initial_scale: Optional[np.ndarray] = None,
-    ) -> Dict[str, Any]:
+        translog_vars: list | None = None,
+        initial_scale: np.ndarray | None = None,
+    ) -> dict[str, Any]:
         """Calculate efficient scale where RTS = 1.
 
         For Translog production functions, finds the input levels where
         returns to scale equal 1 (constant returns).
 
-        Parameters:
+        Parameters
+        ----------
             translog_vars: List of base variable names for Translog
                           (e.g., ['ln_K', 'ln_L'])
             initial_scale: Initial guess for optimization (optional)
                           If None, uses mean input levels
 
-        Returns:
+        Returns
+        -------
             Dictionary with:
                 - efficient_scale: Input levels where RTS = 1
                 - rts_at_efficient: RTS at efficient scale (should be ≈ 1)
                 - elasticities: Elasticities at efficient scale
                 - converged: Whether optimization converged
 
-        Notes:
+        Notes
+        -----
             - Only applicable for Translog specifications
             - For Cobb-Douglas, RTS is constant, so no unique efficient scale
             - Uses numerical optimization to find scale where Σ ε_j = 1
 
         Example:
             >>> # Estimate Translog model
-            >>> data_tl = add_translog(data, ['ln_K', 'ln_L'])
+            >>> data_tl = add_translog(data, ["ln_K", "ln_L"])
             >>> result = fit_sfa(data_tl, ...)
-            >>> eff_scale = result.efficient_scale(translog_vars=['ln_K', 'ln_L'])
-            >>> print(eff_scale['efficient_scale'])
+            >>> eff_scale = result.efficient_scale(translog_vars=["ln_K", "ln_L"])
+            >>> print(eff_scale["efficient_scale"])
         """
         if translog_vars is None:
             raise ValueError("Must specify translog_vars for efficient scale calculation")
@@ -956,10 +980,7 @@ class SFResult:
             rts = 0
             for j, var_j in enumerate(translog_vars):
                 # Base coefficient
-                if var_j in param_names:
-                    beta_j = self.params[var_j]
-                else:
-                    beta_j = 0
+                beta_j = self.params[var_j] if var_j in param_names else 0
 
                 # Elasticity for input j
                 elas_j = beta_j
@@ -1001,10 +1022,7 @@ class SFResult:
 
         for j, var_j in enumerate(translog_vars):
             # Base coefficient
-            if var_j in param_names:
-                beta_j = self.params[var_j]
-            else:
-                beta_j = 0
+            beta_j = self.params[var_j] if var_j in param_names else 0
 
             # Elasticity for input j
             elas_j = beta_j
@@ -1037,9 +1055,9 @@ class SFResult:
 
     def compare_functional_form(
         self,
-        translog_result: "SFResult",
+        translog_result: SFResult,
         alpha: float = 0.05,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare Cobb-Douglas vs Translog functional forms.
 
         Performs likelihood ratio test to determine if the additional
@@ -1048,11 +1066,13 @@ class SFResult:
         H0: Cobb-Douglas is adequate (all quadratic and interaction terms = 0)
         H1: Translog provides better fit
 
-        Parameters:
+        Parameters
+        ----------
             translog_result: SFResult from Translog specification
             alpha: Significance level for test
 
-        Returns:
+        Returns
+        -------
             Dictionary with test results:
                 - lr_statistic: LR test statistic
                 - df: Degrees of freedom (number of additional Translog terms)
@@ -1066,14 +1086,14 @@ class SFResult:
 
         Example:
             >>> # Estimate both models
-            >>> cd_result = fit_sfa(data, depvar='ln_y', exog=['ln_K', 'ln_L'])
-            >>> data_tl = add_translog(data, ['ln_K', 'ln_L'])
-            >>> tl_result = fit_sfa(data_tl, depvar='ln_y',
-            ...                     exog=['ln_K', 'ln_L', 'ln_K_sq', ...])
+            >>> cd_result = fit_sfa(data, depvar="ln_y", exog=["ln_K", "ln_L"])
+            >>> data_tl = add_translog(data, ["ln_K", "ln_L"])
+            >>> tl_result = fit_sfa(data_tl, depvar="ln_y", exog=["ln_K", "ln_L", "ln_K_sq", ...])
             >>> # Compare
             >>> cd_result.compare_functional_form(tl_result)
 
-        Notes:
+        Notes
+        -----
             - This test assumes Cobb-Douglas is nested in Translog
             - Self should be the restricted (Cobb-Douglas) model
             - translog_result should be the unrestricted (Translog) model
@@ -1110,7 +1130,7 @@ class SFResult:
         if lr_result["pvalue"] < alpha:
             conclusion = "translog"
             interpretation = (
-                f"Reject H0 at {100*alpha}% level (p = {lr_result['pvalue']:.4f}). "
+                f"Reject H0 at {100 * alpha}% level (p = {lr_result['pvalue']:.4f}). "
                 f"Translog specification provides significantly better fit than Cobb-Douglas. "
                 f"The additional flexibility (df={df}) is statistically justified."
             )
@@ -1153,15 +1173,16 @@ class SFResult:
 
     def plot_frontier(
         self,
-        input_var: Optional[str] = None,
-        input_vars: Optional[List[str]] = None,
+        input_var: str | None = None,
+        input_vars: list[str] | None = None,
         kind: str = "2d",
         backend: str = "plotly",
         **kwargs,
     ) -> Any:
         """Plot estimated frontier.
 
-        Parameters:
+        Parameters
+        ----------
             input_var: Single input variable name (for 2D or partial plots)
             input_vars: List of input variable names (for 3D or contour plots)
             kind: Type of plot ('2d', '3d', 'contour', 'partial')
@@ -1172,22 +1193,16 @@ class SFResult:
                 For 'contour': n_grid, levels, title
                 For 'partial': fix_others_at, title
 
-        Returns:
+        Returns
+        -------
             Plotly Figure or Matplotlib Figure object
 
         Example:
             >>> result = sf.fit()
             >>> # 2D plot
-            >>> fig = result.plot_frontier(
-            ...     input_var='log_labor',
-            ...     kind='2d',
-            ...     show_distance=True
-            ... )
+            >>> fig = result.plot_frontier(input_var="log_labor", kind="2d", show_distance=True)
             >>> # 3D plot
-            >>> fig = result.plot_frontier(
-            ...     input_vars=['log_labor', 'log_capital'],
-            ...     kind='3d'
-            ... )
+            >>> fig = result.plot_frontier(input_vars=["log_labor", "log_capital"], kind="3d")
             >>> fig.show()
         """
         from .visualization.frontier_plots import (
@@ -1225,7 +1240,8 @@ class SFResult:
     ) -> Any:
         """Plot efficiency distribution, ranking, or box plot.
 
-        Parameters:
+        Parameters
+        ----------
             kind: Type of plot ('histogram', 'ranking', 'boxplot')
             backend: 'plotly' for interactive or 'matplotlib' for static
             estimator: Efficiency estimator ('jlms', 'bc', 'mode')
@@ -1234,19 +1250,20 @@ class SFResult:
                 For 'ranking': top_n, bottom_n, entity_col, title, colorscale
                 For 'boxplot': group_var (required), test, title
 
-        Returns:
+        Returns
+        -------
             Plotly Figure or Matplotlib Figure object
 
         Example:
             >>> result = sf.fit()
             >>> # Histogram
-            >>> fig = result.plot_efficiency(kind='histogram', bins=30)
+            >>> fig = result.plot_efficiency(kind="histogram", bins=30)
             >>> fig.show()
             >>> # Ranking
-            >>> fig = result.plot_efficiency(kind='ranking', top_n=15, bottom_n=15)
+            >>> fig = result.plot_efficiency(kind="ranking", top_n=15, bottom_n=15)
             >>> fig.show()
             >>> # Box plot by group
-            >>> fig = result.plot_efficiency(kind='boxplot', group_var='region', test='kruskal')
+            >>> fig = result.plot_efficiency(kind="boxplot", group_var="region", test="kruskal")
             >>> fig.show()
         """
         from .visualization.efficiency_plots import (
@@ -1271,9 +1288,9 @@ class SFResult:
 
     def to_latex(
         self,
-        include_stats: Optional[list] = None,
-        caption: Optional[str] = None,
-        label: Optional[str] = None,
+        include_stats: list | None = None,
+        caption: str | None = None,
+        label: str | None = None,
         float_format: str = "%.4f",
     ) -> str:
         """Generate LaTeX table of results.
@@ -1286,7 +1303,7 @@ class SFResult:
 
     def to_html(
         self,
-        filename: Optional[str] = None,
+        filename: str | None = None,
         include_plots: bool = True,
         theme: str = "academic",
         **kwargs,
@@ -1312,7 +1329,7 @@ class SFResult:
         self,
         sort_by: str = "te",
         ascending: bool = False,
-        top_n: Optional[int] = None,
+        top_n: int | None = None,
         estimator: str = "bc",
     ) -> pd.DataFrame:
         """Create formatted efficiency rankings table.
@@ -1330,7 +1347,8 @@ class SFResult:
         - Wang (2002): Both location (Z) and scale (W) determinants
         - Battese & Coelli (1995): Only location (Z) determinants
 
-        Parameters:
+        Parameters
+        ----------
             method: Type of marginal effect
                 'location' - ∂E[u_i] / ∂z_k (effect on mean inefficiency)
                 'scale' - ∂σ_u,i / ∂w_k (effect on std dev of inefficiency)
@@ -1340,7 +1358,8 @@ class SFResult:
                 at_means: bool - Evaluate at sample means (True) or
                          compute average ME (False). Default: True
 
-        Returns:
+        Returns
+        -------
             DataFrame with marginal effects and standard errors, containing:
                 - variable: Name of covariate
                 - marginal_effect: Point estimate of marginal effect
@@ -1350,7 +1369,8 @@ class SFResult:
                 - ci_lower: Lower bound of 95% confidence interval
                 - ci_upper: Upper bound of 95% confidence interval
 
-        Raises:
+        Raises
+        ------
             ValueError: If model has no inefficiency determinants
             NotImplementedError: If method='efficiency' is requested
 
@@ -1358,36 +1378,37 @@ class SFResult:
             >>> # Wang (2002) model
             >>> model = StochasticFrontier(
             ...     data=df,
-            ...     depvar='log_output',
-            ...     exog=['log_labor', 'log_capital'],
-            ...     frontier='production',
-            ...     dist='truncated_normal',
-            ...     inefficiency_vars=['firm_age'],  # Z: affects location
-            ...     het_vars=['firm_size']            # W: affects scale
+            ...     depvar="log_output",
+            ...     exog=["log_labor", "log_capital"],
+            ...     frontier="production",
+            ...     dist="truncated_normal",
+            ...     inefficiency_vars=["firm_age"],  # Z: affects location
+            ...     het_vars=["firm_size"],  # W: affects scale
             ... )
             >>> result = model.fit()
             >>>
             >>> # Effect on mean inefficiency
-            >>> me_location = result.marginal_effects(method='location')
+            >>> me_location = result.marginal_effects(method="location")
             >>> print(me_location)
             >>>
             >>> # Effect on variance of inefficiency
-            >>> me_scale = result.marginal_effects(method='scale')
+            >>> me_scale = result.marginal_effects(method="scale")
             >>> print(me_scale)
             >>>
             >>> # BC95 model (only location)
             >>> model_bc95 = StochasticFrontier(
             ...     data=panel_df,
-            ...     depvar='log_output',
-            ...     exog=['log_labor', 'log_capital'],
-            ...     inefficiency_vars=['firm_age'],
-            ...     frontier='production',
-            ...     dist='truncated_normal'
+            ...     depvar="log_output",
+            ...     exog=["log_labor", "log_capital"],
+            ...     inefficiency_vars=["firm_age"],
+            ...     frontier="production",
+            ...     dist="truncated_normal",
             ... )
             >>> result_bc95 = model_bc95.fit()
-            >>> me_bc95 = result_bc95.marginal_effects(method='location')
+            >>> me_bc95 = result_bc95.marginal_effects(method="location")
 
-        References:
+        References
+        ----------
             Wang, H. J. (2002). "Heteroscedasticity and non-monotonic efficiency
                 effects of a stochastic frontier model."
                 Journal of Productivity Analysis, 18, 241-253.
@@ -1398,6 +1419,10 @@ class SFResult:
                 Empirical Economics, 20(2), 325-332.
         """
         from .utils.marginal_effects import marginal_effects_bc95, marginal_effects_wang_2002
+
+        # Map convenience aliases to internal method names
+        method_map = {"location": "mean", "scale": "variance"}
+        method = method_map.get(method, method)
 
         # Check if model has inefficiency determinants
         has_location = self.model.inefficiency_vars and len(self.model.inefficiency_vars) > 0
@@ -1416,9 +1441,9 @@ class SFResult:
             return marginal_effects_wang_2002(self, method=method, **kwargs)
         elif has_location and not has_scale:
             # BC95 or similar model (only location determinants)
-            if method == "scale":
+            if method == "variance":
                 raise ValueError(
-                    "Method 'scale' is only available for Wang (2002) models "
+                    "Method 'scale'/'variance' is only available for Wang (2002) models "
                     "with heteroscedasticity variables (het_vars). "
                     "This model only has location determinants (inefficiency_vars)."
                 )
@@ -1431,26 +1456,28 @@ class SFResult:
         n_boot: int = 999,
         method: str = "parametric",
         ci_level: float = 0.95,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         n_jobs: int = -1,
     ) -> pd.DataFrame:
         """Bootstrap confidence intervals for model parameters.
 
-        Parameters:
+        Parameters
+        ----------
             n_boot: Number of bootstrap replications (default: 999)
             method: Bootstrap method - 'parametric' or 'pairs'
             ci_level: Confidence level (default: 0.95)
             seed: Random seed for reproducibility
             n_jobs: Number of parallel jobs (-1 for all cores)
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns: parameter, estimate, boot_mean, boot_std,
             bias, ci_lower, ci_upper
 
         Example:
             >>> result = sf.fit()
             >>> boot_ci = result.bootstrap(n_boot=999, seed=42)
-            >>> print(boot_ci[['parameter', 'estimate', 'ci_lower', 'ci_upper']])
+            >>> print(boot_ci[["parameter", "estimate", "ci_lower", "ci_upper"]])
         """
         from .bootstrap import SFABootstrap
 
@@ -1472,12 +1499,13 @@ class SFResult:
         n_boot: int = 999,
         method: str = "parametric",
         ci_level: float = 0.95,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         n_jobs: int = -1,
     ) -> pd.DataFrame:
         """Bootstrap confidence intervals for efficiency scores.
 
-        Parameters:
+        Parameters
+        ----------
             estimator: Efficiency estimator - 'bc' or 'jlms'
             n_boot: Number of bootstrap replications
             method: Bootstrap method - 'parametric' or 'pairs'
@@ -1485,12 +1513,13 @@ class SFResult:
             seed: Random seed
             n_jobs: Number of parallel jobs
 
-        Returns:
+        Returns
+        -------
             DataFrame with efficiency point estimates and bootstrap CIs
 
         Example:
             >>> eff_ci = result.bootstrap_efficiency(n_boot=999, seed=42)
-            >>> print(eff_ci[['te', 'ci_lower', 'ci_upper']])
+            >>> print(eff_ci[["te", "ci_lower", "ci_upper"]])
         """
         from .bootstrap import SFABootstrap
 
@@ -1532,17 +1561,18 @@ class PanelSFResult(SFResult):
         self,
         params: np.ndarray,
         param_names: list,
-        hessian: Optional[np.ndarray],
+        hessian: np.ndarray | None,
         converged: bool,
         model: Any,
-        loglik: Optional[float] = None,
+        loglik: float | None = None,
         panel_type: str = "pitt_lee",
-        temporal_params: Optional[Dict[str, float]] = None,
+        temporal_params: dict[str, float] | None = None,
         optimization_result: Any = None,
     ):
         """Initialize PanelSFResult.
 
-        Parameters:
+        Parameters
+        ----------
             params: Parameter estimates
             param_names: Parameter names
             hessian: Hessian matrix
@@ -1575,7 +1605,8 @@ class PanelSFResult(SFResult):
     ) -> pd.DataFrame:
         """Estimate technical/cost efficiency for panel data.
 
-        Parameters:
+        Parameters
+        ----------
             estimator: Efficiency estimator type
                       'jlms' - Jondrow et al. (1982) E[u|ε]
                       'bc' - Battese & Coelli (1988) E[exp(-u)|ε]
@@ -1584,10 +1615,12 @@ class PanelSFResult(SFResult):
             by_period: If True, return efficiency by (entity, period)
                       If False, return time-averaged efficiency by entity
 
-        Returns:
+        Returns
+        -------
             DataFrame with efficiency estimates
 
-        Notes:
+        Notes
+        -----
             - For Pitt-Lee: efficiency is constant over time (one per entity)
             - For BC92/Kumbhakar/Lee-Schmidt: efficiency varies by (entity, period)
             - For BC95: efficiency depends on determinants Z_it
@@ -1610,14 +1643,16 @@ class PanelSFResult(SFResult):
 
         return eff_df
 
-    def summary(self, alpha: float = 0.05, title: Optional[str] = None) -> str:
+    def summary(self, alpha: float = 0.05, title: str | None = None) -> str:
         """Generate summary table of panel SFA results.
 
-        Parameters:
+        Parameters
+        ----------
             alpha: Significance level for confidence intervals
             title: Optional title for summary table
 
-        Returns:
+        Returns
+        -------
             Formatted summary string with panel-specific information
         """
         if title is None:
@@ -1674,17 +1709,19 @@ class PanelSFResult(SFResult):
 
         return "\n".join(lines)
 
-    def test_temporal_constancy(self) -> Dict[str, Any]:
+    def test_temporal_constancy(self) -> dict[str, Any]:
         """Test whether efficiency is constant over time.
 
-        Returns:
+        Returns
+        -------
             Dictionary with test results:
             - test_statistic: LR or Wald statistic
             - p_value: p-value for the test
             - df: degrees of freedom
             - conclusion: 'constant' or 'time_varying'
 
-        Notes:
+        Notes
+        -----
             - For BC92: Tests H0: η = 0
             - For Kumbhakar: Tests H0: b = c = 0
             - For Lee-Schmidt: Tests H0: δ_1 = ... = δ_{T-1} = 1
@@ -1708,7 +1745,7 @@ class PanelSFResult(SFResult):
 
     def variance_decomposition(
         self, ci_level: float = 0.95, method: str = "delta"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Decompose variance into noise, inefficiency, and heterogeneity components.
 
         For True RE models, decomposes total variance into three components:
@@ -1716,11 +1753,13 @@ class PanelSFResult(SFResult):
             γ_u = σ²_u / (σ²_v + σ²_u + σ²_w) - proportion due to inefficiency
             γ_w = σ²_w / (σ²_v + σ²_u + σ²_w) - proportion due to heterogeneity
 
-        Parameters:
+        Parameters
+        ----------
             ci_level: Confidence level for intervals (default 0.95)
             method: Method for computing CIs ('delta' or 'bootstrap')
 
-        Returns:
+        Returns
+        -------
             Dictionary with decomposition results:
                 - gamma_v: Proportion of variance due to noise
                 - gamma_u: Proportion of variance due to inefficiency
@@ -1730,7 +1769,8 @@ class PanelSFResult(SFResult):
                 - sigma_sq: Total variance
                 - interpretation: Interpretation of results
 
-        Notes:
+        Notes
+        -----
             For True RE: γ_v + γ_u + γ_w = 1
             For other panel models: falls back to base class method
         """
@@ -1878,19 +1918,19 @@ class PanelSFResult(SFResult):
         # Interpretation
         interpretation = (
             f"Three-component variance decomposition (True RE):\n"
-            f"  - Noise (v): {100*gamma_v:.1f}% of total variance\n"
-            f"  - Inefficiency (u): {100*gamma_u:.1f}% of total variance\n"
-            f"  - Heterogeneity (w): {100*gamma_w:.1f}% of total variance\n"
+            f"  - Noise (v): {100 * gamma_v:.1f}% of total variance\n"
+            f"  - Inefficiency (u): {100 * gamma_u:.1f}% of total variance\n"
+            f"  - Heterogeneity (w): {100 * gamma_w:.1f}% of total variance\n"
         )
 
         if gamma_u < 0.1:
             interpretation += (
-                f"Inefficiency accounts for only {100*gamma_u:.1f}% of variance. "
+                f"Inefficiency accounts for only {100 * gamma_u:.1f}% of variance. "
                 "Consider whether SFA is necessary."
             )
         elif gamma_w > 0.5:
             interpretation += (
-                f"Heterogeneity is dominant ({100*gamma_w:.1f}%). "
+                f"Heterogeneity is dominant ({100 * gamma_w:.1f}%). "
                 "Entity-specific effects are important."
             )
 
@@ -1919,7 +1959,8 @@ class PanelSFResult(SFResult):
     ) -> Any:
         """Plot evolution of efficiency over time for panel data.
 
-        Parameters:
+        Parameters
+        ----------
             kind: Type of plot ('timeseries', 'spaghetti', 'heatmap', 'fanchart')
             backend: 'plotly' for interactive or 'matplotlib' for static
             estimator: Efficiency estimator ('jlms', 'bc', 'mode')
@@ -1929,23 +1970,20 @@ class PanelSFResult(SFResult):
                 For 'heatmap': order_by, entity_col, colorscale, title
                 For 'fanchart': percentiles, title
 
-        Returns:
+        Returns
+        -------
             Plotly Figure or Matplotlib Figure object
 
         Example:
             >>> result = panel_sf.fit()
             >>> # Time series
             >>> fig = result.plot_efficiency_evolution(
-            ...     kind='timeseries',
-            ...     show_ci=True,
-            ...     events={2008: 'Crisis'}
+            ...     kind="timeseries", show_ci=True, events={2008: "Crisis"}
             ... )
             >>> fig.show()
             >>> # Spaghetti plot
             >>> fig = result.plot_efficiency_evolution(
-            ...     kind='spaghetti',
-            ...     highlight=['firm_A', 'firm_B'],
-            ...     alpha=0.3
+            ...     kind="spaghetti", highlight=["firm_A", "firm_B"], alpha=0.3
             ... )
             >>> fig.show()
         """
@@ -1969,8 +2007,7 @@ class PanelSFResult(SFResult):
             return plot_efficiency_fanchart(efficiency_df=eff_df, backend=backend, **kwargs)
         else:
             raise ValueError(
-                f"Unknown kind: {kind}. "
-                f"Use 'timeseries', 'spaghetti', 'heatmap', or 'fanchart'."
+                f"Unknown kind: {kind}. Use 'timeseries', 'spaghetti', 'heatmap', or 'fanchart'."
             )
 
     def __repr__(self) -> str:

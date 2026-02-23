@@ -5,7 +5,10 @@ This module provides interactive Plotly charts for visualizing
 validation test results from panel data models.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -13,6 +16,8 @@ from plotly.subplots import make_subplots
 from ..base import PlotlyChartBase
 from ..config.color_schemes import get_color_for_pvalue
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("validation_test_overview")
@@ -37,16 +42,22 @@ class TestOverviewChart(PlotlyChartBase):
     Examples
     --------
     >>> chart = TestOverviewChart()
-    >>> chart.create(data={
-    ...     'categories': ['Specification', 'Serial Correlation',
-    ...                    'Heteroskedasticity', 'Cross-Sectional'],
-    ...     'passed': [5, 3, 2, 4],
-    ...     'failed': [1, 2, 0, 1]
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "categories": [
+    ...             "Specification",
+    ...             "Serial Correlation",
+    ...             "Heteroskedasticity",
+    ...             "Cross-Sectional",
+    ...         ],
+    ...         "passed": [5, 3, 2, 4],
+    ...         "failed": [1, 2, 0, 1],
+    ...     }
+    ... )
     >>> html = chart.to_html()
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate test overview data."""
         super()._validate_data(data)
 
@@ -59,13 +70,13 @@ class TestOverviewChart(PlotlyChartBase):
         if not (len(data["categories"]) == len(data["passed"]) == len(data["failed"])):
             raise ValueError("categories, passed, and failed must have same length")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("show_percentages", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create test overview stacked bar chart."""
         fig = go.Figure()
 
@@ -147,13 +158,15 @@ class PValueDistributionChart(PlotlyChartBase):
     Examples
     --------
     >>> chart = PValueDistributionChart()
-    >>> chart.create(data={
-    ...     'test_names': ['Hausman', 'Wooldridge', 'Pesaran CD'],
-    ...     'pvalues': [0.001, 0.234, 0.012]
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "test_names": ["Hausman", "Wooldridge", "Pesaran CD"],
+    ...         "pvalues": [0.001, 0.234, 0.012],
+    ...     }
+    ... )
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate p-value distribution data."""
         super()._validate_data(data)
 
@@ -163,14 +176,14 @@ class PValueDistributionChart(PlotlyChartBase):
         if len(data["test_names"]) != len(data["pvalues"]):
             raise ValueError("test_names and pvalues must have same length")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("alpha", 0.05)
         processed.setdefault("log_scale", True)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create p-value distribution chart."""
         fig = go.Figure()
 
@@ -219,7 +232,7 @@ class PValueDistributionChart(PlotlyChartBase):
             y=alpha / 10,
             line_dash="dash",
             line_color="darkred",
-            annotation_text=f"α/10 = {alpha/10}",
+            annotation_text=f"α/10 = {alpha / 10}",
             annotation_position="right",
         )
 
@@ -258,14 +271,16 @@ class TestStatisticsChart(PlotlyChartBase):
     Examples
     --------
     >>> chart = TestStatisticsChart()
-    >>> chart.create(data={
-    ...     'test_names': ['Hausman', 'Wooldridge', 'Pesaran CD'],
-    ...     'statistics': [15.3, 8.2, 2.1],
-    ...     'categories': ['Specification', 'Serial', 'CD']
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "test_names": ["Hausman", "Wooldridge", "Pesaran CD"],
+    ...         "statistics": [15.3, 8.2, 2.1],
+    ...         "categories": ["Specification", "Serial", "CD"],
+    ...     }
+    ... )
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate test statistics data."""
         super()._validate_data(data)
 
@@ -277,14 +292,14 @@ class TestStatisticsChart(PlotlyChartBase):
         if not (len(data["test_names"]) == len(data["statistics"]) == len(data["categories"])):
             raise ValueError("test_names, statistics, and categories must have same length")
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create test statistics scatter plot."""
         fig = go.Figure()
 
         test_names = data["test_names"]
         statistics = data["statistics"]
         categories = data["categories"]
-        pvalues = data.get("pvalues", None)
+        pvalues = data.get("pvalues")
 
         # Get unique categories for color mapping
         unique_categories = list(set(categories))
@@ -311,11 +326,11 @@ class TestStatisticsChart(PlotlyChartBase):
                     y=cat_stats,
                     mode="markers",
                     name=category,
-                    marker=dict(
-                        size=sizes,
-                        color=category_colors[category],
-                        line=dict(width=1, color="white"),
-                    ),
+                    marker={
+                        "size": sizes,
+                        "color": category_colors[category],
+                        "line": {"width": 1, "color": "white"},
+                    },
                     text=cat_names,
                     hovertemplate="<b>%{text}</b><br>Statistic: %{y:.2f}<extra></extra>",
                 )
@@ -353,16 +368,16 @@ class TestComparisonHeatmap(PlotlyChartBase):
     Examples
     --------
     >>> chart = TestComparisonHeatmap()
-    >>> chart.create(data={
-    ...     'models': ['Model 1', 'Model 2', 'Model 3'],
-    ...     'tests': ['Hausman', 'Wooldridge', 'Pesaran CD'],
-    ...     'matrix': [[0.01, 0.23, 0.001],
-    ...                [0.45, 0.03, 0.12],
-    ...                [0.001, 0.56, 0.08]]
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "models": ["Model 1", "Model 2", "Model 3"],
+    ...         "tests": ["Hausman", "Wooldridge", "Pesaran CD"],
+    ...         "matrix": [[0.01, 0.23, 0.001], [0.45, 0.03, 0.12], [0.001, 0.56, 0.08]],
+    ...     }
+    ... )
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate heatmap data."""
         super()._validate_data(data)
 
@@ -379,14 +394,14 @@ class TestComparisonHeatmap(PlotlyChartBase):
             if len(row) != len(data["tests"]):
                 raise ValueError("Number of matrix columns must match number of tests")
 
-    def _preprocess_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _preprocess_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess data."""
         processed = data.copy()
         processed.setdefault("binary", False)
         processed.setdefault("alpha", 0.05)
         return processed
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create comparison heatmap."""
         models = data["models"]
         tests = data["tests"]
@@ -396,8 +411,8 @@ class TestComparisonHeatmap(PlotlyChartBase):
 
         # Create annotation text
         annotations = []
-        for i, model in enumerate(models):
-            for j, test in enumerate(tests):
+        for i, _model in enumerate(models):
+            for j, _test in enumerate(tests):
                 value = matrix[i][j]
 
                 if binary:
@@ -415,7 +430,13 @@ class TestComparisonHeatmap(PlotlyChartBase):
                     text_color = "black" if value > 0.5 else "white"
 
                 annotations.append(
-                    dict(x=j, y=i, text=text, showarrow=False, font=dict(color=text_color, size=10))
+                    {
+                        "x": j,
+                        "y": i,
+                        "text": text,
+                        "showarrow": False,
+                        "font": {"color": text_color, "size": 10},
+                    }
                 )
 
         # Create heatmap
@@ -463,15 +484,17 @@ class ValidationDashboard(PlotlyChartBase):
     Examples
     --------
     >>> chart = ValidationDashboard()
-    >>> chart.create(data={
-    ...     'overview': {...},
-    ...     'pvalues': {...},
-    ...     'statistics': {...},
-    ...     'summary': {'total_tests': 10, 'passed': 8, 'failed': 2}
-    ... })
+    >>> chart.create(
+    ...     data={
+    ...         "overview": {...},
+    ...         "pvalues": {...},
+    ...         "statistics": {...},
+    ...         "summary": {"total_tests": 10, "passed": 8, "failed": 2},
+    ...     }
+    ... )
     """
 
-    def _validate_data(self, data: Dict[str, Any]) -> None:
+    def _validate_data(self, data: dict[str, Any]) -> None:
         """Validate dashboard data."""
         super()._validate_data(data)
 
@@ -480,7 +503,7 @@ class ValidationDashboard(PlotlyChartBase):
             if field not in data:
                 raise ValueError(f"Dashboard data must contain '{field}'")
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create validation dashboard."""
         # Create subplots
         fig = make_subplots(
@@ -542,7 +565,7 @@ class ValidationDashboard(PlotlyChartBase):
                     y=cat_stats,
                     mode="markers",
                     name=cat,
-                    marker=dict(size=12, color=self.theme.get_color(i)),
+                    marker={"size": 12, "color": self.theme.get_color(i)},
                 ),
                 row=2,
                 col=1,

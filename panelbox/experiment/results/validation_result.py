@@ -5,10 +5,17 @@ This module provides a concrete implementation of BaseResult for
 validation test results.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Any
 
 from panelbox.experiment.results.base import BaseResult
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationResult(BaseResult):
@@ -48,20 +55,13 @@ class ValidationResult(BaseResult):
     >>> validation = results.validate(tests="default")
     >>>
     >>> # Create ValidationResult
-    >>> val_result = ValidationResult(
-    ...     validation_report=validation,
-    ...     model_results=results
-    ... )
+    >>> val_result = ValidationResult(validation_report=validation, model_results=results)
     >>>
     >>> # Save as HTML
-    >>> val_result.save_html(
-    ...     'validation_report.html',
-    ...     test_type='validation',
-    ...     theme='professional'
-    ... )
+    >>> val_result.save_html("validation_report.html", test_type="validation", theme="professional")
     >>>
     >>> # Save as JSON
-    >>> val_result.save_json('validation_result.json')
+    >>> val_result.save_json("validation_result.json")
     >>>
     >>> # Get summary
     >>> print(val_result.summary())
@@ -71,8 +71,8 @@ class ValidationResult(BaseResult):
         self,
         validation_report,
         model_results=None,
-        timestamp: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        timestamp: datetime | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize ValidationResult.
@@ -93,7 +93,7 @@ class ValidationResult(BaseResult):
         self.validation_report = validation_report
         self.model_results = model_results
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert validation result to dictionary.
 
@@ -164,7 +164,7 @@ class ValidationResult(BaseResult):
         )
 
     @property
-    def failed_tests(self) -> List[str]:
+    def failed_tests(self) -> list[str]:
         """
         Get list of failed tests.
 
@@ -181,7 +181,7 @@ class ValidationResult(BaseResult):
         return self.validation_report.get_failed_tests()
 
     @property
-    def passed_tests(self) -> List[str]:
+    def passed_tests(self) -> list[str]:
         """
         Get list of passed tests.
 
@@ -271,13 +271,11 @@ class ValidationResult(BaseResult):
         >>>
         >>> # Create ValidationResult directly
         >>> val_result = ValidationResult.from_model_results(
-        ...     model_results=results,
-        ...     alpha=0.05,
-        ...     tests="default"
+        ...     model_results=results, alpha=0.05, tests="default"
         ... )
         >>>
         >>> # Save report
-        >>> val_result.save_html('report.html', test_type='validation')
+        >>> val_result.save_html("report.html", test_type="validation")
         """
         # Run validation
         validation_report = model_results.validate(tests=tests, alpha=alpha, verbose=verbose)

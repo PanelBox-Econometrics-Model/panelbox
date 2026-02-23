@@ -5,19 +5,23 @@ This module provides utilities for checking and validating panel data structures
 including balanced/unbalanced panels and data transformation functions.
 """
 
-from typing import Any, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
 
 def check_panel_data(
-    y: Union[np.ndarray, pd.Series, pd.DataFrame],
-    X: Union[np.ndarray, pd.DataFrame],
-    entity_id: Optional[Union[np.ndarray, pd.Series]] = None,
-    time_id: Optional[Union[np.ndarray, pd.Series]] = None,
-    weights: Optional[Union[np.ndarray, pd.Series]] = None,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
+    y: np.ndarray | pd.Series | pd.DataFrame,
+    X: np.ndarray | pd.DataFrame,
+    entity_id: np.ndarray | pd.Series | None = None,
+    time_id: np.ndarray | pd.Series | None = None,
+    weights: np.ndarray | pd.Series | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None]:
     """
     Check and validate panel data inputs.
 
@@ -139,7 +143,7 @@ def panel_to_dict(
     X: np.ndarray,
     entity_id: np.ndarray,
     time_id: np.ndarray,
-    weights: Optional[np.ndarray] = None,
+    weights: np.ndarray | None = None,
 ) -> dict:
     """
     Convert panel data to dictionary format indexed by entity.

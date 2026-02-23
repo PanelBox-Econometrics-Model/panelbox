@@ -13,16 +13,19 @@ References
 - Davidson, R., & MacKinnon, J. G. (2004). "Econometric Theory and Methods".
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from scipy import stats
 from tqdm import tqdm
 
-from panelbox.var.causality import dumitrescu_hurlin_test, granger_causality_wald
+from panelbox.var.causality import dumitrescu_hurlin_test
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -203,7 +206,7 @@ class BootstrapGrangerResult:
                     y=[0, y_max],
                     mode="lines",
                     name=f"Observed: {self.observed_stat:.2f}",
-                    line=dict(color="red", width=2),
+                    line={"color": "red", "width": 2},
                 )
             )
 
@@ -215,7 +218,7 @@ class BootstrapGrangerResult:
                     y=[0, y_max],
                     mode="lines",
                     name=f"95% critical: {critical_95:.2f}",
-                    line=dict(color="orange", dash="dash", width=2),
+                    line={"color": "orange", "dash": "dash", "width": 2},
                 )
             )
 
@@ -467,7 +470,7 @@ def bootstrap_granger_test(
     n_bootstrap: int = 999,
     bootstrap_type: str = "wild",
     n_jobs: int = -1,
-    random_state: Optional[int] = None,
+    random_state: int | None = None,
     show_progress: bool = True,
 ) -> BootstrapGrangerResult:
     """
@@ -556,7 +559,7 @@ def bootstrap_granger_test(
 
     # Run bootstrap in parallel
     if show_progress:
-        print(f"Running {n_bootstrap} bootstrap iterations ({bootstrap_type} bootstrap)...")
+        logger.info(f"Running {n_bootstrap} bootstrap iterations ({bootstrap_type} bootstrap)...")
 
     bootstrap_stats = Parallel(n_jobs=n_jobs)(
         delayed(_single_iteration)(seed) for seed in (tqdm(seeds) if show_progress else seeds)
@@ -567,7 +570,7 @@ def bootstrap_granger_test(
 
     n_failed = n_bootstrap - len(bootstrap_dist)
     if n_failed > 0:
-        print(f"Warning: {n_failed}/{n_bootstrap} bootstrap iterations failed")
+        logger.warning(f"{n_failed}/{n_bootstrap} bootstrap iterations failed")
 
     # Compute bootstrap p-value
     p_value_bootstrap = np.mean(bootstrap_dist >= observed_stat)
@@ -599,7 +602,7 @@ def _single_bootstrap_dh_iteration(
     time_col: str,
     bootstrap_type: str,
     seed: int,
-) -> Optional[Dict]:
+) -> dict | None:
     """
     Single bootstrap iteration for Dumitrescu-Hurlin test.
 
@@ -732,9 +735,9 @@ def bootstrap_dumitrescu_hurlin(
     n_bootstrap: int = 999,
     bootstrap_type: str = "wild",
     n_jobs: int = -1,
-    random_state: Optional[int] = None,
+    random_state: int | None = None,
     show_progress: bool = True,
-) -> Dict:
+) -> dict:
     """
     Bootstrap Dumitrescu-Hurlin test.
 
@@ -839,7 +842,7 @@ def bootstrap_dumitrescu_hurlin(
 
     # Run bootstrap in parallel
     if show_progress:
-        print(
+        logger.info(
             f"Running {n_bootstrap} bootstrap iterations for DH test ({bootstrap_type} bootstrap)..."
         )
 
@@ -853,7 +856,7 @@ def bootstrap_dumitrescu_hurlin(
 
     n_failed = n_bootstrap - len(valid_results)
     if n_failed > 0:
-        print(f"Warning: {n_failed}/{n_bootstrap} bootstrap iterations failed")
+        logger.warning(f"{n_failed}/{n_bootstrap} bootstrap iterations failed")
 
     # Extract statistics
     bootstrap_W_bar = np.array([r["W_bar"] for r in valid_results])
@@ -884,7 +887,7 @@ def bootstrap_dumitrescu_hurlin(
 
 # Placeholder for future implementation
 def _panel_block_bootstrap(
-    data: pd.DataFrame, entity_col: str, time_col: str, block_size: Optional[int] = None
+    data: pd.DataFrame, entity_col: str, time_col: str, block_size: int | None = None
 ) -> pd.DataFrame:
     """
     Perform block bootstrap for panel data.

@@ -18,7 +18,7 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -48,7 +48,7 @@ class TestResult:
     p_value: float
     critical_value: Optional[float] = None
     conclusion: str = ""
-    details: Dict = None
+    details: dict = None
 
     def __str__(self):
         output = [
@@ -361,7 +361,7 @@ def test_spatial_correlation(
     # Simplified variance calculation (assumes normality)
     S0 = np.sum(W)
     S1 = 0.5 * np.sum((W + W.T) ** 2)
-    S2 = np.sum((W.sum(axis=1) + W.sum(axis=0)) ** 2)
+    np.sum((W.sum(axis=1) + W.sum(axis=0)) ** 2)
 
     var_I = (n * S1 - n * S0**2 + 3 * S0**2) / ((n - 1) * (n + 1) * S0**2)
 
@@ -389,7 +389,7 @@ def test_spatial_correlation(
     )
 
 
-def cluster_diagnostics(data: pd.DataFrame, cluster_var: str) -> Dict:
+def cluster_diagnostics(data: pd.DataFrame, cluster_var: str) -> dict:
     """
     Compute diagnostics for cluster structure.
 
@@ -430,7 +430,7 @@ def cluster_diagnostics(data: pd.DataFrame, cluster_var: str) -> Dict:
     return diagnostics
 
 
-def check_pcse_conditions(data: pd.DataFrame, entity_var: str, time_var: str) -> Dict:
+def check_pcse_conditions(data: pd.DataFrame, entity_var: str, time_var: str) -> dict:
     """
     Check conditions for Panel-Corrected Standard Errors (PCSE).
 
@@ -505,7 +505,7 @@ def compute_vif(X: np.ndarray, variable_names: Optional[list] = None) -> pd.Data
     n, k = X.shape
 
     if variable_names is None:
-        variable_names = [f"X{i+1}" for i in range(k)]
+        variable_names = [f"X{i + 1}" for i in range(k)]
 
     vif_values = []
 
@@ -542,10 +542,10 @@ def compute_vif(X: np.ndarray, variable_names: Optional[list] = None) -> pd.Data
 # Export all functions
 __all__ = [
     "TestResult",
-    "test_heteroskedasticity",
-    "test_autocorrelation",
-    "test_spatial_correlation",
-    "cluster_diagnostics",
     "check_pcse_conditions",
+    "cluster_diagnostics",
     "compute_vif",
+    "test_autocorrelation",
+    "test_heteroskedasticity",
+    "test_spatial_correlation",
 ]

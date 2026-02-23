@@ -33,7 +33,10 @@ Known Limitations
 See test_dynamic_validation.py for detailed validation against literature.
 """
 
-from typing import Any, Dict, Literal, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -41,6 +44,8 @@ from scipy import stats
 from scipy.optimize import minimize
 
 from panelbox.models.base import NonlinearPanelModel, PanelModelResults
+
+logger = logging.getLogger(__name__)
 
 
 class DynamicBinaryPanel(NonlinearPanelModel):
@@ -76,8 +81,8 @@ class DynamicBinaryPanel(NonlinearPanelModel):
         self,
         endog: np.ndarray,
         exog: np.ndarray,
-        entity: Optional[np.ndarray] = None,
-        time: Optional[np.ndarray] = None,
+        entity: np.ndarray | None = None,
+        time: np.ndarray | None = None,
         initial_conditions: Literal["wooldridge", "heckman", "simple"] = "wooldridge",
         effects: Literal["random", "pooled"] = "random",
     ):
@@ -140,9 +145,7 @@ class DynamicBinaryPanel(NonlinearPanelModel):
             self._simple_initial_conditions()
 
     def _wooldridge_initial_conditions(self):
-        """
-        Wooldridge (2005) approach: Include y_i0 and time-averages of X.
-        """
+        """Wooldridge (2005) approach: Include y_i0 and time-averages of X."""
         # Get initial values y_i0 for each entity
         self.y_i0 = np.zeros(len(self.endog))
 
@@ -180,17 +183,13 @@ class DynamicBinaryPanel(NonlinearPanelModel):
         self.time_clean = self.time[valid_obs]
 
     def _heckman_initial_conditions(self):
-        """
-        Heckman approach: Model joint distribution of (y_i0, α_i).
-        """
+        """Heckman approach: Model joint distribution of (y_i0, α_i)."""
         # This is more complex and requires modeling the initial period
         # For now, implement a simplified version
         self._wooldridge_initial_conditions()
 
     def _simple_initial_conditions(self):
-        """
-        Simple approach: Just drop first period (may be biased).
-        """
+        """Simple approach: Just drop first period (may be biased)."""
         valid_obs = ~np.isnan(self.endog_lagged)
 
         # Debug print
@@ -227,7 +226,6 @@ class DynamicBinaryPanel(NonlinearPanelModel):
             linear_pred = self.exog_augmented @ params
 
         if self.effects == "random":
-
             # Integrate over random effects distribution
             # Using Gauss-Hermite quadrature
             from scipy.special import roots_hermite
@@ -275,16 +273,11 @@ class DynamicBinaryPanel(NonlinearPanelModel):
             else:
                 linear_pred = self.exog_augmented @ params
         else:
-            if self.effects == "random":
-                linear_pred = exog @ params[:-1]
-            else:
-                linear_pred = exog @ params
+            linear_pred = exog @ params[:-1] if self.effects == "random" else exog @ params
 
         return stats.norm.cdf(linear_pred)
 
-    def fit(
-        self, start_params: Optional[np.ndarray] = None, **kwargs
-    ) -> "DynamicBinaryPanelResult":
+    def fit(self, start_params: np.ndarray | None = None, **kwargs) -> DynamicBinaryPanelResult:
         """
         Fit the dynamic binary panel model.
 
@@ -400,7 +393,7 @@ class DynamicBinaryPanelResult(PanelModelResults):
 
         return "\n".join(output)
 
-    def predict(self, exog: Optional[np.ndarray] = None) -> np.ndarray:
+    def predict(self, exog: np.ndarray | None = None) -> np.ndarray:
         """
         Predict probabilities for new data.
 

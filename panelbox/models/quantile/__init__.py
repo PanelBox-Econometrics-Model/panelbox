@@ -13,6 +13,8 @@ Complete implementation of quantile regression methods including:
 All models integrate seamlessly with PanelBox ecosystem.
 """
 
+from __future__ import annotations
+
 from .base import QuantilePanelModel, QuantilePanelResult
 from .pooled import PooledQuantile, PooledQuantileResults
 
@@ -47,14 +49,14 @@ except ImportError:
     QuantileTreatmentEffects = None
 
 __all__ = [
+    "CanayTwoStep",
+    "DynamicQuantile",
+    "FEQuantileComparison",
+    "FixedEffectsQuantile",
+    "LocationScale",
+    "PooledQuantile",
+    "QuantileMonotonicity",
     "QuantilePanelModel",
     "QuantilePanelResult",
-    "PooledQuantile",
-    "FixedEffectsQuantile",
-    "CanayTwoStep",
-    "LocationScale",
-    "DynamicQuantile",
     "QuantileTreatmentEffects",
-    "QuantileMonotonicity",
-    "FEQuantileComparison",
 ]

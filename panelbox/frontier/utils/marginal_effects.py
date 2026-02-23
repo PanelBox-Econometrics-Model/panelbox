@@ -6,7 +6,8 @@ This module provides marginal effects computation for:
 2. Battese & Coelli (1995): Inefficiency determinants in panel models
 3. General inefficiency determinant models
 
-References:
+References
+----------
     Wang, H. J., & Schmidt, P. (2002).
         One-step and two-step estimation of the effects of exogenous
         variables on technical efficiency levels.
@@ -23,18 +24,22 @@ References:
         Journal of Productivity Analysis, 25, 201-212.
 """
 
-from typing import Dict, Optional
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
+logger = logging.getLogger(__name__)
+
 
 def marginal_effects(
     result,
     method: str = "mean",
-    var: Optional[str] = None,
-    at_values: Optional[Dict[str, float]] = None,
+    var: str | None = None,
+    at_values: dict[str, float] | None = None,
 ) -> pd.DataFrame:
     """Compute marginal effects on inefficiency or efficiency.
 
@@ -80,15 +85,15 @@ def marginal_effects(
     -------
     >>> # Battese & Coelli (1995) model
     >>> model = StochasticFrontier(
-    ...     depvar='log_output',
-    ...     exog=['log_labor', 'log_capital'],
+    ...     depvar="log_output",
+    ...     exog=["log_labor", "log_capital"],
     ...     data=df,
-    ...     inefficiency_vars=['firm_age', 'manager_education'],
+    ...     inefficiency_vars=["firm_age", "manager_education"],
     ... )
     >>> result = model.fit()
     >>>
     >>> # Marginal effects on expected inefficiency
-    >>> me = marginal_effects(result, method='mean')
+    >>> me = marginal_effects(result, method="mean")
     >>> print(me)
            variable  marginal_effect  std_error  z_stat  p_value
     0     firm_age           0.023      0.005     4.60    0.000
@@ -154,7 +159,7 @@ def marginal_effects(
 def marginal_effects_wang_2002(
     result,
     method: str = "mean",
-    var: Optional[str] = None,
+    var: str | None = None,
 ) -> pd.DataFrame:
     """Marginal effects for Wang (2002) heteroscedastic model.
 
@@ -189,19 +194,19 @@ def marginal_effects_wang_2002(
     p = len(model.hetero_var_names)  # Number of inefficiency scale vars
 
     # Parameter positions (assuming order: β, δ, γ, σ²_v)
-    beta = params[:k]
+    params[:k]
     delta = params[k : k + m]
     gamma = params[k + m : k + m + p]
-    sigma_v_sq = params[-1]
+    params[-1]
 
     if method == "mean":
         # Marginal effect on E[u_i]
         # Need to compute at sample means or specific values
         # For simplicity, compute average marginal effect
 
-        # Get data
-        Z = model.data[model.ineff_var_names].values
-        W = model.data[model.hetero_var_names].values
+        # Get data (use model.Z and model.W which already have constants prepended)
+        Z = model.Z
+        W = model.W
 
         # Compute μ_i and σ_u,i for each observation
         mu_i = Z @ delta
@@ -273,9 +278,9 @@ def marginal_effects_wang_2002(
         # Marginal effect on Var[u_i]
         # ∂Var[u_i]/∂w_k involves derivatives of σ²_u,i
 
-        # Get data
-        W = model.data[model.hetero_var_names].values
-        Z = model.data[model.ineff_var_names].values
+        # Get data (use model.Z and model.W which already have constants prepended)
+        W = model.W
+        Z = model.Z
 
         ln_sigma_u_sq_i = W @ gamma
         sigma_u_sq_i = np.exp(ln_sigma_u_sq_i)
@@ -339,8 +344,8 @@ def marginal_effects_wang_2002(
 def marginal_effects_bc95(
     result,
     method: str = "mean",
-    var: Optional[str] = None,
-    at_values: Optional[Dict[str, float]] = None,
+    var: str | None = None,
+    at_values: dict[str, float] | None = None,
 ) -> pd.DataFrame:
     """Marginal effects for Battese & Coelli (1995) model.
 
@@ -385,21 +390,22 @@ def marginal_effects_bc95(
     model = result.model
     params = result.params
 
-    # Extract parameters
+    # Extract parameters using .iloc for positional access
     k = model.n_exog
     m = len(model.ineff_var_names)
 
     # Parameter positions (β, σ²_v, σ²_u, δ)
-    beta = params[:k]
-    sigma_v_sq = params[k]
-    sigma_u_sq = params[k + 1]
-    delta = params[k + 2 : k + 2 + m]
+    # beta = params.iloc[:k].values  (not used here)
+    # sigma_v_sq = params.iloc[k]  (not used here)
+    sigma_u_sq = params.iloc[k + 1]
+    delta = params.iloc[k + 2 : k + 2 + m].values
 
-    sigma_u = np.sqrt(sigma_u_sq)
+    sigma_u = np.sqrt(max(sigma_u_sq, 1e-10))
 
     if method == "mean":
         # Get inefficiency determinant data
-        Z = model.data[model.ineff_var_names].values
+        # Use model.Z which already has the constant prepended
+        Z = model.Z
 
         # Compute μ_it
         mu_it = Z @ delta
@@ -424,7 +430,8 @@ def marginal_effects_bc95(
 
         # Standard errors (delta method - approximate)
         vcov = result.vcov
-        se_values = np.sqrt(np.diag(vcov[k + 2 : k + 2 + m, k + 2 : k + 2 + m]))
+        se_raw = np.diag(vcov[k + 2 : k + 2 + m, k + 2 : k + 2 + m])
+        se_values = np.sqrt(np.maximum(se_raw, 0))
 
         # Note: These SEs are for δ, not for marginal effects
         # Exact SEs require delta method with adjustment factor

@@ -4,9 +4,13 @@ HTML Exporter for PanelBox Reports.
 Exports reports to self-contained HTML files.
 """
 
+from __future__ import annotations
+
 import datetime
+import logging
 from pathlib import Path
-from typing import Dict, Union
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLExporter:
@@ -32,7 +36,7 @@ class HTMLExporter:
     >>> html = report_mgr.generate_validation_report(...)
     >>>
     >>> exporter = HTMLExporter()
-    >>> exporter.export(html, 'report.html')
+    >>> exporter.export(html, "report.html")
     """
 
     def __init__(self, minify: bool = False, pretty_print: bool = False):
@@ -43,7 +47,7 @@ class HTMLExporter:
     def export(
         self,
         html_content: str,
-        output_path: Union[str, Path],
+        output_path: str | Path,
         overwrite: bool = False,
         add_metadata: bool = True,
     ) -> Path:
@@ -69,7 +73,7 @@ class HTMLExporter:
         Examples
         --------
         >>> exporter = HTMLExporter()
-        >>> path = exporter.export(html, 'report.html')
+        >>> path = exporter.export(html, "report.html")
         >>> print(f"Exported to {path}")
         """
         output_path = Path(output_path)
@@ -77,7 +81,7 @@ class HTMLExporter:
         # Check if file exists
         if output_path.exists() and not overwrite:
             raise FileExistsError(
-                f"File already exists: {output_path}. " "Use overwrite=True to replace."
+                f"File already exists: {output_path}. Use overwrite=True to replace."
             )
 
         # Create parent directories
@@ -96,8 +100,8 @@ class HTMLExporter:
         return output_path
 
     def export_multiple(
-        self, reports: Dict[str, str], output_dir: Union[str, Path], overwrite: bool = False
-    ) -> Dict[str, Path]:
+        self, reports: dict[str, str], output_dir: str | Path, overwrite: bool = False
+    ) -> dict[str, Path]:
         """
         Export multiple HTML reports to directory.
 
@@ -117,11 +121,8 @@ class HTMLExporter:
 
         Examples
         --------
-        >>> reports = {
-        ...     'validation.html': validation_html,
-        ...     'regression.html': regression_html
-        ... }
-        >>> paths = exporter.export_multiple(reports, 'output/')
+        >>> reports = {"validation.html": validation_html, "regression.html": regression_html}
+        >>> paths = exporter.export_multiple(reports, "output/")
         """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -136,11 +137,11 @@ class HTMLExporter:
 
     def export_with_index(
         self,
-        reports: Dict[str, str],
-        output_dir: Union[str, Path],
+        reports: dict[str, str],
+        output_dir: str | Path,
         index_title: str = "PanelBox Reports",
         overwrite: bool = False,
-    ) -> Dict[str, Path]:
+    ) -> dict[str, Path]:
         """
         Export multiple reports with an index page.
 
@@ -162,11 +163,8 @@ class HTMLExporter:
 
         Examples
         --------
-        >>> reports = {
-        ...     'Validation Report': validation_html,
-        ...     'Regression Results': regression_html
-        ... }
-        >>> paths = exporter.export_with_index(reports, 'reports/')
+        >>> reports = {"Validation Report": validation_html, "Regression Results": regression_html}
+        >>> paths = exporter.export_with_index(reports, "reports/")
         """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -175,7 +173,7 @@ class HTMLExporter:
         exported = {}
 
         for i, (name, html_content) in enumerate(reports.items()):
-            filename = f"report_{i+1}.html"
+            filename = f"report_{i + 1}.html"
             output_path = output_dir / filename
             exported[name] = self.export(html_content, output_path, overwrite=overwrite)
 
@@ -263,7 +261,7 @@ Minified: {self.minify}
 
         report_links = []
         for i, name in enumerate(reports):
-            filename = f"report_{i+1}.html"
+            filename = f"report_{i + 1}.html"
             report_links.append(f'<li><a href="{filename}">{name}</a></li>')
 
         links_html = "\n                ".join(report_links)
@@ -378,7 +376,7 @@ Minified: {self.minify}
 
         return html
 
-    def get_file_size(self, html_content: str) -> Dict[str, float]:
+    def get_file_size(self, html_content: str) -> dict[str, float]:
         """
         Estimate file size of HTML content.
 
@@ -403,4 +401,4 @@ Minified: {self.minify}
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"HTMLExporter(" f"minify={self.minify}, " f"pretty_print={self.pretty_print})"
+        return f"HTMLExporter(minify={self.minify}, pretty_print={self.pretty_print})"

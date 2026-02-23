@@ -1,5 +1,5 @@
 """
-PanelBox - Panel Data Econometrics in Python
+PanelBox - Panel Data Econometrics in Python.
 
 PanelBox provides comprehensive tools for panel data econometrics,
 inspired by Stata (xtabond2), R (plm), and statsmodels.
@@ -22,17 +22,27 @@ Quick Start (Traditional):
 Quick Start (Experiment Pattern):
     >>> from panelbox import PanelExperiment
     >>> experiment = PanelExperiment(data, "y ~ x1 + x2", "firm", "year")
-    >>> experiment.fit_all_models(names=['pooled', 'fe', 're'])
-    >>> val_result = experiment.validate_model('fe')
-    >>> val_result.save_html('validation.html', test_type='validation')
+    >>> experiment.fit_all_models(names=["pooled", "fe", "re"])
+    >>> val_result = experiment.validate_model("fe")
+    >>> val_result.save_html("validation.html", test_type="validation")
 """
 
+from __future__ import annotations
+
+import contextlib
+import logging
+
+# Library default: no output unless user configures logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
 from panelbox.__version__ import __author__, __email__, __license__, __version__
+from panelbox._logging import set_verbosity
 from panelbox.core.formula_parser import FormulaParser, parse_formula
 
 # Core classes
 from panelbox.core.panel_data import PanelData
 from panelbox.core.results import PanelResults
+from panelbox.core.serialization import SerializableMixin, load_model
 
 # Datasets
 from panelbox.datasets import get_dataset_info, list_datasets, load_abdata, load_grunfeld
@@ -202,170 +212,172 @@ from panelbox.var import (
 )
 
 # Quantile Regression Visualization (optional - requires matplotlib)
-try:
+with contextlib.suppress(ImportError):
     from panelbox.visualization.quantile import qq_plot, quantile_process_plot, residual_plot
-except ImportError:
-    pass
 
 __all__ = [
-    # Version
-    "__version__",
-    "__author__",
-    "__email__",
-    "__license__",
-    # Core
-    "PanelData",
-    "FormulaParser",
-    "parse_formula",
-    "PanelResults",
-    # Static Models
-    "PooledOLS",
-    "FixedEffects",
-    "RandomEffects",
+    "PPML",
+    "BaltagiWuTest",
+    "BaseResult",
     "BetweenEstimator",
-    "FirstDifferenceEstimator",
-    # IV Models
-    "PanelIV",
-    # GMM Models
-    "DifferenceGMM",
-    "SystemGMM",
-    "GMMResults",
+    "BiasCorrectedGMM",
+    "BootstrapResult",
+    "BreitungResult",
+    "BreuschGodfreyTest",
+    "BreuschPaganLMTest",
+    "BreuschPaganTest",
+    "CVResults",
+    "ChowTest",
+    "CointegrationRankTest",
+    "ComparisonResult",
+    "ConditionalLogit",
     # Advanced GMM (FASE 1)
     "ContinuousUpdatedGMM",
-    "BiasCorrectedGMM",
+    # GMM Models
+    "DifferenceGMM",
+    "DistributionType",
+    "EncompassingResult",
+    "FirstDifferenceEstimator",
+    "FisherTest",
+    "FisherTestResult",
+    "FixedEffects",
+    "FixedEffectsLogit",
+    "FixedEffectsNegativeBinomial",
+    "ForecastResult",
+    "FormulaParser",
+    "FreesTest",
+    "FrontierType",
     "GMMDiagnostics",
+    "GMMResults",
+    "HadriResult",
+    # Specification Tests (existing + FASE 5)
+    "HausmanTest",
+    "HausmanTestResult",
+    "IPSTest",
+    "IPSTestResult",
+    "InfluenceDiagnostics",
+    "InfluenceResults",
+    "JTestResult",
+    "JackknifeResults",
+    "KaoResult",
+    "KaoTest",
+    "KaoTestResult",
+    # Unit Root Tests (existing + FASE 4)
+    "LLCTest",
+    "LLCTestResult",
+    "LagOrderResult",
+    "ModelType",
+    # Heteroskedasticity Tests
+    "ModifiedWaldTest",
+    "MultinomialLogit",
+    "MultinomialLogitResult",
+    "MundlakTest",
+    "NegativeBinomial",
+    # Discrete Choice Models (FASE 5)
+    "NonlinearPanelModel",
+    "OrderedLogit",
+    "OrderedProbit",
+    "OutlierDetector",
+    "OutlierResults",
+    "PPMLResult",
+    # Robustness
+    "PanelBootstrap",
+    # Core
+    "PanelData",
+    # Experiment Pattern
+    "PanelExperiment",
+    # Selection Models (FASE 2)
+    "PanelHeckman",
+    "PanelHeckmanResult",
+    # IV Models
+    "PanelIV",
+    "PanelJackknife",
+    "PanelResults",
+    "PanelUnitRootResult",
     # Panel VAR Models
     "PanelVAR",
     "PanelVARData",
     "PanelVARResult",
-    "ForecastResult",
-    "LagOrderResult",
     "PanelVECM",
     "PanelVECMResult",
-    "CointegrationRankTest",
-    "RankSelectionResult",
-    "RankTestResult",
-    "plot_causality_network",
-    # Specification Tests (existing + FASE 5)
-    "HausmanTest",
-    "HausmanTestResult",
-    "MundlakTest",
-    "RESETTest",
-    "ChowTest",
-    "j_test",
-    "JTestResult",
-    "cox_test",
-    "wald_encompassing_test",
-    "likelihood_ratio_test",
-    "EncompassingResult",
-    # Serial Correlation Tests
-    "WooldridgeARTest",
-    "BreuschGodfreyTest",
-    "BaltagiWuTest",
-    # Heteroskedasticity Tests
-    "ModifiedWaldTest",
-    "BreuschPaganTest",
-    "WhiteTest",
-    # Cross-Sectional Dependence Tests
-    "PesaranCDTest",
-    "BreuschPaganLMTest",
-    "FreesTest",
-    # Unit Root Tests (existing + FASE 4)
-    "LLCTest",
-    "LLCTestResult",
-    "IPSTest",
-    "IPSTestResult",
-    "FisherTest",
-    "FisherTestResult",
-    "hadri_test",
-    "HadriResult",
-    "breitung_test",
-    "BreitungResult",
-    "panel_unit_root_test",
-    "PanelUnitRootResult",
+    "PedroniResult",
     # Cointegration Tests (existing + FASE 3)
     "PedroniTest",
     "PedroniTestResult",
-    "KaoTest",
-    "KaoTestResult",
-    "westerlund_test",
-    "WesterlundResult",
-    "kao_test",
-    "KaoResult",
-    "pedroni_test",
-    "PedroniResult",
-    # Robustness
-    "PanelBootstrap",
-    "SensitivityAnalysis",
-    "SensitivityResults",
-    "TimeSeriesCV",
-    "CVResults",
-    "PanelJackknife",
-    "JackknifeResults",
-    "OutlierDetector",
-    "OutlierResults",
-    "InfluenceDiagnostics",
-    "InfluenceResults",
-    "RobustnessChecker",
-    # Datasets
-    "load_grunfeld",
-    "load_abdata",
-    "list_datasets",
-    "get_dataset_info",
-    # Experiment Pattern
-    "PanelExperiment",
-    "BaseResult",
-    "ValidationResult",
-    "ComparisonResult",
-    "ResidualResult",
+    # Cross-Sectional Dependence Tests
+    "PesaranCDTest",
+    "PoissonFixedEffects",
+    "PoissonQML",
+    "PooledLogit",
+    # Static Models
+    "PooledOLS",
+    # Count Data Models (FASE 5)
+    "PooledPoisson",
+    "PooledProbit",
     # Quantile Regression Models
     "PooledQuantile",
     "PooledQuantileResults",
     # Quantile Regression Inference
     "QuantileBootstrap",
-    "BootstrapResult",
-    # Selection Models (FASE 2)
-    "PanelHeckman",
-    "PanelHeckmanResult",
-    "compute_imr",
-    "imr_derivative",
-    "imr_diagnostics",
-    "test_selection_effect",
-    # Discrete Choice Models (FASE 5)
-    "NonlinearPanelModel",
-    "PooledLogit",
-    "PooledProbit",
-    "FixedEffectsLogit",
-    "RandomEffectsProbit",
-    "OrderedLogit",
-    "OrderedProbit",
-    "RandomEffectsOrderedLogit",
-    "MultinomialLogit",
-    "MultinomialLogitResult",
-    "ConditionalLogit",
-    # Count Data Models (FASE 5)
-    "PooledPoisson",
-    "PoissonFixedEffects",
-    "RandomEffectsPoisson",
-    "PoissonQML",
-    "PPML",
-    "PPMLResult",
-    "NegativeBinomial",
-    "FixedEffectsNegativeBinomial",
-    "ZeroInflatedPoisson",
-    "ZeroInflatedPoissonResult",
-    "ZeroInflatedNegativeBinomial",
-    "ZeroInflatedNegativeBinomialResult",
     # Quantile Regression Diagnostics
     "QuantileRegressionDiagnostics",
+    "RESETTest",
+    "RandomEffects",
+    "RandomEffectsOrderedLogit",
+    "RandomEffectsPoisson",
+    "RandomEffectsProbit",
+    "RankSelectionResult",
+    "RankTestResult",
+    "ResidualResult",
+    "RobustnessChecker",
+    "SFResult",
+    "SensitivityAnalysis",
+    "SensitivityResults",
+    "SerializableMixin",
+    # Stochastic Frontier Analysis (FASE 1)
+    "StochasticFrontier",
+    "SystemGMM",
+    "TimeSeriesCV",
+    "ValidationResult",
+    "WesterlundResult",
+    "WhiteTest",
+    # Serial Correlation Tests
+    "WooldridgeARTest",
+    "ZeroInflatedNegativeBinomial",
+    "ZeroInflatedNegativeBinomialResult",
+    "ZeroInflatedPoisson",
+    "ZeroInflatedPoissonResult",
+    "__author__",
+    "__email__",
+    "__license__",
+    # Version
+    "__version__",
+    "breitung_test",
+    "compute_imr",
+    "cox_test",
+    "get_dataset_info",
+    "hadri_test",
+    "imr_derivative",
+    "imr_diagnostics",
+    "j_test",
+    "kao_test",
+    "likelihood_ratio_test",
+    "list_datasets",
+    "load_abdata",
+    # Datasets
+    "load_grunfeld",
+    "load_model",
+    "panel_unit_root_test",
+    "parse_formula",
+    "pedroni_test",
+    "plot_causality_network",
+    "qq_plot",
     # Quantile Regression Visualization
     "quantile_process_plot",
     "residual_plot",
-    "qq_plot",
-    # Stochastic Frontier Analysis (FASE 1)
-    "StochasticFrontier",
-    "SFResult",
-    "FrontierType",
-    "DistributionType",
-    "ModelType",
+    # Logging
+    "set_verbosity",
+    "test_selection_effect",
+    "wald_encompassing_test",
+    "westerlund_test",
 ]

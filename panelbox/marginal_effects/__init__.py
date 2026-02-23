@@ -8,6 +8,8 @@ This module implements:
 - Marginal effects for ordered choice models
 """
 
+from __future__ import annotations
+
 from panelbox.marginal_effects.delta_method import delta_method_se, numerical_gradient
 from panelbox.marginal_effects.discrete_me import (
     MarginalEffectsResult,
@@ -27,16 +29,16 @@ from panelbox.marginal_effects.ordered_me import (
 )
 
 __all__ = [
+    "InteractionEffectsResult",
+    "MarginalEffectsResult",
+    "OrderedMarginalEffectsResult",
     "compute_ame",
+    "compute_interaction_effects",
     "compute_mem",
     "compute_mer",
-    "MarginalEffectsResult",
     "compute_ordered_ame",
     "compute_ordered_mem",
-    "OrderedMarginalEffectsResult",
     "delta_method_se",
     "numerical_gradient",
-    "compute_interaction_effects",
-    "InteractionEffectsResult",
     "test_interaction_significance",
 ]

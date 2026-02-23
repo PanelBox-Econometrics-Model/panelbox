@@ -39,27 +39,27 @@ from .visualization_helpers import (
 )
 
 __all__ = [
+    "compare_models_plot",
+    # Diagnostics
+    "compute_overdispersion_index",
+    "compute_rootogram_data",
+    "detect_outliers_count",
+    "generate_crime_data",
     # Data generators
     "generate_healthcare_data",
+    "generate_innovation_data",
     "generate_patent_data",
-    "generate_crime_data",
+    "generate_policy_impact_data",
     "generate_trade_data",
     "generate_zinb_healthcare_data",
-    "generate_policy_impact_data",
-    "generate_innovation_data",
+    "hausman_test_summary",
+    "overdispersion_test",
+    "plot_irr_forest",
+    "plot_marginal_effects",
+    "plot_panel_trends",
     # Visualization
     "plot_rootogram",
     "plot_variance_mean",
-    "plot_marginal_effects",
-    "plot_irr_forest",
-    "compare_models_plot",
-    "plot_panel_trends",
     "plot_zero_inflation",
-    # Diagnostics
-    "compute_overdispersion_index",
-    "overdispersion_test",
     "vuong_test_summary",
-    "compute_rootogram_data",
-    "detect_outliers_count",
-    "hausman_test_summary",
 ]

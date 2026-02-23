@@ -1,5 +1,6 @@
 """
-GMM Specification Tests
+GMM Specification Tests.
+
 ========================
 
 Specification tests for GMM models including Hansen J-test, Sargan test,
@@ -22,12 +23,16 @@ References
        Review of Economic Studies, 58(2), 277-297.
 """
 
-from typing import Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 from scipy import stats
 
 from panelbox.gmm.results import TestResult
+
+logger = logging.getLogger(__name__)
 
 
 class GMMTests:
@@ -470,7 +475,7 @@ class GMMTests:
             details={"J_full": J_full, "J_subset": J_subset, "n_instruments_tested": df_diff},
         )
 
-    def weak_instruments_test(self, X: np.ndarray, Z: np.ndarray) -> Tuple[float, bool]:
+    def weak_instruments_test(self, X: np.ndarray, Z: np.ndarray) -> tuple[float, bool]:
         """
         Simple weak instruments diagnostic.
 

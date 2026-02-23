@@ -10,30 +10,37 @@ The main approaches are:
 3. Grid search over variance parameters
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
-from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 def ols_starting_values(
     y: np.ndarray, X: np.ndarray, dist: str = "half_normal"
-) -> Tuple[np.ndarray, float, float]:
+) -> tuple[np.ndarray, float, float]:
     """Compute OLS-based starting values.
 
     Estimates β via OLS, then uses residual moments to estimate
     variance components.
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
         dist: Distribution type ('half_normal', 'exponential', etc.)
 
-    Returns:
+    Returns
+    -------
         Tuple of (beta, sigma_v_sq, sigma_u_sq)
 
-    References:
+    References
+    ----------
         Olson, J. A., Schmidt, P., & Waldman, D. M. (1980).
     """
     # OLS estimation
@@ -93,7 +100,7 @@ def ols_starting_values(
     return beta, sigma_v_sq, sigma_u_sq
 
 
-def _moments_half_normal(m2: float, m3: float) -> Tuple[float, float]:
+def _moments_half_normal(m2: float, m3: float) -> tuple[float, float]:
     """Estimate variances using half-normal moments.
 
     For half-normal distribution:
@@ -107,11 +114,13 @@ def _moments_half_normal(m2: float, m3: float) -> Tuple[float, float]:
     From second moment:
         σ_v = √(E[ε²] - (1 - 2/π)σ²_u)
 
-    Parameters:
+    Parameters
+    ----------
         m2: Second moment E[ε²]
         m3: Third moment E[ε³]
 
-    Returns:
+    Returns
+    -------
         (sigma_u_sq, sigma_v_sq)
     """
     # Constants
@@ -127,6 +136,7 @@ def _moments_half_normal(m2: float, m3: float) -> Tuple[float, float]:
             "Third moment near zero. Setting σ_u to small value. "
             "Model may be better estimated as OLS.",
             UserWarning,
+            stacklevel=2,
         )
     else:
         # Solve for σ_u
@@ -143,13 +153,15 @@ def _moments_half_normal(m2: float, m3: float) -> Tuple[float, float]:
             sigma_u_sq = 0.5 * total_var
             sigma_v_sq = 0.5 * total_var
             warnings.warn(
-                "Negative variance from moments. Using equal split of variance.", UserWarning
+                "Negative variance from moments. Using equal split of variance.",
+                UserWarning,
+                stacklevel=2,
             )
 
     return sigma_u_sq, max(sigma_v_sq, 1e-6)
 
 
-def _moments_exponential(m2: float, m3: float) -> Tuple[float, float]:
+def _moments_exponential(m2: float, m3: float) -> tuple[float, float]:
     """Estimate variances using exponential moments.
 
     For exponential distribution with parameter λ:
@@ -160,18 +172,22 @@ def _moments_exponential(m2: float, m3: float) -> Tuple[float, float]:
         E[ε²] = σ²_v + σ²_u
         E[ε³] = -2σ³_u
 
-    Parameters:
+    Parameters
+    ----------
         m2: Second moment E[ε²]
         m3: Third moment E[ε³]
 
-    Returns:
+    Returns
+    -------
         (sigma_u_sq, sigma_v_sq)
     """
     if abs(m3) < 1e-10:
         # No skewness
         sigma_u_sq = 1e-6
         sigma_v_sq = max(m2, 1e-6)
-        warnings.warn("Third moment near zero. Setting σ_u to small value.", UserWarning)
+        warnings.warn(
+            "Third moment near zero. Setting σ_u to small value.", UserWarning, stacklevel=2
+        )
     else:
         # From third moment
         sigma_u = abs(m3 / (-2)) ** (1 / 3)
@@ -184,20 +200,23 @@ def _moments_exponential(m2: float, m3: float) -> Tuple[float, float]:
             total_var = m2
             sigma_u_sq = 0.5 * total_var
             sigma_v_sq = 0.5 * total_var
-            warnings.warn("Negative variance from moments. Using equal split.", UserWarning)
+            warnings.warn(
+                "Negative variance from moments. Using equal split.", UserWarning, stacklevel=2
+            )
 
     return sigma_u_sq, max(sigma_v_sq, 1e-6)
 
 
 def grid_search_starting_values(
     y: np.ndarray, X: np.ndarray, dist: str, likelihood_func, sign: int, n_points: int = 5
-) -> Tuple[np.ndarray, float, float]:
+) -> tuple[np.ndarray, float, float]:
     """Grid search for starting values.
 
     Performs a grid search over variance parameters to find good
     starting values for MLE optimization.
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable
         X: Exogenous variables
         dist: Distribution type
@@ -205,7 +224,8 @@ def grid_search_starting_values(
         sign: Sign convention
         n_points: Number of grid points per dimension
 
-    Returns:
+    Returns
+    -------
         Tuple of (beta, sigma_v_sq, sigma_u_sq)
     """
     # Start with OLS
@@ -222,7 +242,7 @@ def grid_search_starting_values(
     for sigma_v in sigma_v_grid:
         for sigma_u in sigma_u_grid:
             # Construct parameter vector
-            k = X.shape[1]
+            X.shape[1]
             theta = np.concatenate([beta_ols, [np.log(sigma_v**2)], [np.log(sigma_u**2)]])
 
             # Additional parameters for truncated normal
@@ -247,7 +267,7 @@ def grid_search_starting_values(
 def get_starting_values(
     y: np.ndarray,
     X: np.ndarray,
-    Z: Optional[np.ndarray],
+    Z: np.ndarray | None,
     dist: str,
     grid_search: bool = False,
     likelihood_func=None,
@@ -258,7 +278,8 @@ def get_starting_values(
     Main entry point for computing starting values. Uses method of moments
     by default, with optional grid search for robustness.
 
-    Parameters:
+    Parameters
+    ----------
         y: Dependent variable
         X: Exogenous variables
         Z: Inefficiency covariates (for BC95)
@@ -267,7 +288,8 @@ def get_starting_values(
         likelihood_func: Likelihood function (required if grid_search=True)
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Starting parameter vector θ₀
     """
     if grid_search and likelihood_func is None:
@@ -282,7 +304,7 @@ def get_starting_values(
         beta, sigma_v_sq, sigma_u_sq = ols_starting_values(y, X, dist)
 
     # Construct parameter vector
-    k = X.shape[1]
+    X.shape[1]
     theta = np.concatenate([beta, [np.log(sigma_v_sq)], [np.log(sigma_u_sq)]])
 
     # Additional parameters for specific distributions
@@ -308,20 +330,22 @@ def get_starting_values(
 
 def check_starting_values(
     theta: np.ndarray, y: np.ndarray, X: np.ndarray, likelihood_func, sign: int
-) -> Dict[str, any]:
+) -> dict[str, Any]:
     """Check quality of starting values.
 
     Evaluates likelihood and gradient at starting values to ensure
     they are reasonable.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Starting parameter vector
         y: Dependent variable
         X: Exogenous variables
         likelihood_func: Log-likelihood function
         sign: Sign convention
 
-    Returns:
+    Returns
+    -------
         Dictionary with diagnostic information
     """
     # Evaluate likelihood

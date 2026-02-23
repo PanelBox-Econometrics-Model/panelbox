@@ -12,7 +12,8 @@ Panel models exploit the time dimension to:
 All functions use the parameterization:
     θ = [β, ln(σ²_v), ln(σ²_u), ...]
 
-References:
+References
+----------
     Pitt, M. M., & Lee, L. F. (1981).
         The measurement and sources of technical inefficiency in Indonesian
         weaving industry. Journal of Development Economics, 9(1), 43-64.
@@ -27,13 +28,14 @@ References:
         production function for panel data. Empirical Economics, 20(2), 325-332.
 """
 
-import warnings
-from typing import Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import numpy as np
-from scipy import stats
-from scipy.integrate import quad
-from scipy.special import log_ndtr, ndtr
+from scipy.special import log_ndtr
+
+logger = logging.getLogger(__name__)
 
 # Constants for numerical stability
 SQRT_2PI = np.sqrt(2 * np.pi)
@@ -61,7 +63,8 @@ def loglik_pitt_lee_half_normal(
 
     For half-normal distribution, this has a closed-form solution.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u)]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -69,13 +72,15 @@ def loglik_pitt_lee_half_normal(
         time_id: Time identifiers (n,) - integer coded 0, 1, ..., T-1
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Pitt, M. M., & Lee, L. F. (1981).
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -85,15 +90,15 @@ def loglik_pitt_lee_half_normal(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
 
     # Residuals
     epsilon = y - X @ beta
 
     # Get unique entities and their observation counts
     unique_entities = np.unique(entity_id)
-    N = len(unique_entities)
+    len(unique_entities)
 
     loglik = 0.0
 
@@ -113,7 +118,7 @@ def loglik_pitt_lee_half_normal(
 
         # Overall variance
         sigma_sq_i = sigma_v_sq + sigma_u_sq
-        sigma_i = np.sqrt(sigma_sq_i)
+        np.sqrt(sigma_sq_i)
 
         # Mean of epsilon_i
         epsilon_bar_i = np.mean(epsilon_i)
@@ -167,7 +172,8 @@ def loglik_pitt_lee_exponential(
 
     For exponential distribution, closed-form solution exists.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(λ)]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -175,10 +181,11 @@ def loglik_pitt_lee_exponential(
         time_id: Time identifiers (n,)
         sign: Sign convention (+1 for production, -1 for cost)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -253,7 +260,8 @@ def loglik_pitt_lee_truncated_normal(
 
     Uses Gauss-Hermite quadrature to integrate over u_i.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), μ]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -262,12 +270,13 @@ def loglik_pitt_lee_truncated_normal(
         sign: Sign convention (+1 for production, -1 for cost)
         n_quad_points: Number of quadrature points (default 12)
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
     """
     from scipy.special import roots_hermite
 
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -278,7 +287,7 @@ def loglik_pitt_lee_truncated_normal(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Residuals
@@ -362,7 +371,8 @@ def loglik_battese_coelli_92(
     When η < 0: efficiency worsens over time (u increases)
     When η = 0: reduces to Pitt-Lee model
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), μ, η]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -371,15 +381,17 @@ def loglik_battese_coelli_92(
         sign: Sign convention (+1 for production, -1 for cost)
         n_quad_points: Number of quadrature points
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Battese, G. E., & Coelli, T. J. (1992).
     """
     from scipy.special import roots_hermite
 
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -391,7 +403,7 @@ def loglik_battese_coelli_92(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Residuals
@@ -477,7 +489,8 @@ def loglik_battese_coelli_95(
     This is a single-step estimation where inefficiency determinants
     are included directly in the likelihood.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), δ]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -487,17 +500,19 @@ def loglik_battese_coelli_95(
         sign: Sign convention (+1 for production, -1 for cost)
         n_quad_points: Number of quadrature points
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Battese, G. E., & Coelli, T. J. (1995).
 
     Note:
         This implementation uses single-step MLE, avoiding the bias
         of two-step estimation (Wang & Schmidt 2002).
     """
-    n, k = X.shape
+    _n, k = X.shape
     m = Z.shape[1]
 
     # Extract parameters
@@ -509,7 +524,7 @@ def loglik_battese_coelli_95(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Compute μ_{it} = Z_{it}δ
@@ -567,7 +582,8 @@ def loglik_kumbhakar_1990(
 
     This allows for non-monotonic time patterns (U-shape, inverted-U).
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), μ, b, c]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -576,17 +592,19 @@ def loglik_kumbhakar_1990(
         sign: Sign convention (+1 for production, -1 for cost)
         n_quad_points: Number of quadrature points
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Kumbhakar, S. C. (1990).
             Production frontiers, panel data, and time-varying technical
             inefficiency. Journal of Econometrics, 46(1-2), 201-211.
     """
     from scipy.special import roots_hermite
 
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -599,7 +617,7 @@ def loglik_kumbhakar_1990(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Residuals
@@ -685,7 +703,8 @@ def loglik_lee_schmidt_1993(
     This is the most flexible time pattern specification, but
     requires T-1 additional parameters.
 
-    Parameters:
+    Parameters
+    ----------
         theta: Parameter vector [β, ln(σ²_v), ln(σ²_u), μ, δ_1, ..., δ_{T-1}]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -694,10 +713,12 @@ def loglik_lee_schmidt_1993(
         sign: Sign convention (+1 for production, -1 for cost)
         n_quad_points: Number of quadrature points
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value (scalar)
 
-    References:
+    References
+    ----------
         Lee, Y. H., & Schmidt, P. (1993).
             A production frontier model with flexible temporal variation in
             technical inefficiency. In The measurement of productive efficiency:
@@ -705,7 +726,7 @@ def loglik_lee_schmidt_1993(
     """
     from scipy.special import roots_hermite
 
-    n, k = X.shape
+    _n, k = X.shape
 
     # Get number of time periods
     T = time_id.max() + 1  # Assuming time coded as 0, 1, ..., T-1
@@ -723,7 +744,7 @@ def loglik_lee_schmidt_1993(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_v_sq)
     sigma_u = np.sqrt(sigma_u_sq)
 
     # Residuals
@@ -801,7 +822,8 @@ def loglik_bc92(
 
     where T_i is the last period observed for entity i.
 
-    Parameters:
+    Parameters
+    ----------
         theta: [β, ln(σ²_v), ln(σ²_u), η]
         y: Dependent variable (n,)
         X: Exogenous variables (n, k)
@@ -809,16 +831,18 @@ def loglik_bc92(
         time_id: Time identifiers (n,) - coded 0, 1, ..., T-1
         sign: +1 for production, -1 for cost
 
-    Returns:
+    Returns
+    -------
         Log-likelihood value
 
-    References:
+    References
+    ----------
         Battese, G. E., & Coelli, T. J. (1992).
             Frontier production functions, technical efficiency and panel data:
             with application to paddy farmers in India.
             Journal of Productivity Analysis, 3(1-2), 153-169.
     """
-    n, k = X.shape
+    _n, k = X.shape
 
     # Extract parameters
     beta = theta[:k]
@@ -829,8 +853,8 @@ def loglik_bc92(
     # Transform to natural scale
     sigma_v_sq = np.exp(ln_sigma_v_sq)
     sigma_u_sq = np.exp(ln_sigma_u_sq)
-    sigma_v = np.sqrt(sigma_v_sq)
-    sigma_u = np.sqrt(sigma_u_sq)
+    np.sqrt(sigma_v_sq)
+    np.sqrt(sigma_u_sq)
 
     # Residuals
     epsilon = y - X @ beta
@@ -857,7 +881,7 @@ def loglik_bc92(
 
         # For each time period, compute contribution to likelihood
         for t_idx in range(T_i):
-            t = time_i[t_idx]
+            time_i[t_idx]
             decay_t = decay_factors[t_idx]
             eps_it = epsilon_i[t_idx]
 

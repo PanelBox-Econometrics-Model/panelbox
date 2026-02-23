@@ -5,6 +5,8 @@ This module contains implementations of efficient optimization methods
 for solving quantile regression problems.
 """
 
+from __future__ import annotations
+
 from .interior_point import frisch_newton_qr
 from .smooth_qr import smooth_check_gradient, smooth_check_loss, smooth_qr
 
@@ -60,9 +62,9 @@ def optimize_quantile(
 
 
 __all__ = [
-    "optimize_quantile",
     "frisch_newton_qr",
-    "smooth_qr",
-    "smooth_check_loss",
+    "optimize_quantile",
     "smooth_check_gradient",
+    "smooth_check_loss",
+    "smooth_qr",
 ]

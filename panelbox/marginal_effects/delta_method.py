@@ -5,10 +5,14 @@ This module provides tools for computing standard errors of transformations
 using the delta method.
 """
 
-from typing import Callable, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Callable
 
 import numpy as np
-import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def numerical_gradient(func: Callable, params: np.ndarray, eps: float = 1e-6) -> np.ndarray:
@@ -130,7 +134,7 @@ def delta_method_se(gradient: np.ndarray, cov_matrix: np.ndarray, alpha: float =
         return {"std_errors": std_errors, "z_critical": z_crit}
 
 
-def compute_me_gradient(
+def compute_me_gradient(  # noqa: C901
     model, params: np.ndarray, var_idx: int, X: np.ndarray, me_type: str = "ame"
 ) -> np.ndarray:
     """

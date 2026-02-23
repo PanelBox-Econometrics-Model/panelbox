@@ -1,21 +1,20 @@
 """
-Model Comparison Visualization Utilities
+Model Comparison Visualization Utilities.
 
 This module provides plotting functions for comparing panel model results.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 
 def coefficient_plot(
-    results_dict: Dict[str, object],
-    variables: Optional[List[str]] = None,
-    figsize: Tuple[int, int] = (10, 8),
+    results_dict: dict[str, object],
+    variables: Optional[list[str]] = None,
+    figsize: tuple[int, int] = (10, 8),
     conf_level: float = 0.95,
 ) -> plt.Axes:
     """
@@ -40,22 +39,22 @@ def coefficient_plot(
     Examples
     --------
     >>> results = {
-    ...     'Pooled OLS': pooled_result,
-    ...     'Fixed Effects': fe_result,
-    ...     'Random Effects': re_result
+    ...     "Pooled OLS": pooled_result,
+    ...     "Fixed Effects": fe_result,
+    ...     "Random Effects": re_result,
     ... }
     >>> coefficient_plot(results)
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    _fig, ax = plt.subplots(figsize=figsize)
 
     # Extract coefficients and standard errors
     n_models = len(results_dict)
-    model_names = list(results_dict.keys())
+    list(results_dict.keys())
 
     if variables is None:
         # Find common variables across all models
         all_vars = [set(res.params.index) for res in results_dict.values()]
-        variables = sorted(list(set.intersection(*all_vars)))
+        variables = sorted(set.intersection(*all_vars))
 
     n_vars = len(variables)
     y_positions = np.arange(n_vars)
@@ -84,7 +83,7 @@ def coefficient_plot(
     ax.set_yticklabels(variables)
     ax.set_xlabel("Coefficient Estimate")
     ax.set_ylabel("Variable")
-    ax.set_title(f"Coefficient Comparison Across Models ({int(conf_level*100)}% CI)")
+    ax.set_title(f"Coefficient Comparison Across Models ({int(conf_level * 100)}% CI)")
     ax.legend(loc="best")
     ax.grid(True, alpha=0.3, axis="x")
 
@@ -93,7 +92,7 @@ def coefficient_plot(
 
 
 def r_squared_comparison(
-    results_dict: Dict[str, object], figsize: Tuple[int, int] = (10, 6)
+    results_dict: dict[str, object], figsize: tuple[int, int] = (10, 6)
 ) -> plt.Axes:
     """
     Compare R-squared values across models.
@@ -112,7 +111,7 @@ def r_squared_comparison(
 
     Examples
     --------
-    >>> r_squared_comparison({'Pooled': pooled, 'FE': fe, 'RE': re})
+    >>> r_squared_comparison({"Pooled": pooled, "FE": fe, "RE": re})
     """
     model_names = list(results_dict.keys())
     r2_values = []
@@ -125,7 +124,7 @@ def r_squared_comparison(
     x = np.arange(len(model_names))
     width = 0.35
 
-    fig, ax = plt.subplots(figsize=figsize)
+    _fig, ax = plt.subplots(figsize=figsize)
     ax.bar(x - width / 2, r2_values, width, label="R²", color="#3498db")
     ax.bar(x + width / 2, r2_adj_values, width, label="Adjusted R²", color="#2ecc71")
 
@@ -142,7 +141,7 @@ def r_squared_comparison(
 
 
 def model_metrics_table(
-    results_dict: Dict[str, object], metrics: Optional[List[str]] = None
+    results_dict: dict[str, object], metrics: Optional[list[str]] = None
 ) -> pd.DataFrame:
     """
     Create comparison table of model fit metrics.
@@ -161,7 +160,7 @@ def model_metrics_table(
 
     Examples
     --------
-    >>> table = model_metrics_table({'Pooled': pooled, 'FE': fe})
+    >>> table = model_metrics_table({"Pooled": pooled, "FE": fe})
     >>> print(table)
     """
     if metrics is None:

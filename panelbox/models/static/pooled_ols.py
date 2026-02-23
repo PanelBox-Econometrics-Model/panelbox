@@ -5,7 +5,10 @@ This module provides the Pooled OLS estimator which ignores the panel structure
 and estimates a standard OLS regression.
 """
 
-from typing import Optional, Union, cast
+from __future__ import annotations
+
+import logging
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -26,6 +29,8 @@ from panelbox.standard_errors.newey_west import NeweyWestResult
 from panelbox.standard_errors.pcse import PCSEResult
 from panelbox.standard_errors.robust import HC_TYPES, RobustCovarianceResult
 from panelbox.utils.matrix_ops import compute_ols, compute_rsquared, compute_vcov_nonrobust
+
+logger = logging.getLogger(__name__)
 
 
 class PooledOLS(PanelModel):
@@ -80,14 +85,14 @@ class PooledOLS(PanelModel):
     >>>
     >>> # Estimate Pooled OLS
     >>> model = pb.PooledOLS("invest ~ value + capital", data, "firm", "year")
-    >>> results = model.fit(cov_type='robust')
+    >>> results = model.fit(cov_type="robust")
     >>> print(results.summary())
     >>>
     >>> # With clustered standard errors by entity
-    >>> results_cluster = model.fit(cov_type='clustered')
+    >>> results_cluster = model.fit(cov_type="clustered")
     >>>
     >>> # With Driscoll-Kraay standard errors
-    >>> results_dk = model.fit(cov_type='driscoll_kraay', max_lags=3)
+    >>> results_dk = model.fit(cov_type="driscoll_kraay", max_lags=3)
 
     Notes
     -----
@@ -135,7 +140,7 @@ class PooledOLS(PanelModel):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
@@ -168,25 +173,29 @@ class PooledOLS(PanelModel):
         Examples
         --------
         >>> # Classical standard errors
-        >>> results = model.fit(cov_type='nonrobust')
+        >>> results = model.fit(cov_type="nonrobust")
         >>>
         >>> # Heteroskedasticity-robust
-        >>> results = model.fit(cov_type='robust')
-        >>> results = model.fit(cov_type='hc3')
+        >>> results = model.fit(cov_type="robust")
+        >>> results = model.fit(cov_type="hc3")
         >>>
         >>> # Cluster-robust
-        >>> results = model.fit(cov_type='clustered')
-        >>> results = model.fit(cov_type='twoway')
+        >>> results = model.fit(cov_type="clustered")
+        >>> results = model.fit(cov_type="twoway")
         >>>
         >>> # HAC
-        >>> results = model.fit(cov_type='driscoll_kraay', max_lags=3)
-        >>> results = model.fit(cov_type='newey_west', max_lags=4, kernel='bartlett')
+        >>> results = model.fit(cov_type="driscoll_kraay", max_lags=3)
+        >>> results = model.fit(cov_type="newey_west", max_lags=4, kernel="bartlett")
         >>>
         >>> # PCSE
-        >>> results = model.fit(cov_type='pcse')
+        >>> results = model.fit(cov_type="pcse")
         """
         # Build design matrices
         y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+
+        # Store original data for post-estimation (e.g., J-test)
+        self._y_orig = y
+        self._X_orig = X
 
         # Get variable names
         var_names = self.formula_parser.get_variable_names(self.data.data)
@@ -208,13 +217,7 @@ class PooledOLS(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: Union[
-            RobustCovarianceResult,
-            ClusteredCovarianceResult,
-            DriscollKraayResult,
-            NeweyWestResult,
-            PCSEResult,
-        ]
+        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult | PCSEResult
 
         if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X, resid, df_resid)
@@ -223,7 +226,7 @@ class PooledOLS(PanelModel):
             # HC robust standard errors
             method_str = "HC1" if cov_type_lower == "robust" else cov_type_lower.upper()
             # Cast to Literal type for type checking (we've validated the input above)
-            method = cast(HC_TYPES, method_str)
+            method = cast("HC_TYPES", method_str)
             result = robust_covariance(X, resid, method=method)
             vcov = result.cov_matrix
 
@@ -239,14 +242,14 @@ class PooledOLS(PanelModel):
 
         elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(X, resid, times, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
         elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X, resid, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
@@ -318,6 +321,7 @@ class PooledOLS(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
 
         # Store results and update state

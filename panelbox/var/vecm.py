@@ -28,16 +28,20 @@ References
        in panels. In The econometrics of panel data (pp. 279-322). Springer.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.linalg import eig, inv, sqrtm
+from scipy.linalg import inv
 
 from panelbox.var.data import PanelVARData
 from panelbox.var.inference import within_transformation
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,7 +70,7 @@ class RankTestResult:
     z_stat: float
     p_value: float
     test_type: str
-    critical_values: Optional[Dict[str, float]] = None
+    critical_values: dict[str, float] | None = None
 
     @property
     def reject(self) -> bool:
@@ -113,8 +117,9 @@ class CointegrationRankTest:
     >>> from panelbox.var.vecm import CointegrationRankTest
     >>>
     >>> # Create data
-    >>> data = PanelVARData(df, endog_vars=['y1', 'y2', 'y3'],
-    ...                     entity_col='id', time_col='time', lags=2)
+    >>> data = PanelVARData(
+    ...     df, endog_vars=["y1", "y2", "y3"], entity_col="id", time_col="time", lags=2
+    ... )
     >>>
     >>> # Test rank
     >>> rank_test = CointegrationRankTest(data)
@@ -126,7 +131,7 @@ class CointegrationRankTest:
     def __init__(
         self,
         data: PanelVARData,
-        max_rank: Optional[int] = None,
+        max_rank: int | None = None,
         deterministic: str = "c",
     ):
         self.data = data
@@ -168,7 +173,6 @@ class CointegrationRankTest:
         df = self.data.data.copy()
         endog_vars = self.data.endog_vars
         entity_col = self.data.entity_col
-        time_col = self.data.time_col
 
         # Create differences
         for var in endog_vars:
@@ -219,10 +223,7 @@ class CointegrationRankTest:
         # Regress y_{i,t-1} on lagged differences
         Y1 = df_within[level_lag_vars].values
 
-        if lag_vars:
-            fitted1 = X @ np.linalg.solve(XtX, X.T @ Y1)
-        else:
-            fitted1 = np.zeros_like(Y1)
+        fitted1 = X @ np.linalg.solve(XtX, X.T @ Y1) if lag_vars else np.zeros_like(Y1)
 
         self._R1 = Y1 - fitted1
 
@@ -324,7 +325,7 @@ class CointegrationRankTest:
 
         return eigenvalues
 
-    def _panel_trace_statistic(self, rank: int) -> Tuple[float, float]:
+    def _panel_trace_statistic(self, rank: int) -> tuple[float, float]:
         """
         Compute panel trace test statistic for given rank.
 
@@ -367,14 +368,11 @@ class CointegrationRankTest:
         # Asymptotic mean and variance
         E_LR, Var_LR = self._trace_moments(rank)
 
-        if Var_LR > 0:
-            Z_trace = np.sqrt(valid_entities) * (LR_bar - E_LR) / np.sqrt(Var_LR)
-        else:
-            Z_trace = 0.0
+        Z_trace = np.sqrt(valid_entities) * (LR_bar - E_LR) / np.sqrt(Var_LR) if Var_LR > 0 else 0.0
 
         return LR_bar, Z_trace
 
-    def _trace_moments(self, rank: int) -> Tuple[float, float]:
+    def _trace_moments(self, rank: int) -> tuple[float, float]:
         """
         Compute theoretical mean and variance of trace statistic.
 
@@ -391,7 +389,6 @@ class CointegrationRankTest:
             Expected value and variance
         """
         K = self.K
-        p = rank  # Number of zero eigenvalues under H0
         m = K - rank  # Number of non-zero eigenvalues
 
         # Asymptotic mean (Larsson et al. 2001, Theorem 1)
@@ -411,7 +408,7 @@ class CointegrationRankTest:
 
         return E_LR, Var_LR
 
-    def _panel_maxeig_statistic(self, rank: int) -> Tuple[float, float]:
+    def _panel_maxeig_statistic(self, rank: int) -> tuple[float, float]:
         """
         Compute panel max-eigenvalue test statistic for given rank.
 
@@ -460,7 +457,7 @@ class CointegrationRankTest:
 
         return LR_bar, Z_maxeig
 
-    def _maxeig_moments(self, rank: int) -> Tuple[float, float]:
+    def _maxeig_moments(self, rank: int) -> tuple[float, float]:
         """
         Compute theoretical mean and variance of max-eigenvalue statistic.
 
@@ -488,7 +485,7 @@ class CointegrationRankTest:
 
     def test_rank(
         self, use_bootstrap: bool = False, n_bootstrap: int = 1000, seed: int = 42
-    ) -> "RankSelectionResult":
+    ) -> RankSelectionResult:
         """
         Test cointegration rank using trace and max-eigenvalue tests.
 
@@ -593,8 +590,8 @@ class RankSelectionResult:
 
     def __init__(
         self,
-        trace_tests: List[RankTestResult],
-        maxeig_tests: List[RankTestResult],
+        trace_tests: list[RankTestResult],
+        maxeig_tests: list[RankTestResult],
         K: int,
         N: int,
         T_avg: float,
@@ -641,7 +638,8 @@ class RankSelectionResult:
                 f"Trace and max-eigenvalue tests disagree on rank "
                 f"(trace: {self.selected_rank_trace}, "
                 f"maxeig: {self.selected_rank_maxeig}). "
-                f"Using trace test result. Consider using bootstrap p-values."
+                f"Using trace test result. Consider using bootstrap p-values.",
+                stacklevel=2,
             )
 
         self.selected_rank = self.selected_rank_trace
@@ -668,8 +666,7 @@ class RankSelectionResult:
         lines.append("Trace Test Results")
         lines.append("─" * 80)
         lines.append(
-            f"{'H0: rank ≤ r':<15} {'Trace Stat':<12} {'Z-stat':<10} "
-            f"{'P-value':<10} {'Result':<10}"
+            f"{'H0: rank ≤ r':<15} {'Trace Stat':<12} {'Z-stat':<10} {'P-value':<10} {'Result':<10}"
         )
         lines.append("─" * 80)
 
@@ -738,9 +735,7 @@ class RankSelectionResult:
         return self.summary()
 
     def __repr__(self) -> str:
-        return (
-            f"RankSelectionResult(selected_rank={self.selected_rank}, " f"K={self.K}, N={self.N})"
-        )
+        return f"RankSelectionResult(selected_rank={self.selected_rank}, K={self.K}, N={self.N})"
 
 
 class PanelVECMResult:
@@ -788,17 +783,17 @@ class PanelVECMResult:
         self,
         alpha: np.ndarray,
         beta: np.ndarray,
-        Gamma: List[np.ndarray],
+        Gamma: list[np.ndarray],
         Sigma: np.ndarray,
         residuals: np.ndarray,
-        var_names: List[str],
+        var_names: list[str],
         rank: int,
         method: str,
         N: int,
         T_avg: float,
         deterministic: str = "c",
-        alpha_se: Optional[np.ndarray] = None,
-        beta_se: Optional[np.ndarray] = None,
+        alpha_se: np.ndarray | None = None,
+        beta_se: np.ndarray | None = None,
     ):
         self.alpha = alpha
         self.beta = beta
@@ -841,7 +836,7 @@ class PanelVECMResult:
         df = pd.DataFrame(
             beta_normalized,
             index=self.var_names,
-            columns=[f"Relation_{i+1}" for i in range(self.rank)],
+            columns=[f"Relation_{i + 1}" for i in range(self.rank)],
         )
 
         return df
@@ -858,12 +853,12 @@ class PanelVECMResult:
         df = pd.DataFrame(
             self.alpha,
             index=[f"Δ{var}" for var in self.var_names],
-            columns=[f"ECT_{i+1}" for i in range(self.rank)],
+            columns=[f"ECT_{i + 1}" for i in range(self.rank)],
         )
 
         return df
 
-    def short_run_dynamics(self) -> List[pd.DataFrame]:
+    def short_run_dynamics(self) -> list[pd.DataFrame]:
         """
         Return short-run dynamics matrices (Γ) as DataFrames.
 
@@ -883,7 +878,7 @@ class PanelVECMResult:
 
         return gamma_dfs
 
-    def to_var(self) -> List[np.ndarray]:
+    def to_var(self) -> list[np.ndarray]:
         """
         Convert VECM to VAR representation in levels.
 
@@ -921,9 +916,9 @@ class PanelVECMResult:
 
         return A_matrices
 
-    def test_weak_exogeneity(self, variable: str) -> Dict[str, float]:
+    def test_weak_exogeneity(self, variable: str) -> dict[str, float]:
         """
-        Test weak exogeneity: H0: α[variable, :] = 0
+        Test weak exogeneity: H0: α[variable, :] = 0.
 
         Weak exogeneity means the variable does not respond to deviations
         from long-run equilibrium.
@@ -970,9 +965,9 @@ class PanelVECMResult:
             "reject": p_value < 0.05,
         }
 
-    def test_strong_exogeneity(self, variable: str) -> Dict[str, float]:
+    def test_strong_exogeneity(self, variable: str) -> dict[str, float]:
         """
-        Test strong exogeneity: H0: α[variable, :] = 0 AND Γ[variable, other] = 0
+        Test strong exogeneity: H0: α[variable, :] = 0 AND Γ[variable, other] = 0.
 
         Strong exogeneity means the variable is weakly exogenous and is not
         Granger-caused by other variables.
@@ -1068,7 +1063,7 @@ class PanelVECMResult:
                     else:
                         terms.append(f"- {abs(coef):.3f}·{var}")
             equilibrium = " ".join(terms) + " = 0"
-            lines.append(f"  β_{j+1}: {equilibrium}")
+            lines.append(f"  β_{j + 1}: {equilibrium}")
         lines.append("")
 
         # Adjustment speeds
@@ -1136,9 +1131,9 @@ class PanelVECMResult:
         self,
         periods: int = 10,
         method: str = "cholesky",
-        shock_size: Union[str, float] = "one_std",
+        shock_size: str | float = "one_std",
         cumulative: bool = False,
-        ordering: Optional[List[str]] = None,
+        ordering: list[str] | None = None,
     ):
         """
         Compute Impulse Response Functions for VECM.
@@ -1175,8 +1170,8 @@ class PanelVECMResult:
         Examples
         --------
         >>> results = vecm.fit()
-        >>> irf = results.irf(periods=20, method='cholesky')
-        >>> irf.plot(impulse='y1', response='y2')
+        >>> irf = results.irf(periods=20, method="cholesky")
+        >>> irf.plot(impulse="y1", response="y2")
         """
         from panelbox.var.irf import (
             IRFResult,
@@ -1221,7 +1216,7 @@ class PanelVECMResult:
         self,
         periods: int = 10,
         method: str = "cholesky",
-        ordering: Optional[List[str]] = None,
+        ordering: list[str] | None = None,
     ):
         """
         Compute Forecast Error Variance Decomposition for VECM.
@@ -1248,7 +1243,7 @@ class PanelVECMResult:
         --------
         >>> results = vecm.fit()
         >>> fevd = results.fevd(periods=20)
-        >>> fevd.plot(variable='y1')
+        >>> fevd.plot(variable="y1")
         """
         from panelbox.var.fevd import FEVDResult, compute_fevd_cholesky, compute_fevd_generalized
         from panelbox.var.irf import compute_phi_non_orthogonalized
@@ -1308,12 +1303,11 @@ class PanelVECM:
     >>> from panelbox.var.vecm import PanelVECM
     >>>
     >>> # Create data
-    >>> data = PanelVARData(df, endog_vars=['y1', 'y2'],
-    ...                     entity_col='id', time_col='time', lags=2)
+    >>> data = PanelVARData(df, endog_vars=["y1", "y2"], entity_col="id", time_col="time", lags=2)
     >>>
     >>> # Estimate VECM
     >>> vecm = PanelVECM(data, rank=1)
-    >>> results = vecm.fit(method='ml')
+    >>> results = vecm.fit(method="ml")
     >>> print(results.summary())
     >>>
     >>> # Cointegrating relations
@@ -1323,7 +1317,7 @@ class PanelVECM:
     def __init__(
         self,
         data: PanelVARData,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         deterministic: str = "c",
     ):
         self.data = data
@@ -1338,10 +1332,10 @@ class PanelVECM:
             rank_test = CointegrationRankTest(data, deterministic=deterministic)
             rank_results = rank_test.test_rank()
             self.rank = rank_results.selected_rank
-            print(f"Automatically selected rank: {self.rank}")
+            logger.info(f"Automatically selected rank: {self.rank}")
         else:
             if rank < 0 or rank >= self.K:
-                raise ValueError(f"Rank must be in [0, {self.K-1}]")
+                raise ValueError(f"Rank must be in [0, {self.K - 1}]")
             self.rank = rank
 
     def fit(self, method: str = "ml") -> PanelVECMResult:
@@ -1362,7 +1356,7 @@ class PanelVECM:
         Examples
         --------
         >>> vecm = PanelVECM(data, rank=1)
-        >>> results = vecm.fit(method='ml')
+        >>> results = vecm.fit(method="ml")
         >>> print(results.summary())
         """
         if method == "ml":
@@ -1372,7 +1366,7 @@ class PanelVECM:
         else:
             raise ValueError(f"Unknown method: {method}. Use 'ml' or 'twostep'.")
 
-    def _fit_ml(self) -> PanelVECMResult:
+    def _fit_ml(self) -> PanelVECMResult:  # noqa: C901
         """
         Estimate VECM using Maximum Likelihood (Johansen procedure for panels).
 
@@ -1452,15 +1446,15 @@ class PanelVECM:
             eigenvalues = eigenvalues[idx]
             eigenvectors = eigenvectors[:, idx]
 
-        except np.linalg.LinAlgError:
-            raise RuntimeError("Failed to solve eigenvalue problem. Data may be singular.")
+        except np.linalg.LinAlgError as err:
+            raise RuntimeError("Failed to solve eigenvalue problem. Data may be singular.") from err
 
         # Step 3: Extract β (first r eigenvectors)
         if self.rank == 0:
             # No cointegration: β and α are empty
             beta = np.zeros((self.K, 0))
             alpha = np.zeros((self.K, 0))
-            Pi = np.zeros((self.K, self.K))
+            np.zeros((self.K, self.K))
         else:
             # Beta: eigenvectors corresponding to largest r eigenvalues
             # These are eigenvectors of S11^{-1} S10 S00^{-1} S01
@@ -1496,7 +1490,7 @@ class PanelVECM:
             # Regress R0 on ECT (concentrated model)
             alpha = np.linalg.lstsq(ECT, R0, rcond=None)[0].T
 
-            Pi = alpha @ beta.T
+            alpha @ beta.T
 
         # Step 5: Estimate Γ (short-run dynamics)
         # Regress Δy on ECT and lagged differences
@@ -1509,7 +1503,7 @@ class PanelVECM:
 
             # Extract Γ coefficients
             # coefs: first 'rank' columns are α, rest are Γ stacked
-            n_gamma_coefs = len(lag_vars)
+            len(lag_vars)
             gamma_coefs = coefs[self.rank :, :].T  # K × (K*(p-1))
 
             # Reshape into Γ_1, Γ_2, ..., Γ_{p-1}
@@ -1580,6 +1574,7 @@ class PanelVECM:
         warnings.warn(
             "Two-step estimation not fully implemented. Using ML method.",
             UserWarning,
+            stacklevel=2,
         )
 
         result = self._fit_ml()

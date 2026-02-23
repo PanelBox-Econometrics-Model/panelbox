@@ -6,8 +6,14 @@ non-differentiable check loss with a smooth approximation, enabling the use
 of standard gradient-based optimization methods.
 """
 
+from __future__ import annotations
+
+import logging
+
 import numpy as np
 from scipy.optimize import minimize
+
+logger = logging.getLogger(__name__)
 
 
 def smooth_check_loss(u, tau, epsilon=1e-6):
@@ -93,13 +99,15 @@ def smooth_qr(X, y, tau, epsilon=1e-6, method="L-BFGS-B", **kwargs):
     result : OptimizeResult
         Full optimization result
     """
-    n, p = X.shape
+    _n, _p = X.shape
 
     def objective(beta):
+        """Compute the smoothed quantile regression objective."""
         u = y - X @ beta
         return smooth_check_loss(u, tau, epsilon)
 
     def gradient(beta):
+        """Compute the gradient of the smoothed objective."""
         u = y - X @ beta
         grad_u = smooth_check_gradient(u, tau, epsilon)
         return -X.T @ grad_u

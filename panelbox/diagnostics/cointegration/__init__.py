@@ -1,5 +1,5 @@
 """
-Panel Cointegration Tests
+Panel Cointegration Tests.
 
 This module provides state-of-the-art cointegration tests for panel data,
 including Westerlund (2007) ECM-based tests, Pedroni (1999) residual-based
@@ -18,15 +18,17 @@ Kao, C. (1999). "Spurious Regression and Residual-Based Tests for
     Cointegration in Panel Data." Journal of Econometrics, 90(1), 1-44.
 """
 
+from __future__ import annotations
+
 from .kao import KaoResult, kao_test
 from .pedroni import PedroniResult, pedroni_test
 from .westerlund import WesterlundResult, westerlund_test
 
 __all__ = [
-    "westerlund_test",
-    "WesterlundResult",
-    "pedroni_test",
-    "PedroniResult",
-    "kao_test",
     "KaoResult",
+    "PedroniResult",
+    "WesterlundResult",
+    "kao_test",
+    "pedroni_test",
+    "westerlund_test",
 ]

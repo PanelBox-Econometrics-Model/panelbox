@@ -138,7 +138,7 @@ def test_kao_cointegrated():
     if result.pvalue < 0.10:
         print("✓ Test passed: Detects cointegration")
     else:
-        print("⚠ Warning: Did not detect cointegration (p={:.4f})".format(result.pvalue))
+        print(f"⚠ Warning: Did not detect cointegration (p={result.pvalue:.4f})")
 
 
 def test_pedroni_noncointegrated():
@@ -180,7 +180,7 @@ def test_kao_noncointegrated():
     if result.pvalue > 0.05:
         print("✓ Test passed: Does not falsely detect cointegration")
     else:
-        print("⚠ Warning: False positive (p={:.4f})".format(result.pvalue))
+        print(f"⚠ Warning: False positive (p={result.pvalue:.4f})")
 
 
 def test_validation():

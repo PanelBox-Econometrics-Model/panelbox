@@ -245,7 +245,7 @@ def test_ips_individual_stats():
     result = ips.run()
 
     print(f"Number of entities: {result.n_entities}")
-    print(f"Individual t-statistics:")
+    print("Individual t-statistics:")
     for entity, t_stat in list(result.individual_stats.items())[:5]:
         print(f"  Entity {entity}: {t_stat:.4f}")
     if len(result.individual_stats) > 5:

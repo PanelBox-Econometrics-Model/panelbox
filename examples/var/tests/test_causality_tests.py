@@ -1,6 +1,4 @@
-"""
-Test Granger causality implementations.
-"""
+"""Test Granger causality implementations."""
 
 import sys
 from pathlib import Path
@@ -220,8 +218,8 @@ class TestDumitrescuHurlin:
         try:
             dh = results.dumitrescu_hurlin(cause="y_0", effect="y_1")
             # With 50% causal entities and strong effect, DH should detect it
-            assert (
-                dh.Z_bar_pvalue < 0.10 or dh.Z_tilde_pvalue < 0.10
-            ), f"DH test failed to detect heterogeneous causality"
+            assert dh.Z_bar_pvalue < 0.10 or dh.Z_tilde_pvalue < 0.10, (
+                "DH test failed to detect heterogeneous causality"
+            )
         except Exception as e:
             pytest.skip(f"Dumitrescu-Hurlin test not available: {e}")

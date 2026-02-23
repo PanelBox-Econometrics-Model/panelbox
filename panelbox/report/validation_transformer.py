@@ -4,13 +4,18 @@ Validation Report Transformer.
 Transforms ValidationReport objects into template-friendly data structures.
 """
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 # Import at module level for patching in tests
 try:
     from panelbox.visualization import create_validation_charts
 except ImportError:
     create_validation_charts = None
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationTransformer:
@@ -41,7 +46,7 @@ class ValidationTransformer:
 
     def transform(
         self, include_charts: bool = True, use_new_visualization: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Transform validation report into template data.
 
@@ -85,7 +90,7 @@ class ValidationTransformer:
 
         return data
 
-    def _transform_model_info(self) -> Dict[str, Any]:
+    def _transform_model_info(self) -> dict[str, Any]:
         """
         Transform model information.
 
@@ -108,7 +113,7 @@ class ValidationTransformer:
 
         return info
 
-    def _transform_tests(self) -> List[Dict[str, Any]]:
+    def _transform_tests(self) -> list[dict[str, Any]]:
         """
         Transform test results into table-ready format.
 
@@ -147,7 +152,7 @@ class ValidationTransformer:
 
         return tests
 
-    def _compute_summary(self) -> Dict[str, Any]:
+    def _compute_summary(self) -> dict[str, Any]:
         """
         Compute summary statistics.
 
@@ -225,7 +230,7 @@ class ValidationTransformer:
             "has_issues": total_failed > 0,
         }
 
-    def _generate_recommendations(self) -> List[Dict[str, Any]]:
+    def _generate_recommendations(self) -> list[dict[str, Any]]:
         """
         Generate recommendations based on failed tests.
 
@@ -322,7 +327,7 @@ class ValidationTransformer:
 
         return recommendations
 
-    def _prepare_chart_data(self, use_new_visualization: bool = True) -> Dict[str, Any]:
+    def _prepare_chart_data(self, use_new_visualization: bool = True) -> dict[str, Any]:
         """
         Prepare chart data or generate pre-rendered charts.
 
@@ -359,6 +364,7 @@ class ValidationTransformer:
                 "New visualization system not available. Falling back to legacy mode. "
                 "Install panelbox.visualization or set use_new_visualization=False.",
                 UserWarning,
+                stacklevel=2,
             )
             return self._prepare_chart_data_legacy()
 
@@ -395,6 +401,7 @@ class ValidationTransformer:
                 "New visualization system not available. Falling back to legacy mode. "
                 "Install panelbox.visualization or set use_new_visualization=False.",
                 UserWarning,
+                stacklevel=2,
             )
             return self._prepare_chart_data_legacy()
         except Exception as e:
@@ -405,10 +412,11 @@ class ValidationTransformer:
                 f"Failed to generate charts with new visualization system: {e}. "
                 "Falling back to legacy mode.",
                 UserWarning,
+                stacklevel=2,
             )
             return self._prepare_chart_data_legacy()
 
-    def _prepare_chart_data_legacy(self) -> Dict[str, Any]:
+    def _prepare_chart_data_legacy(self) -> dict[str, Any]:
         """
         Prepare raw chart data (legacy mode).
 
@@ -496,7 +504,7 @@ class ValidationTransformer:
 
         return charts
 
-    def prepare_visualization_data(self) -> Dict[str, Any]:
+    def prepare_visualization_data(self) -> dict[str, Any]:
         """
         Prepare data specifically for the new visualization system.
 
@@ -513,7 +521,7 @@ class ValidationTransformer:
         >>> from panelbox.visualization import create_validation_charts
         >>> transformer = ValidationTransformer(validation_report)
         >>> viz_data = transformer.prepare_visualization_data()
-        >>> charts = create_validation_charts(viz_data, theme='professional')
+        >>> charts = create_validation_charts(viz_data, theme="professional")
 
         Notes
         -----
@@ -594,7 +602,7 @@ class ValidationTransformer:
             return "."
         return ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary (alias for transform).
 

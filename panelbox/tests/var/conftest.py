@@ -1,5 +1,6 @@
-# tests/var/conftest.py
+from __future__ import annotations
 
+# tests/var/conftest.py
 import json
 from pathlib import Path
 

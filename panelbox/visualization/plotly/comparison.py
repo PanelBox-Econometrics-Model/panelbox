@@ -6,13 +6,18 @@ including coefficient comparisons, forest plots, fit statistics, and
 information criteria.
 """
 
-from typing import Any, Dict
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
 
 from ..base import PlotlyChartBase
 from ..registry import register_chart
+
+logger = logging.getLogger(__name__)
 
 
 @register_chart("comparison_coefficients")
@@ -47,7 +52,7 @@ class CoefficientComparisonChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create coefficient comparison chart."""
         models = data.get("models", [])
         coefficients = data.get("coefficients", {})
@@ -66,10 +71,7 @@ class CoefficientComparisonChart(PlotlyChartBase):
             coef_values = [coefficients[var][i] for var in variables]
 
             # Calculate error bars if std_errors provided
-            if std_errors:
-                errors = [std_errors[var][i] * z_score for var in variables]
-            else:
-                errors = None
+            errors = [std_errors[var][i] * z_score for var in variables] if std_errors else None
 
             # Add bars
             fig.add_trace(
@@ -77,7 +79,7 @@ class CoefficientComparisonChart(PlotlyChartBase):
                     name=model,
                     x=variables,
                     y=coef_values,
-                    error_y=dict(type="data", array=errors, visible=True) if errors else None,
+                    error_y={"type": "data", "array": errors, "visible": True} if errors else None,
                     offsetgroup=i,
                     showlegend=True,
                     hovertemplate=(
@@ -106,7 +108,7 @@ class CoefficientComparisonChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "Coefficient Estimate"),
             barmode="group",
             hovermode="closest",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         )
 
         return fig
@@ -138,13 +140,13 @@ class ForestPlotChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create forest plot."""
         variables = data.get("variables", [])
         estimates = data.get("estimates", [])
         ci_lower = data.get("ci_lower", [])
         ci_upper = data.get("ci_upper", [])
-        pvalues = data.get("pvalues", None)
+        pvalues = data.get("pvalues")
 
         # Sort by effect size if requested
         if data.get("sort_by_size", False):
@@ -180,8 +182,8 @@ class ForestPlotChart(PlotlyChartBase):
                     x=[ci_lower[i], estimates[i], ci_upper[i]],
                     y=[var, var, var],
                     mode="lines+markers",
-                    marker=dict(size=[0, 10, 0], color=colors[i]),
-                    line=dict(color=colors[i], width=2),
+                    marker={"size": [0, 10, 0], "color": colors[i]},
+                    line={"color": colors[i], "width": 2},
                     showlegend=False,
                     hovertemplate=(
                         f"<b>{var}</b><br>"
@@ -203,7 +205,7 @@ class ForestPlotChart(PlotlyChartBase):
             xaxis_title=data.get("xaxis_title", "Coefficient Estimate"),
             yaxis_title=data.get("yaxis_title", "Variables"),
             hovermode="closest",
-            yaxis=dict(categoryorder="array", categoryarray=variables),
+            yaxis={"categoryorder": "array", "categoryarray": variables},
         )
 
         # Add legend for significance levels if pvalues provided
@@ -220,7 +222,7 @@ class ForestPlotChart(PlotlyChartBase):
                         x=[None],
                         y=[None],
                         mode="markers",
-                        marker=dict(size=10, color=color),
+                        marker={"size": 10, "color": color},
                         name=label,
                         showlegend=True,
                     )
@@ -255,7 +257,7 @@ class ModelFitComparisonChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create model fit comparison chart."""
         models = data.get("models", [])
         metrics = data.get("metrics", {})
@@ -302,7 +304,7 @@ class ModelFitComparisonChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "Value" + (" (Normalized)" if normalize else "")),
             barmode="group",
             hovermode="closest",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         )
 
         return fig
@@ -331,12 +333,12 @@ class InformationCriteriaChart(PlotlyChartBase):
     >>> chart.show()
     """
 
-    def _create_figure(self, data: Dict[str, Any], **kwargs) -> go.Figure:
+    def _create_figure(self, data: dict[str, Any], **kwargs) -> go.Figure:
         """Create information criteria comparison chart."""
         models = data.get("models", [])
-        aic = data.get("aic", None)
-        bic = data.get("bic", None)
-        hqic = data.get("hqic", None)
+        aic = data.get("aic")
+        bic = data.get("bic")
+        hqic = data.get("hqic")
         show_delta = data.get("show_delta", True)
 
         fig = go.Figure()
@@ -379,16 +381,16 @@ class InformationCriteriaChart(PlotlyChartBase):
                     textposition="auto",
                     hovertemplate="%{hovertext}<extra></extra>",
                     hovertext=hover_text,
-                    marker=dict(
+                    marker={
                         # Highlight best model
-                        line=dict(
-                            color=[
+                        "line": {
+                            "color": [
                                 "gold" if i == best_idx else "rgba(0,0,0,0)"
                                 for i in range(len(models))
                             ],
-                            width=3,
-                        )
-                    ),
+                            "width": 3,
+                        }
+                    },
                 )
             )
 
@@ -402,17 +404,17 @@ class InformationCriteriaChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "IC Value"),
             barmode="group",
             hovermode="closest",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
             annotations=[
-                dict(
-                    text="★ = Best Model (lowest IC)",
-                    xref="paper",
-                    yref="paper",
-                    x=1,
-                    y=-0.15,
-                    showarrow=False,
-                    font=dict(size=10, color="gray"),
-                )
+                {
+                    "text": "★ = Best Model (lowest IC)",
+                    "xref": "paper",
+                    "yref": "paper",
+                    "x": 1,
+                    "y": -0.15,
+                    "showarrow": False,
+                    "font": {"size": 10, "color": "gray"},
+                }
             ],
         )
 

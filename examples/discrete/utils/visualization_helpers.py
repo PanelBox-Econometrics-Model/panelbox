@@ -17,7 +17,7 @@ Author: PanelBox Contributors
 Date: 2026-02-16
 """
 
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,9 +28,9 @@ from sklearn.metrics import auc, confusion_matrix, roc_curve
 
 
 def plot_link_functions(
-    compare: List[str] = ["logit", "probit", "lpm"],
-    x_range: Tuple[float, float] = (-4, 4),
-    figsize: Tuple[int, int] = (10, 6),
+    compare: list[str] = None,
+    x_range: tuple[float, float] = (-4, 4),
+    figsize: tuple[int, int] = (10, 6),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """
@@ -54,9 +54,11 @@ def plot_link_functions(
 
     Examples
     --------
-    >>> fig = plot_link_functions(compare=['logit', 'probit'])
+    >>> fig = plot_link_functions(compare=["logit", "probit"])
     >>> plt.show()
     """
+    if compare is None:
+        compare = ["logit", "probit", "lpm"]
     fig, ax = plt.subplots(figsize=figsize)
 
     x = np.linspace(x_range[0], x_range[1], 500)
@@ -113,7 +115,7 @@ def plot_predicted_probabilities(
     results,
     actual_y: np.ndarray,
     bins: int = 20,
-    figsize: Tuple[int, int] = (12, 5),
+    figsize: tuple[int, int] = (12, 5),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """
@@ -203,7 +205,7 @@ def plot_confusion_matrix(
     results,
     actual_y: np.ndarray,
     threshold: float = 0.5,
-    figsize: Tuple[int, int] = (8, 6),
+    figsize: tuple[int, int] = (8, 6),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """
@@ -261,7 +263,7 @@ def plot_confusion_matrix(
         metrics_text,
         fontsize=10,
         verticalalignment="center",
-        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+        bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
     )
 
     plt.tight_layout()
@@ -275,7 +277,7 @@ def plot_confusion_matrix(
 def plot_roc_curve(
     results,
     actual_y: np.ndarray,
-    figsize: Tuple[int, int] = (8, 6),
+    figsize: tuple[int, int] = (8, 6),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """
@@ -306,7 +308,7 @@ def plot_roc_curve(
         pred_probs = results.predict()
 
     # Compute ROC curve
-    fpr, tpr, thresholds = roc_curve(actual_y, pred_probs)
+    fpr, tpr, _thresholds = roc_curve(actual_y, pred_probs)
     roc_auc = auc(fpr, tpr)
 
     # Plot ROC curve
@@ -333,7 +335,7 @@ def plot_marginal_effects(
     results,
     variable: str,
     at_values: Optional[Union[str, dict]] = "mean",
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: tuple[int, int] = (10, 6),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """
@@ -406,7 +408,7 @@ def plot_marginal_effects(
         transform=ax.transAxes,
         fontsize=9,
         verticalalignment="top",
-        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+        bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
     )
 
     plt.tight_layout()
@@ -422,7 +424,7 @@ def plot_choice_probabilities(
     data: pd.DataFrame,
     individual_id: Optional[int] = None,
     n_individuals: int = 10,
-    figsize: Tuple[int, int] = (12, 6),
+    figsize: tuple[int, int] = (12, 6),
     save_path: Optional[str] = None,
 ) -> plt.Figure:
     """

@@ -6,8 +6,14 @@ solving quantile regression problems. This is a specialized linear programming
 approach that is particularly efficient for small to medium-sized problems.
 """
 
+from __future__ import annotations
+
+import logging
+
 import numpy as np
 from scipy.optimize import linprog
+
+logger = logging.getLogger(__name__)
 
 
 def barrodale_roberts_qr(X, y, tau, max_iter=1000, tol=1e-8, verbose=False):

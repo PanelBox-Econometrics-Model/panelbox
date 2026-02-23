@@ -4,10 +4,15 @@ Data transformer for model comparison visualizations.
 Converts multiple model results into formats expected by comparison charts.
 """
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+import logging
+from typing import Any
 from unittest.mock import Mock
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class ComparisonDataTransformer:
@@ -23,8 +28,8 @@ class ComparisonDataTransformer:
     >>> from panelbox.visualization.transformers import ComparisonDataTransformer
     >>>
     >>> # Fit multiple models
-    >>> fe_results = FixedEffects('y ~ x1 + x2', data, ...).fit()
-    >>> re_results = RandomEffects('y ~ x1 + x2', data, ...).fit()
+    >>> fe_results = FixedEffects("y ~ x1 + x2", data, ...).fit()
+    >>> re_results = RandomEffects("y ~ x1 + x2", data, ...).fit()
     >>>
     >>> # Transform for comparison
     >>> transformer = ComparisonDataTransformer()
@@ -38,8 +43,8 @@ class ComparisonDataTransformer:
     """
 
     def transform(
-        self, results_list: List[Any], names: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, results_list: list[Any], names: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Transform multiple model results to comparison format.
 
@@ -65,14 +70,14 @@ class ComparisonDataTransformer:
         --------
         >>> data = transformer.transform([results1, results2],
         >>>                              names=['Model A', 'Model B'])
-        >>> print(data['models'])
+        >>> print(data["models"])
         ['Model A', 'Model B']
-        >>> print(data['coefficients'])
+        >>> print(data["coefficients"])
         {'x1': [0.5, 0.6], 'x2': [0.3, 0.25]}
         """
         # Generate default names if not provided
         if names is None:
-            names = [f"Model {i+1}" for i in range(len(results_list))]
+            names = [f"Model {i + 1}" for i in range(len(results_list))]
 
         # Extract all data
         coefficients = self._extract_coefficients(results_list)
@@ -90,7 +95,7 @@ class ComparisonDataTransformer:
             "ic_values": ic_values,
         }
 
-    def _extract_coefficients(self, results_list: List[Any]) -> Dict[str, List[float]]:
+    def _extract_coefficients(self, results_list: list[Any]) -> dict[str, list[float]]:
         """
         Extract coefficients from all models.
 
@@ -107,9 +112,8 @@ class ComparisonDataTransformer:
         # Get all unique variables across models
         all_vars = set()
         for results in results_list:
-            if hasattr(results, "params"):
-                if hasattr(results.params, "index"):
-                    all_vars.update(results.params.index)
+            if hasattr(results, "params") and hasattr(results.params, "index"):
+                all_vars.update(results.params.index)
 
         # Extract coefficients for each variable
         coefficients = {}
@@ -139,7 +143,7 @@ class ComparisonDataTransformer:
 
         return coefficients
 
-    def _extract_std_errors(self, results_list: List[Any]) -> Dict[str, List[float]]:
+    def _extract_std_errors(self, results_list: list[Any]) -> dict[str, list[float]]:
         """
         Extract standard errors from all models.
 
@@ -156,9 +160,8 @@ class ComparisonDataTransformer:
         # Get all unique variables
         all_vars = set()
         for results in results_list:
-            if hasattr(results, "params"):
-                if hasattr(results.params, "index"):
-                    all_vars.update(results.params.index)
+            if hasattr(results, "params") and hasattr(results.params, "index"):
+                all_vars.update(results.params.index)
 
         # Extract standard errors for each variable
         std_errors = {}
@@ -206,7 +209,7 @@ class ComparisonDataTransformer:
 
         return std_errors
 
-    def _extract_pvalues(self, results_list: List[Any]) -> Dict[str, List[float]]:
+    def _extract_pvalues(self, results_list: list[Any]) -> dict[str, list[float]]:
         """
         Extract p-values from all models.
 
@@ -223,9 +226,8 @@ class ComparisonDataTransformer:
         # Get all unique variables
         all_vars = set()
         for results in results_list:
-            if hasattr(results, "params"):
-                if hasattr(results.params, "index"):
-                    all_vars.update(results.params.index)
+            if hasattr(results, "params") and hasattr(results.params, "index"):
+                all_vars.update(results.params.index)
 
         # Extract p-values for each variable
         pvalues = {}
@@ -272,7 +274,7 @@ class ComparisonDataTransformer:
         except (TypeError, ValueError):
             return np.nan
 
-    def _extract_fit_metrics(self, results_list: List[Any]) -> Dict[str, List[float]]:
+    def _extract_fit_metrics(self, results_list: list[Any]) -> dict[str, list[float]]:
         """
         Extract fit metrics from all models.
 
@@ -325,7 +327,7 @@ class ComparisonDataTransformer:
 
         return metrics
 
-    def _extract_ic_values(self, results_list: List[Any]) -> Dict[str, List[float]]:
+    def _extract_ic_values(self, results_list: list[Any]) -> dict[str, list[float]]:
         """
         Extract information criteria from all models.
 
@@ -367,10 +369,10 @@ class ComparisonDataTransformer:
 
     def prepare_coefficient_comparison(
         self,
-        results_list: List[Any],
-        names: Optional[List[str]] = None,
-        variables: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        results_list: list[Any],
+        names: list[str] | None = None,
+        variables: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Prepare data for coefficient comparison chart.
 
@@ -404,8 +406,8 @@ class ComparisonDataTransformer:
         }
 
     def prepare_forest_plot(
-        self, results: Any, variables: Optional[List[str]] = None, confidence_level: float = 0.95
-    ) -> Dict[str, Any]:
+        self, results: Any, variables: list[str] | None = None, confidence_level: float = 0.95
+    ) -> dict[str, Any]:
         """
         Prepare data for forest plot (single model).
 
@@ -453,8 +455,8 @@ class ComparisonDataTransformer:
         }
 
     def prepare_model_fit_comparison(
-        self, results_list: List[Any], names: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, results_list: list[Any], names: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Prepare data for model fit comparison chart.
 
@@ -492,8 +494,8 @@ class ComparisonDataTransformer:
         return result
 
     def prepare_ic_comparison(
-        self, results_list: List[Any], names: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, results_list: list[Any], names: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Prepare data for information criteria comparison.
 

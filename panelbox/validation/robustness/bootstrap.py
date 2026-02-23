@@ -13,6 +13,9 @@ Cameron, A. C., & Trivedi, P. K. (2005). Microeconometrics: Methods and Applicat
 Efron, B., & Tibshirani, R. J. (1994). An Introduction to the Bootstrap.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from typing import Literal, Optional
 
@@ -21,6 +24,8 @@ import pandas as pd
 from tqdm import tqdm
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class PanelBootstrap:
@@ -74,16 +79,13 @@ class PanelBootstrap:
     >>> import pandas as pd
     >>>
     >>> # Fit a fixed effects model
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "id", "time")
     >>> results = fe.fit()
     >>>
     >>> # Bootstrap with pairs method (recommended) - using 'results' parameter
     >>> bootstrap = pb.PanelBootstrap(
-    ...     results=results,
-    ...     n_bootstrap=1000,
-    ...     method='pairs',
-    ...     random_state=42
+    ...     results=results, n_bootstrap=1000, method="pairs", random_state=42
     ... )
     >>> bootstrap.run()
     >>>
@@ -91,13 +93,13 @@ class PanelBootstrap:
     >>> bootstrap = pb.PanelBootstrap(
     ...     model=results,
     ...     n_bootstrap=1000,
-    ...     method='pairs',
-    ...     seed=42  # 'seed' is alias for 'random_state'
+    ...     method="pairs",
+    ...     seed=42,  # 'seed' is alias for 'random_state'
     ... )
     >>> bootstrap.run()
     >>>
     >>> # Get bootstrap confidence intervals
-    >>> ci = bootstrap.conf_int(alpha=0.05, method='percentile')
+    >>> ci = bootstrap.conf_int(alpha=0.05, method="percentile")
     >>> print(ci)
     >>>
     >>> # Compare with asymptotic CI
@@ -107,10 +109,9 @@ class PanelBootstrap:
     >>> # Get bootstrap standard errors
     >>> se_boot = bootstrap.bootstrap_se_
     >>> se_asymp = results.std_errors
-    >>> comparison = pd.DataFrame({
-    ...     'Bootstrap SE': se_boot,
-    ...     'Asymptotic SE': se_asymp
-    ... }, index=results.params.index)
+    >>> comparison = pd.DataFrame(
+    ...     {"Bootstrap SE": se_boot, "Asymptotic SE": se_asymp}, index=results.params.index
+    ... )
     >>> print(comparison)
 
     Notes
@@ -238,7 +239,7 @@ class PanelBootstrap:
         self.n_failed_: int = 0
         self._fitted = False
 
-    def run(self) -> "PanelBootstrap":
+    def run(self) -> PanelBootstrap:
         """
         Run bootstrap procedure.
 
@@ -286,7 +287,7 @@ class PanelBootstrap:
         if self.n_failed_ > self.n_bootstrap * 0.1:
             warnings.warn(
                 f"{self.n_failed_} out of {self.n_bootstrap} bootstrap replications failed "
-                f"({self.n_failed_/self.n_bootstrap*100:.1f}%). "
+                f"({self.n_failed_ / self.n_bootstrap * 100:.1f}%). "
                 "Results may be unreliable. Consider using a different method or "
                 "checking your model specification.",
                 UserWarning,
@@ -350,7 +351,7 @@ class PanelBootstrap:
 
                 if self.show_progress and self.n_failed_ <= 5:
                     # Print first few failures for debugging
-                    print(f"\nBootstrap iteration {b} failed: {str(e)}")
+                    logger.warning(f"Bootstrap iteration {b} failed: {e!s}")
 
         # Remove failed replications
         valid_mask = ~np.isnan(estimates).any(axis=1)
@@ -449,7 +450,7 @@ class PanelBootstrap:
                 self.n_failed_ += 1
 
                 if self.show_progress and self.n_failed_ <= 5:
-                    print(f"\nBootstrap iteration {b} failed: {str(e)}")
+                    logger.warning(f"Bootstrap iteration {b} failed: {e!s}")
 
         # Remove failed replications
         valid_mask = ~np.isnan(estimates).any(axis=1)
@@ -508,7 +509,9 @@ class PanelBootstrap:
             # Rule of thumb: T^(1/3)
             block_size = max(1, int(np.ceil(n_periods ** (1 / 3))))
             if self.show_progress:
-                print(f"\nUsing automatic block size: {block_size} (T^(1/3) where T={n_periods})")
+                logger.info(
+                    f"Using automatic block size: {block_size} (T^(1/3) where T={n_periods})"
+                )
         else:
             block_size = self.block_size
 
@@ -567,7 +570,7 @@ class PanelBootstrap:
                 self.n_failed_ += 1
 
                 if self.show_progress and self.n_failed_ <= 5:
-                    print(f"\nBootstrap iteration {b} failed: {str(e)}")
+                    logger.warning(f"Bootstrap iteration {b} failed: {e!s}")
 
         # Remove failed replications
         valid_mask = ~np.isnan(estimates).any(axis=1)
@@ -669,7 +672,7 @@ class PanelBootstrap:
                 self.n_failed_ += 1
 
                 if self.show_progress and self.n_failed_ <= 5:
-                    print(f"\nBootstrap iteration {b} failed: {str(e)}")
+                    logger.warning(f"Bootstrap iteration {b} failed: {e!s}")
 
         # Remove failed replications
         valid_mask = ~np.isnan(estimates).any(axis=1)
@@ -750,8 +753,8 @@ class PanelBootstrap:
         Examples
         --------
         >>> # After running bootstrap
-        >>> ci_perc = bootstrap.conf_int(alpha=0.05, method='percentile')
-        >>> ci_basic = bootstrap.conf_int(alpha=0.05, method='basic')
+        >>> ci_perc = bootstrap.conf_int(alpha=0.05, method="percentile")
+        >>> ci_basic = bootstrap.conf_int(alpha=0.05, method="basic")
         >>>
         >>> # Compare with asymptotic
         >>> ci_asymp = results.conf_int(alpha=0.05)
@@ -769,7 +772,7 @@ class PanelBootstrap:
             ci = self._conf_int_studentized(alpha)
         else:
             raise ValueError(
-                f"method must be 'percentile', 'basic', 'bca', or 'studentized', " f"got '{method}'"
+                f"method must be 'percentile', 'basic', 'bca', or 'studentized', got '{method}'"
             )
 
         return ci
@@ -853,9 +856,9 @@ class PanelBootstrap:
         if not self._fitted:
             raise RuntimeError("Must call run() before summary()")
 
-        assert (
-            self.bootstrap_estimates_ is not None
-        ), "bootstrap_estimates_ should be set after run()"
+        assert self.bootstrap_estimates_ is not None, (
+            "bootstrap_estimates_ should be set after run()"
+        )
 
         summary = pd.DataFrame(
             {
@@ -890,7 +893,7 @@ class PanelBootstrap:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "matplotlib is required for plotting. " "Install with: pip install matplotlib"
+                "matplotlib is required for plotting. Install with: pip install matplotlib"
             )
 
         if not self._fitted:
@@ -967,9 +970,4 @@ class PanelBootstrap:
         else:
             status = "not fitted"
 
-        return (
-            f"PanelBootstrap("
-            f"method='{self.method}', "
-            f"n_bootstrap={self.n_bootstrap}, "
-            f"{status})"
-        )
+        return f"PanelBootstrap(method='{self.method}', n_bootstrap={self.n_bootstrap}, {status})"

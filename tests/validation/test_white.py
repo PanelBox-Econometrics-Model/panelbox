@@ -137,9 +137,9 @@ class TestWhite:
         df_no_cross = result_no_cross.details["df"]
         df_with_cross = result_with_cross.details["df"]
 
-        assert (
-            df_with_cross > df_no_cross
-        ), f"DF with cross terms ({df_with_cross}) should be > DF without ({df_no_cross})"
+        assert df_with_cross > df_no_cross, (
+            f"DF with cross terms ({df_with_cross}) should be > DF without ({df_no_cross})"
+        )
 
     def test_with_unbalanced_panel(self, unbalanced_panel_data):
         """Test White test with unbalanced panel."""
@@ -207,7 +207,6 @@ class TestWhite:
 
     def test_design_matrix_not_available(self, clean_panel_data):
         """Test ValueError when design matrix is not available (line 106)."""
-        from unittest.mock import Mock
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()
@@ -265,7 +264,6 @@ class TestWhite:
 
     def test_zero_total_variance_edge_case(self, clean_panel_data):
         """Test edge case when SST is zero (line 164)."""
-        from unittest.mock import Mock
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()

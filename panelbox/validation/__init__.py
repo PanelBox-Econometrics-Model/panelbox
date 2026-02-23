@@ -2,6 +2,8 @@
 Validation tests for panel data models.
 """
 
+from __future__ import annotations
+
 from panelbox.validation.base import ValidationTest, ValidationTestResult
 from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
 from panelbox.validation.cross_sectional_dependence.frees import FreesTest

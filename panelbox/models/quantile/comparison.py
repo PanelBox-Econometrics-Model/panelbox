@@ -5,13 +5,15 @@ This module provides utilities for comparing different FE QR approaches,
 including performance benchmarks, diagnostic tests, and visualization tools.
 """
 
+from __future__ import annotations
+
+import logging
 import time
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from panelbox.core.panel_data import PanelData
 
@@ -19,14 +21,14 @@ from .canay import CanayTwoStep
 from .fixed_effects import FixedEffectsQuantile
 from .pooled import PooledQuantile
 
+logger = logging.getLogger(__name__)
+
 
 class FEQuantileComparison:
-    """
-    Tools for comparing Fixed Effects Quantile Regression estimators.
-    """
+    """Tools for comparing Fixed Effects Quantile Regression estimators."""
 
     def __init__(
-        self, data: PanelData, formula: Optional[str] = None, tau: Union[float, List[float]] = 0.5
+        self, data: PanelData, formula: str | None = None, tau: float | list[float] = 0.5
     ):
         self.data = data
         self.formula = formula
@@ -34,8 +36,8 @@ class FEQuantileComparison:
         self.results = {}
 
     def compare_all(
-        self, methods: List[str] = ["canay", "penalty", "pooled"], verbose: bool = True, **kwargs
-    ) -> "ComparisonResults":
+        self, methods: list[str] = None, verbose: bool = True, **kwargs
+    ) -> ComparisonResults:
         """
         Compare multiple FE QR estimators.
 
@@ -55,9 +57,11 @@ class FEQuantileComparison:
         -------
         ComparisonResults
         """
+        if methods is None:
+            methods = ["canay", "penalty", "pooled"]
         if verbose:
-            print("\nCOMPARING FIXED EFFECTS QR ESTIMATORS")
-            print("=" * 60)
+            logger.info("COMPARING FIXED EFFECTS QR ESTIMATORS")
+            logger.info("=" * 50)
 
         timing = {}
         estimates = {}
@@ -66,27 +70,45 @@ class FEQuantileComparison:
         # Pooled QR (baseline)
         if "pooled" in methods:
             if verbose:
-                print("\n1. Pooled Quantile Regression")
-                print("-" * 40)
+                logger.info("1. Pooled Quantile Regression")
+                logger.info("-" * 40)
 
-            model = PooledQuantile(self.data, self.formula, self.tau)
+            # PooledQuantile takes (endog, exog) arrays, not PanelData
+            if self.formula and "~" in self.formula:
+                lhs, rhs = self.formula.split("~")
+                dep_var = lhs.strip()
+                indep_vars = [v.strip() for v in rhs.split("+")]
+                y_pooled = self.data.data[dep_var].values
+                X_pooled = np.column_stack(
+                    [np.ones(len(y_pooled)), self.data.data[indep_vars].values]
+                )
+            else:
+                y_pooled = self.data.data.iloc[:, 0].values
+                X_pooled = np.column_stack(
+                    [np.ones(len(y_pooled)), self.data.data.iloc[:, 1:].values]
+                )
+            entity_ids_pooled = self.data.data[self.data.entity_col].values
+
+            model = PooledQuantile(
+                y_pooled, X_pooled, entity_id=entity_ids_pooled, quantiles=self.tau
+            )
 
             start = time.time()
-            result = model.fit()
+            result = model.fit(se_type="cluster")
             timing["pooled"] = time.time() - start
 
             estimates["pooled"] = result
             diagnostics["pooled"] = self._compute_diagnostics(model, result)
 
             if verbose:
-                print(f"  Time: {timing['pooled']:.2f} seconds")
-                print(f"  Pseudo-R²: {diagnostics['pooled']['pseudo_r2']:.4f}")
+                logger.info(f"  Time: {timing['pooled']:.2f} seconds")
+                logger.info(f"  Pseudo-R²: {diagnostics['pooled']['pseudo_r2']:.4f}")
 
         # Canay two-step
         if "canay" in methods:
             if verbose:
-                print("\n2. Canay Two-Step Estimator")
-                print("-" * 40)
+                logger.info("2. Canay Two-Step Estimator")
+                logger.info("-" * 40)
 
             model = CanayTwoStep(self.data, self.formula, self.tau)
 
@@ -112,14 +134,14 @@ class FEQuantileComparison:
             }
 
             if verbose:
-                print(f"  Time: {timing['canay']:.2f} seconds")
-                print(f"  Location shift p-value: {location_shift_pval:.4f}")
+                logger.info(f"  Time: {timing['canay']:.2f} seconds")
+                logger.info(f"  Location shift p-value: {location_shift_pval:.4f}")
 
         # Penalty method
         if "penalty" in methods:
             if verbose:
-                print("\n3. Koenker Penalty Method")
-                print("-" * 40)
+                logger.info("3. Koenker Penalty Method")
+                logger.info("-" * 40)
 
             model = FixedEffectsQuantile(
                 self.data, self.formula, self.tau, lambda_fe=kwargs.get("lambda_fe", "auto")
@@ -140,9 +162,9 @@ class FEQuantileComparison:
             }
 
             if verbose:
-                print(f"  Time: {timing['penalty']:.2f} seconds")
-                print(f"  Optimal λ: {diagnostics['penalty']['lambda_optimal']:.4f}")
-                print(f"  Zero FE: {diagnostics['penalty']['n_zero_fe']}")
+                logger.info(f"  Time: {timing['penalty']:.2f} seconds")
+                logger.info(f"  Optimal λ: {diagnostics['penalty']['lambda_optimal']:.4f}")
+                logger.info(f"  Zero FE: {diagnostics['penalty']['n_zero_fe']}")
 
         # Store results
         self.results = ComparisonResults(
@@ -150,12 +172,12 @@ class FEQuantileComparison:
         )
 
         if verbose:
-            print("\n" + "=" * 60)
+            logger.info("=" * 50)
             self.results.print_summary()
 
         return self.results
 
-    def _compute_diagnostics(self, model, result) -> Dict[str, Any]:
+    def _compute_diagnostics(self, model, result) -> dict[str, Any]:
         """Compute diagnostic measures for a result."""
         pseudo_r2 = self._compute_pseudo_r2(model, result)
         return {"pseudo_r2": pseudo_r2}
@@ -166,15 +188,30 @@ class FEQuantileComparison:
         tau = self.tau[0]
 
         if hasattr(result, "results"):
-            # Multi-tau result
+            # Multi-tau result (Canay, FixedEffects)
             res = result.results[tau]
             params = res.params
         else:
             params = result.params if hasattr(result, "params") else result.get("params")
 
-        # Get y and X from model
-        y = model.y if hasattr(model, "y") else model.data.df.iloc[:, 0].values
-        X = model.X if hasattr(model, "X") else model.data.df.iloc[:, 1:].values
+        # Handle multi-quantile params (n_vars, n_quantiles) -> take first column
+        if params is not None and params.ndim == 2:
+            params = params[:, 0]
+
+        # Get y and X from model - handle different model types
+        if hasattr(model, "y"):
+            y = model.y
+        elif hasattr(model, "endog"):
+            y = model.endog
+        else:
+            y = self.data.data.iloc[:, 0].values
+
+        if hasattr(model, "X"):
+            X = model.X
+        elif hasattr(model, "exog"):
+            X = model.exog
+        else:
+            X = self.data.data.iloc[:, 1:].values
 
         # Add constant if needed
         if X.shape[1] < len(params):
@@ -194,37 +231,33 @@ class FEQuantileComparison:
 
         return 1 - rho_full / rho_null if rho_null > 0 else 0
 
-    def bootstrap_comparison(
-        self, n_boot: int = 100, methods: List[str] = ["canay", "penalty"]
-    ) -> Dict[str, Dict]:
-        """
-        Bootstrap comparison of methods to assess stability.
-        """
+    def bootstrap_comparison(self, n_boot: int = 100, methods: list[str] = None) -> dict[str, dict]:
+        """Bootstrap comparison of methods to assess stability."""
+        if methods is None:
+            methods = ["canay", "penalty"]
         boot_results = {method: [] for method in methods}
 
         for b in range(n_boot):
             # Resample entities with replacement
-            entities = np.unique(self.data.entity_ids)
+            entity_col = self.data.entity_col
+            time_col = self.data.time_col
+            entities = self.data.entities
             boot_entities = np.random.choice(entities, len(entities), replace=True)
 
             # Create bootstrap sample - need to handle duplicates properly
             boot_indices = []
             for entity in boot_entities:
-                entity_mask = self.data.entity_ids == entity
+                entity_mask = self.data.data[entity_col] == entity
                 boot_indices.extend(np.where(entity_mask)[0])
 
             # Create bootstrap data
-            boot_df = self.data.df.iloc[boot_indices].reset_index(drop=True)
-            boot_entity_ids = self.data.entity_ids.iloc[boot_indices].reset_index(drop=True)
-            boot_time_ids = self.data.time_ids.iloc[boot_indices].reset_index(drop=True)
+            boot_df = self.data.data.iloc[boot_indices].reset_index(drop=True)
 
             boot_data = PanelData(
-                df=boot_df,
-                entity_col=boot_entity_ids.name if hasattr(boot_entity_ids, "name") else "entity",
-                time_col=boot_time_ids.name if hasattr(boot_time_ids, "name") else "time",
+                data=boot_df,
+                entity_col=entity_col,
+                time_col=time_col,
             )
-            boot_data.entity_ids = boot_entity_ids
-            boot_data.time_ids = boot_time_ids
 
             # Estimate with each method
             for method in methods:
@@ -247,7 +280,7 @@ class FEQuantileComparison:
                     boot_results[method].append(params)
                 except Exception as e:
                     # Skip if estimation fails
-                    warnings.warn(f"Bootstrap iteration {b} failed for {method}: {e}")
+                    warnings.warn(f"Bootstrap iteration {b} failed for {method}: {e}", stacklevel=2)
 
         # Compute statistics
         stats = {}
@@ -268,7 +301,7 @@ class FEQuantileComparison:
 class ComparisonResults:
     """Container for comparison results."""
 
-    def __init__(self, estimates: Dict, timing: Dict, diagnostics: Dict, tau: List[float]):
+    def __init__(self, estimates: dict, timing: dict, diagnostics: dict, tau: list[float]):
         self.estimates = estimates
         self.timing = timing
         self.diagnostics = diagnostics
@@ -293,6 +326,9 @@ class ComparisonResults:
                 params = result.results[tau_compare].params
             else:
                 params = result.params if hasattr(result, "params") else result.get("params")
+            # Handle multi-quantile params (n_vars, n_quantiles) -> flatten
+            if params is not None and params.ndim == 2:
+                params = params[:, 0]
             coef_dict[method] = params
 
         # Determine number of coefficients
@@ -304,7 +340,7 @@ class ComparisonResults:
         print("-" * len(header))
 
         for i in range(n_coef):
-            row = f"β{i+1:<6}"
+            row = f"β{i + 1:<6}"
             for method in methods:
                 coef = coef_dict[method][i]
                 row += f"  {coef:10.4f}"
@@ -349,12 +385,19 @@ class ComparisonResults:
                     se = np.sqrt(np.diag(result.results[tau_compare].cov_matrix))
             else:
                 params = result.params if hasattr(result, "params") else result.get("params")
-                if hasattr(result, "bse"):
+                if hasattr(result, "std_errors"):
+                    se = result.std_errors
+                elif hasattr(result, "bse"):
                     se = result.bse
                 elif hasattr(result, "cov_matrix"):
                     se = np.sqrt(np.diag(result.cov_matrix))
                 else:
                     se = np.zeros_like(params)
+            # Handle multi-quantile params (n_vars, n_quantiles) -> flatten
+            if params is not None and params.ndim == 2:
+                params = params[:, 0]
+            if se is not None and se.ndim == 2:
+                se = se[:, 0]
             coef_dict[method] = params
             se_dict[method] = se
 
@@ -375,7 +418,7 @@ class ComparisonResults:
         ax.set_ylabel("Value")
         ax.set_title("Coefficient Estimates Comparison")
         ax.set_xticks(x + width * (len(methods) - 1) / 2)
-        ax.set_xticklabels([f"β{i+1}" for i in range(n_coef)])
+        ax.set_xticklabels([f"β{i + 1}" for i in range(n_coef)])
         ax.legend()
         ax.grid(True, alpha=0.3)
 
@@ -388,7 +431,7 @@ class ComparisonResults:
 
         # 3. Standard errors comparison
         ax = axes[1, 0]
-        for i, method in enumerate(methods):
+        for _i, method in enumerate(methods):
             se = se_dict[method]
             ax.plot(range(len(se)), se, "o-", label=method)
 
@@ -440,6 +483,8 @@ class ComparisonResults:
                 params = result.results[tau_compare].params
             else:
                 params = result.params if hasattr(result, "params") else result.get("params")
+            if params is not None and params.ndim == 2:
+                params = params[:, 0]
             coef_matrix.append(params)
 
         coef_matrix = np.array(coef_matrix).T  # Variables x Methods
@@ -467,9 +512,7 @@ class ComparisonResults:
         # Add correlation values
         for i in range(len(methods)):
             for j in range(len(methods)):
-                text = ax.text(
-                    j, i, f"{corr_matrix[i, j]:.3f}", ha="center", va="center", color="black"
-                )
+                ax.text(j, i, f"{corr_matrix[i, j]:.3f}", ha="center", va="center", color="black")
 
         ax.set_title(f"Coefficient Correlation Matrix (τ={tau_compare})")
         plt.tight_layout()

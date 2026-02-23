@@ -5,8 +5,10 @@ This module provides functions to visualize Granger causality relationships
 as directed network graphs using NetworkX, Matplotlib, and Plotly.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -32,17 +34,19 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
+logger = logging.getLogger(__name__)
+
 
 def plot_causality_network(
     granger_matrix: pd.DataFrame,
     threshold: float = 0.05,
     layout: str = "spring",
     node_size: float = 3000,
-    edge_width_range: Tuple[float, float] = (1.0, 5.0),
+    edge_width_range: tuple[float, float] = (1.0, 5.0),
     show_pvalues: bool = False,
     backend: str = "plotly",
-    title: Optional[str] = None,
-    figsize: Tuple[int, int] = (10, 8),
+    title: str | None = None,
+    figsize: tuple[int, int] = (10, 8),
     show: bool = True,
     **kwargs,
 ):
@@ -99,18 +103,18 @@ def plot_causality_network(
 
     Examples
     --------
-    >>> result = pvar.fit(method='ols', lags=2)
+    >>> result = pvar.fit(method="ols", lags=2)
     >>> granger_mat = result.granger_causality_matrix(significance_level=0.05)
-    >>> fig = plot_causality_network(granger_mat, threshold=0.05, backend='plotly')
+    >>> fig = plot_causality_network(granger_mat, threshold=0.05, backend="plotly")
     >>>
     >>> # Customize
     >>> fig = plot_causality_network(
     ...     granger_mat,
     ...     threshold=0.10,
-    ...     layout='circular',
+    ...     layout="circular",
     ...     node_size=4000,
     ...     show_pvalues=True,
-    ...     backend='matplotlib'
+    ...     backend="matplotlib",
     ... )
 
     Notes
@@ -173,7 +177,7 @@ def plot_causality_network(
         raise ValueError(f"Unknown backend='{backend}'. Use 'plotly' or 'matplotlib'")
 
 
-def _build_causality_graph(granger_matrix: pd.DataFrame, threshold: float) -> "nx.DiGraph":
+def _build_causality_graph(granger_matrix: pd.DataFrame, threshold: float) -> nx.DiGraph:
     """
     Build directed graph from Granger causality matrix.
 
@@ -218,12 +222,13 @@ def _build_causality_graph(granger_matrix: pd.DataFrame, threshold: float) -> "n
             f"No significant Granger causality relationships found at threshold={threshold}. "
             "Try increasing the threshold or check your model specification.",
             UserWarning,
+            stacklevel=2,
         )
 
     return G
 
 
-def _get_layout_positions(G: "nx.DiGraph", layout: str) -> Dict[str, Tuple[float, float]]:
+def _get_layout_positions(G: nx.DiGraph, layout: str) -> dict[str, tuple[float, float]]:
     """
     Compute node positions using specified layout algorithm.
 
@@ -250,7 +255,7 @@ def _get_layout_positions(G: "nx.DiGraph", layout: str) -> Dict[str, Tuple[float
         if n_nodes > 1:
             pos = nx.kamada_kawai_layout(G)
         else:
-            pos = {list(G.nodes())[0]: (0.5, 0.5)} if n_nodes == 1 else {}
+            pos = {next(iter(G.nodes())): (0.5, 0.5)} if n_nodes == 1 else {}
     elif layout == "shell":
         pos = nx.shell_layout(G)
     else:
@@ -262,18 +267,18 @@ def _get_layout_positions(G: "nx.DiGraph", layout: str) -> Dict[str, Tuple[float
 
 
 def _plot_network_matplotlib(
-    G: "nx.DiGraph",
-    pos: Dict,
+    G: nx.DiGraph,
+    pos: dict,
     granger_matrix: pd.DataFrame,
     threshold: float,
     node_size: float,
-    edge_width_range: Tuple[float, float],
+    edge_width_range: tuple[float, float],
     show_pvalues: bool,
-    title: Optional[str],
-    figsize: Tuple[int, int],
+    title: str | None,
+    figsize: tuple[int, int],
     show: bool,
     **kwargs,
-) -> "plt.Figure":
+) -> plt.Figure:
     """Plot network using Matplotlib."""
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -334,9 +339,12 @@ def _plot_network_matplotlib(
                     f"p={p_value:.3f}",
                     fontsize=8,
                     ha="center",
-                    bbox=dict(
-                        boxstyle="round,pad=0.3", facecolor="white", alpha=0.7, edgecolor="gray"
-                    ),
+                    bbox={
+                        "boxstyle": "round,pad=0.3",
+                        "facecolor": "white",
+                        "alpha": 0.7,
+                        "edgecolor": "gray",
+                    },
                 )
 
     ax.set_title(title or "Granger Causality Network", fontsize=14, fontweight="bold")
@@ -346,8 +354,8 @@ def _plot_network_matplotlib(
     from matplotlib.lines import Line2D
 
     legend_elements = [
-        Line2D([0], [0], color="darkgreen", linewidth=3, label=f"p < 0.01"),
-        Line2D([0], [0], color="green", linewidth=3, label=f"0.01 ≤ p < 0.05"),
+        Line2D([0], [0], color="darkgreen", linewidth=3, label="p < 0.01"),
+        Line2D([0], [0], color="green", linewidth=3, label="0.01 ≤ p < 0.05"),
         Line2D([0], [0], color="orange", linewidth=3, label=f"0.05 ≤ p < {threshold}"),
     ]
     ax.legend(handles=legend_elements, loc="upper right", fontsize=10)
@@ -361,17 +369,17 @@ def _plot_network_matplotlib(
 
 
 def _plot_network_plotly(
-    G: "nx.DiGraph",
-    pos: Dict,
+    G: nx.DiGraph,
+    pos: dict,
     granger_matrix: pd.DataFrame,
     threshold: float,
     node_size: float,
-    edge_width_range: Tuple[float, float],
+    edge_width_range: tuple[float, float],
     show_pvalues: bool,
-    title: Optional[str],
+    title: str | None,
     show: bool,
     **kwargs,
-) -> "go.Figure":
+) -> go.Figure:
     """Plot network using Plotly (interactive)."""
     # Create edge traces
     edge_traces = []
@@ -405,7 +413,7 @@ def _plot_network_plotly(
                 x=[x0, x1, None],
                 y=[y0, y1, None],
                 mode="lines",
-                line=dict(color=color, width=width),
+                line={"color": color, "width": width},
                 hoverinfo="text",
                 text=f"{u} → {v}<br>p-value: {p_value:.4f}",
                 showlegend=False,
@@ -415,8 +423,8 @@ def _plot_network_plotly(
             # Arrow annotation
             # Plotly doesn't have native arrows in scatter, use annotations
             # Calculate arrow position (80% along the edge to avoid overlapping with node)
-            arrow_x = x0 + 0.8 * (x1 - x0)
-            arrow_y = y0 + 0.8 * (y1 - y0)
+            x0 + 0.8 * (x1 - x0)
+            y0 + 0.8 * (y1 - y0)
 
     # Create node trace
     node_x = []
@@ -436,19 +444,19 @@ def _plot_network_plotly(
         mode="markers+text",
         text=node_text,
         textposition="middle center",
-        textfont=dict(size=12, color="black", family="Arial Black"),
+        textfont={"size": 12, "color": "black", "family": "Arial Black"},
         hoverinfo="text",
         hovertext=[f"{name}<br>Degree: {G.degree(name)}" for name in node_names],
-        marker=dict(
-            size=node_size / 30,  # Scale down for Plotly
-            color="lightblue",
-            line=dict(color="black", width=2),
-        ),
+        marker={
+            "size": node_size / 30,  # Scale down for Plotly
+            "color": "lightblue",
+            "line": {"color": "black", "width": 2},
+        },
         showlegend=False,
     )
 
     # Create figure
-    fig = go.Figure(data=edge_traces + [node_trace])
+    fig = go.Figure(data=[*edge_traces, node_trace])
 
     # Add arrows as annotations
     if G.number_of_edges() > 0:
@@ -462,33 +470,33 @@ def _plot_network_plotly(
             ay = y0 + 0.8 * (y1 - y0)
 
             annotations.append(
-                dict(
-                    ax=x0 + 0.6 * (x1 - x0),
-                    ay=y0 + 0.6 * (y1 - y0),
-                    x=ax,
-                    y=ay,
-                    xref="x",
-                    yref="y",
-                    axref="x",
-                    ayref="y",
-                    showarrow=True,
-                    arrowhead=2,
-                    arrowsize=1,
-                    arrowwidth=2,
-                    arrowcolor=fig.data[list(G.edges()).index((u, v))].line.color,
-                )
+                {
+                    "ax": x0 + 0.6 * (x1 - x0),
+                    "ay": y0 + 0.6 * (y1 - y0),
+                    "x": ax,
+                    "y": ay,
+                    "xref": "x",
+                    "yref": "y",
+                    "axref": "x",
+                    "ayref": "y",
+                    "showarrow": True,
+                    "arrowhead": 2,
+                    "arrowsize": 1,
+                    "arrowwidth": 2,
+                    "arrowcolor": fig.data[list(G.edges()).index((u, v))].line.color,
+                }
             )
 
         fig.update_layout(annotations=annotations)
 
     # Update layout
     fig.update_layout(
-        title=dict(text=title or "Granger Causality Network (Interactive)", font=dict(size=16)),
+        title={"text": title or "Granger Causality Network (Interactive)", "font": {"size": 16}},
         showlegend=False,
         hovermode="closest",
-        margin=dict(b=0, l=0, r=0, t=40),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        margin={"b": 0, "l": 0, "r": 0, "t": 40},
+        xaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
+        yaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
         plot_bgcolor="white",
         **kwargs,
     )

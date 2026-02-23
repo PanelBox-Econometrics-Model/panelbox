@@ -1,10 +1,10 @@
 """
-Result Table Generation Utilities
+Result Table Generation Utilities.
 
 This module provides functions to generate formatted result tables.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ import pandas as pd
 def create_regression_table(
     result: object,
     title: Optional[str] = None,
-    variable_labels: Optional[Dict[str, str]] = None,
+    variable_labels: Optional[dict[str, str]] = None,
     include_diagnostics: bool = True,
 ) -> pd.DataFrame:
     """
@@ -39,8 +39,8 @@ def create_regression_table(
     --------
     >>> table = create_regression_table(
     ...     fe_result,
-    ...     title='Fixed Effects Model',
-    ...     variable_labels={'log_capital': 'Log Capital Stock'}
+    ...     title="Fixed Effects Model",
+    ...     variable_labels={"log_capital": "Log Capital Stock"},
     ... )
     """
     rows = []
@@ -86,7 +86,7 @@ def create_regression_table(
 
 def summary_statistics_table(
     data: pd.DataFrame,
-    variables: List[str],
+    variables: list[str],
     by_entity: bool = False,
     entity_col: Optional[str] = None,
 ) -> pd.DataFrame:
@@ -111,7 +111,7 @@ def summary_statistics_table(
 
     Examples
     --------
-    >>> summary_statistics_table(data, ['invest', 'value', 'capital'])
+    >>> summary_statistics_table(data, ["invest", "value", "capital"])
     """
     stats_list = []
 
@@ -149,7 +149,7 @@ def summary_statistics_table(
 
 
 def correlation_table(
-    data: pd.DataFrame, variables: List[str], method: str = "pearson"
+    data: pd.DataFrame, variables: list[str], method: str = "pearson"
 ) -> pd.DataFrame:
     """
     Create correlation table.
@@ -170,7 +170,7 @@ def correlation_table(
 
     Examples
     --------
-    >>> correlation_table(data, ['invest', 'value', 'capital'])
+    >>> correlation_table(data, ["invest", "value", "capital"])
     """
     corr_matrix = data[variables].corr(method=method)
     return corr_matrix.round(3)
@@ -204,10 +204,7 @@ def format_table_for_publication(
     Examples
     --------
     >>> latex_table = format_table_for_publication(
-    ...     comparison_df,
-    ...     caption='Model Comparison',
-    ...     label='tab:models',
-    ...     format='latex'
+    ...     comparison_df, caption="Model Comparison", label="tab:models", format="latex"
     ... )
     """
     if format == "latex":

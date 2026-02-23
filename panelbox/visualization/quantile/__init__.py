@@ -5,38 +5,32 @@ This module provides professional visualization tools for quantile regression,
 including coefficient paths, surface plots, fan charts, and more.
 """
 
-try:
+from __future__ import annotations
+
+import contextlib
+
+with contextlib.suppress(ImportError):
     from .process_plots import qq_plot, quantile_process_plot, residual_plot
-except ImportError:
-    pass
 
 # New advanced visualization components - optional dependencies (matplotlib/plotly)
-try:
+with contextlib.suppress(ImportError):
     from .advanced_plots import QuantileVisualizer
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from .interactive import InteractivePlotter
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from .surface_plots import SurfacePlotter
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from .themes import PublicationTheme
-except ImportError:
-    pass
 
 __all__ = [
-    "QuantileVisualizer",
-    "PublicationTheme",
-    "SurfacePlotter",
     "InteractivePlotter",
+    "PublicationTheme",
+    "QuantileVisualizer",
+    "SurfacePlotter",
+    "qq_plot",
     "quantile_process_plot",
     "residual_plot",
-    "qq_plot",
 ]

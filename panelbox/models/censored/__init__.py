@@ -10,7 +10,9 @@ Author: PanelBox Developers
 License: MIT
 """
 
+from __future__ import annotations
+
 from .honore import HonoreTrimmedEstimator
 from .tobit import PooledTobit, RandomEffectsTobit
 
-__all__ = ["RandomEffectsTobit", "PooledTobit", "HonoreTrimmedEstimator"]
+__all__ = ["HonoreTrimmedEstimator", "PooledTobit", "RandomEffectsTobit"]

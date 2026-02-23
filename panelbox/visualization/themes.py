@@ -12,9 +12,14 @@ Available Themes
 - PRESENTATION_THEME: Bold, high-contrast theme for presentations
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Dict, List, Union
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,21 +50,21 @@ class Theme:
     Create a custom theme:
 
     >>> custom_theme = Theme(
-    ...     name='corporate',
-    ...     color_scheme=['#003366', '#FF6600', '#00CC99'],
-    ...     font_config={'family': 'Arial', 'size': 12, 'color': '#333333'},
-    ...     layout_config={'paper_bgcolor': '#FFFFFF'}
+    ...     name="corporate",
+    ...     color_scheme=["#003366", "#FF6600", "#00CC99"],
+    ...     font_config={"family": "Arial", "size": 12, "color": "#333333"},
+    ...     layout_config={"paper_bgcolor": "#FFFFFF"},
     ... )
 
     Use with a chart:
 
-    >>> chart = ChartFactory.create('qq_plot', data=residuals, theme=custom_theme)
+    >>> chart = ChartFactory.create("qq_plot", data=residuals, theme=custom_theme)
     """
 
     name: str
-    color_scheme: List[str]
-    font_config: Dict[str, any]
-    layout_config: Dict[str, any]
+    color_scheme: list[str]
+    font_config: dict[str, Any]
+    layout_config: dict[str, Any]
     plotly_template: str = "plotly_white"
     matplotlib_style: str = "seaborn-v0_8-whitegrid"
 
@@ -85,7 +90,7 @@ class Theme:
         """
         return self.color_scheme[index % len(self.color_scheme)]
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """
         Export theme as dictionary.
 
@@ -305,14 +310,14 @@ PRESENTATION_THEME = Theme(
 # ============================================================================
 
 # Registry of available themes
-_THEME_REGISTRY: Dict[str, Theme] = {
+_THEME_REGISTRY: dict[str, Theme] = {
     "professional": PROFESSIONAL_THEME,
     "academic": ACADEMIC_THEME,
     "presentation": PRESENTATION_THEME,
 }
 
 
-def get_theme(theme: Union[str, Theme]) -> Theme:
+def get_theme(theme: str | Theme) -> Theme:
     """
     Get theme by name or return theme object.
 
@@ -337,7 +342,7 @@ def get_theme(theme: Union[str, Theme]) -> Theme:
     --------
     Get by name:
 
-    >>> theme = get_theme('professional')
+    >>> theme = get_theme("professional")
 
     Pass through Theme object:
 
@@ -382,10 +387,10 @@ def register_theme(theme: Theme) -> None:
     Examples
     --------
     >>> corporate_theme = Theme(
-    ...     name='corporate',
-    ...     color_scheme=['#003366', '#FF6600'],
-    ...     font_config={'family': 'Arial', 'size': 12, 'color': '#333'},
-    ...     layout_config={'paper_bgcolor': '#FFF'}
+    ...     name="corporate",
+    ...     color_scheme=["#003366", "#FF6600"],
+    ...     font_config={"family": "Arial", "size": 12, "color": "#333"},
+    ...     layout_config={"paper_bgcolor": "#FFF"},
     ... )
     >>> register_theme(corporate_theme)
     >>> chart = ChartFactory.create('qq_plot', theme='corporate', ...)
@@ -398,7 +403,7 @@ def register_theme(theme: Theme) -> None:
     _get_theme_by_name.cache_clear()
 
 
-def list_themes() -> List[str]:
+def list_themes() -> list[str]:
     """
     List all registered theme names.
 

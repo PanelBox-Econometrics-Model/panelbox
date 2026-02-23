@@ -1,5 +1,5 @@
 """
-Discrete Choice Models - Data
+Discrete Choice Models - Data.
 
 Part of the PanelBox tutorial series on discrete choice econometrics.
 

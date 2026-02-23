@@ -5,7 +5,9 @@ This module provides the Random Effects estimator which uses GLS (Generalized Le
 to account for the variance component structure in panel data.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -24,6 +26,8 @@ from panelbox.standard_errors.driscoll_kraay import DriscollKraayResult
 from panelbox.standard_errors.newey_west import NeweyWestResult
 from panelbox.standard_errors.robust import RobustCovarianceResult
 from panelbox.utils.matrix_ops import compute_ols, compute_panel_rsquared
+
+logger = logging.getLogger(__name__)
 
 
 class RandomEffects(PanelModel):
@@ -101,16 +105,14 @@ class RandomEffects(PanelModel):
     >>> print(f"Entity variance (σ²_u): {model.sigma2_u:.4f}")
     >>> print(f"Idiosyncratic variance (σ²_ε): {model.sigma2_e:.4f}")
     >>> print(f"Theta: {model.theta:.4f}")
-    >>> print(f"Proportion of variance due to u_i: "
-    ...       f"{model.sigma2_u/(model.sigma2_u + model.sigma2_e):.2%}")
+    >>> print(
+    ...     f"Proportion of variance due to u_i: "
+    ...     f"{model.sigma2_u / (model.sigma2_u + model.sigma2_e):.2%}"
+    ... )
     >>>
     >>> # Use different variance estimator
     >>> model_amemiya = pb.RandomEffects(
-    ...     "invest ~ value + capital",
-    ...     data,
-    ...     "firm",
-    ...     "year",
-    ...     variance_estimator='amemiya'
+    ...     "invest ~ value + capital", data, "firm", "year", variance_estimator="amemiya"
     ... )
     >>> results_amemiya = model_amemiya.fit()
 
@@ -182,23 +184,22 @@ class RandomEffects(PanelModel):
         entity_col: str,
         time_col: str,
         variance_estimator: str = "swamy-arora",
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         super().__init__(formula, data, entity_col, time_col, weights)
 
         valid_estimators = ["swamy-arora", "walhus", "amemiya", "nerlove"]
         if variance_estimator not in valid_estimators:
             raise ValueError(
-                f"variance_estimator must be one of {valid_estimators}, "
-                f"got '{variance_estimator}'"
+                f"variance_estimator must be one of {valid_estimators}, got '{variance_estimator}'"
             )
 
         self.variance_estimator = variance_estimator
 
         # Variance components (computed after fitting)
-        self.sigma2_u: Optional[float] = None  # Variance of entity effects
-        self.sigma2_e: Optional[float] = None  # Variance of idiosyncratic errors
-        self.theta: Optional[float] = None  # GLS transformation parameter
+        self.sigma2_u: float | None = None  # Variance of entity effects
+        self.sigma2_e: float | None = None  # Variance of idiosyncratic errors
+        self.theta: float | None = None  # GLS transformation parameter
 
     def fit(self, cov_type: str = "nonrobust", **cov_kwds) -> PanelResults:
         """
@@ -228,10 +229,14 @@ class RandomEffects(PanelModel):
         Examples
         --------
         >>> results = model.fit()
-        >>> results_robust = model.fit(cov_type='robust')
+        >>> results_robust = model.fit(cov_type="robust")
         """
         # Build design matrices
         y, X = self.formula_parser.build_design_matrices(self.data.data, return_type="array")
+
+        # Store original data for post-estimation (e.g., J-test)
+        self._y_orig = y
+        self._X_orig = X
 
         # Get variable names
         var_names = self.formula_parser.get_variable_names(self.data.data)
@@ -247,7 +252,7 @@ class RandomEffects(PanelModel):
         y_gls, X_gls = self._gls_transform(y, X, entities)
 
         # Estimate coefficients on transformed data
-        beta, resid_gls, fitted_gls = compute_ols(y_gls, X_gls, self.weights)
+        beta, resid_gls, _fitted_gls = compute_ols(y_gls, X_gls, self.weights)
 
         # Compute residuals and fitted values in original scale
         fitted = (X @ beta).ravel()
@@ -263,9 +268,7 @@ class RandomEffects(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: Union[
-            RobustCovarianceResult, ClusteredCovarianceResult, DriscollKraayResult, NeweyWestResult
-        ]
+        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult
 
         if cov_type_lower == "nonrobust":
             vcov = self._compute_vcov_gls(X, resid_gls, entities, df_resid)
@@ -288,14 +291,14 @@ class RandomEffects(PanelModel):
 
         elif cov_type_lower == "driscoll_kraay":
             # Driscoll-Kraay for spatial/temporal dependence
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = driscoll_kraay(X_gls, resid_gls, times, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
 
         elif cov_type_lower == "newey_west":
             # Newey-West HAC
-            max_lags = cov_kwds.get("max_lags", None)
+            max_lags = cov_kwds.get("max_lags")
             kernel = cov_kwds.get("kernel", "bartlett")
             result = newey_west(X_gls, resid_gls, max_lags=max_lags, kernel=kernel)
             vcov = result.cov_matrix
@@ -362,6 +365,7 @@ class RandomEffects(PanelModel):
             data_info=data_info,
             rsquared_dict=rsquared_dict,
             model=self,
+            formula_parser=self.formula_parser,
         )
 
         # Store results and update state
@@ -411,7 +415,7 @@ class RandomEffects(PanelModel):
         y_within = demean_matrix(y.reshape(-1, 1), entities).ravel()
         X_within = demean_matrix(X, entities)
 
-        beta_within, resid_within, _ = compute_ols(y_within, X_within)
+        _beta_within, resid_within, _ = compute_ols(y_within, X_within)
 
         # Estimate sigma2_e from within residuals
         N = self.data.n_entities
@@ -431,7 +435,7 @@ class RandomEffects(PanelModel):
         y_between = np.array(y_means)
         X_between = np.array(X_means)
 
-        beta_between, resid_between, _ = compute_ols(y_between, X_between)
+        _beta_between, resid_between, _ = compute_ols(y_between, X_between)
 
         # Estimate sigma2_u from between residuals
         # Average group size

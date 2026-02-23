@@ -5,7 +5,8 @@ Implements various methods for estimating quantile treatment effects (QTE)
 including standard QTE, unconditional QTE via RIF regression, difference-in-differences
 QR, and changes-in-changes methods.
 
-References:
+References
+----------
     Firpo, S., Fortin, N. M., & Lemieux, T. (2009). Unconditional quantile
     regressions. Econometrica, 77(3), 953-973.
 
@@ -16,15 +17,21 @@ References:
     differences models with panel data. Quantitative Economics, 10(4), 1579-1618.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.linalg import lstsq
 
-from .base import QuantilePanelModel
+if TYPE_CHECKING:
+    from panelbox.core.panel_data import PanelData
+
+logger = logging.getLogger(__name__)
 
 
 class QuantileTreatmentEffects:
@@ -40,14 +47,16 @@ class QuantileTreatmentEffects:
 
     def __init__(
         self,
-        data: Union[pd.DataFrame, "PanelData"],
+        data: pd.DataFrame | PanelData,
         outcome: str,
         treatment: str,
-        covariates: Optional[List[str]] = None,
-        entity_col: Optional[str] = None,
-        time_col: Optional[str] = None,
+        covariates: list[str] | None = None,
+        entity_col: str | None = None,
+        time_col: str | None = None,
     ):
         """
+        Initialize QuantileTreatmentEffects.
+
         Parameters
         ----------
         data : PanelData or DataFrame
@@ -75,9 +84,9 @@ class QuantileTreatmentEffects:
     def _prepare_data(self):
         """Prepare data for QTE estimation."""
         # Handle PanelData vs DataFrame
-        if hasattr(self.data, "_data"):
+        if hasattr(self.data, "data") and hasattr(self.data, "entity_col"):
             # PanelData object
-            df = self.data._data
+            df = self.data.data
             self.entity_col = self.entity_col or self.data.entity_col
             self.time_col = self.time_col or self.data.time_col
         else:
@@ -105,18 +114,17 @@ class QuantileTreatmentEffects:
 
         # Check treatment is binary
         unique_d = np.unique(self.d)
-        if len(unique_d) != 2:
-            if not all(d in [0, 1] for d in unique_d):
-                # Try to convert to binary
-                self.d = (self.d > np.median(self.d)).astype(int)
-                warnings.warn("Treatment variable converted to binary")
+        if len(unique_d) != 2 and not all(d in [0, 1] for d in unique_d):
+            # Try to convert to binary
+            self.d = (self.d > np.median(self.d)).astype(int)
+            warnings.warn("Treatment variable converted to binary", stacklevel=2)
 
         self.n_treated = np.sum(self.d == 1)
         self.n_control = np.sum(self.d == 0)
 
     def estimate_qte(
-        self, tau: Union[float, np.ndarray] = 0.5, method: str = "standard", **kwargs
-    ) -> "QTEResult":
+        self, tau: float | np.ndarray = 0.5, method: str = "standard", **kwargs
+    ) -> QTEResult:
         """
         Estimate Quantile Treatment Effects.
 
@@ -154,7 +162,7 @@ class QuantileTreatmentEffects:
         bootstrap: bool = True,
         n_boot: int = 999,
         cluster_bootstrap: bool = False,
-    ) -> "QTEResult":
+    ) -> QTEResult:
         """
         Standard QTE: difference in conditional quantiles.
 
@@ -174,7 +182,7 @@ class QuantileTreatmentEffects:
                 X_full = np.column_stack([X_full, X_interactions])
 
             # Estimate QR
-            beta, info = frisch_newton_qr(X_full, self.y, tau)
+            beta, _info = frisch_newton_qr(X_full, self.y, tau)
 
             # QTE is coefficient on treatment (plus average interaction effect)
             qte = beta[self.X.shape[1]]  # Main treatment effect
@@ -209,8 +217,8 @@ class QuantileTreatmentEffects:
         return QTEResult(qte_results, method="standard")
 
     def _qte_unconditional(
-        self, tau_list: np.ndarray, bandwidth: Optional[float] = None
-    ) -> "QTEResult":
+        self, tau_list: np.ndarray, bandwidth: float | None = None
+    ) -> QTEResult:
         """
         Unconditional QTE via Recentered Influence Function (RIF).
 
@@ -232,7 +240,7 @@ class QuantileTreatmentEffects:
             X_rif = np.column_stack([self.X, self.d[:, np.newaxis]])
 
             # OLS regression
-            beta_rif = lstsq(X_rif, rif, rcond=None)[0]
+            beta_rif = lstsq(X_rif, rif)[0]
 
             # QTE is coefficient on treatment
             qte = beta_rif[-1]
@@ -256,7 +264,7 @@ class QuantileTreatmentEffects:
 
         return QTEResult(qte_results, method="unconditional")
 
-    def _density_at_quantile(self, q: float, bandwidth: Optional[float] = None) -> float:
+    def _density_at_quantile(self, q: float, bandwidth: float | None = None) -> float:
         """Estimate density at quantile using kernel method."""
         if bandwidth is None:
             # Silverman's rule of thumb
@@ -271,10 +279,10 @@ class QuantileTreatmentEffects:
     def _qte_did(
         self,
         tau_list: np.ndarray,
-        pre_post_cutoff: Optional[Any] = None,
+        pre_post_cutoff: Any | None = None,
         bootstrap: bool = True,
         n_boot: int = 999,
-    ) -> "QTEResult":
+    ) -> QTEResult:
         """
         Difference-in-differences QR.
 
@@ -340,7 +348,7 @@ class QuantileTreatmentEffects:
 
         return QTEResult(qte_results, method="did")
 
-    def _qte_cic(self, tau_list: np.ndarray, n_grid: int = 100) -> "QTEResult":
+    def _qte_cic(self, tau_list: np.ndarray, n_grid: int = 100) -> QTEResult:
         """
         Changes-in-Changes (Athey & Imbens 2006).
 
@@ -427,8 +435,7 @@ class QuantileTreatmentEffects:
             try:
                 beta_boot, _ = frisch_newton_qr(X_full, y_boot, tau, max_iter=50, verbose=False)
                 qte_boot.append(beta_boot[self.X.shape[1]])
-            except:
-                # Skip if optimization fails
+            except Exception:  # noqa: S110 — skip failed bootstrap iterations
                 pass
 
         return np.array(qte_boot)
@@ -466,17 +473,15 @@ class QuantileTreatmentEffects:
                 # DiD estimate
                 qte_did_b = (q11 - q10) - (q01 - q00)
                 qte_boot.append(qte_did_b)
-            except:
+            except Exception:  # noqa: S110 — skip failed bootstrap iterations
                 pass
 
         return np.array(qte_boot)
 
     def plot_qte(
-        self, results: "QTEResult", tau_grid: Optional[np.ndarray] = None, show_ate: bool = True
+        self, results: QTEResult, tau_grid: np.ndarray | None = None, show_ate: bool = True
     ):
-        """
-        Plot Quantile Treatment Effects across τ.
-        """
+        """Plot Quantile Treatment Effects across τ."""
         import matplotlib.pyplot as plt
 
         if tau_grid is None:
@@ -518,7 +523,7 @@ class QuantileTreatmentEffects:
 class QTEResult:
     """Results container for QTE estimation."""
 
-    def __init__(self, qte_results: Dict, method: str):
+    def __init__(self, qte_results: dict, method: str):
         self.qte_results = qte_results
         self.method = method
         self.tau_list = sorted(qte_results.keys())
@@ -601,7 +606,7 @@ class QTEResult:
 
         return pd.DataFrame(rows)
 
-    def test_constant_effects(self) -> Dict:
+    def test_constant_effects(self) -> dict:
         """
         Test hypothesis of constant treatment effects across quantiles.
 

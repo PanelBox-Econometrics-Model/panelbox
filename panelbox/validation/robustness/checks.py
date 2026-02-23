@@ -5,11 +5,16 @@ Provides tools to test robustness of results across different
 specifications, samples, and estimators.
 """
 
+from __future__ import annotations
+
+import logging
 from typing import List, Optional
 
 import pandas as pd
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class RobustnessChecker:
@@ -26,11 +31,7 @@ class RobustnessChecker:
     Examples
     --------
     >>> checker = pb.RobustnessChecker(results)
-    >>> alt_specs = checker.check_alternative_specs([
-    ...     "y ~ x1",
-    ...     "y ~ x1 + x2",
-    ...     "y ~ x1 + x2 + x3"
-    ... ])
+    >>> alt_specs = checker.check_alternative_specs(["y ~ x1", "y ~ x1 + x2", "y ~ x1 + x2 + x3"])
     >>> print(checker.generate_robustness_table(alt_specs))
     """
 
@@ -74,7 +75,7 @@ class RobustnessChecker:
 
         for formula in formulas:
             if self.verbose:
-                print(f"Estimating: {formula}")
+                logger.info(f"Estimating: {formula}")
 
             try:
                 model = model_class(formula, self.data, self.entity_col, self.time_col)
@@ -82,7 +83,7 @@ class RobustnessChecker:
                 results_list.append(result)
             except Exception as e:
                 if self.verbose:
-                    print(f"  Failed: {e}")
+                    logger.warning(f"  Failed: {e}")
                 results_list.append(None)
 
         return results_list

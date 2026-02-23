@@ -8,8 +8,8 @@ seaborn>=0.11.0
 # Statistical computing
 statsmodels>=0.13.0
 
-# PanelBox (local installation)
--e /home/guhaase/projetos/panelbox
+# PanelBox
+panelbox>=1.0.0
 
 # Jupyter
 jupyter>=1.0.0

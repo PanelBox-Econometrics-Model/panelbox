@@ -6,13 +6,18 @@ Reference:
     Econometrics Journal, 3(2), 148-161.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from statsmodels.regression.linear_model import OLS
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -72,8 +77,8 @@ class HadriResult:
             "=" * 70,
             "Hadri (2000) LM Test for Stationarity",
             "=" * 70,
-            f"H0: All series are stationary",
-            f"H1: At least one series has a unit root",
+            "H0: All series are stationary",
+            "H1: At least one series has a unit root",
             "",
             f"Specification: {self._format_trend()}",
             f"Robust version: {'Yes' if self.robust else 'No'}",
@@ -189,11 +194,11 @@ def hadri_test(
     >>> for i in range(10):
     ...     y = np.random.randn(100).cumsum() * 0.1  # Near stationary
     ...     for t, val in enumerate(y):
-    ...         data.append({'entity': i, 'time': t, 'y': val})
+    ...         data.append({"entity": i, "time": t, "y": val})
     >>> df = pd.DataFrame(data)
     >>>
     >>> # Test for stationarity
-    >>> result = hadri_test(df, 'y', trend='c')
+    >>> result = hadri_test(df, "y", trend="c")
     >>> print(result.summary())
     """
     # Validate inputs
@@ -224,7 +229,7 @@ def hadri_test(
 
         if T_common is None:
             T_common = T
-        elif T != T_common:
+        elif T_common != T:
             raise ValueError("Hadri test requires balanced panel (same T for all entities)")
 
         # Extract variable

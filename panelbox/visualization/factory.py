@@ -5,11 +5,16 @@ This module implements the Factory pattern for creating charts with
 consistent theming and configuration management.
 """
 
-from typing import Any, Dict, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from .base import BaseChart
 from .registry import ChartRegistry
 from .themes import Theme, get_theme
+
+logger = logging.getLogger(__name__)
 
 
 class ChartFactory:
@@ -30,34 +35,31 @@ class ChartFactory:
     Create a chart with default theme:
 
     >>> chart = ChartFactory.create(
-    ...     chart_type='residual_qq_plot',
-    ...     data={'residuals': [0.1, -0.2, 0.3, -0.1]}
+    ...     chart_type="residual_qq_plot", data={"residuals": [0.1, -0.2, 0.3, -0.1]}
     ... )
 
     Create with custom theme:
 
     >>> chart = ChartFactory.create(
-    ...     chart_type='validation_test_overview',
-    ...     data=test_data,
-    ...     theme='academic'
+    ...     chart_type="validation_test_overview", data=test_data, theme="academic"
     ... )
 
     Create with configuration:
 
     >>> chart = ChartFactory.create(
-    ...     chart_type='residual_vs_fitted',
-    ...     data={'fitted': fitted, 'residuals': residuals},
-    ...     theme='presentation',
-    ...     config={'title': 'Residual Diagnostics', 'width': 1000}
+    ...     chart_type="residual_vs_fitted",
+    ...     data={"fitted": fitted, "residuals": residuals},
+    ...     theme="presentation",
+    ...     config={"title": "Residual Diagnostics", "width": 1000},
     ... )
     """
 
     @staticmethod
     def create(
         chart_type: str,
-        data: Optional[Dict[str, Any]] = None,
-        theme: Union[str, Theme, None] = None,
-        config: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
+        theme: str | Theme | None = None,
+        config: dict[str, Any] | None = None,
         **kwargs,
     ) -> BaseChart:
         """
@@ -97,17 +99,17 @@ class ChartFactory:
         Create and immediately render:
 
         >>> chart = ChartFactory.create(
-        ...     'validation_test_overview',
-        ...     data={'categories': [...], 'passed': [...], 'failed': [...]},
-        ...     theme='professional'
+        ...     "validation_test_overview",
+        ...     data={"categories": [...], "passed": [...], "failed": [...]},
+        ...     theme="professional",
         ... )
         >>> html = chart.to_html()
 
         Create without data (for later use):
 
-        >>> chart = ChartFactory.create('qq_plot', theme='academic')
+        >>> chart = ChartFactory.create("qq_plot", theme="academic")
         >>> # ... later ...
-        >>> chart.create(data={'residuals': residuals})
+        >>> chart.create(data={"residuals": residuals})
         """
         # Step 1: Get chart class from registry
         chart_class = ChartRegistry.get(chart_type)
@@ -131,8 +133,8 @@ class ChartFactory:
 
     @staticmethod
     def create_multiple(
-        chart_specs: list[Dict[str, Any]], common_theme: Union[str, Theme, None] = None
-    ) -> Dict[str, BaseChart]:
+        chart_specs: list[dict[str, Any]], common_theme: str | Theme | None = None
+    ) -> dict[str, BaseChart]:
         """
         Create multiple charts at once.
 
@@ -158,21 +160,17 @@ class ChartFactory:
         Examples
         --------
         >>> specs = [
+        ...     {"type": "qq_plot", "name": "qq", "data": {"residuals": residuals}},
         ...     {
-        ...         'type': 'qq_plot',
-        ...         'name': 'qq',
-        ...         'data': {'residuals': residuals}
+        ...         "type": "residual_vs_fitted",
+        ...         "name": "rvf",
+        ...         "data": {"fitted": fitted, "residuals": residuals},
+        ...         "config": {"title": "Residuals vs Fitted"},
         ...     },
-        ...     {
-        ...         'type': 'residual_vs_fitted',
-        ...         'name': 'rvf',
-        ...         'data': {'fitted': fitted, 'residuals': residuals},
-        ...         'config': {'title': 'Residuals vs Fitted'}
-        ...     }
         ... ]
-        >>> charts = ChartFactory.create_multiple(specs, common_theme='academic')
-        >>> qq_chart = charts['qq']
-        >>> rvf_chart = charts['rvf']
+        >>> charts = ChartFactory.create_multiple(specs, common_theme="academic")
+        >>> qq_chart = charts["qq"]
+        >>> rvf_chart = charts["rvf"]
         """
         charts = {}
 
@@ -217,7 +215,7 @@ class ChartFactory:
         return ChartRegistry.list_charts()
 
     @staticmethod
-    def get_chart_info(chart_type: str) -> Dict[str, str]:
+    def get_chart_info(chart_type: str) -> dict[str, str]:
         """
         Get information about a chart type.
 
@@ -233,8 +231,8 @@ class ChartFactory:
 
         Examples
         --------
-        >>> info = ChartFactory.get_chart_info('qq_plot')
-        >>> print(info['description'])
+        >>> info = ChartFactory.get_chart_info("qq_plot")
+        >>> print(info["description"])
         Q-Q plot for normality testing
         """
         return ChartRegistry.get_chart_info(chart_type)

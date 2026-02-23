@@ -6,6 +6,8 @@ This module provides tools for testing model specification including:
 - Encompassing tests (Cox, Wald, Likelihood Ratio)
 """
 
+from __future__ import annotations
+
 from .davidson_mackinnon import JTestResult, j_test
 from .encompassing import (
     EncompassingResult,
@@ -15,10 +17,10 @@ from .encompassing import (
 )
 
 __all__ = [
-    "j_test",
+    "EncompassingResult",
     "JTestResult",
     "cox_test",
-    "wald_encompassing_test",
+    "j_test",
     "likelihood_ratio_test",
-    "EncompassingResult",
+    "wald_encompassing_test",
 ]

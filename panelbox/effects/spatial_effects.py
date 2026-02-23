@@ -16,12 +16,18 @@ LeSage, J.P. & Pace, R.K. (2009). Introduction to Spatial Econometrics. CRC Pres
 Elhorst, J.P. (2014). Spatial Econometrics. Springer.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+if TYPE_CHECKING:
+    from panelbox.models.spatial.spatial_lag import SpatialPanelResults as SpatialPanelResult
 
 try:
     import plotly.graph_objects as go
@@ -30,11 +36,13 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
+logger = logging.getLogger(__name__)
+
 
 def spatial_impact_matrix(
     rho: float,
     beta: float,
-    theta: Optional[float],
+    theta: float | None,
     W: np.ndarray,
     model_type: Literal["SAR", "SDM"] = "SAR",
 ) -> np.ndarray:
@@ -82,12 +90,12 @@ def spatial_impact_matrix(
 
 
 def compute_spatial_effects(
-    result: "SpatialPanelResult",
-    variables: Optional[Union[str, List[str]]] = None,
+    result: SpatialPanelResult,
+    variables: str | list[str] | None = None,
     n_simulations: int = 1000,
     confidence_level: float = 0.95,
     method: Literal["simulation", "delta"] = "simulation",
-) -> "SpatialEffectsResult":
+) -> SpatialEffectsResult:
     """
     Compute direct, indirect, and total effects with inference.
 
@@ -137,7 +145,7 @@ def compute_spatial_effects(
 
     for var_name in variables:
         if var_name not in result.params.index:
-            warnings.warn(f"Variable {var_name} not found in model")
+            warnings.warn(f"Variable {var_name} not found in model", stacklevel=2)
             continue
 
         beta = result.params[var_name]
@@ -146,10 +154,7 @@ def compute_spatial_effects(
         theta = None
         if model_type == "SDM":
             theta_name = f"W*{var_name}"
-            if theta_name in result.params.index:
-                theta = result.params[theta_name]
-            else:
-                theta = 0.0
+            theta = result.params[theta_name] if theta_name in result.params.index else 0.0
 
         # Compute impact matrix
         impact_matrix = spatial_impact_matrix(rho, beta, theta, W, model_type)
@@ -177,13 +182,13 @@ def compute_spatial_effects(
     return SpatialEffectsResult(effects, result, method, n_simulations, confidence_level)
 
 
-def _simulation_inference(
-    result: "SpatialPanelResult",
-    effects: Dict[str, Dict[str, Any]],
-    variables: List[str],
+def _simulation_inference(  # noqa: C901
+    result: SpatialPanelResult,
+    effects: dict[str, dict[str, Any]],
+    variables: list[str],
     n_simulations: int,
     confidence_level: float,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """
     Simulation-based inference for spatial effects.
 
@@ -218,8 +223,8 @@ def _simulation_inference(
     try:
         L = np.linalg.cholesky(cov_subset)
     except np.linalg.LinAlgError:
-        warnings.warn("Covariance matrix not positive definite, using SVD")
-        U, S, Vt = np.linalg.svd(cov_subset)
+        warnings.warn("Covariance matrix not positive definite, using SVD", stacklevel=2)
+        U, S, _Vt = np.linalg.svd(cov_subset)
         L = U @ np.diag(np.sqrt(np.maximum(S, 0)))
 
     # Storage for simulated effects
@@ -320,11 +325,11 @@ def _simulation_inference(
 
 
 def _delta_method_inference(
-    result: "SpatialPanelResult",
-    effects: Dict[str, Dict[str, Any]],
-    variables: List[str],
+    result: SpatialPanelResult,
+    effects: dict[str, dict[str, Any]],
+    variables: list[str],
     confidence_level: float,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """
     Delta method inference for spatial effects.
 
@@ -395,7 +400,7 @@ def _delta_method_inference(
             # More complex for SDM - simplified version
             theta_name = f"W*{var}"
             if theta_name in result.params.index:
-                theta = result.params[theta_name]
+                result.params[theta_name]
                 theta_idx = list(result.params.index).index(theta_name)
                 theta_var = result.cov_matrix[theta_idx, theta_idx]
 
@@ -476,10 +481,10 @@ class SpatialEffectsResult:
 
     def __init__(
         self,
-        effects: Dict[str, Dict[str, Any]],
-        model_result: "SpatialPanelResult",
+        effects: dict[str, dict[str, Any]],
+        model_result: SpatialPanelResult,
         method: str,
-        n_simulations: Optional[int],
+        n_simulations: int | None,
         confidence_level: float,
     ):
         """Initialize spatial effects result."""
@@ -627,12 +632,12 @@ class SpatialEffectsResult:
 
         # Direct effects
         error_y = None
-        if show_ci and "direct_se" in list(self.effects.values())[0]:
-            error_y = dict(
-                type="data",
-                array=[self.effects[v]["direct_se"] * 1.96 for v in variables],
-                visible=True,
-            )
+        if show_ci and "direct_se" in next(iter(self.effects.values())):
+            error_y = {
+                "type": "data",
+                "array": [self.effects[v]["direct_se"] * 1.96 for v in variables],
+                "visible": True,
+            }
 
         traces.append(
             go.Bar(
@@ -642,12 +647,12 @@ class SpatialEffectsResult:
 
         # Indirect effects
         error_y = None
-        if show_ci and "indirect_se" in list(self.effects.values())[0]:
-            error_y = dict(
-                type="data",
-                array=[self.effects[v]["indirect_se"] * 1.96 for v in variables],
-                visible=True,
-            )
+        if show_ci and "indirect_se" in next(iter(self.effects.values())):
+            error_y = {
+                "type": "data",
+                "array": [self.effects[v]["indirect_se"] * 1.96 for v in variables],
+                "visible": True,
+            }
 
         traces.append(
             go.Bar(
@@ -657,12 +662,12 @@ class SpatialEffectsResult:
 
         # Total effects
         error_y = None
-        if show_ci and "total_se" in list(self.effects.values())[0]:
-            error_y = dict(
-                type="data",
-                array=[self.effects[v]["total_se"] * 1.96 for v in variables],
-                visible=True,
-            )
+        if show_ci and "total_se" in next(iter(self.effects.values())):
+            error_y = {
+                "type": "data",
+                "array": [self.effects[v]["total_se"] * 1.96 for v in variables],
+                "visible": True,
+            }
 
         traces.append(
             go.Bar(
@@ -680,7 +685,7 @@ class SpatialEffectsResult:
             yaxis_title="Effect Magnitude",
             barmode="group",
             hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
             **kwargs,
         )
 
@@ -706,12 +711,12 @@ class SpatialEffectsResult:
         fig, ax = plt.subplots(figsize=kwargs.get("figsize", (10, 6)))
 
         # Plot bars
-        bars1 = ax.bar(x - width, direct_vals, width, label="Direct", color="steelblue")
-        bars2 = ax.bar(x, indirect_vals, width, label="Indirect", color="coral")
-        bars3 = ax.bar(x + width, total_vals, width, label="Total", color="seagreen")
+        ax.bar(x - width, direct_vals, width, label="Direct", color="steelblue")
+        ax.bar(x, indirect_vals, width, label="Indirect", color="coral")
+        ax.bar(x + width, total_vals, width, label="Total", color="seagreen")
 
         # Add error bars if requested
-        if show_ci and "direct_se" in list(self.effects.values())[0]:
+        if show_ci and "direct_se" in next(iter(self.effects.values())):
             direct_se = np.array([self.effects[v]["direct_se"] for v in variables])
             indirect_se = np.array([self.effects[v]["indirect_se"] for v in variables])
             total_se = np.array([self.effects[v]["total_se"] for v in variables])
@@ -741,7 +746,7 @@ class SpatialEffectsResult:
         plt.tight_layout()
         return fig
 
-    def to_latex(self, filename: Optional[str] = None, **kwargs) -> str:
+    def to_latex(self, filename: str | None = None, **kwargs) -> str:
         """
         Export results to LaTeX table.
 

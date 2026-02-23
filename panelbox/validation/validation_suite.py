@@ -2,6 +2,9 @@
 Validation suite for panel models.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from typing import Dict, List, Union
 
@@ -21,6 +24,8 @@ from panelbox.validation.serial_correlation.wooldridge_ar import WooldridgeARTes
 from panelbox.validation.specification.mundlak import MundlakTest
 from panelbox.validation.specification.reset import RESETTest
 from panelbox.validation.validation_report import ValidationReport
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationSuite:
@@ -43,7 +48,7 @@ class ValidationSuite:
     >>>
     >>> from panelbox.validation.validation_suite import ValidationSuite
     >>> suite = ValidationSuite(results)
-    >>> report = suite.run(tests='all')
+    >>> report = suite.run(tests="all")
     >>> print(report)
     """
 
@@ -157,23 +162,23 @@ class ValidationSuite:
         if "Random Effects" in self.model_type:
             try:
                 if verbose:
-                    print("Running Mundlak test...")
+                    logger.info("Running Mundlak test...")
                 mundlak_test = MundlakTest(self.results)
                 results["Mundlak"] = mundlak_test.run(alpha)
             except Exception as e:
                 if verbose:
-                    print(f"  Warning: Mundlak test failed: {e}")
+                    logger.warning(f"Mundlak test failed: {e}")
                 warnings.warn(f"Mundlak test failed: {e}")
 
         # RESET test (for all models)
         try:
             if verbose:
-                print("Running RESET test...")
+                logger.info("Running RESET test...")
             reset_test = RESETTest(self.results)
             results["RESET"] = reset_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: RESET test failed: {e}")
+                logger.warning(f"RESET test failed: {e}")
             warnings.warn(f"RESET test failed: {e}")
 
         # Chow test (for all models)
@@ -206,34 +211,34 @@ class ValidationSuite:
         if "Fixed Effects" in self.model_type:
             try:
                 if verbose:
-                    print("Running Wooldridge AR test...")
+                    logger.info("Running Wooldridge AR test...")
                 wooldridge_test = WooldridgeARTest(self.results)
                 results["Wooldridge"] = wooldridge_test.run(alpha)
             except Exception as e:
                 if verbose:
-                    print(f"  Warning: Wooldridge test failed: {e}")
+                    logger.warning(f"Wooldridge test failed: {e}")
                 warnings.warn(f"Wooldridge test failed: {e}")
 
         # Breusch-Godfrey test (for all models)
         try:
             if verbose:
-                print("Running Breusch-Godfrey test...")
+                logger.info("Running Breusch-Godfrey test...")
             bg_test = BreuschGodfreyTest(self.results)
             results["Breusch-Godfrey"] = bg_test.run(lags=1, alpha=alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Breusch-Godfrey test failed: {e}")
+                logger.warning(f"Breusch-Godfrey test failed: {e}")
             warnings.warn(f"Breusch-Godfrey test failed: {e}")
 
         # Baltagi-Wu LBI test (for all models, especially unbalanced panels)
         try:
             if verbose:
-                print("Running Baltagi-Wu LBI test...")
+                logger.info("Running Baltagi-Wu LBI test...")
             bw_test = BaltagiWuTest(self.results)
             results["Baltagi-Wu"] = bw_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Baltagi-Wu test failed: {e}")
+                logger.warning(f"Baltagi-Wu test failed: {e}")
             warnings.warn(f"Baltagi-Wu test failed: {e}")
 
         return results
@@ -262,36 +267,36 @@ class ValidationSuite:
         if "Fixed Effects" in self.model_type:
             try:
                 if verbose:
-                    print("Running Modified Wald test...")
+                    logger.info("Running Modified Wald test...")
                 mwald_test = ModifiedWaldTest(self.results)
                 results["Modified Wald"] = mwald_test.run(alpha)
             except Exception as e:
                 if verbose:
-                    print(f"  Warning: Modified Wald test failed: {e}")
+                    logger.warning(f"Modified Wald test failed: {e}")
                 warnings.warn(f"Modified Wald test failed: {e}")
 
         # Breusch-Pagan LM test (for all models)
         try:
             if verbose:
-                print("Running Breusch-Pagan test...")
+                logger.info("Running Breusch-Pagan test...")
             bp_test = BreuschPaganTest(self.results)
             results["Breusch-Pagan"] = bp_test.run(alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Breusch-Pagan test failed: {e}")
+                logger.warning(f"Breusch-Pagan test failed: {e}")
             warnings.warn(f"Breusch-Pagan test failed: {e}")
 
         # White test (for all models)
         try:
             if verbose:
-                print("Running White test...")
+                logger.info("Running White test...")
             white_test = WhiteTest(self.results)
             results["White"] = white_test.run(
                 alpha, cross_terms=False
             )  # Without cross terms for speed
         except Exception as e:
             if verbose:
-                print(f"  Warning: White test failed: {e}")
+                logger.warning(f"White test failed: {e}")
             warnings.warn(f"White test failed: {e}")
 
         return results
@@ -319,34 +324,34 @@ class ValidationSuite:
         # Pesaran CD test (for all models, large N)
         try:
             if verbose:
-                print("Running Pesaran CD test...")
+                logger.info("Running Pesaran CD test...")
             pesaran_test = PesaranCDTest(self.results)
             results["Pesaran CD"] = pesaran_test.run(alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Pesaran CD test failed: {e}")
+                logger.warning(f"Pesaran CD test failed: {e}")
             warnings.warn(f"Pesaran CD test failed: {e}")
 
         # Breusch-Pagan LM test (for all models, small to moderate N)
         try:
             if verbose:
-                print("Running Breusch-Pagan LM test...")
+                logger.info("Running Breusch-Pagan LM test...")
             bplm_test = BreuschPaganLMTest(self.results)
             results["Breusch-Pagan LM"] = bplm_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Breusch-Pagan LM test failed: {e}")
+                logger.warning(f"Breusch-Pagan LM test failed: {e}")
             warnings.warn(f"Breusch-Pagan LM test failed: {e}")
 
         # Frees test (non-parametric, robust to non-normality)
         try:
             if verbose:
-                print("Running Frees test...")
+                logger.info("Running Frees test...")
             frees_test = FreesTest(self.results)
             results["Frees"] = frees_test.run(alpha=alpha)
         except Exception as e:
             if verbose:
-                print(f"  Warning: Frees test failed: {e}")
+                logger.warning(f"Frees test failed: {e}")
             warnings.warn(f"Frees test failed: {e}")
 
         return results

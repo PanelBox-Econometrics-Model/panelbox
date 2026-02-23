@@ -10,12 +10,17 @@ Reference:
     heterogeneous panels. Journal of econometrics, 115(1), 53-74.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -138,12 +143,12 @@ class IPSTest:
     >>> data = pb.load_grunfeld()
     >>>
     >>> # Test for unit root in 'invest'
-    >>> ips = pb.IPSTest(data, 'invest', 'firm', 'year')
+    >>> ips = pb.IPSTest(data, "invest", "firm", "year")
     >>> result = ips.run()
     >>> print(result)
     >>>
     >>> # With trend
-    >>> ips_trend = pb.IPSTest(data, 'invest', 'firm', 'year', trend='ct')
+    >>> ips_trend = pb.IPSTest(data, "invest", "firm", "year", trend="ct")
     >>> result = ips_trend.run()
 
     Notes

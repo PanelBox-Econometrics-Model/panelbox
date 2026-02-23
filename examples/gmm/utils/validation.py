@@ -91,9 +91,7 @@ def gmm_diagnostic_checklist(result: Any) -> pd.DataFrame:
         p = result.hansen_j.pvalue
         if p > 0.25:
             status = "PASS"
-        elif p > 0.05:
-            status = "WARNING"
-        elif p > 0.90:
+        elif p > 0.05 or p > 0.90:
             status = "WARNING"
         else:
             status = "FAIL"

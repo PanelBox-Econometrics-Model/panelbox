@@ -10,7 +10,13 @@ operations, primarily targeting:
 Using Numba can provide 10-100x speedups for these operations.
 """
 
+from __future__ import annotations
+
+import logging
+
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from numba import jit, prange
@@ -21,7 +27,10 @@ except ImportError:
 
     # Fallback: create a no-op decorator
     def jit(*args, **kwargs):
+        """No-op JIT decorator when Numba is unavailable."""
+
         def decorator(func):
+            """Return the function unchanged."""
             return func
 
         if len(args) == 1 and callable(args[0]):
@@ -416,7 +425,7 @@ def get_numba_status() -> dict:
             import numba.config
 
             status["parallel_available"] = numba.config.NUMBA_NUM_THREADS > 0
-        except Exception:
+        except Exception:  # noqa: S110 — numba config may not be accessible
             pass
 
     return status
@@ -489,14 +498,15 @@ def validate_numba_optimization(func_original, func_numba, *args, **kwargs):
 
 if __name__ == "__main__":
     # Print status when module is run
+    logging.basicConfig(level=logging.INFO)
     status = get_numba_status()
-    print("Numba Optimization Module")
-    print("=" * 60)
-    print(f"Numba available: {status['available']}")
+    logger.info("Numba Optimization Module")
+    logger.info("=" * 50)
+    logger.info(f"Numba available: {status['available']}")
     if status["available"]:
-        print(f"Numba version: {status['version']}")
-        print(f"Parallel support: {status['parallel_available']}")
+        logger.info(f"Numba version: {status['version']}")
+        logger.info(f"Parallel support: {status['parallel_available']}")
     else:
-        print("Note: Numba not installed. Install with: pip install numba")
-        print("Functions will fall back to standard Python (slower)")
-    print("=" * 60)
+        logger.info("Note: Numba not installed. Install with: pip install numba")
+        logger.info("Functions will fall back to standard Python (slower)")
+    logger.info("=" * 50)

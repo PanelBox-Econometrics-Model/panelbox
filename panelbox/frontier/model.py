@@ -6,8 +6,9 @@ a unified interface for estimating production and cost frontiers with
 various distributional assumptions.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,8 @@ from .data import (
     prepare_panel_index,
     validate_frontier_data,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class StochasticFrontier:
@@ -36,7 +39,8 @@ class StochasticFrontier:
         v ~ N(0, σ²_v) is random noise
         u ≥ 0 is inefficiency with specified distribution
 
-    Parameters:
+    Parameters
+    ----------
         data: DataFrame containing all variables
         depvar: Name of dependent variable (usually in logs)
         exog: List of exogenous variable names
@@ -48,7 +52,8 @@ class StochasticFrontier:
         het_vars: Variables for heteroskedasticity (optional)
         model_type: Type of panel model (auto-detected from entity/time if None)
 
-    Attributes:
+    Attributes
+    ----------
         n_obs: Number of observations
         n_entities: Number of entities (panel data only)
         n_periods: Number of time periods (panel data only)
@@ -62,28 +67,28 @@ class StochasticFrontier:
         >>> # Cross-sectional production frontier
         >>> sf = StochasticFrontier(
         ...     data=df,
-        ...     depvar='log_output',
-        ...     exog=['log_labor', 'log_capital'],
-        ...     frontier='production',
-        ...     dist='half_normal'
+        ...     depvar="log_output",
+        ...     exog=["log_labor", "log_capital"],
+        ...     frontier="production",
+        ...     dist="half_normal",
         ... )
-        >>> result = sf.fit(method='mle')
+        >>> result = sf.fit(method="mle")
         >>> print(result.summary())
         >>>
         >>> # Get efficiency estimates
-        >>> eff = result.efficiency(estimator='bc')
+        >>> eff = result.efficiency(estimator="bc")
         >>> print(eff.describe())
         >>>
         >>> # CSS Model - Distribution-free panel model with quadratic time trend
         >>> sf_css = StochasticFrontier(
         ...     data=panel_df,
-        ...     depvar='log_output',
-        ...     exog=['log_labor', 'log_capital'],
-        ...     entity='firm_id',
-        ...     time='year',
-        ...     frontier='production',
-        ...     model_type='css',
-        ...     css_time_trend='quadratic'
+        ...     depvar="log_output",
+        ...     exog=["log_labor", "log_capital"],
+        ...     entity="firm_id",
+        ...     time="year",
+        ...     frontier="production",
+        ...     model_type="css",
+        ...     css_time_trend="quadratic",
         ... )
         >>> result = sf_css.fit()
         >>> # Get time-varying efficiency
@@ -93,13 +98,13 @@ class StochasticFrontier:
         >>> # BC92 Model - Time-varying inefficiency with time-decay
         >>> sf_bc92 = StochasticFrontier(
         ...     data=panel_df,
-        ...     depvar='log_output',
-        ...     exog=['log_labor', 'log_capital'],
-        ...     entity='firm_id',
-        ...     time='year',
-        ...     frontier='production',
-        ...     dist='half_normal',
-        ...     model_type='bc92'
+        ...     depvar="log_output",
+        ...     exog=["log_labor", "log_capital"],
+        ...     entity="firm_id",
+        ...     time="year",
+        ...     frontier="production",
+        ...     dist="half_normal",
+        ...     model_type="bc92",
         ... )
         >>> result_bc92 = sf_bc92.fit()
         >>> # Get time-varying efficiency
@@ -111,19 +116,20 @@ class StochasticFrontier:
         >>> # Wang (2002) Model - Heteroscedastic inefficiency
         >>> sf_wang = StochasticFrontier(
         ...     data=df,
-        ...     depvar='log_output',
-        ...     exog=['log_labor', 'log_capital'],
-        ...     frontier='production',
-        ...     dist='truncated_normal',
-        ...     inefficiency_vars=['firm_age'],      # Affects mean inefficiency
-        ...     het_vars=['firm_size']                # Affects variance of inefficiency
+        ...     depvar="log_output",
+        ...     exog=["log_labor", "log_capital"],
+        ...     frontier="production",
+        ...     dist="truncated_normal",
+        ...     inefficiency_vars=["firm_age"],  # Affects mean inefficiency
+        ...     het_vars=["firm_size"],  # Affects variance of inefficiency
         ... )
         >>> result_wang = sf_wang.fit()
         >>> # Interpret inefficiency determinants
-        >>> print(result_wang.params['delta_firm_age'])   # Effect on mean
-        >>> print(result_wang.params['gamma_firm_size'])  # Effect on variance
+        >>> print(result_wang.params["delta_firm_age"])  # Effect on mean
+        >>> print(result_wang.params["gamma_firm_size"])  # Effect on variance
 
-    References:
+    References
+    ----------
         Aigner, D., Lovell, C. K., & Schmidt, P. (1977).
             Formulation and estimation of stochastic frontier production
             function models. Journal of Econometrics, 6(1), 21-37.
@@ -146,15 +152,15 @@ class StochasticFrontier:
         self,
         data: pd.DataFrame,
         depvar: str,
-        exog: List[str],
-        entity: Optional[str] = None,
-        time: Optional[str] = None,
-        frontier: Union[str, FrontierType] = "production",
-        dist: Union[str, DistributionType] = "half_normal",
-        inefficiency_vars: Optional[List[str]] = None,
-        het_vars: Optional[List[str]] = None,
-        model_type: Optional[Union[str, ModelType]] = None,
-        css_time_trend: Optional[str] = None,
+        exog: list[str],
+        entity: str | None = None,
+        time: str | None = None,
+        frontier: str | FrontierType = "production",
+        dist: str | DistributionType = "half_normal",
+        inefficiency_vars: list[str] | None = None,
+        het_vars: list[str] | None = None,
+        model_type: str | ModelType | None = None,
+        css_time_trend: str | None = None,
     ):
         """Initialize StochasticFrontier model."""
         # Store basic configuration
@@ -251,7 +257,7 @@ class StochasticFrontier:
         if not has_constant:
             # Add constant
             X = np.column_stack([np.ones(len(X)), X])
-            self.exog_names = ["const"] + self.exog
+            self.exog_names = ["const", *self.exog]
         else:
             self.exog_names = self.exog
 
@@ -266,7 +272,7 @@ class StochasticFrontier:
 
             if not has_constant_z:
                 Z = np.column_stack([np.ones(len(Z)), Z])
-                self.ineff_var_names = ["const"] + self.inefficiency_vars
+                self.ineff_var_names = ["const", *self.inefficiency_vars]
             else:
                 self.ineff_var_names = self.inefficiency_vars
 
@@ -285,7 +291,7 @@ class StochasticFrontier:
 
             if not has_constant_w:
                 W = np.column_stack([np.ones(len(W)), W])
-                self.hetero_var_names = ["const"] + self.het_vars
+                self.hetero_var_names = ["const", *self.het_vars]
             else:
                 self.hetero_var_names = self.het_vars
 
@@ -300,12 +306,12 @@ class StochasticFrontier:
         return self._n_obs
 
     @property
-    def n_entities(self) -> Optional[int]:
+    def n_entities(self) -> int | None:
         """Number of entities (panel data only)."""
         return self._n_entities
 
     @property
-    def n_periods(self) -> Optional[int]:
+    def n_periods(self) -> int | None:
         """Number of time periods (panel data only)."""
         return self._n_periods
 
@@ -315,7 +321,7 @@ class StochasticFrontier:
         return len(self.exog_names)
 
     @property
-    def is_balanced(self) -> Optional[bool]:
+    def is_balanced(self) -> bool | None:
         """Whether panel is balanced (panel data only)."""
         return self._is_balanced
 
@@ -327,7 +333,7 @@ class StochasticFrontier:
     def __repr__(self) -> str:
         """String representation of the model."""
         parts = [
-            f"StochasticFrontier(",
+            "StochasticFrontier(",
             f"  type={self.frontier_type.value}",
             f"  dist={self.dist.value}",
             f"  model={self.model_type.value}",
@@ -347,7 +353,7 @@ class StochasticFrontier:
     def fit(
         self,
         method: str = "mle",
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         optimizer: str = "L-BFGS-B",
         maxiter: int = 1000,
         tol: float = 1e-8,
@@ -357,7 +363,8 @@ class StochasticFrontier:
     ):
         """Fit the stochastic frontier model.
 
-        Parameters:
+        Parameters
+        ----------
             method: Estimation method ('mle' is currently supported)
             start_params: Initial parameter values (auto-computed if None)
             optimizer: Optimization algorithm ('L-BFGS-B', 'Newton-CG', 'BFGS')
@@ -367,10 +374,12 @@ class StochasticFrontier:
             verbose: Whether to print optimization progress
             **kwargs: Additional arguments passed to optimizer
 
-        Returns:
+        Returns
+        -------
             SFResult object with estimation results
 
-        Raises:
+        Raises
+        ------
             ValueError: If method is not supported
             RuntimeError: If optimization fails to converge
         """
@@ -401,10 +410,12 @@ class StochasticFrontier:
     def result(self):
         """Access the most recent estimation result.
 
-        Returns:
+        Returns
+        -------
             SFResult object from last fit() call
 
-        Raises:
+        Raises
+        ------
             RuntimeError: If fit() has not been called
         """
         if self._result is None:
@@ -421,11 +432,13 @@ def _sign_convention(epsilon: np.ndarray, frontier_type: FrontierType) -> np.nda
     For estimation, we need the composed error to have the right sign
     relative to the inefficiency term.
 
-    Parameters:
+    Parameters
+    ----------
         epsilon: Composed error term (y - X'β)
         frontier_type: Type of frontier
 
-    Returns:
+    Returns
+    -------
         Signed epsilon for likelihood calculation
     """
     if frontier_type == FrontierType.PRODUCTION:

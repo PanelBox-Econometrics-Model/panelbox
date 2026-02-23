@@ -4,11 +4,14 @@ Base classes for validation tests.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationTestResult:
@@ -63,10 +66,10 @@ class ValidationTestResult:
         # Determine conclusion
         if pvalue < alpha:
             self.reject_null = True
-            self.conclusion = f"Reject H0 at {alpha*100:.0f}% level. {alternative_hypothesis}"
+            self.conclusion = f"Reject H0 at {alpha * 100:.0f}% level. {alternative_hypothesis}"
         else:
             self.reject_null = False
-            self.conclusion = f"Fail to reject H0 at {alpha*100:.0f}% level. {null_hypothesis}"
+            self.conclusion = f"Fail to reject H0 at {alpha * 100:.0f}% level. {null_hypothesis}"
 
     @property
     def details(self):
@@ -137,7 +140,7 @@ class ValidationTest(ABC):
     the `run()` method.
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize validation test.
 

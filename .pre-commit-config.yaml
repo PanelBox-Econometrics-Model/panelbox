@@ -3,47 +3,46 @@
 # Run manually: pre-commit run --all-files
 
 repos:
-  # Black - Code formatting
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
+  # Ruff (lint + format) — substitui black, isort, flake8
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
     hooks:
-      - id: black
-        language_version: python3.9
-        args: [--line-length=100]
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+        exclude: (docs/tutorials/intro_panel_quantile_regression\.ipynb|examples/standard_errors/notebooks/04_spatial_errors\.ipynb|examples/tutorials/01_fundamentals/03_estimation_interpretation_backup\.ipynb)
 
-  # isort - Import sorting
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+  # Type checking
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.408
     hooks:
-      - id: isort
-        args: [--profile=black, --line-length=100]
+      - id: pyright
+        files: ^panelbox/
 
-  # Flake8 - Linting (disabled for now - needs config file instead of args)
-  # - repo: https://github.com/pycqa/flake8
-  #   rev: 7.0.0
-  #   hooks:
-  #     - id: flake8
-  #       args: [--max-line-length=100, --extend-ignore=E203,W503,E501,E402,E722,F401,F841, --max-complexity=20]
-  #       exclude: ^(tests/benchmarks/|tests/.*test_.*)
+  # Validacao do pyproject.toml
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.23
+    hooks:
+      - id: validate-pyproject
+        additional_dependencies: ["validate-pyproject-schema-store[all]"]
 
-  # Basic checks
+  # Seguranca - prevencao de secrets
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.22.1
+    hooks:
+      - id: gitleaks
+
+  # Hooks genericos
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        exclude: r_validation\.yml$
+      - id: check-toml
+      - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=10000]
-      - id: check-merge-conflict
       - id: debug-statements
       - id: mixed-line-ending
-
-  # Security checks (disabled for now - too many false positives in tests)
-  # - repo: https://github.com/PyCQA/bandit
-  #   rev: 1.7.6
-  #   hooks:
-  #     - id: bandit
-  #       args: [-c, pyproject.toml, --skip, B101]
-  #       additional_dependencies: ["bandit[toml]"]
-  #       exclude: ^tests/

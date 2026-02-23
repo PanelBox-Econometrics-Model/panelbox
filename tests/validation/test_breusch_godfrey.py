@@ -5,7 +5,6 @@ Tests the BreuschGodfreyTest which detects AR(p) serial correlation
 in panel models using the Lagrange Multiplier approach.
 """
 
-import numpy as np
 import pytest
 
 from panelbox.models.static.fixed_effects import FixedEffects
@@ -170,7 +169,6 @@ class TestBreuschGodfrey:
 
     def test_design_matrix_not_available(self, clean_panel_data):
         """Test ValueError when design matrix is not available."""
-        from unittest.mock import Mock
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()
@@ -222,7 +220,7 @@ class TestBreuschGodfrey:
 
     def test_exception_in_design_matrix_building(self, clean_panel_data):
         """Test exception handling in design matrix building."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         fe = FixedEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
         results = fe.fit()

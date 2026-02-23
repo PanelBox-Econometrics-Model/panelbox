@@ -6,7 +6,8 @@ This module decomposes TFP growth into:
 2. Technical efficiency change (catch-up)
 3. Scale efficiency change (movement along frontier)
 
-References:
+References
+----------
     Kumbhakar, S. C., & Lovell, C. A. K. (2000).
         Stochastic Frontier Analysis. Cambridge University Press.
         Chapter 7: Productivity and its components.
@@ -20,12 +21,15 @@ References:
         Journal of Productivity Analysis, 18(1), 5-22.
 """
 
-from typing import Dict, Optional, Tuple
+from __future__ import annotations
+
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class TFPDecomposition:
@@ -69,7 +73,7 @@ class TFPDecomposition:
     >>> # Decompose TFP growth
     >>> tfp = TFPDecomposition(result)
     >>> decomp = tfp.decompose()
-    >>> print(decomp[['entity', 'delta_tfp', 'delta_tc', 'delta_te', 'delta_se']])
+    >>> print(decomp[["entity", "delta_tfp", "delta_tc", "delta_te", "delta_se"]])
     >>>
     >>> # Aggregate statistics
     >>> agg = tfp.aggregate_decomposition()
@@ -78,7 +82,7 @@ class TFPDecomposition:
     >>> print(f"  From efficiency change: {agg['pct_from_te']:.1f}%")
     >>>
     >>> # Visualize
-    >>> tfp.plot_decomposition(kind='bar', top_n=20)
+    >>> tfp.plot_decomposition(kind="bar", top_n=20)
 
     Notes
     -----
@@ -122,7 +126,7 @@ class TFPDecomposition:
     def __init__(
         self,
         result,
-        periods: Optional[Tuple[int, int]] = None,
+        periods: tuple[int, int] | None = None,
     ):
         self.result = result
         self.model = result.model
@@ -145,7 +149,7 @@ class TFPDecomposition:
 
         if self.t1 not in unique_times or self.t2 not in unique_times:
             raise ValueError(
-                f"Specified periods {periods} not found in data. " f"Available: {unique_times}"
+                f"Specified periods {periods} not found in data. Available: {unique_times}"
             )
 
         # Store data
@@ -338,7 +342,7 @@ class TFPDecomposition:
         scale_effect = (rts - 1.0) * delta_inputs
         return scale_effect
 
-    def aggregate_decomposition(self) -> Dict[str, float]:
+    def aggregate_decomposition(self) -> dict[str, float]:
         """Compute aggregate (mean) decomposition across all firms.
 
         Returns
@@ -392,7 +396,7 @@ class TFPDecomposition:
         self,
         kind: str = "bar",
         top_n: int = 20,
-        figsize: Tuple[int, int] = (12, 6),
+        figsize: tuple[int, int] = (12, 6),
     ):
         """Plot TFP decomposition.
 
@@ -416,11 +420,11 @@ class TFPDecomposition:
         Example
         -------
         >>> # Stacked bar chart of top 20 firms
-        >>> fig = tfp.plot_decomposition(kind='bar', top_n=20)
-        >>> plt.savefig('tfp_decomposition.png', dpi=300, bbox_inches='tight')
+        >>> fig = tfp.plot_decomposition(kind="bar", top_n=20)
+        >>> plt.savefig("tfp_decomposition.png", dpi=300, bbox_inches="tight")
         >>>
         >>> # Scatter plot showing innovation vs catch-up
-        >>> fig = tfp.plot_decomposition(kind='scatter')
+        >>> fig = tfp.plot_decomposition(kind="scatter")
         """
         decomp = self.decompose()
 
@@ -435,7 +439,7 @@ class TFPDecomposition:
         self,
         decomp: pd.DataFrame,
         top_n: int,
-        figsize: Tuple[int, int],
+        figsize: tuple[int, int],
     ):
         """Create stacked bar chart of decomposition."""
         # Sort by total TFP growth and take top_n
@@ -494,7 +498,7 @@ class TFPDecomposition:
     def _plot_scatter(
         self,
         decomp: pd.DataFrame,
-        figsize: Tuple[int, int],
+        figsize: tuple[int, int],
     ):
         """Create scatter plot of TC vs TE."""
         fig, ax = plt.subplots(figsize=figsize)
@@ -522,7 +526,7 @@ class TFPDecomposition:
         ax.set_xlabel("Technical Change (ΔTC): Frontier Shift", fontsize=11)
         ax.set_ylabel("Efficiency Change (ΔTE): Catch-up", fontsize=11)
         ax.set_title(
-            "Decomposition of TFP Growth\n" f"Period {self.t1} → {self.t2}",
+            f"Decomposition of TFP Growth\nPeriod {self.t1} → {self.t2}",
             fontsize=13,
             fontweight="bold",
         )
@@ -536,7 +540,7 @@ class TFPDecomposition:
             transform=ax.transAxes,
             va="top",
             fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.3),
+            bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.3},
         )
         ax.text(
             0.02,
@@ -544,7 +548,7 @@ class TFPDecomposition:
             "Catch-up\nonly",
             transform=ax.transAxes,
             fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="lightblue", alpha=0.3),
+            bbox={"boxstyle": "round", "facecolor": "lightblue", "alpha": 0.3},
         )
         ax.text(
             0.98,
@@ -554,7 +558,7 @@ class TFPDecomposition:
             ha="right",
             va="top",
             fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="lightgreen", alpha=0.3),
+            bbox={"boxstyle": "round", "facecolor": "lightgreen", "alpha": 0.3},
         )
         ax.text(
             0.98,
@@ -563,7 +567,7 @@ class TFPDecomposition:
             transform=ax.transAxes,
             ha="right",
             fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="lightcoral", alpha=0.3),
+            bbox={"boxstyle": "round", "facecolor": "lightcoral", "alpha": 0.3},
         )
 
         plt.tight_layout()
@@ -582,7 +586,7 @@ class TFPDecomposition:
         >>> print(tfp.summary())
         """
         agg = self.aggregate_decomposition()
-        decomp = self.decompose()
+        self.decompose()
 
         lines = []
         lines.append("=" * 70)

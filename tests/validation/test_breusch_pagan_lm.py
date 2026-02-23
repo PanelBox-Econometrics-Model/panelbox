@@ -6,7 +6,6 @@ in panel model residuals using the Lagrange Multiplier approach.
 """
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from panelbox.models.static.fixed_effects import FixedEffects

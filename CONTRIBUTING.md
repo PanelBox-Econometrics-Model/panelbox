@@ -39,12 +39,12 @@ pip install -r requirements-dev.txt
 ```
 
 Required for development:
-- pytest >= 7.0
-- pytest-cov >= 3.0
-- black >= 22.0 (code formatting)
-- flake8 >= 4.0 (linting)
-- mypy >= 0.950 (type checking)
-- sphinx >= 4.0 (documentation)
+- pytest >= 8.0 (with xdist, randomly, timeout plugins)
+- pytest-cov >= 5.0
+- ruff >= 0.15.0 (linting + formatting)
+- pyright >= 1.1.400 (type checking)
+- interrogate >= 1.7.0 (docstring coverage)
+- vulture >= 2.14 (dead code detection)
 
 ## Contributing to Quantile Regression
 
@@ -106,23 +106,28 @@ class MyNewEstimator(QuantileModel):
 
 ### Code Style
 
-We follow PEP 8 with some modifications:
+We follow PEP 8 with ruff for linting and formatting:
 
-- **Line length**: 88 characters (Black default)
+- **Line length**: 100 characters (configured in ruff)
 - **Quotes**: Double quotes for strings
-- **Imports**: Organized with isort
-- **Type hints**: Use for all public APIs
+- **Imports**: Organized automatically by ruff (isort-compatible)
+- **Type hints**: Use for all public APIs (enforced by pyright)
 
-**Format your code:**
+**Format and lint your code:**
 ```bash
-black panelbox/
-isort panelbox/
+ruff format panelbox/
+ruff check panelbox/ --fix
 ```
 
-**Check linting:**
+**Type check:**
 ```bash
-flake8 panelbox/
-mypy panelbox/
+pyright panelbox/
+```
+
+**Pre-commit hooks** (ruff + pyright + gitleaks) run automatically on every commit:
+```bash
+pre-commit install       # One-time setup
+pre-commit run --all-files  # Manual run
 ```
 
 ### Testing
@@ -163,6 +168,8 @@ class TestMyNewEstimator:
 
 #### Running Tests
 
+We use pytest with several plugins (xdist for parallelism, randomly for test ordering, timeout for deadlock prevention):
+
 ```bash
 # Run all tests
 pytest
@@ -170,11 +177,14 @@ pytest
 # Run specific test file
 pytest tests/quantile/test_mynew.py
 
-# Run with coverage
-pytest --cov=panelbox --cov-report=html
+# Run with coverage (branch coverage enabled)
+pytest --cov=panelbox --cov-report=html --cov-branch
 
 # Run only quantile tests
 pytest tests/quantile/
+
+# Run tests in parallel
+pytest -n auto
 ```
 
 #### Validation Against R

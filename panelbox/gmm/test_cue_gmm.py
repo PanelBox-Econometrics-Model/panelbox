@@ -1,15 +1,17 @@
 """
-Tests for Continuous Updated GMM Estimator
+Tests for Continuous Updated GMM Estimator.
+
 ===========================================
 
 Test suite for CUE-GMM implementation.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import pytest
 import scipy.stats
-from scipy.stats import chi2
 
 from panelbox.gmm import ContinuousUpdatedGMM
 from panelbox.gmm.estimator import GMMEstimator
@@ -219,7 +221,7 @@ class TestCUEGMM:
             data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2", "z3"]
         )
 
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         j_test = model.j_statistic()
 
@@ -249,11 +251,11 @@ class TestCUEGMM:
         cue_model = ContinuousUpdatedGMM(
             data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"]
         )
-        cue_results = cue_model.fit(verbose=False)
+        cue_model.fit(verbose=False)
 
         # Estimate two-step GMM
         estimator = GMMEstimator()
-        ts_params, ts_vcov, _, _ = estimator.two_step(cue_model.y, cue_model.X, cue_model.Z)
+        _ts_params, ts_vcov, _, _ = estimator.two_step(cue_model.y, cue_model.X, cue_model.Z)
 
         # Compare variances (CUE should have lower variance, at least for some params)
         cue_var = np.diag(cue_model.vcov_)
@@ -283,7 +285,7 @@ class TestCUEGMM:
         cue_estimates = []
         ts_estimates = []
 
-        for sim in range(n_sims):
+        for _sim in range(n_sims):
             # Generate data
             z1 = np.random.normal(0, 1, n)
             z2 = np.random.normal(0, 1, n)
@@ -305,7 +307,7 @@ class TestCUEGMM:
                 cue_results = cue_model.fit(verbose=False)
                 if cue_model.converged_:
                     cue_estimates.append(cue_results.params)
-            except:
+            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
                 pass
 
             # Estimate two-step GMM
@@ -317,7 +319,7 @@ class TestCUEGMM:
                 estimator = GMMEstimator()
                 ts_params, _, _, _ = estimator.two_step(y_arr, X_arr, Z_arr)
                 ts_estimates.append(ts_params.flatten())
-            except:
+            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
                 pass
 
         # Compare variances
@@ -333,9 +335,9 @@ class TestCUEGMM:
             efficiency_gain = ts_variance / cue_variance
 
             # At least one parameter should show efficiency gain >= 1.0
-            assert np.any(
-                efficiency_gain >= 0.8
-            ), f"CUE did not show efficiency gain. Ratios: {efficiency_gain}"
+            assert np.any(efficiency_gain >= 0.8), (
+                f"CUE did not show efficiency gain. Ratios: {efficiency_gain}"
+            )
 
     def test_starting_values_twostep(self, simple_iv_data):
         """Test that two-step GMM is used as default starting values."""
@@ -375,7 +377,7 @@ class TestCUEGMM:
         cue_model = ContinuousUpdatedGMM(
             data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"]
         )
-        cue_results = cue_model.fit(verbose=False)
+        cue_model.fit(verbose=False)
 
         # Create a mock two-step result
         estimator = GMMEstimator()
@@ -531,7 +533,7 @@ class TestCUEGMM:
             bootstrap_method="residual",
         )
 
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         # Check bootstrap attributes are set
         assert model.bootstrap_params_ is not None
@@ -556,7 +558,7 @@ class TestCUEGMM:
             bootstrap_method="pairs",
         )
 
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         # Check bootstrap attributes
         assert model.bootstrap_params_ is not None
@@ -571,7 +573,7 @@ class TestCUEGMM:
         model_analytical = ContinuousUpdatedGMM(
             data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"], se_type="analytical"
         )
-        results_analytical = model_analytical.fit(verbose=False)
+        model_analytical.fit(verbose=False)
         se_analytical = model_analytical.bse_
 
         # Bootstrap with pairs method (more appropriate for comparison)
@@ -584,7 +586,7 @@ class TestCUEGMM:
             n_bootstrap=100,  # Moderate number for test speed
             bootstrap_method="pairs",  # Pairs bootstrap
         )
-        results_bootstrap = model_bootstrap.fit(verbose=False)
+        model_bootstrap.fit(verbose=False)
         se_bootstrap = model_bootstrap.bse_
 
         # Both SEs should be positive
@@ -637,7 +639,7 @@ class TestCUEGMM:
             se_type="bootstrap",
             n_bootstrap=100,
         )
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         # Percentile CI
         ci = model.conf_int(alpha=0.05, method="percentile")
@@ -661,7 +663,7 @@ class TestCUEGMM:
             se_type="bootstrap",
             n_bootstrap=100,
         )
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         # Basic CI
         ci = model.conf_int(alpha=0.05, method="basic")
@@ -684,7 +686,7 @@ class TestCUEGMM:
         beta0_true = 1.0
         beta1_true = 2.0
 
-        for sim in range(n_sims):
+        for _sim in range(n_sims):
             # Generate data
             z1 = np.random.normal(0, 1, n)
             z2 = np.random.normal(0, 1, n)
@@ -702,7 +704,7 @@ class TestCUEGMM:
                 model = ContinuousUpdatedGMM(
                     data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"]
                 )
-                results = model.fit(verbose=False)
+                model.fit(verbose=False)
 
                 if model.converged_:
                     ci = model.conf_int(alpha=0.05, method="normal")
@@ -710,14 +712,14 @@ class TestCUEGMM:
                     # Check if true parameter is in CI
                     if ci.loc["x", "lower"] <= beta1_true <= ci.loc["x", "upper"]:
                         coverage_count += 1
-            except:
+            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
                 pass
 
         # Coverage should be approximately 95% (allow wide margin for test)
         coverage_rate = coverage_count / n_sims
-        assert (
-            coverage_rate >= 0.85
-        ), f"Coverage rate {coverage_rate:.2f} is too low (expected ~0.95)"
+        assert coverage_rate >= 0.85, (
+            f"Coverage rate {coverage_rate:.2f} is too low (expected ~0.95)"
+        )
 
     def test_bse_property(self, simple_iv_data):
         """Test bse property returns standard errors."""
@@ -726,7 +728,7 @@ class TestCUEGMM:
         model = ContinuousUpdatedGMM(
             data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"]
         )
-        results = model.fit(verbose=False)
+        model.fit(verbose=False)
 
         # Access bse property
         bse = model.bse

@@ -5,12 +5,17 @@ This module defines the abstract base class that all result containers
 (ValidationResult, ComparisonResult, etc.) must inherit from.
 """
 
+from __future__ import annotations
+
 import json
+import logging
 import webbrowser
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class BaseResult(ABC):
@@ -37,18 +42,18 @@ class BaseResult(ABC):
     --------
     >>> class MyResult(BaseResult):
     ...     def to_dict(self):
-    ...         return {'my_data': self.my_data}
+    ...         return {"my_data": self.my_data}
     ...
     ...     def summary(self):
     ...         return "My result summary"
 
     >>> result = MyResult()
-    >>> result.save_html('report.html', test_type='validation', theme='professional')
-    >>> result.save_json('result.json')
+    >>> result.save_html("report.html", test_type="validation", theme="professional")
+    >>> result.save_json("result.json")
     """
 
     def __init__(
-        self, timestamp: Optional[datetime] = None, metadata: Optional[Dict[str, Any]] = None
+        self, timestamp: datetime | None = None, metadata: dict[str, Any] | None = None
     ):
         """
         Initialize BaseResult.
@@ -64,7 +69,7 @@ class BaseResult(ABC):
         self.metadata = metadata or {}
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert result to dictionary.
 
@@ -108,10 +113,10 @@ class BaseResult(ABC):
         self,
         file_path: str,
         test_type: str,
-        template: Optional[str] = None,
+        template: str | None = None,
         report_type: str = "interactive",
         theme: str = "professional",
-        title: Optional[str] = None,
+        title: str | None = None,
         open_browser: bool = False,
     ) -> Path:
         """
@@ -144,19 +149,11 @@ class BaseResult(ABC):
 
         Examples
         --------
-        >>> result.save_html(
-        ...     'validation_report.html',
-        ...     test_type='validation',
-        ...     theme='professional'
-        ... )
+        >>> result.save_html("validation_report.html", test_type="validation", theme="professional")
         PosixPath('/path/to/validation_report.html')
 
         >>> # Open in browser automatically
-        >>> result.save_html(
-        ...     'report.html',
-        ...     test_type='validation',
-        ...     open_browser=True
-        ... )
+        >>> result.save_html("report.html", test_type="validation", open_browser=True)
         """
         # Import ReportManager
         from panelbox.report.report_manager import ReportManager
@@ -212,11 +209,11 @@ class BaseResult(ABC):
 
         Examples
         --------
-        >>> result.save_json('result.json')
+        >>> result.save_json("result.json")
         PosixPath('/path/to/result.json')
 
         >>> # Compact JSON (no indentation)
-        >>> result.save_json('result.json', indent=None)
+        >>> result.save_json("result.json", indent=None)
         """
         output_path = Path(file_path)
 

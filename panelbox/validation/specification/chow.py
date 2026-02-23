@@ -12,6 +12,7 @@ Wiley, Chapter 4.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +22,8 @@ import numpy as np
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class ChowTest(ValidationTest):
@@ -63,7 +66,7 @@ class ChowTest(ValidationTest):
     >>> print(result)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Chow test.
 
@@ -137,8 +140,7 @@ class ChowTest(ValidationTest):
             break_idx = time_periods.index(break_time)
         else:
             raise ValueError(
-                "break_point must be None, int (time period), "
-                "or float between 0 and 1 (fraction)"
+                "break_point must be None, int (time period), or float between 0 and 1 (fraction)"
             )
 
         # Create subperiod indicator
@@ -154,7 +156,7 @@ class ChowTest(ValidationTest):
         if n1 < 2 * k or n2 < 2 * k:
             raise ValueError(
                 f"Insufficient observations in subperiods. "
-                f"Need at least {2*k} in each, got n1={n1}, n2={n2}"
+                f"Need at least {2 * k} in each, got n1={n1}, n2={n2}"
             )
 
         # Estimate restricted model (pooled)

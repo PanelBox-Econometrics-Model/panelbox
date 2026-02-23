@@ -1,5 +1,5 @@
 """
-me_helpers.py
+me_helpers.py.
 -------------
 Shared plotting and table-formatting utilities for the Marginal Effects
 Tutorial Series.
@@ -19,9 +19,6 @@ plot_interaction_heatmap(interaction_df, x_var, z_var, me_var, figsize)
     Heatmap of interaction marginal effects over a grid of two variables.
 """
 
-import warnings
-
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -141,8 +138,10 @@ def format_me_table(me_result, decimals: int = 4, stars: bool = True) -> pd.Data
         out["P>|z|"] = df["pval"].map(lambda v: f"{v:.4f}" if not np.isnan(v) else "—")
 
     out["[95% CI]"] = df.apply(
-        lambda r: f"[{r['ci_low']:{'.'+str(decimals)+'f'}}, "
-        f"{r['ci_high']:{'.'+str(decimals)+'f'}}]",
+        lambda r: (
+            f"[{r['ci_low']:{'.' + str(decimals) + 'f'}}, "
+            f"{r['ci_high']:{'.' + str(decimals) + 'f'}}]"
+        ),
         axis=1,
     )
 

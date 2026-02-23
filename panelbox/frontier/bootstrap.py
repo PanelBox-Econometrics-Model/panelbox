@@ -10,7 +10,8 @@ Bootstrap is particularly useful for:
 3. Hypothesis tests with non-standard distributions
 4. Model selection and averaging
 
-References:
+References
+----------
     Simar, L., & Wilson, P. W. (1998). Sensitivity analysis of efficiency
         scores: How to bootstrap in nonparametric frontier models.
         Management Science, 44(1), 49-61.
@@ -26,12 +27,18 @@ Author: PanelBox Development Team
 Date: 2026-02-15
 """
 
-from typing import Literal, Optional, Union
+from __future__ import annotations
+
+import logging
+import warnings
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class SFABootstrap:
@@ -40,7 +47,8 @@ class SFABootstrap:
     This class provides parametric and pairs bootstrap methods for
     constructing confidence intervals for parameters and efficiency scores.
 
-    Attributes:
+    Attributes
+    ----------
         result: SFResult object from fitted SFA model
         method: Bootstrap method ('parametric' or 'pairs')
         n_boot: Number of bootstrap replications
@@ -50,7 +58,7 @@ class SFABootstrap:
 
     Example:
         >>> result = sf.fit()
-        >>> bootstrap = SFABootstrap(result, n_boot=999, method='parametric')
+        >>> bootstrap = SFABootstrap(result, n_boot=999, method="parametric")
         >>> ci_params = bootstrap.bootstrap_parameters()
         >>> ci_efficiency = bootstrap.bootstrap_efficiency()
     """
@@ -61,13 +69,14 @@ class SFABootstrap:
         method: Literal["parametric", "pairs"] = "parametric",
         n_boot: int = 999,
         ci_level: float = 0.95,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         n_jobs: int = -1,
     ):
         """
         Initialize bootstrap inference.
 
-        Parameters:
+        Parameters
+        ----------
             result: Fitted SFResult object
             method: Bootstrap method
                 - 'parametric': Resample from estimated distributions
@@ -111,10 +120,11 @@ class SFABootstrap:
             - std_boot: Standard deviation of bootstrap estimates
             - bias: Bootstrap bias estimate
 
-        Returns:
+        Returns
+        -------
             dict: Bootstrap results for parameters
         """
-        print(f"Bootstrap: {self.n_boot} replications using {self.method} method...")
+        logger.info(f"Bootstrap: {self.n_boot} replications using {self.method} method...")
 
         # Run bootstrap replications in parallel
         if self.method == "parametric":
@@ -141,7 +151,7 @@ class SFABootstrap:
         valid_mask = ~np.isnan(params_boot).any(axis=1)
         n_failed = (~valid_mask).sum()
         if n_failed > 0:
-            print(f"Warning: {n_failed}/{self.n_boot} bootstrap reps failed to converge")
+            logger.warning(f"{n_failed}/{self.n_boot} bootstrap reps failed to converge")
 
         params_boot_valid = params_boot[valid_mask]
 
@@ -189,10 +199,12 @@ class SFABootstrap:
         This is useful when the Horrace-Schmidt approach gives imprecise
         intervals or when dealing with small samples.
 
-        Parameters:
+        Parameters
+        ----------
             estimator: Efficiency estimator ('bc' or 'jlms')
 
-        Returns:
+        Returns
+        -------
             DataFrame with columns:
                 - entity: Entity identifier (if panel)
                 - time: Time identifier (if panel)
@@ -202,7 +214,7 @@ class SFABootstrap:
                 - ci_lower: Lower CI bound
                 - ci_upper: Upper CI bound
         """
-        print(f"Bootstrapping efficiency scores ({estimator} estimator)...")
+        logger.info(f"Bootstrapping efficiency scores ({estimator} estimator)...")
 
         # Run bootstrap replications
         if self.method == "parametric":
@@ -233,9 +245,26 @@ class SFABootstrap:
         valid_mask = ~np.isnan(eff_boot).any(axis=1)
         n_failed = (~valid_mask).sum()
         if n_failed > 0:
-            print(f"Warning: {n_failed}/{self.n_boot} efficiency bootstrap reps failed")
+            logger.warning(f"{n_failed}/{self.n_boot} efficiency bootstrap reps failed")
 
         eff_boot_valid = eff_boot[valid_mask]
+
+        # Original efficiency
+        eff_original = self.result.efficiency(estimator=estimator)
+
+        # Handle case where all bootstrap reps failed
+        if eff_boot_valid.shape[0] == 0:
+            warnings.warn(
+                f"All {self.n_boot} efficiency bootstrap replications failed. "
+                "Returning NaN confidence intervals.",
+                stacklevel=2,
+            )
+            results = eff_original.copy()
+            results["boot_mean"] = np.nan
+            results["boot_std"] = np.nan
+            results["ci_lower"] = np.nan
+            results["ci_upper"] = np.nan
+            return results
 
         # Compute intervals
         alpha = 1 - self.ci_level
@@ -245,9 +274,6 @@ class SFABootstrap:
         # Statistics
         mean_boot = np.mean(eff_boot_valid, axis=0)
         std_boot = np.std(eff_boot_valid, axis=0, ddof=1)
-
-        # Original efficiency
-        eff_original = self.result.efficiency(estimator=estimator)
 
         # Create results DataFrame
         results = eff_original.copy()
@@ -272,10 +298,12 @@ class SFABootstrap:
         3. Construct y* = Xβ̂ + v* - sign*u* (sign depends on frontier type)
         4. Re-estimate model on (y*, X)
 
-        Parameters:
+        Parameters
+        ----------
             b: Bootstrap replication index (for seeding)
 
-        Returns:
+        Returns
+        -------
             SFResult object or None if failed
         """
         # Seed for this replication
@@ -347,7 +375,7 @@ class SFABootstrap:
 
             return result_star
 
-        except Exception as e:
+        except Exception:
             # Convergence failure
             return None
 
@@ -359,10 +387,12 @@ class SFABootstrap:
         1. Resample (y, X) with replacement
         2. Re-estimate model on resampled data
 
-        Parameters:
+        Parameters
+        ----------
             b: Bootstrap replication index
 
-        Returns:
+        Returns
+        -------
             SFResult object or None if failed
         """
         rng = np.random.default_rng(self.seed + b if self.seed is not None else None)
@@ -412,10 +442,12 @@ class SFABootstrap:
         This is more accurate than percentile method, especially when
         the bootstrap distribution is biased or skewed.
 
-        Parameters:
+        Parameters
+        ----------
             param_name: Name of parameter
 
-        Returns:
+        Returns
+        -------
             (lower, upper): BCa confidence interval
         """
         # Run bootstrap if not done yet
@@ -461,13 +493,14 @@ def bootstrap_sfa(
     n_boot: int = 999,
     method: Literal["parametric", "pairs"] = "parametric",
     ci_level: float = 0.95,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     n_jobs: int = -1,
 ) -> dict:
     """
     Convenience function for bootstrap inference on SFA parameters.
 
-    Parameters:
+    Parameters
+    ----------
         result: Fitted SFResult object
         n_boot: Number of bootstrap replications
         method: Bootstrap method ('parametric' or 'pairs')
@@ -475,13 +508,14 @@ def bootstrap_sfa(
         seed: Random seed
         n_jobs: Number of parallel jobs
 
-    Returns:
+    Returns
+    -------
         dict: Bootstrap results
 
     Example:
         >>> result = sf.fit()
-        >>> boot_results = bootstrap_sfa(result, n_boot=999, method='parametric')
-        >>> print(boot_results['results_df'])
+        >>> boot_results = bootstrap_sfa(result, n_boot=999, method="parametric")
+        >>> print(boot_results["results_df"])
     """
     boot = SFABootstrap(
         result=result,
@@ -501,13 +535,14 @@ def bootstrap_efficiency(
     n_boot: int = 999,
     method: Literal["parametric", "pairs"] = "parametric",
     ci_level: float = 0.95,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     n_jobs: int = -1,
 ) -> pd.DataFrame:
     """
     Convenience function for bootstrap inference on efficiency scores.
 
-    Parameters:
+    Parameters
+    ----------
         result: Fitted SFResult object
         estimator: Efficiency estimator ('bc' or 'jlms')
         n_boot: Number of bootstrap replications
@@ -516,12 +551,13 @@ def bootstrap_efficiency(
         seed: Random seed
         n_jobs: Number of parallel jobs
 
-    Returns:
+    Returns
+    -------
         DataFrame with efficiency CIs
 
     Example:
         >>> eff_ci = bootstrap_efficiency(result, n_boot=999)
-        >>> print(eff_ci[['te', 'ci_lower', 'ci_upper']])
+        >>> print(eff_ci[["te", "ci_lower", "ci_upper"]])
     """
     boot = SFABootstrap(
         result=result,

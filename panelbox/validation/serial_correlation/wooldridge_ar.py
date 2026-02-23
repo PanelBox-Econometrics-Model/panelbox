@@ -11,6 +11,7 @@ Stata command: xtserial
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +22,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class WooldridgeARTest(ValidationTest):
@@ -181,7 +184,7 @@ class WooldridgeARTest(ValidationTest):
     >>> print(result_strict.conclusion)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Wooldridge AR test.
 
@@ -228,7 +231,7 @@ class WooldridgeARTest(ValidationTest):
         min_T = resid_df.groupby("entity").size().min()
         if min_T < 3:
             raise ValueError(
-                f"Wooldridge test requires at least 3 time periods. " f"Minimum found: {min_T}"
+                f"Wooldridge test requires at least 3 time periods. Minimum found: {min_T}"
             )
 
         # Compute first differences of residuals

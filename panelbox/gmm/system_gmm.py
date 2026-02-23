@@ -1,5 +1,6 @@
 """
-System GMM Estimator
+System GMM Estimator.
+
 ====================
 
 Blundell-Bond (1998) System GMM estimator for dynamic panel data models.
@@ -15,7 +16,9 @@ References
        87(1), 115-143.
 """
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
 
 import numpy as np
 import pandas as pd
@@ -23,6 +26,8 @@ import pandas as pd
 from panelbox.gmm.difference_gmm import DifferenceGMM
 from panelbox.gmm.instruments import InstrumentBuilder, InstrumentSet
 from panelbox.gmm.results import GMMResults
+
+logger = logging.getLogger(__name__)
 
 
 class SystemGMM(DifferenceGMM):
@@ -93,20 +98,20 @@ class SystemGMM(DifferenceGMM):
     >>> from panelbox.gmm import SystemGMM
     >>>
     >>> # Load production data
-    >>> data = pd.read_csv('production.csv')
+    >>> data = pd.read_csv("production.csv")
     >>>
     >>> # Estimate System GMM
     >>> model = SystemGMM(
     ...     data=data,
-    ...     dep_var='output',
-    ...     lags=1,                        # Include output_{t-1}
-    ...     id_var='firm_id',
-    ...     time_var='year',
-    ...     exog_vars=['capital', 'labor'],
-    ...     collapse=True,                 # Always recommended
+    ...     dep_var="output",
+    ...     lags=1,  # Include output_{t-1}
+    ...     id_var="firm_id",
+    ...     time_var="year",
+    ...     exog_vars=["capital", "labor"],
+    ...     collapse=True,  # Always recommended
     ...     two_step=True,
     ...     robust=True,
-    ...     level_instruments={'max_lags': 1}  # Use Δy_{t-1} for level equation
+    ...     level_instruments={"max_lags": 1},  # Use Δy_{t-1} for level equation
     ... )
     >>>
     >>> results = model.fit()
@@ -121,28 +126,23 @@ class SystemGMM(DifferenceGMM):
     >>>
     >>> # Estimate both
     >>> diff_gmm = DifferenceGMM(
-    ...     data=data,
-    ...     dep_var='y',
-    ...     lags=1,
-    ...     exog_vars=['x1', 'x2'],
-    ...     collapse=True,
-    ...     two_step=True
+    ...     data=data, dep_var="y", lags=1, exog_vars=["x1", "x2"], collapse=True, two_step=True
     ... )
     >>> diff_results = diff_gmm.fit()
     >>>
     >>> sys_gmm = SystemGMM(
     ...     data=data,
-    ...     dep_var='y',
+    ...     dep_var="y",
     ...     lags=1,
-    ...     exog_vars=['x1', 'x2'],
+    ...     exog_vars=["x1", "x2"],
     ...     collapse=True,
     ...     two_step=True,
-    ...     level_instruments={'max_lags': 1}
+    ...     level_instruments={"max_lags": 1},
     ... )
     >>> sys_results = sys_gmm.fit()
     >>>
     >>> # Compare efficiency
-    >>> coef_name = 'L1.y'
+    >>> coef_name = "L1.y"
     >>> diff_se = diff_results.std_errors[coef_name]
     >>> sys_se = sys_results.std_errors[coef_name]
     >>> efficiency_gain = (diff_se - sys_se) / diff_se * 100
@@ -157,11 +157,11 @@ class SystemGMM(DifferenceGMM):
     >>> # Control instrument depth for level equation
     >>> model = SystemGMM(
     ...     data=data,
-    ...     dep_var='n',
+    ...     dep_var="n",
     ...     lags=1,
-    ...     exog_vars=['w', 'k'],
+    ...     exog_vars=["w", "k"],
     ...     collapse=True,
-    ...     level_instruments={'max_lags': 1}
+    ...     level_instruments={"max_lags": 1},
     ... )
     >>> results = model.fit()
 
@@ -253,19 +253,19 @@ class SystemGMM(DifferenceGMM):
         self,
         data: pd.DataFrame,
         dep_var: str,
-        lags: Union[int, List[int]],
+        lags: int | list[int],
         id_var: str = "id",
         time_var: str = "year",
-        exog_vars: Optional[List[str]] = None,
-        endogenous_vars: Optional[List[str]] = None,
-        predetermined_vars: Optional[List[str]] = None,
+        exog_vars: list[str] | None = None,
+        endogenous_vars: list[str] | None = None,
+        predetermined_vars: list[str] | None = None,
         time_dummies: bool = True,
         collapse: bool = False,
         two_step: bool = True,
         robust: bool = True,
         gmm_type: str = "two_step",
-        level_instruments: Optional[Dict] = None,
-        gmm_max_lag: Optional[int] = None,
+        level_instruments: dict | None = None,
+        gmm_max_lag: int | None = None,
         iv_max_lag: int = 0,
     ):
         """Initialize System GMM model."""
@@ -310,7 +310,7 @@ class SystemGMM(DifferenceGMM):
         5. Compute specification tests including Diff-in-Hansen
         """
         # Step 1 & 2: Transform data (both differences and levels)
-        y_diff, X_diff, y_level, X_level, ids, times, valid_diff = self._transform_data_system()
+        y_diff, X_diff, y_level, X_level, ids, _times, valid_diff = self._transform_data_system()
 
         # Step 3: Generate instruments (difference + level)
         # Returns separate GMM and IV instruments for proper stacking
@@ -499,7 +499,7 @@ class SystemGMM(DifferenceGMM):
 
         # AR tests (on difference residuals only - first half of stacked system)
         # Find which clean rows correspond to the diff block
-        diff_mask_in_clean = valid_mask[: 2 * n_diff][:n_diff]  # valid mask for diff part
+        valid_mask[: 2 * n_diff][:n_diff]  # valid mask for diff part
         residuals_full_diff = np.full(n_diff, np.nan)
         # Map clean residuals back to diff block
         clean_idx = 0
@@ -551,6 +551,13 @@ class SystemGMM(DifferenceGMM):
             model_type="system",
             transformation="fd",
             residuals=residuals_clean,
+            dep_var=self.dep_var,
+            exog_vars=list(self.exog_vars),
+            id_var=self.id_var,
+            time_var=self.time_var,
+            n_lags=max(self.lags),
+            endogenous_vars=list(self.endogenous_vars),
+            predetermined_vars=list(self.predetermined_vars),
         )
 
         self.params = self.results.params
@@ -562,7 +569,7 @@ class SystemGMM(DifferenceGMM):
 
             warnings.warn(
                 f"\nLow observation retention: {self.results.nobs}/{len(self.data)} "
-                f"({retention_rate*100:.1f}%).\n"
+                f"({retention_rate * 100:.1f}%).\n"
                 f"Many observations were dropped due to insufficient valid instruments.\n\n"
                 f"Recommendations:\n"
                 f"  1. Simplify specification (fewer variables/lags)\n"
@@ -572,6 +579,7 @@ class SystemGMM(DifferenceGMM):
                 f"  5. Consider using DifferenceGMM (more robust for weak instruments)\n\n"
                 f"See examples/gmm/unbalanced_panel_guide.py for detailed guidance.",
                 UserWarning,
+                stacklevel=2,
             )
 
         return self.results
@@ -861,7 +869,7 @@ class SystemGMM(DifferenceGMM):
         if not valid_cols.any():
             import warnings
 
-            warnings.warn("No valid instrument columns found. System GMM may fail.")
+            warnings.warn("No valid instrument columns found. System GMM may fail.", stacklevel=2)
             return np.zeros((n_obs, 1))
 
         Z_filtered = Z[:, valid_cols]
@@ -874,7 +882,7 @@ class SystemGMM(DifferenceGMM):
         return Z_filtered
 
     def _get_valid_mask_system(
-        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: Optional[int] = None
+        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: int | None = None
     ) -> np.ndarray:
         """
         Get mask of observations with sufficient valid data for System GMM.
@@ -918,7 +926,7 @@ class SystemGMM(DifferenceGMM):
         Z_level: InstrumentSet,
         W_full: np.ndarray,
         n_params: int,
-        valid_diff: Optional[np.ndarray] = None,
+        valid_diff: np.ndarray | None = None,
     ):
         """
         Compute Difference-in-Hansen test for level instruments.
@@ -1006,4 +1014,4 @@ class SystemGMM(DifferenceGMM):
     def __repr__(self) -> str:
         """Representation of the model."""
         status = "fitted" if self.results is not None else "not fitted"
-        return f"SystemGMM(dep_var='{self.dep_var}', lags={self.lags}, " f"status='{status}')"
+        return f"SystemGMM(dep_var='{self.dep_var}', lags={self.lags}, status='{status}')"

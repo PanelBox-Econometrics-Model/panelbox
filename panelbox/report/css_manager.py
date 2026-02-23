@@ -4,10 +4,14 @@ CSS Manager for PanelBox Reports.
 Manages compilation and layering of CSS styles with 3-layer architecture.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
 
 from .asset_manager import AssetManager
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,7 +30,7 @@ class CSSLayer:
     """
 
     name: str
-    files: List[str]
+    files: list[str]
     priority: int = 0
 
 
@@ -59,7 +63,7 @@ class CSSManager:
     --------
     >>> css_mgr = CSSManager(minify=False)
     >>> css = css_mgr.compile()
-    >>> css_mgr.add_custom_css('custom-styles.css')
+    >>> css_mgr.add_custom_css("custom-styles.css")
     >>> css = css_mgr.compile()
     """
 
@@ -70,7 +74,7 @@ class CSSManager:
         "custom": CSSLayer(name="custom", files=[], priority=20),
     }
 
-    def __init__(self, asset_manager: Optional[AssetManager] = None, minify: bool = False):
+    def __init__(self, asset_manager: AssetManager | None = None, minify: bool = False):
         """Initialize CSS Manager."""
         if asset_manager is None:
             asset_manager = AssetManager(minify=minify)
@@ -79,20 +83,20 @@ class CSSManager:
         self.minify = minify
 
         # Initialize layers with defaults
-        self.layers: Dict[str, CSSLayer] = {}
+        self.layers: dict[str, CSSLayer] = {}
         for name, layer in self.DEFAULT_LAYERS.items():
             self.layers[name] = CSSLayer(
                 name=layer.name, files=layer.files.copy(), priority=layer.priority
             )
 
         # Track custom CSS snippets
-        self.custom_css: List[str] = []
+        self.custom_css: list[str] = []
 
         # Compilation cache
-        self._compiled_css: Optional[str] = None
+        self._compiled_css: str | None = None
         self._cache_valid = False
 
-    def add_layer(self, name: str, files: List[str], priority: int) -> None:
+    def add_layer(self, name: str, files: list[str], priority: int) -> None:
         """
         Add a new CSS layer.
 
@@ -107,7 +111,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.add_layer('theme', ['dark-theme.css'], priority=5)
+        >>> css_mgr.add_layer("theme", ["dark-theme.css"], priority=5)
         """
         self.layers[name] = CSSLayer(name=name, files=files, priority=priority)
         self._invalidate_cache()
@@ -125,7 +129,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.add_css_to_layer('custom', 'my-styles.css')
+        >>> css_mgr.add_css_to_layer("custom", "my-styles.css")
         """
         if layer_name not in self.layers:
             raise ValueError(f"Layer '{layer_name}' does not exist")
@@ -147,7 +151,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.remove_css_from_layer('custom', 'old-styles.css')
+        >>> css_mgr.remove_css_from_layer("custom", "old-styles.css")
         """
         if layer_name not in self.layers:
             raise ValueError(f"Layer '{layer_name}' does not exist")
@@ -169,7 +173,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.add_custom_css('validation-custom.css')
+        >>> css_mgr.add_custom_css("validation-custom.css")
         """
         self.add_css_to_layer("custom", css_file)
 
@@ -184,7 +188,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.add_inline_css('.my-class { color: red; }')
+        >>> css_mgr.add_inline_css(".my-class { color: red; }")
         """
         self.custom_css.append(css_content)
         self._invalidate_cache()
@@ -207,7 +211,7 @@ class CSSManager:
         --------
         >>> css = css_mgr.compile()
         >>> # Use in template
-        >>> '<style>{{ css }}</style>'
+        >>> "<style>{{ css }}</style>"
         """
         # Return cached version if valid
         if self._cache_valid and not force and self._compiled_css is not None:
@@ -273,7 +277,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css = css_mgr.compile_for_report_type('validation')
+        >>> css = css_mgr.compile_for_report_type("validation")
         """
         # Check if report-type CSS exists
         report_css_file = f"{report_type}_report.css"
@@ -297,7 +301,7 @@ class CSSManager:
 
         return css
 
-    def get_layer_info(self) -> Dict[str, Dict]:
+    def get_layer_info(self) -> dict[str, dict]:
         """
         Get information about all layers.
 
@@ -309,7 +313,7 @@ class CSSManager:
         Examples
         --------
         >>> info = css_mgr.get_layer_info()
-        >>> print(info['base']['files'])
+        >>> print(info["base"]["files"])
         ['base_styles.css']
         """
         return {
@@ -327,7 +331,7 @@ class CSSManager:
 
         Examples
         --------
-        >>> css_mgr.add_custom_css('temp.css')
+        >>> css_mgr.add_custom_css("temp.css")
         >>> css_mgr.reset_to_defaults()
         >>> # All custom CSS removed
         """
@@ -340,7 +344,7 @@ class CSSManager:
         self.custom_css.clear()
         self._invalidate_cache()
 
-    def list_available_css(self) -> Dict[str, List[str]]:
+    def list_available_css(self) -> dict[str, list[str]]:
         """
         List all available CSS files from asset manager.
 
@@ -352,12 +356,12 @@ class CSSManager:
         Examples
         --------
         >>> files = css_mgr.list_available_css()
-        >>> print(files['css'])
+        >>> print(files["css"])
         ['base_styles.css', 'report_components.css', ...]
         """
         return self.asset_manager.list_assets(asset_type="css")
 
-    def get_size_estimate(self) -> Dict[str, Union[int, float]]:
+    def get_size_estimate(self) -> dict[str, int | float]:
         """
         Estimate size of compiled CSS.
 
@@ -385,7 +389,7 @@ class CSSManager:
 
         return sizes
 
-    def validate_layers(self) -> Dict[str, List[str]]:
+    def validate_layers(self) -> dict[str, list[str]]:
         """
         Validate that all CSS files in layers exist.
 
@@ -397,7 +401,7 @@ class CSSManager:
         Examples
         --------
         >>> missing = css_mgr.validate_layers()
-        >>> if missing['custom']:
+        >>> if missing["custom"]:
         ...     print(f"Missing files: {missing['custom']}")
         """
         missing: dict[str, list] = {}

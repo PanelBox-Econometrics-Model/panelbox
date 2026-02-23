@@ -5,6 +5,8 @@ This module provides diagnostic tools for assessing the fit and
 validity of quantile regression models.
 """
 
+from __future__ import annotations
+
 from panelbox.diagnostics.quantile.advanced_tests import (
     AdvancedDiagnostics,
     DiagnosticReport,
@@ -13,8 +15,8 @@ from panelbox.diagnostics.quantile.advanced_tests import (
 from panelbox.diagnostics.quantile.basic_diagnostics import QuantileRegressionDiagnostics
 
 __all__ = [
-    "QuantileRegressionDiagnostics",
     "AdvancedDiagnostics",
-    "DiagnosticResult",
     "DiagnosticReport",
+    "DiagnosticResult",
+    "QuantileRegressionDiagnostics",
 ]

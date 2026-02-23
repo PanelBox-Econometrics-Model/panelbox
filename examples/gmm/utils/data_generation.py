@@ -15,8 +15,8 @@ def generate_nickell_bias_data(
     output_path: str | None = None,
     seed: int = 42,
     N: int = 500,
-    rho_values: list[float] = [0.3, 0.5, 0.8],
-    T_values: list[int] = [5, 10, 20],
+    rho_values: list[float] = None,
+    T_values: list[int] = None,
 ) -> pd.DataFrame:
     """
     Generate panel data demonstrating Nickell bias.
@@ -41,6 +41,10 @@ def generate_nickell_bias_data(
     pd.DataFrame
         Panel data with columns: entity, time, y, rho, T.
     """
+    if T_values is None:
+        T_values = [5, 10, 20]
+    if rho_values is None:
+        rho_values = [0.3, 0.5, 0.8]
     rng = np.random.default_rng(seed)
     frames = []
 

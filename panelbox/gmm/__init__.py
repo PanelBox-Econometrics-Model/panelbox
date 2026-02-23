@@ -1,5 +1,6 @@
 """
-PanelBox GMM Module
+PanelBox GMM Module.
+
 ===================
 
 Dynamic panel data models using Generalized Method of Moments (GMM).
@@ -24,11 +25,7 @@ Examples
 --------
 >>> from panelbox.gmm import DifferenceGMM
 >>> model = DifferenceGMM(
-...     data=abdata,
-...     dep_var='n',
-...     lags=[1],
-...     exog_vars=['w', 'k'],
-...     time_dummies=True
+...     data=abdata, dep_var="n", lags=[1], exog_vars=["w", "k"], time_dummies=True
 ... )
 >>> results = model.fit()
 >>> print(results.summary())
@@ -51,6 +48,8 @@ References
        126(1), 25-51.
 """
 
+from __future__ import annotations
+
 from panelbox.gmm.bias_corrected import BiasCorrectedGMM
 from panelbox.gmm.cue_gmm import ContinuousUpdatedGMM
 from panelbox.gmm.diagnostics import GMMDiagnostics
@@ -62,11 +61,11 @@ from panelbox.gmm.system_gmm import SystemGMM
 __all__ = [
     "BiasCorrectedGMM",
     "ContinuousUpdatedGMM",
+    "DifferenceGMM",
     "GMMDiagnostics",
     "GMMOverfitDiagnostic",
-    "DifferenceGMM",
-    "SystemGMM",
     "GMMResults",
+    "SystemGMM",
     "TestResult",
 ]
 

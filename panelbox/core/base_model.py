@@ -6,8 +6,9 @@ This module provides the abstract base class that all panel models inherit from.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,8 @@ from panelbox.core.panel_data import PanelData
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
     from panelbox.validation.validation_suite import ValidationReport
+
+logger = logging.getLogger(__name__)
 
 
 class PanelModel(ABC):
@@ -67,7 +70,7 @@ class PanelModel(ABC):
         data: pd.DataFrame,
         entity_col: str,
         time_col: str,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         # Store formula
         self.formula = formula
@@ -80,19 +83,18 @@ class PanelModel(ABC):
 
         # Store weights
         self.weights = weights
-        if weights is not None:
-            if len(weights) != self.data.n_obs:
-                raise ValueError(f"weights must have length {self.data.n_obs}, got {len(weights)}")
+        if weights is not None and len(weights) != self.data.n_obs:
+            raise ValueError(f"weights must have length {self.data.n_obs}, got {len(weights)}")
 
         # Parse formula
         self.formula_parser = FormulaParser(formula).parse()
 
         # Model state
         self._fitted = False
-        self._results: Optional[Any] = None
+        self._results: Any | None = None
 
     @abstractmethod
-    def fit(self, **kwargs) -> "PanelResults":
+    def fit(self, **kwargs) -> PanelResults:
         """
         Fit the model.
 
@@ -123,7 +125,7 @@ class PanelModel(ABC):
             Estimated coefficients
         """
 
-    def validate(self, tests: Optional[list] = None, verbose: bool = True) -> "ValidationReport":
+    def validate(self, tests: list | None = None, verbose: bool = True) -> ValidationReport:
         """
         Run validation suite on fitted model.
 
@@ -152,6 +154,20 @@ class PanelModel(ABC):
 
         suite = ValidationSuite(self._results)
         return suite.run(tests=tests, verbose=verbose)
+
+    @property
+    def endog(self) -> np.ndarray:
+        """Dependent variable array (available after fit)."""
+        if hasattr(self, "_y_orig"):
+            return self._y_orig
+        raise AttributeError("endog not available. Call fit() first.")
+
+    @property
+    def exog(self) -> np.ndarray:
+        """Exogenous variable array (available after fit)."""
+        if hasattr(self, "_X_orig"):
+            return self._X_orig
+        raise AttributeError("exog not available. Call fit() first.")
 
     def __repr__(self) -> str:
         """String representation."""

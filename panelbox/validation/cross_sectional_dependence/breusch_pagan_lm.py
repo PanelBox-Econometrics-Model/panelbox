@@ -13,6 +13,7 @@ in Panels. Cambridge Working Papers in Economics No. 0435.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,6 +24,8 @@ import pandas as pd
 from scipy import stats
 
 from panelbox.validation.base import ValidationTest, ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class BreuschPaganLMTest(ValidationTest):
@@ -63,13 +66,15 @@ class BreuschPaganLMTest(ValidationTest):
     >>> model = PooledOLS("y ~ x1 + x2", data, "entity", "time")
     >>> results = model.fit()
     >>>
-    >>> from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
+    >>> from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import (
+    ...     BreuschPaganLMTest,
+    ... )
     >>> test = BreuschPaganLMTest(results)
     >>> result = test.run()
     >>> print(result)
     """
 
-    def __init__(self, results: "PanelResults"):
+    def __init__(self, results: PanelResults):
         """
         Initialize Breusch-Pagan LM test.
 
@@ -183,7 +188,7 @@ class BreuschPaganLMTest(ValidationTest):
             "n_positive_correlations": int(positive_corrs),
             "n_negative_correlations": int(negative_corrs),
             "warning": (
-                "Test may be over-sized for large N. " "Consider Pesaran CD test if N > 30."
+                "Test may be over-sized for large N. Consider Pesaran CD test if N > 30."
                 if N > 30
                 else None
             ),

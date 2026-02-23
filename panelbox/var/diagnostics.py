@@ -1,5 +1,5 @@
 """
-GMM Diagnostic Tests for Panel VAR
+GMM Diagnostic Tests for Panel VAR.
 
 This module implements diagnostic tests for GMM estimation including:
 - Hansen J test for over-identifying restrictions
@@ -7,7 +7,8 @@ This module implements diagnostic tests for GMM estimation including:
 - Difference-in-Hansen test for subsets of instruments
 - Automatic warning system for weak/invalid instruments
 
-References:
+References
+----------
 - Hansen, L. P. (1982). Large sample properties of generalized method of moments estimators.
   Econometrica, 1029-1054.
 - Sargan, J. D. (1958). The estimation of economic relationships using instrumental variables.
@@ -15,12 +16,16 @@ References:
 - Roodman, D. (2009). How to do xtabond2. The Stata Journal, 9(1), 86-136.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class GMMDiagnostics:
@@ -47,7 +52,7 @@ class GMMDiagnostics:
         instruments: np.ndarray,
         n_params: int,
         n_entities: int,
-        entity_ids: Optional[np.ndarray] = None,
+        entity_ids: np.ndarray | None = None,
     ):
         self.residuals = residuals
         self.instruments = instruments
@@ -60,7 +65,7 @@ class GMMDiagnostics:
         self.n_instruments = instruments.shape[1]
         self.df_overid = self.n_instruments - self.n_params
 
-    def hansen_j_test(self) -> Dict:
+    def hansen_j_test(self) -> dict:
         """
         Hansen J test for over-identifying restrictions.
 
@@ -117,7 +122,9 @@ class GMMDiagnostics:
         try:
             Omega_inv = np.linalg.inv(Omega)
         except np.linalg.LinAlgError:
-            warnings.warn("Could not invert moment covariance matrix for Hansen J test")
+            warnings.warn(
+                "Could not invert moment covariance matrix for Hansen J test", stacklevel=2
+            )
             return {
                 "statistic": np.nan,
                 "p_value": np.nan,
@@ -143,7 +150,7 @@ class GMMDiagnostics:
             "warnings": test_warnings,
         }
 
-    def _interpret_hansen_j(self, j_stat: float, p_value: float) -> Tuple[str, list]:
+    def _interpret_hansen_j(self, j_stat: float, p_value: float) -> tuple[str, list]:
         """
         Interpret Hansen J test result.
 
@@ -179,8 +186,7 @@ class GMMDiagnostics:
 
         elif 0.10 <= p_value <= 0.90:
             interpretation = (
-                "Do not reject H₀: Instruments appear valid. "
-                "P-value in ideal range [0.10, 0.90]."
+                "Do not reject H₀: Instruments appear valid. P-value in ideal range [0.10, 0.90]."
             )
 
         else:
@@ -195,7 +201,7 @@ class GMMDiagnostics:
 
         return interpretation, test_warnings
 
-    def sargan_test(self) -> Dict:
+    def sargan_test(self) -> dict:
         """
         Sargan test for over-identifying restrictions (non-robust version).
 
@@ -272,7 +278,7 @@ class GMMDiagnostics:
         residuals_full: np.ndarray,
         residuals_restricted: np.ndarray,
         n_params: int,
-    ) -> Dict:
+    ) -> dict:
         """
         Difference-in-Hansen test for subset of instruments.
 
@@ -335,7 +341,7 @@ class GMMDiagnostics:
             "interpretation": interpretation,
         }
 
-    def instrument_diagnostics_report(self) -> Dict:
+    def instrument_diagnostics_report(self) -> dict:
         """
         Comprehensive instrument diagnostics report.
 
@@ -402,7 +408,7 @@ class GMMDiagnostics:
             "diagnosis": diagnosis,
         }
 
-    def ar_test(self, order: int = 1) -> Dict:
+    def ar_test(self, order: int = 1) -> dict:
         """
         Arellano-Bond AR test for autocorrelation in transformed residuals.
 
@@ -512,7 +518,7 @@ class GMMDiagnostics:
 
 def hansen_j_test(
     residuals: np.ndarray, instruments: np.ndarray, n_params: int, n_entities: int
-) -> Dict:
+) -> dict:
     """
     Convenience function for Hansen J test.
 
@@ -538,7 +544,7 @@ def hansen_j_test(
 
 def sargan_test(
     residuals: np.ndarray, instruments: np.ndarray, n_params: int, n_entities: int
-) -> Dict:
+) -> dict:
     """
     Convenience function for Sargan test.
 
@@ -562,9 +568,9 @@ def sargan_test(
     return diag.sargan_test()
 
 
-def instrument_sensitivity_analysis(
-    model_func, max_instruments_list: List[int], **model_kwargs
-) -> Dict:
+def instrument_sensitivity_analysis(  # noqa: C901
+    model_func, max_instruments_list: list[int], **model_kwargs
+) -> dict:
     """
     Sensitivity analysis: stability of coefficients across different instrument counts.
 
@@ -616,7 +622,6 @@ def instrument_sensitivity_analysis(
 
     # Track first successful estimation for baseline
     baseline_params = None
-    first_result = None
 
     for max_instr in max_instruments_list:
         try:
@@ -648,7 +653,6 @@ def instrument_sensitivity_analysis(
             # Store baseline
             if baseline_params is None:
                 baseline_params = params
-                first_result = result
 
             # Store coefficients
             for i, val in enumerate(params):
@@ -659,7 +663,7 @@ def instrument_sensitivity_analysis(
 
         except Exception as e:
             results["warnings"].append(
-                f"Failed to estimate with max_instruments={max_instr}: {str(e)}"
+                f"Failed to estimate with max_instruments={max_instr}: {e!s}"
             )
             continue
 
@@ -689,7 +693,7 @@ def instrument_sensitivity_analysis(
 
     # Check convergence (monotonicity)
     # Coefficients should converge as instruments increase
-    for coef_name, values in results["coefficients"].items():
+    for _coef_name, values in results["coefficients"].items():
         if len(values) > 2:
             # Check if changes are decreasing in magnitude
             changes = np.abs(np.diff(values))
@@ -716,14 +720,14 @@ def instrument_sensitivity_analysis(
 def compare_transforms(
     data: pd.DataFrame,
     var_lags: int,
-    value_cols: List[str],
+    value_cols: list[str],
     entity_col: str = "entity",
     time_col: str = "time",
     gmm_step: str = "two-step",
     instrument_type: str = "all",
-    max_instruments: Optional[int] = None,
+    max_instruments: int | None = None,
     windmeijer_correction: bool = True,
-) -> Dict:
+) -> dict:
     """
     Compare FOD and FD transformations for Panel VAR GMM estimation.
 
@@ -795,15 +799,11 @@ def compare_transforms(
     >>> from panelbox.var.diagnostics import compare_transforms
     >>>
     >>> # Compare transformations
-    >>> comparison = compare_transforms(
-    ...     data=df,
-    ...     var_lags=1,
-    ...     value_cols=['y1', 'y2']
-    ... )
-    >>> print(comparison['summary'])
+    >>> comparison = compare_transforms(data=df, var_lags=1, value_cols=["y1", "y2"])
+    >>> print(comparison["summary"])
     >>>
     >>> # Check if results are similar
-    >>> if comparison['coef_diff_max'] < 0.05:
+    >>> if comparison["coef_diff_max"] < 0.05:
     ...     print("Results robust across transformations")
     """
     from panelbox.var.gmm import estimate_panel_var_gmm
@@ -823,7 +823,7 @@ def compare_transforms(
             windmeijer_correction=windmeijer_correction,
         )
     except Exception as e:
-        return {"error": f"FOD estimation failed: {str(e)}", "fod_result": None, "fd_result": None}
+        return {"error": f"FOD estimation failed: {e!s}", "fod_result": None, "fd_result": None}
 
     # Estimate with FD
     try:
@@ -841,7 +841,7 @@ def compare_transforms(
         )
     except Exception as e:
         return {
-            "error": f"FD estimation failed: {str(e)}",
+            "error": f"FD estimation failed: {e!s}",
             "fod_result": result_fod,
             "fd_result": None,
         }
@@ -948,7 +948,7 @@ def compare_transforms(
     }
 
 
-def ar_test(residuals_transformed: np.ndarray, entity_ids: np.ndarray, order: int = 1) -> Dict:
+def ar_test(residuals_transformed: np.ndarray, entity_ids: np.ndarray, order: int = 1) -> dict:
     """
     Arellano-Bond AR test for autocorrelation in transformed residuals.
 

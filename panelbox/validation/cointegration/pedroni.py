@@ -15,12 +15,17 @@ Reference:
     hypothesis. Econometric theory, 20(3), 597-625.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -154,7 +159,7 @@ class PedroniTest:
     >>> data = pb.load_grunfeld()
     >>>
     >>> # Test cointegration between invest and value
-    >>> ped = pb.PedroniTest(data, 'invest', ['value'], 'firm', 'year')
+    >>> ped = pb.PedroniTest(data, "invest", ["value"], "firm", "year")
     >>> result = ped.run()
     >>> print(result)
 

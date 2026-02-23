@@ -16,7 +16,6 @@ Functions:
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def generate_healthcare_data(n=2000, seed=42):
@@ -47,7 +46,7 @@ def generate_healthcare_data(n=2000, seed=42):
     Examples
     --------
     >>> df = generate_healthcare_data(n=2000, seed=42)
-    >>> df['visits'].mean()
+    >>> df["visits"].mean()
     4.2...
 
     Notes
@@ -578,15 +577,15 @@ if __name__ == "__main__":
     print(f"✓ Crime data: {df3.shape}")
 
     df4 = generate_trade_data(n_countries=10, n_years=3)
-    print(f"✓ Trade data: {df4.shape}, zeros={( df4['trade_value']==0).mean():.1%}")
+    print(f"✓ Trade data: {df4.shape}, zeros={(df4['trade_value'] == 0).mean():.1%}")
 
     df5 = generate_zinb_healthcare_data(n=100)
-    print(f"✓ ZINB healthcare: {df5.shape}, zeros={(df5['visits']==0).mean():.1%}")
+    print(f"✓ ZINB healthcare: {df5.shape}, zeros={(df5['visits'] == 0).mean():.1%}")
 
     df6 = generate_policy_impact_data(n=100)
     print(f"✓ Policy impact: {df6.shape}")
 
     df7 = generate_innovation_data(n_firms=50, n_years=3)
-    print(f"✓ Innovation data: {df7.shape}, zeros={(df7['patents']==0).mean():.1%}")
+    print(f"✓ Innovation data: {df7.shape}, zeros={(df7['patents'] == 0).mean():.1%}")
 
     print("\nAll data generators working correctly!")

@@ -4,10 +4,15 @@ PanelData - Container for panel data with validation and transformations.
 This module provides the core PanelData class for handling panel datasets.
 """
 
-from typing import List, Optional, Union, cast
+from __future__ import annotations
+
+import logging
+from typing import cast
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class PanelData:
@@ -54,15 +59,17 @@ class PanelData:
     >>> import panelbox as pb
     >>>
     >>> # Create sample panel data
-    >>> data = pd.DataFrame({
-    ...     'firm': [1, 1, 1, 2, 2, 2],
-    ...     'year': [2020, 2021, 2022, 2020, 2021, 2022],
-    ...     'invest': [100, 110, 115, 200, 210, 220],
-    ...     'value': [1000, 1100, 1200, 2000, 2100, 2200]
-    ... })
+    >>> data = pd.DataFrame(
+    ...     {
+    ...         "firm": [1, 1, 1, 2, 2, 2],
+    ...         "year": [2020, 2021, 2022, 2020, 2021, 2022],
+    ...         "invest": [100, 110, 115, 200, 210, 220],
+    ...         "value": [1000, 1100, 1200, 2000, 2100, 2200],
+    ...     }
+    ... )
     >>>
     >>> # Create PanelData object
-    >>> panel = pb.PanelData(data, entity_col='firm', time_col='year')
+    >>> panel = pb.PanelData(data, entity_col="firm", time_col="year")
     >>> print(panel.summary())
     """
 
@@ -100,8 +107,13 @@ class PanelData:
             self.min_periods = int(obs_per_entity.min())
             self.avg_periods = float(obs_per_entity.mean())
 
+    @property
+    def dataframe(self) -> pd.DataFrame:
+        """Alias for .data for backward compatibility."""
+        return self.data
+
     def demeaning(
-        self, variables: Optional[Union[str, List[str]]] = None, method: str = "entity"
+        self, variables: str | list[str] | None = None, method: str = "entity"
     ) -> pd.DataFrame:
         """
         Remove means from variables (within transformation).
@@ -126,7 +138,7 @@ class PanelData:
 
         Examples
         --------
-        >>> demeaned = panel.demeaning(['invest', 'value'], method='entity')
+        >>> demeaned = panel.demeaning(["invest", "value"], method="entity")
         """
         if variables is None:
             # Demean all numeric columns except identifiers
@@ -164,9 +176,9 @@ class PanelData:
         else:
             raise ValueError("method must be 'entity', 'time', or 'both'")
 
-        return cast(pd.DataFrame, result)
+        return cast("pd.DataFrame", result)
 
-    def first_difference(self, variables: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
+    def first_difference(self, variables: str | list[str] | None = None) -> pd.DataFrame:
         """
         Compute first differences (Δy_it = y_it - y_i,t-1).
 
@@ -185,7 +197,7 @@ class PanelData:
 
         Examples
         --------
-        >>> diff_data = panel.first_difference(['invest', 'value'])
+        >>> diff_data = panel.first_difference(["invest", "value"])
         """
         if variables is None:
             numeric_cols = self.data.select_dtypes(include=[np.number]).columns
@@ -207,9 +219,9 @@ class PanelData:
         # Drop first observation for each entity (NaN from diff)
         result = result.dropna(subset=variables)
 
-        return cast(pd.DataFrame, result)
+        return cast("pd.DataFrame", result)
 
-    def lag(self, variable: str, lags: Union[int, List[int]] = 1) -> pd.DataFrame:
+    def lag(self, variable: str, lags: int | list[int] = 1) -> pd.DataFrame:
         """
         Create lagged variables.
 
@@ -229,10 +241,10 @@ class PanelData:
         Examples
         --------
         >>> # Create single lag
-        >>> data_lag1 = panel.lag('invest', lags=1)
+        >>> data_lag1 = panel.lag("invest", lags=1)
         >>>
         >>> # Create multiple lags
-        >>> data_lags = panel.lag('invest', lags=[1, 2, 3])
+        >>> data_lags = panel.lag("invest", lags=[1, 2, 3])
         """
         if variable not in self.data.columns:
             raise ValueError(f"Variable '{variable}' not found in data")
@@ -249,9 +261,9 @@ class PanelData:
             lag_name = f"L{lag}.{variable}"
             result[lag_name] = result.groupby(self.entity_col)[variable].shift(lag)
 
-        return cast(pd.DataFrame, result)
+        return cast("pd.DataFrame", result)
 
-    def lead(self, variable: str, leads: Union[int, List[int]] = 1) -> pd.DataFrame:
+    def lead(self, variable: str, leads: int | list[int] = 1) -> pd.DataFrame:
         """
         Create lead variables (forward lags).
 
@@ -270,7 +282,7 @@ class PanelData:
 
         Examples
         --------
-        >>> data_lead = panel.lead('invest', leads=1)
+        >>> data_lead = panel.lead("invest", leads=1)
         """
         if variable not in self.data.columns:
             raise ValueError(f"Variable '{variable}' not found in data")
@@ -287,9 +299,9 @@ class PanelData:
             lead_name = f"F{lead}.{variable}"
             result[lead_name] = result.groupby(self.entity_col)[variable].shift(-lead)
 
-        return cast(pd.DataFrame, result)
+        return cast("pd.DataFrame", result)
 
-    def balance(self) -> "PanelData":
+    def balance(self) -> PanelData:
         """
         Balance the panel by keeping only entities with complete time series.
 

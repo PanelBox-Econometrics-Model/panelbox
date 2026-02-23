@@ -8,15 +8,20 @@ Author: PanelBox Developers
 License: MIT
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 from scipy import optimize, stats
 from scipy.special import expit, logsumexp
 
 from panelbox.optimization.quadrature import gauss_hermite_quadrature
+
+logger = logging.getLogger(__name__)
 
 
 class NonlinearPanelModel:
@@ -52,8 +57,8 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         endog: np.ndarray,
         exog: np.ndarray,
         groups: np.ndarray,
-        time: Optional[np.ndarray] = None,
-        n_categories: Optional[int] = None,
+        time: np.ndarray | None = None,
+        n_categories: int | None = None,
     ):
         super().__init__(endog, exog, groups, time)
 
@@ -70,8 +75,9 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         expected_cats = np.arange(self.n_categories)
         if not np.array_equal(np.sort(unique_vals), expected_cats):
             warnings.warn(
-                f"Categories should be 0, 1, ..., {self.n_categories-1}. " "Remapping categories.",
+                f"Categories should be 0, 1, ..., {self.n_categories - 1}. Remapping categories.",
                 RuntimeWarning,
+                stacklevel=2,
             )
             # Remap to 0-based consecutive integers
             self.category_map = {val: i for i, val in enumerate(unique_vals)}
@@ -112,9 +118,7 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         return cutpoints
 
     def _inverse_transform_cutpoints(self, cutpoints: np.ndarray) -> np.ndarray:
-        """
-        Inverse transform from ordered cutpoints to unconstrained parameters.
-        """
+        """Inverse transform from ordered cutpoints to unconstrained parameters."""
         cutpoint_params = np.zeros(len(cutpoints))
         cutpoint_params[0] = cutpoints[0]
 
@@ -222,11 +226,11 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "OrderedChoiceModel":
+    ) -> OrderedChoiceModel:
         """
         Fit the ordered choice model.
 
@@ -286,7 +290,7 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning)
+            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning, stacklevel=2)
 
         # Store results
         self.params = result.x
@@ -317,6 +321,7 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         for i in range(n_params):
 
             def grad_i(params):
+                """Compute individual-level gradient contributions."""
                 return self._score(params)[i]
 
             hessian[i, :] = approx_fprime(self.params, grad_i, eps)
@@ -331,11 +336,15 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
             self.cov_params = np.linalg.inv(hessian)
             self.bse = np.sqrt(np.diag(self.cov_params))
         except np.linalg.LinAlgError:
-            warnings.warn("Singular Hessian matrix, cannot compute standard errors", RuntimeWarning)
+            warnings.warn(
+                "Singular Hessian matrix, cannot compute standard errors",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             self.cov_params = np.full((n_params, n_params), np.nan)
             self.bse = np.full(n_params, np.nan)
 
-    def predict_proba(self, exog: Optional[np.ndarray] = None) -> np.ndarray:
+    def predict_proba(self, exog: np.ndarray | None = None) -> np.ndarray:
         """
         Predict probabilities for each category.
 
@@ -380,7 +389,7 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         return probs
 
     def predict(
-        self, exog: Optional[np.ndarray] = None, type: Literal["category", "prob"] = "category"
+        self, exog: np.ndarray | None = None, type: Literal["category", "prob"] = "category"
     ) -> np.ndarray:
         """
         Generate predictions from the fitted model.
@@ -538,8 +547,8 @@ class RandomEffectsOrderedLogit(OrderedChoiceModel):
         endog: np.ndarray,
         exog: np.ndarray,
         groups: np.ndarray,
-        time: Optional[np.ndarray] = None,
-        n_categories: Optional[int] = None,
+        time: np.ndarray | None = None,
+        n_categories: int | None = None,
         quadrature_points: int = 12,
     ):
         super().__init__(endog, exog, groups, time, n_categories)
@@ -626,11 +635,11 @@ class RandomEffectsOrderedLogit(OrderedChoiceModel):
 
     def fit(
         self,
-        start_params: Optional[np.ndarray] = None,
+        start_params: np.ndarray | None = None,
         method: str = "BFGS",
         maxiter: int = 1000,
         **kwargs,
-    ) -> "RandomEffectsOrderedLogit":
+    ) -> RandomEffectsOrderedLogit:
         """
         Fit the Random Effects Ordered Logit model.
 
@@ -656,7 +665,7 @@ class RandomEffectsOrderedLogit(OrderedChoiceModel):
         )
 
         if not result.success:
-            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning)
+            warnings.warn(f"Optimization failed: {result.message}", RuntimeWarning, stacklevel=2)
 
         # Store results
         self.params = result.x

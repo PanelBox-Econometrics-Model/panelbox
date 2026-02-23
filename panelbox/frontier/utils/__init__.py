@@ -30,9 +30,11 @@ Example
 >>> print(tfp.summary())
 >>>
 >>> # Marginal effects
->>> me = marginal_effects(result, method='mean')
+>>> me = marginal_effects(result, method="mean")
 >>> print(me)
 """
+
+from __future__ import annotations
 
 from .decomposition import TFPDecomposition
 from .marginal_effects import (
@@ -45,7 +47,7 @@ from .marginal_effects import (
 __all__ = [
     "TFPDecomposition",
     "marginal_effects",
-    "marginal_effects_wang_2002",
     "marginal_effects_bc95",
     "marginal_effects_summary",
+    "marginal_effects_wang_2002",
 ]

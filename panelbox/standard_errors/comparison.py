@@ -1,5 +1,5 @@
 """
-Standard Error Comparison Tools
+Standard Error Comparison Tools.
 
 This module provides tools for comparing different types of standard errors
 for the same model specification. It allows researchers to assess the impact
@@ -35,11 +35,16 @@ References
   both firm and time. Journal of Financial Economics, 99(1), 1-10.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -123,7 +128,7 @@ class StandardErrorComparison:
 
     Compare specific pair:
 
-    >>> comp = comparison.compare_pair('robust', 'clustered')
+    >>> comp = comparison.compare_pair("robust", "clustered")
     >>> print(f"Max difference: {comp.se_ratios.max().max():.3f}")
 
     Plot comparison:
@@ -173,7 +178,7 @@ class StandardErrorComparison:
         else:
             self._has_model = True
 
-    def compare_all(self, se_types: Optional[List[str]] = None, **kwargs) -> ComparisonResult:
+    def compare_all(self, se_types: list[str] | None = None, **kwargs) -> ComparisonResult:
         """
         Compare all specified standard error types.
 
@@ -199,13 +204,10 @@ class StandardErrorComparison:
         >>> print(comp.se_comparison)
 
         >>> # Custom SE types
-        >>> comp = comparison.compare_all(['nonrobust', 'robust', 'clustered'])
+        >>> comp = comparison.compare_all(["nonrobust", "robust", "clustered"])
 
         >>> # With parameters
-        >>> comp = comparison.compare_all(
-        ...     se_types=['driscoll_kraay', 'newey_west'],
-        ...     max_lags=3
-        ... )
+        >>> comp = comparison.compare_all(se_types=["driscoll_kraay", "newey_west"], max_lags=3)
         """
         if se_types is None:
             # Default list of SE types to compare
@@ -228,10 +230,10 @@ class StandardErrorComparison:
                     se_dict[se_type] = results.std_errors.values
                 else:
                     # Can't refit, skip this SE type
-                    print(f"Warning: Cannot refit model for {se_type}")
+                    logger.warning("Cannot refit model for %s", se_type)
                     continue
             except Exception as e:
-                print(f"Warning: Failed to compute {se_type} SEs: {str(e)}")
+                logger.warning("Failed to compute %s SEs: %s", se_type, e)
                 continue
 
         if not se_dict:
@@ -245,12 +247,12 @@ class StandardErrorComparison:
             se_ratios = se_comparison.div(se_comparison["nonrobust"], axis=0)
         else:
             # Use first SE type as baseline
-            baseline = list(se_dict.keys())[0]
+            baseline = next(iter(se_dict.keys()))
             se_ratios = se_comparison.div(se_comparison[baseline], axis=0)
 
         # Compute t-statistics
         t_stats = pd.DataFrame(
-            {se_type: self.coefficients / se_dict[se_type] for se_type in se_dict.keys()},
+            {se_type: self.coefficients / se_dict[se_type] for se_type in se_dict},
             index=self.coef_names,
         )
 
@@ -260,7 +262,7 @@ class StandardErrorComparison:
         p_values = pd.DataFrame(
             {
                 se_type: 2 * (1 - stats.t.cdf(np.abs(t_stats[se_type]), self.df_resid))
-                for se_type in se_dict.keys()
+                for se_type in se_dict
             },
             index=self.coef_names,
         )
@@ -268,11 +270,11 @@ class StandardErrorComparison:
         # Compute 95% confidence intervals
         t_crit = stats.t.ppf(0.975, self.df_resid)
         ci_lower = pd.DataFrame(
-            {se_type: self.coefficients - t_crit * se_dict[se_type] for se_type in se_dict.keys()},
+            {se_type: self.coefficients - t_crit * se_dict[se_type] for se_type in se_dict},
             index=self.coef_names,
         )
         ci_upper = pd.DataFrame(
-            {se_type: self.coefficients + t_crit * se_dict[se_type] for se_type in se_dict.keys()},
+            {se_type: self.coefficients + t_crit * se_dict[se_type] for se_type in se_dict},
             index=self.coef_names,
         )
 
@@ -324,14 +326,14 @@ class StandardErrorComparison:
 
         Examples
         --------
-        >>> comp = comparison.compare_pair('robust', 'clustered')
+        >>> comp = comparison.compare_pair("robust", "clustered")
         >>> print(comp.se_ratios)
         """
         return self.compare_all(se_types=[se_type1, se_type2], **kwargs)
 
     def plot_comparison(
         self,
-        result: Optional[ComparisonResult] = None,
+        result: ComparisonResult | None = None,
         alpha: float = 0.05,
         figsize: tuple = (12, 8),
     ):
@@ -367,8 +369,8 @@ class StandardErrorComparison:
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError(
-                "Matplotlib is required for plotting. " "Install it with: pip install matplotlib"
-            )
+                "Matplotlib is required for plotting. Install it with: pip install matplotlib"
+            ) from None
 
         if result is None:
             result = self.compare_all()
@@ -422,7 +424,7 @@ class StandardErrorComparison:
         plt.tight_layout()
         return fig
 
-    def summary(self, result: Optional[ComparisonResult] = None):
+    def summary(self, result: ComparisonResult | None = None):
         """
         Print summary of standard error comparison.
 
@@ -505,7 +507,7 @@ class StandardErrorComparison:
         print()
         print("=" * 80)
 
-    def _get_se_kwargs(self, se_type: str, **kwargs) -> Dict[str, Any]:
+    def _get_se_kwargs(self, se_type: str, **kwargs) -> dict[str, Any]:
         """Get SE-specific keyword arguments."""
         se_kwargs = {}
 

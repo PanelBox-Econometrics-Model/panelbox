@@ -8,25 +8,31 @@ This module provides visualization functions for:
 - Fan charts (percentile evolution)
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
+logger = logging.getLogger(__name__)
 
-def plot_efficiency_timeseries(
+
+def plot_efficiency_timeseries(  # noqa: C901
     efficiency_df: pd.DataFrame,
     backend: str = "plotly",
     show_ci: bool = True,
     show_range: bool = False,
     show_median: bool = False,
-    events: Optional[Dict[Union[int, str], str]] = None,
-    title: Optional[str] = None,
+    events: dict[int | str, str] | None = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot time series of mean efficiency with confidence intervals.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency' and 'time' columns
         backend: 'plotly' for interactive or 'matplotlib' for static
         show_ci: Show confidence interval band (±2 std errors)
@@ -37,20 +43,20 @@ def plot_efficiency_timeseries(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = panel_sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc', by_period=True)
+        >>> eff_df = result.efficiency(estimator="bc", by_period=True)
         >>> fig = plot_efficiency_timeseries(
-        ...     eff_df,
-        ...     show_ci=True,
-        ...     events={2008: 'Crisis', 2015: 'Reform'}
+        ...     eff_df, show_ci=True, events={2008: "Crisis", 2015: "Reform"}
         ... )
         >>> fig.show()
 
-    Notes:
+    Notes
+    -----
         - Requires panel data with time-varying efficiency
         - For Pitt-Lee model, efficiency is constant over time
     """
@@ -85,7 +91,7 @@ def plot_efficiency_timeseries(
                     x=time_points,
                     y=max_eff,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     showlegend=False,
                     hoverinfo="skip",
                 )
@@ -95,7 +101,7 @@ def plot_efficiency_timeseries(
                     x=time_points,
                     y=min_eff,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     fill="tonexty",
                     fillcolor="rgba(200, 200, 200, 0.3)",
                     name="Range (Min-Max)",
@@ -113,7 +119,7 @@ def plot_efficiency_timeseries(
                     x=time_points,
                     y=ci_upper,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     showlegend=False,
                     hoverinfo="skip",
                 )
@@ -123,7 +129,7 @@ def plot_efficiency_timeseries(
                     x=time_points,
                     y=ci_lower,
                     mode="lines",
-                    line=dict(width=0),
+                    line={"width": 0},
                     fill="tonexty",
                     fillcolor="rgba(100, 150, 250, 0.3)",
                     name="95% CI",
@@ -137,8 +143,8 @@ def plot_efficiency_timeseries(
                 x=time_points,
                 y=mean_eff,
                 mode="lines+markers",
-                line=dict(color="blue", width=3),
-                marker=dict(size=8),
+                line={"color": "blue", "width": 3},
+                marker={"size": 8},
                 name="Mean Efficiency",
                 hovertemplate="<b>Time: %{x}</b><br>Mean: %{y:.4f}<extra></extra>",
             )
@@ -151,8 +157,8 @@ def plot_efficiency_timeseries(
                     x=time_points,
                     y=median_eff,
                     mode="lines+markers",
-                    line=dict(color="orange", width=2, dash="dot"),
-                    marker=dict(size=6),
+                    line={"color": "orange", "width": 2, "dash": "dot"},
+                    marker={"size": 6},
                     name="Median Efficiency",
                     hovertemplate="<b>Time: %{x}</b><br>Median: %{y:.4f}<extra></extra>",
                 )
@@ -248,16 +254,17 @@ def plot_efficiency_timeseries(
 def plot_efficiency_spaghetti(
     efficiency_df: pd.DataFrame,
     backend: str = "plotly",
-    highlight: Optional[List[Union[str, int]]] = None,
+    highlight: list[str | int] | None = None,
     alpha: float = 0.2,
     show_mean: bool = True,
     entity_col: str = "entity",
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot spaghetti plot with individual entity trajectories.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency', 'time', and entity identifier
         backend: 'plotly' for interactive or 'matplotlib' for static
         highlight: List of entity IDs to highlight with thicker lines
@@ -267,17 +274,15 @@ def plot_efficiency_spaghetti(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = panel_sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc', by_period=True)
+        >>> eff_df = result.efficiency(estimator="bc", by_period=True)
         >>> fig = plot_efficiency_spaghetti(
-        ...     eff_df,
-        ...     highlight=['firm_A', 'firm_B'],
-        ...     alpha=0.3,
-        ...     show_mean=True
+        ...     eff_df, highlight=["firm_A", "firm_B"], alpha=0.3, show_mean=True
         ... )
         >>> fig.show()
     """
@@ -307,7 +312,7 @@ def plot_efficiency_spaghetti(
                         x=entity_data["time"],
                         y=entity_data["efficiency"],
                         mode="lines",
-                        line=dict(width=3),
+                        line={"width": 3},
                         name=str(entity),
                         hovertemplate=f"<b>{entity}</b><br>Time: %{{x}}<br>Efficiency: %{{y:.4f}}<extra></extra>",
                     )
@@ -319,7 +324,7 @@ def plot_efficiency_spaghetti(
                         x=entity_data["time"],
                         y=entity_data["efficiency"],
                         mode="lines",
-                        line=dict(width=1),
+                        line={"width": 1},
                         opacity=alpha,
                         name=str(entity),
                         showlegend=False,
@@ -335,7 +340,7 @@ def plot_efficiency_spaghetti(
                     x=mean_by_time.index,
                     y=mean_by_time.values,
                     mode="lines",
-                    line=dict(color="black", width=4, dash="dash"),
+                    line={"color": "black", "width": 4, "dash": "dash"},
                     name="Mean",
                     hovertemplate="<b>Mean</b><br>Time: %{x}<br>Efficiency: %{y:.4f}<extra></extra>",
                 )
@@ -399,12 +404,13 @@ def plot_efficiency_heatmap(
     order_by: str = "efficiency",
     entity_col: str = "entity",
     colorscale: str = "RdYlGn",
-    title: Optional[str] = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot heatmap of efficiency (entity × time).
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency', 'time', and entity identifier
         backend: 'plotly' for interactive or 'matplotlib' for static
         order_by: How to order entities ('efficiency', 'alphabetical', or None)
@@ -413,13 +419,14 @@ def plot_efficiency_heatmap(
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = panel_sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc', by_period=True)
-        >>> fig = plot_efficiency_heatmap(eff_df, order_by='efficiency')
+        >>> eff_df = result.efficiency(estimator="bc", by_period=True)
+        >>> fig = plot_efficiency_heatmap(eff_df, order_by="efficiency")
         >>> fig.show()
     """
     if "time" not in efficiency_df.columns:
@@ -452,7 +459,7 @@ def plot_efficiency_heatmap(
                 y=heatmap_data.index,
                 colorscale=colorscale,
                 hovertemplate="<b>Entity: %{y}</b><br>Time: %{x}<br>Efficiency: %{z:.4f}<extra></extra>",
-                colorbar=dict(title="Efficiency"),
+                colorbar={"title": "Efficiency"},
             )
         )
 
@@ -497,29 +504,28 @@ def plot_efficiency_heatmap(
 def plot_efficiency_fanchart(
     efficiency_df: pd.DataFrame,
     backend: str = "plotly",
-    percentiles: Optional[List[int]] = None,
-    title: Optional[str] = None,
+    percentiles: list[int] | None = None,
+    title: str | None = None,
     **kwargs,
 ) -> Any:
     """Plot fan chart showing percentile evolution over time.
 
-    Parameters:
+    Parameters
+    ----------
         efficiency_df: DataFrame with 'efficiency' and 'time' columns
         backend: 'plotly' for interactive or 'matplotlib' for static
         percentiles: List of percentiles to plot (default: [10, 25, 50, 75, 90])
         title: Custom plot title
         **kwargs: Additional arguments passed to plotting backend
 
-    Returns:
+    Returns
+    -------
         Plotly Figure or Matplotlib Figure object
 
     Example:
         >>> result = panel_sf.fit()
-        >>> eff_df = result.efficiency(estimator='bc', by_period=True)
-        >>> fig = plot_efficiency_fanchart(
-        ...     eff_df,
-        ...     percentiles=[10, 25, 50, 75, 90]
-        ... )
+        >>> eff_df = result.efficiency(estimator="bc", by_period=True)
+        >>> fig = plot_efficiency_fanchart(eff_df, percentiles=[10, 25, 50, 75, 90])
         >>> fig.show()
     """
     if "time" not in efficiency_df.columns:
@@ -559,9 +565,10 @@ def plot_efficiency_fanchart(
                     x=time_points,
                     y=percentile_data[f"p{p}"],
                     mode="lines",
-                    line=dict(
-                        width=2 if p == 50 else 1, color=colors[i] if i < len(colors) else "gray"
-                    ),
+                    line={
+                        "width": 2 if p == 50 else 1,
+                        "color": colors[i] if i < len(colors) else "gray",
+                    },
                     name=f"P{p}",
                     fill="tonexty" if i > 0 else None,
                     fillcolor=colors[i] if i < len(colors) else "rgba(200,200,200,0.2)",

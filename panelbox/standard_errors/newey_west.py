@@ -5,12 +5,17 @@ Newey-West (1987) standard errors are robust to both heteroskedasticity and
 autocorrelation. Useful for time-series and panel data with serial correlation.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 
 from .utils import compute_bread, sandwich_covariance
+
+logger = logging.getLogger(__name__)
 
 KernelType = Literal["bartlett", "parzen", "quadratic_spectral"]
 
@@ -103,7 +108,7 @@ class NeweyWestStandardErrors:
         self,
         X: np.ndarray,
         resid: np.ndarray,
-        max_lags: Optional[int] = None,
+        max_lags: int | None = None,
         kernel: KernelType = "bartlett",
         prewhitening: bool = False,
     ):
@@ -126,7 +131,7 @@ class NeweyWestStandardErrors:
             self.max_lags = self.n_obs - 1
 
         # Cache
-        self._bread: Optional[np.ndarray] = None
+        self._bread: np.ndarray | None = None
 
     @property
     def bread(self) -> np.ndarray:
@@ -191,7 +196,6 @@ class NeweyWestStandardErrors:
         gamma : np.ndarray
             Autocovariance matrix (k x k)
         """
-        self.n_params
         n = self.n_obs
 
         if lag == 0:
@@ -290,7 +294,7 @@ class NeweyWestStandardErrors:
 def newey_west(
     X: np.ndarray,
     resid: np.ndarray,
-    max_lags: Optional[int] = None,
+    max_lags: int | None = None,
     kernel: KernelType = "bartlett",
     prewhitening: bool = False,
 ) -> NeweyWestResult:

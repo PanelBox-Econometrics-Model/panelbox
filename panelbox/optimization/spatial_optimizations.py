@@ -4,9 +4,10 @@ Performance optimizations for spatial panel models.
 Includes caching, sparse operations, and JIT compilation for faster estimation.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from functools import lru_cache
-from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.sparse import csr_matrix, issparse
@@ -22,7 +23,10 @@ except ImportError:
         "Numba not installed. Some performance optimizations will be unavailable. "
         "Install with: pip install numba",
         ImportWarning,
+        stacklevel=2,
     )
+
+logger = logging.getLogger(__name__)
 
 
 class EigenvalueCache:
@@ -159,7 +163,7 @@ class SparseOperations:
         return W
 
     @staticmethod
-    def spatial_lag(W: Union[np.ndarray, csr_matrix], y: np.ndarray) -> np.ndarray:
+    def spatial_lag(W: np.ndarray | csr_matrix, y: np.ndarray) -> np.ndarray:
         """
         Compute spatial lag Wy efficiently.
 
@@ -181,7 +185,7 @@ class SparseOperations:
             return W @ y
 
     @staticmethod
-    def log_determinant(I_rho_W: Union[np.ndarray, csr_matrix], method: str = "eigen") -> float:
+    def log_determinant(I_rho_W: np.ndarray | csr_matrix, method: str = "eigen") -> float:
         """
         Compute log determinant efficiently.
 
@@ -222,7 +226,7 @@ class SparseOperations:
                 return SparseOperations.log_determinant(I_rho_W, "eigen")
         else:
             # Default LU decomposition
-            sign, log_det = np.linalg.slogdet(I_rho_W)
+            _sign, log_det = np.linalg.slogdet(I_rho_W)
             return log_det
 
 
@@ -230,7 +234,7 @@ class SparseOperations:
 if HAS_NUMBA:
 
     @jit(nopython=True, parallel=True, fastmath=True)
-    def compute_spatial_lag_fast(
+    def compute_spatial_lag_fast(  # type: ignore[reportRedeclaration]
         W_data: np.ndarray, W_indices: np.ndarray, W_indptr: np.ndarray, y: np.ndarray
     ) -> np.ndarray:
         """
@@ -253,7 +257,7 @@ if HAS_NUMBA:
         return result
 
     @jit(nopython=True, fastmath=True)
-    def compute_quadratic_form(X: np.ndarray, W: np.ndarray, y: np.ndarray) -> float:
+    def compute_quadratic_form(X: np.ndarray, W: np.ndarray, y: np.ndarray) -> float:  # type: ignore[reportRedeclaration]
         """
         Compute y'X'WXy efficiently.
 
@@ -290,7 +294,7 @@ if HAS_NUMBA:
         return result
 
     @jit(nopython=True, parallel=True)
-    def row_standardize_fast(W: np.ndarray) -> np.ndarray:
+    def row_standardize_fast(W: np.ndarray) -> np.ndarray:  # type: ignore[reportRedeclaration]
         """
         Fast row standardization using Numba.
 
@@ -356,7 +360,7 @@ class ChebyshevApproximation:
         self.order = order
 
     def log_determinant(
-        self, rho: float, W: Union[np.ndarray, csr_matrix], eigenvalues: Optional[np.ndarray] = None
+        self, rho: float, W: np.ndarray | csr_matrix, eigenvalues: np.ndarray | None = None
     ) -> float:
         """
         Approximate log|I - rho*W| using Chebyshev polynomials.
@@ -382,7 +386,10 @@ class ChebyshevApproximation:
             if issparse(W):
                 k = min(self.order * 2, n - 2)
                 eigenvalues = sp_linalg.eigsh(
-                    W, k=k, return_eigenvectors=False, which="BE"  # Both ends
+                    W,
+                    k=k,
+                    return_eigenvectors=False,
+                    which="BE",  # Both ends
                 )
             else:
                 eigenvalues = np.linalg.eigvals(W).real
@@ -392,7 +399,7 @@ class ChebyshevApproximation:
 
         return log_det
 
-    def trace_powers(self, W: Union[np.ndarray, csr_matrix], max_power: int = 10) -> np.ndarray:
+    def trace_powers(self, W: np.ndarray | csr_matrix, max_power: int = 10) -> np.ndarray:
         """
         Compute trace of powers of W efficiently.
 
@@ -437,6 +444,7 @@ def optimize_spatial_model(model_class):
     original_init = model_class.__init__
 
     def optimized_init(self, *args, **kwargs):
+        """Initialize spatial model with optimized weight matrix computation."""
         original_init(self, *args, **kwargs)
 
         # Add optimization attributes

@@ -1,18 +1,18 @@
 """
-Model Comparison Utilities
+Model Comparison Utilities.
 
 This module provides functions to compare multiple panel model results.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 
 
 def compare_models(
-    results_dict: Dict[str, object],
-    variables: Optional[List[str]] = None,
+    results_dict: dict[str, object],
+    variables: Optional[list[str]] = None,
     include_se: bool = True,
     include_pvalues: bool = True,
     star_levels: tuple = (0.1, 0.05, 0.01),
@@ -41,9 +41,9 @@ def compare_models(
     Examples
     --------
     >>> results = {
-    ...     'Pooled OLS': pooled_result,
-    ...     'Fixed Effects': fe_result,
-    ...     'Random Effects': re_result
+    ...     "Pooled OLS": pooled_result,
+    ...     "Fixed Effects": fe_result,
+    ...     "Random Effects": re_result,
     ... }
     >>> comparison_table = compare_models(results)
     >>> print(comparison_table)
@@ -51,7 +51,7 @@ def compare_models(
     if variables is None:
         # Find common variables across all models
         all_vars = [set(res.params.index) for res in results_dict.values()]
-        variables = sorted(list(set.intersection(*all_vars)))
+        variables = sorted(set.intersection(*all_vars))
 
     rows = []
 
@@ -59,7 +59,7 @@ def compare_models(
         row_coef = [var]
         row_se = [""]
 
-        for model_name, result in results_dict.items():
+        for _model_name, result in results_dict.items():
             if var in result.params.index:
                 coef = result.params[var]
                 se = result.std_errors[var]
@@ -95,13 +95,13 @@ def compare_models(
     rows.append(["N"] + [str(res.nobs) for res in results_dict.values()])
 
     # Create DataFrame
-    columns = ["Variable"] + list(results_dict.keys())
+    columns = ["Variable", *list(results_dict.keys())]
     df = pd.DataFrame(rows, columns=columns)
 
     return df
 
 
-def aic_bic_comparison(results_dict: Dict[str, object]) -> pd.DataFrame:
+def aic_bic_comparison(results_dict: dict[str, object]) -> pd.DataFrame:
     """
     Compare AIC and BIC across models.
 
@@ -117,7 +117,7 @@ def aic_bic_comparison(results_dict: Dict[str, object]) -> pd.DataFrame:
 
     Examples
     --------
-    >>> aic_bic_comparison({'Pooled': pooled, 'FE': fe, 'RE': re})
+    >>> aic_bic_comparison({"Pooled": pooled, "FE": fe, "RE": re})
     """
     aic_values = {}
     bic_values = {}
@@ -142,7 +142,7 @@ def aic_bic_comparison(results_dict: Dict[str, object]) -> pd.DataFrame:
     return comparison.round(2)
 
 
-def hausman_test_summary(fe_result: object, re_result: object) -> Dict[str, Any]:
+def hausman_test_summary(fe_result: object, re_result: object) -> dict[str, Any]:
     """
     Perform and summarize Hausman test.
 
@@ -161,7 +161,7 @@ def hausman_test_summary(fe_result: object, re_result: object) -> Dict[str, Any]
     Examples
     --------
     >>> hausman = hausman_test_summary(fe_result, re_result)
-    >>> print(hausman['interpretation'])
+    >>> print(hausman["interpretation"])
     """
     # This is a placeholder - actual implementation depends on PanelBox API
     # for Hausman test functionality
@@ -201,7 +201,7 @@ def export_comparison_table(
     Examples
     --------
     >>> table = compare_models(results)
-    >>> export_comparison_table(table, 'results.tex', format='latex')
+    >>> export_comparison_table(table, "results.tex", format="latex")
     """
     if format == "latex":
         latex_str = comparison_df.to_latex(index=False, escape=False)

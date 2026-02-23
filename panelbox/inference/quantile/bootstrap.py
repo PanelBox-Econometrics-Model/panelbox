@@ -4,10 +4,15 @@ Bootstrap inference for quantile regression.
 This module implements bootstrap methods for panel quantile regression inference.
 """
 
+from __future__ import annotations
+
+import logging
+
 import numpy as np
-import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class QuantileBootstrap:
@@ -21,6 +26,8 @@ class QuantileBootstrap:
         self, model, tau, n_boot=999, method="cluster", ci_method="percentile", random_state=None
     ):
         """
+        Initialize QuantileBootstrap.
+
         Parameters
         ----------
         model : QuantilePanelModel
@@ -94,7 +101,7 @@ class QuantileBootstrap:
             boot_params=boot_params,
             ci_lower=ci_lower,
             ci_upper=ci_upper,
-            se=np.std(boot_params, axis=0),
+            se=np.nanstd(boot_params, axis=0),
             original_params=getattr(self.model, "params", None),
             method=self.method,
             n_boot=self.n_boot,
@@ -139,20 +146,17 @@ class QuantileBootstrap:
 
     def _resample_clusters(self):
         """Resample entire entities (clusters)."""
-        n_entities = (
-            self.model.n_entities
-            if hasattr(self.model, "n_entities")
-            else len(np.unique(self.model.entity_ids))
-        )
+        unique_entities = np.unique(self.model.entity_ids)
+        n_entities = len(unique_entities)
 
-        # Resample entity IDs with replacement
-        entity_ids_boot = np.random.choice(range(n_entities), size=n_entities, replace=True)
+        # Resample entity IDs with replacement (use actual entity labels)
+        entity_ids_boot = np.random.choice(unique_entities, size=n_entities, replace=True)
 
         # Reconstruct data
         X_list = []
         y_list = []
 
-        for i, entity_id in enumerate(entity_ids_boot):
+        for entity_id in entity_ids_boot:
             # Get data for this entity
             entity_mask = self.model.entity_ids == entity_id
             X_list.append(self.model.X[entity_mask])
@@ -202,8 +206,6 @@ class QuantileBootstrap:
 
     def _bca_ci(self, boot_params, alpha=0.05):
         """Bias-corrected and accelerated (BCa) confidence intervals."""
-        from scipy import stats
-
         # For simplicity, return percentile CI
         return self._percentile_ci(boot_params, alpha)
 
@@ -212,7 +214,7 @@ class QuantileBootstrap:
         from scipy import stats
 
         theta_hat = getattr(self.model, "params", np.zeros(boot_params.shape[1]))
-        se = np.std(boot_params, axis=0)
+        se = np.nanstd(boot_params, axis=0)
 
         z_alpha = stats.norm.ppf(1 - alpha / 2)
 

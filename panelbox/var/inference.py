@@ -5,13 +5,17 @@ This module provides standard error computation and hypothesis testing
 for Panel VAR models.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple
 
 import numpy as np
 from scipy import stats
 
 from panelbox.standard_errors import cluster_by_entity, driscoll_kraay, robust_covariance
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -48,8 +52,8 @@ class WaldTestResult:
 
 
 def compute_ols_equation(
-    y: np.ndarray, X: np.ndarray, weights: Optional[np.ndarray] = None
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    y: np.ndarray, X: np.ndarray, weights: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute OLS for a single equation.
 
@@ -87,7 +91,7 @@ def compute_ols_equation(
     return beta, resid, fitted
 
 
-def within_transformation(data: np.ndarray, entities: np.ndarray) -> Tuple[np.ndarray, dict]:
+def within_transformation(data: np.ndarray, entities: np.ndarray) -> tuple[np.ndarray, dict]:
     """
     Apply within transformation (entity demeaning).
 
@@ -112,7 +116,7 @@ def within_transformation(data: np.ndarray, entities: np.ndarray) -> Tuple[np.nd
     else:
         squeeze_output = False
 
-    n, k = data.shape
+    _n, _k = data.shape
     demeaned = np.zeros_like(data)
     entity_means = {}
 
@@ -176,7 +180,7 @@ def compute_sur_covariance(
     Unrelated Regressions and Tests for Aggregation Bias".
     Journal of the American Statistical Association.
     """
-    n, k = X.shape
+    n, _k = X.shape
 
     # Compute residual covariance matrix Σ̂ (K x K)
     # Σ̂ = (1/n) * Σ_t ε_t ε_t'
@@ -199,8 +203,8 @@ def compute_covariance_matrix(
     X: np.ndarray,
     resid: np.ndarray,
     cov_type: str,
-    entities: Optional[np.ndarray] = None,
-    times: Optional[np.ndarray] = None,
+    entities: np.ndarray | None = None,
+    times: np.ndarray | None = None,
     **cov_kwds,
 ) -> np.ndarray:
     """
@@ -260,7 +264,7 @@ def compute_covariance_matrix(
         # Driscoll-Kraay HAC
         if times is None:
             raise ValueError("times required for driscoll_kraay covariance")
-        max_lags = cov_kwds.get("max_lags", None)
+        max_lags = cov_kwds.get("max_lags")
         kernel = cov_kwds.get("kernel", "bartlett")
         result = driscoll_kraay(X, resid, times, max_lags=max_lags, kernel=kernel)
         vcov = result.cov_matrix
@@ -285,7 +289,7 @@ def wald_test(
     params: np.ndarray,
     cov_params: np.ndarray,
     R: np.ndarray,
-    r: Optional[np.ndarray] = None,
+    r: np.ndarray | None = None,
 ) -> WaldTestResult:
     """
     Perform Wald test for linear restrictions.

@@ -7,12 +7,17 @@ They are particularly useful for macro panel data with potential cross-
 sectional correlation.
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 
 from .utils import compute_bread, sandwich_covariance
+
+logger = logging.getLogger(__name__)
 
 KernelType = Literal["bartlett", "parzen", "quadratic_spectral"]
 
@@ -49,7 +54,7 @@ class DriscollKraayResult:
     n_obs: int
     n_params: int
     n_periods: int
-    bandwidth: Optional[float] = None
+    bandwidth: float | None = None
 
 
 class DriscollKraayStandardErrors:
@@ -113,7 +118,7 @@ class DriscollKraayStandardErrors:
         X: np.ndarray,
         resid: np.ndarray,
         time_ids: np.ndarray,
-        max_lags: Optional[int] = None,
+        max_lags: int | None = None,
         kernel: KernelType = "bartlett",
     ):
         self.X = X
@@ -126,7 +131,7 @@ class DriscollKraayStandardErrors:
         # Validate dimensions
         if len(self.time_ids) != self.n_obs:
             raise ValueError(
-                f"time_ids dimension mismatch: expected {self.n_obs}, " f"got {len(self.time_ids)}"
+                f"time_ids dimension mismatch: expected {self.n_obs}, got {len(self.time_ids)}"
             )
 
         # Count time periods
@@ -145,8 +150,8 @@ class DriscollKraayStandardErrors:
             self.max_lags = self.n_periods - 1
 
         # Cache
-        self._bread: Optional[np.ndarray] = None
-        self._time_sorted: Optional[dict] = None
+        self._bread: np.ndarray | None = None
+        self._time_sorted: dict | None = None
 
     @property
     def bread(self) -> np.ndarray:
@@ -286,8 +291,6 @@ class DriscollKraayStandardErrors:
 
         The kernel weights w_l ensure positive semi-definiteness.
         """
-        self.n_params
-
         # Start with lag-0 autocovariance
         S = self._compute_gamma(0)
 
@@ -348,7 +351,7 @@ def driscoll_kraay(
     X: np.ndarray,
     resid: np.ndarray,
     time_ids: np.ndarray,
-    max_lags: Optional[int] = None,
+    max_lags: int | None = None,
     kernel: KernelType = "bartlett",
 ) -> DriscollKraayResult:
     """

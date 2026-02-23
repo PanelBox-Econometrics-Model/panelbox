@@ -11,13 +11,16 @@ models, including:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Tuple
+import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import stats
 
 if TYPE_CHECKING:
     from panelbox.models.quantile import QuantileRegressionModel
+
+logger = logging.getLogger(__name__)
 
 
 class QuantileRegressionDiagnostics:
@@ -85,7 +88,7 @@ class QuantileRegressionDiagnostics:
 
         return np.clip(r2, 0, 1)
 
-    def goodness_of_fit(self, n_bins: int = 10) -> Dict[str, float]:
+    def goodness_of_fit(self, n_bins: int = 10) -> dict[str, float]:
         """
         Compute goodness of fit statistics.
 
@@ -125,7 +128,7 @@ class QuantileRegressionDiagnostics:
 
         return diagnostics
 
-    def symmetry_test(self) -> Tuple[float, float]:
+    def symmetry_test(self) -> tuple[float, float]:
         """
         Test for symmetry of residuals around the quantile.
 
@@ -155,17 +158,14 @@ class QuantileRegressionDiagnostics:
         n = len(self.residuals)
         se = np.sqrt(expected * (1 - expected) / n)
 
-        if se > 0:
-            z_stat = (frac_neg - expected) / se
-        else:
-            z_stat = 0
+        z_stat = (frac_neg - expected) / se if se > 0 else 0
 
         # Two-tailed p-value
         pvalue = 2 * (1 - stats.norm.cdf(np.abs(z_stat)))
 
         return z_stat, pvalue
 
-    def goodness_of_fit_test(self, n_bins: int = 10) -> Tuple[float, float]:
+    def goodness_of_fit_test(self, n_bins: int = 10) -> tuple[float, float]:
         """
         Perform chi-square goodness of fit test.
 
@@ -233,9 +233,7 @@ class QuantileRegressionDiagnostics:
 
         return f_hat
 
-    def residual_quantiles(
-        self, quantiles: np.ndarray = np.array([0.25, 0.5, 0.75])
-    ) -> Dict[float, float]:
+    def residual_quantiles(self, quantiles: np.ndarray = None) -> dict[float, float]:
         """
         Compute quantiles of residuals.
 
@@ -249,6 +247,8 @@ class QuantileRegressionDiagnostics:
         dict
             Dictionary with quantile levels as keys and values as values
         """
+        if quantiles is None:
+            quantiles = np.array([0.25, 0.5, 0.75])
         result = {}
         for q in quantiles:
             result[q] = np.quantile(self.residuals, q)

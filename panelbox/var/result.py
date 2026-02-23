@@ -4,20 +4,30 @@ Results containers for Panel VAR models.
 This module provides result classes for Panel VAR estimation and lag selection.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
+from panelbox.core.serialization import SerializableMixin
 from panelbox.var.causality_network import plot_causality_network
 from panelbox.var.forecast import ForecastResult
 from panelbox.var.inference import WaldTestResult, f_test_exclusion, wald_test
 from panelbox.visualization.var_plots import plot_stability as _plot_stability
 
+if TYPE_CHECKING:
+    from panelbox.var.fevd import FEVDResult
+    from panelbox.var.irf import IRFResult
 
-class PanelVARResult:
+logger = logging.getLogger(__name__)
+
+
+class PanelVARResult(SerializableMixin):
     """
     Results container for Panel VAR estimation.
 
@@ -63,15 +73,15 @@ class PanelVARResult:
 
     def __init__(
         self,
-        params_by_eq: List[np.ndarray],
-        std_errors_by_eq: List[np.ndarray],
-        cov_by_eq: List[np.ndarray],
-        resid_by_eq: List[np.ndarray],
-        fitted_by_eq: List[np.ndarray],
-        endog_names: List[str],
-        exog_names: List[str],
-        model_info: Dict[str, Any],
-        data_info: Dict[str, Any],
+        params_by_eq: list[np.ndarray],
+        std_errors_by_eq: list[np.ndarray],
+        cov_by_eq: list[np.ndarray],
+        resid_by_eq: list[np.ndarray],
+        fitted_by_eq: list[np.ndarray],
+        endog_names: list[str],
+        exog_names: list[str],
+        model_info: dict[str, Any],
+        data_info: dict[str, Any],
     ):
         self.params_by_eq = params_by_eq
         self.std_errors_by_eq = std_errors_by_eq
@@ -380,7 +390,7 @@ class PanelVARResult:
         lines.append("Residual Covariance Matrix (Σ̂):")
         for i, name_i in enumerate(self.endog_names):
             row_vals = []
-            for j, name_j in enumerate(self.endog_names):
+            for j, _name_j in enumerate(self.endog_names):
                 row_vals.append(f"{self.Sigma[i, j]:>10.6f}")
             lines.append(f"  {name_i:>6s}: " + "  ".join(row_vals))
         lines.append("")
@@ -392,7 +402,7 @@ class PanelVARResult:
             max_coef = np.max(np.abs(A_l))
             frobenius_norm = np.linalg.norm(A_l, "fro")
             lines.append(
-                f"  A_{lag+1}: max|coef|={max_coef:.4f}, ||A_{lag+1}||_F={frobenius_norm:.4f}"
+                f"  A_{lag + 1}: max|coef|={max_coef:.4f}, ||A_{lag + 1}||_F={frobenius_norm:.4f}"
             )
         lines.append("")
 
@@ -402,7 +412,7 @@ class PanelVARResult:
 
         return "\n".join(lines)
 
-    def summary(self, equation: Optional[int] = None) -> str:
+    def summary(self, equation: int | None = None) -> str:
         """
         Generate summary report.
 
@@ -480,7 +490,7 @@ class PanelVARResult:
         return "\n".join(lines)
 
     def wald_test(
-        self, R: np.ndarray, r: Optional[np.ndarray] = None, equation: int = 0
+        self, R: np.ndarray, r: np.ndarray | None = None, equation: int = 0
     ) -> WaldTestResult:
         """
         Perform Wald test for linear restrictions on equation k.
@@ -509,7 +519,7 @@ class PanelVARResult:
 
     def test_granger_causality(self, causing_var: str, caused_var: str) -> WaldTestResult:
         """
-        Test Granger causality: does causing_var Granger-cause caused_var?
+        Test Granger causality: does causing_var Granger-cause caused_var.
 
         Parameters
         ----------
@@ -532,7 +542,7 @@ class PanelVARResult:
         try:
             eq_idx = self.endog_names.index(caused_var)
         except ValueError:
-            raise ValueError(f"Variable '{caused_var}' not found in endogenous variables")
+            raise ValueError(f"Variable '{caused_var}' not found in endogenous variables") from None
 
         # Find indices of causing_var lags in the regressors
         causing_indices = []
@@ -578,7 +588,7 @@ class PanelVARResult:
         Examples
         --------
         >>> result = model.fit()
-        >>> gc = result.granger_causality('gdp', 'inflation')
+        >>> gc = result.granger_causality("gdp", "inflation")
         >>> print(gc.summary())
         """
         from panelbox.var.causality import granger_causality_wald
@@ -651,7 +661,7 @@ class PanelVARResult:
         Examples
         --------
         >>> result = model.fit()
-        >>> dh = result.dumitrescu_hurlin('gdp', 'inflation')
+        >>> dh = result.dumitrescu_hurlin("gdp", "inflation")
         >>> print(dh.summary())
 
         References
@@ -700,7 +710,7 @@ class PanelVARResult:
         Examples
         --------
         >>> result = model.fit()
-        >>> ic = result.instantaneous_causality('gdp', 'inflation')
+        >>> ic = result.instantaneous_causality("gdp", "inflation")
         >>> print(ic.summary())
         """
         from panelbox.var.causality import instantaneous_causality
@@ -715,7 +725,7 @@ class PanelVARResult:
 
         return instantaneous_causality(resid1, resid2, var1, var2)
 
-    def instantaneous_causality_matrix(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def instantaneous_causality_matrix(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Compute instantaneous causality matrix for all variable pairs.
 
@@ -781,17 +791,17 @@ class PanelVARResult:
 
         Examples
         --------
-        >>> result = pvar.fit(method='ols', lags=2)
+        >>> result = pvar.fit(method="ols", lags=2)
         >>> # Interactive plot
-        >>> result.plot_causality_network(threshold=0.05, layout='circular')
+        >>> result.plot_causality_network(threshold=0.05, layout="circular")
         >>>
         >>> # Static plot with custom styling
         >>> result.plot_causality_network(
         ...     threshold=0.10,
-        ...     layout='spring',
-        ...     backend='matplotlib',
+        ...     layout="spring",
+        ...     backend="matplotlib",
         ...     node_size=4000,
-        ...     show_pvalues=True
+        ...     show_pvalues=True,
         ... )
 
         Notes
@@ -817,7 +827,7 @@ class PanelVARResult:
             **kwargs,
         )
 
-    def to_latex(self, equation: Optional[int] = None) -> str:
+    def to_latex(self, equation: int | None = None) -> str:
         """
         Export results to LaTeX table format.
 
@@ -835,7 +845,7 @@ class PanelVARResult:
         --------
         >>> latex_code = results.to_latex()
         >>> # Save to file
-        >>> with open('var_results.tex', 'w') as f:
+        >>> with open("var_results.tex", "w") as f:
         ...     f.write(latex_code)
         """
         lines = []
@@ -920,7 +930,7 @@ class PanelVARResult:
 
         return "\n".join(lines)
 
-    def to_html(self, equation: Optional[int] = None) -> str:
+    def to_html(self, equation: int | None = None) -> str:
         """
         Export results to HTML table format.
 
@@ -938,7 +948,7 @@ class PanelVARResult:
         --------
         >>> html_code = results.to_html()
         >>> # Save to file
-        >>> with open('var_results.html', 'w') as f:
+        >>> with open("var_results.html", "w") as f:
         ...     f.write(html_code)
         """
         lines = []
@@ -991,12 +1001,12 @@ class PanelVARResult:
 
         # Summary statistics
         lines.append('<div class="model-stats">')
-        lines.append(f"<p><b>Model Statistics:</b></p>")
+        lines.append("<p><b>Model Statistics:</b></p>")
         lines.append(f"<p>N: {self.N} | Observations: {self.n_obs} | Lags: {self.p}</p>")
         lines.append(f"<p>AIC: {self.aic:.4f} | BIC: {self.bic:.4f} | HQIC: {self.hqic:.4f}</p>")
         stable_str = "Yes" if self.is_stable() else "No"
         lines.append(f"<p>Stable: {stable_str}</p>")
-        lines.append(f"<p><small>*p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</small></p>")
+        lines.append("<p><small>*p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</small></p>")
         lines.append("</div>")
         lines.append("</div>")
 
@@ -1004,7 +1014,7 @@ class PanelVARResult:
 
     def plot_stability(
         self, backend: str = "matplotlib", figsize: tuple = (8, 8), show: bool = True
-    ) -> Optional[object]:
+    ) -> object | None:
         """
         Plot eigenvalues of companion matrix with unit circle.
 
@@ -1042,10 +1052,10 @@ class PanelVARResult:
         >>> # Get figure for customization
         >>> fig = results.plot_stability(show=False)
         >>> # With matplotlib:
-        >>> fig.savefig('stability.png')
+        >>> fig.savefig("stability.png")
         >>>
         >>> # Use plotly for interactive plot
-        >>> results.plot_stability(backend='plotly')
+        >>> results.plot_stability(backend="plotly")
         """
         title = f"VAR({self.p}) Stability - Eigenvalues of Companion Matrix"
         return _plot_stability(
@@ -1056,17 +1066,17 @@ class PanelVARResult:
         self,
         periods: int = 20,
         method: str = "cholesky",
-        shock_size: Union[str, float] = "one_std",
+        shock_size: str | float = "one_std",
         cumulative: bool = False,
-        order: Optional[List[str]] = None,
-        ci_method: Optional[str] = None,
+        order: list[str] | None = None,
+        ci_method: str | None = None,
         n_bootstrap: int = 500,
         ci_level: float = 0.95,
         bootstrap_ci_method: str = "percentile",
         n_jobs: int = -1,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         verbose: bool = True,
-    ) -> "IRFResult":
+    ) -> IRFResult:
         """
         Compute Impulse Response Functions (IRFs).
 
@@ -1116,17 +1126,17 @@ class PanelVARResult:
         --------
         >>> result = model.fit()
         >>> # Orthogonalized IRF (Cholesky)
-        >>> irf_chol = result.irf(periods=20, method='cholesky')
+        >>> irf_chol = result.irf(periods=20, method="cholesky")
         >>> print(irf_chol.summary())
         >>>
         >>> # Generalized IRF
-        >>> irf_gen = result.irf(periods=20, method='generalized')
+        >>> irf_gen = result.irf(periods=20, method="generalized")
         >>>
         >>> # Cumulative IRF
         >>> irf_cum = result.irf(periods=20, cumulative=True)
         >>>
         >>> # Custom ordering
-        >>> irf_ord = result.irf(order=['inflation', 'gdp', 'interest_rate'])
+        >>> irf_ord = result.irf(order=["inflation", "gdp", "interest_rate"])
 
         Notes
         -----
@@ -1159,6 +1169,7 @@ class PanelVARResult:
                 "VAR system is UNSTABLE (max eigenvalue modulus >= 1). "
                 "IRFs may diverge and not converge to zero.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Handle ordering
@@ -1191,6 +1202,7 @@ class PanelVARResult:
                     f"Variable ordering for Cholesky decomposition: {order}. "
                     "Earlier variables are treated as more exogenous.",
                     UserWarning,
+                    stacklevel=2,
                 )
         else:
             var_names = self.endog_names
@@ -1261,8 +1273,8 @@ class PanelVARResult:
         self,
         periods: int = 20,
         method: str = "cholesky",
-        order: Optional[List[str]] = None,
-    ) -> "FEVDResult":
+        order: list[str] | None = None,
+    ) -> FEVDResult:
         """
         Compute Forecast Error Variance Decomposition (FEVD).
 
@@ -1288,14 +1300,14 @@ class PanelVARResult:
         --------
         >>> result = model.fit()
         >>> # Cholesky FEVD
-        >>> fevd_chol = result.fevd(periods=20, method='cholesky')
+        >>> fevd_chol = result.fevd(periods=20, method="cholesky")
         >>> print(fevd_chol.summary())
         >>>
         >>> # Generalized FEVD
-        >>> fevd_gen = result.fevd(periods=20, method='generalized')
+        >>> fevd_gen = result.fevd(periods=20, method="generalized")
         >>>
         >>> # Custom ordering
-        >>> fevd_ord = result.fevd(order=['inflation', 'gdp', 'interest_rate'])
+        >>> fevd_ord = result.fevd(order=["inflation", "gdp", "interest_rate"])
 
         Notes
         -----
@@ -1324,6 +1336,7 @@ class PanelVARResult:
                 "VAR system is UNSTABLE (max eigenvalue modulus >= 1). "
                 "FEVD may not be well-defined.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Handle ordering
@@ -1355,6 +1368,7 @@ class PanelVARResult:
                     f"Variable ordering for Cholesky decomposition: {order}. "
                     "Earlier variables are treated as more exogenous.",
                     UserWarning,
+                    stacklevel=2,
                 )
         else:
             var_names = self.endog_names
@@ -1389,11 +1403,11 @@ class PanelVARResult:
     def forecast(
         self,
         steps: int = 10,
-        exog_future: Optional[np.ndarray] = None,
-        ci_method: Optional[str] = None,
+        exog_future: np.ndarray | None = None,
+        ci_method: str | None = None,
         ci_level: float = 0.95,
         n_bootstrap: int = 500,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> ForecastResult:
         """
         Generate h-step-ahead forecasts.
@@ -1435,17 +1449,17 @@ class PanelVARResult:
 
         Examples
         --------
-        >>> result = pvar.fit(method='ols', lags=2)
+        >>> result = pvar.fit(method="ols", lags=2)
         >>> # Simple forecast
         >>> fcst = result.forecast(steps=10)
-        >>> fcst.plot(entity=0, variable='gdp')
+        >>> fcst.plot(entity=0, variable="gdp")
         >>>
         >>> # With bootstrap CIs
-        >>> fcst = result.forecast(steps=10, ci_method='bootstrap', n_bootstrap=1000)
-        >>> fcst.to_dataframe(entity='USA')
+        >>> fcst = result.forecast(steps=10, ci_method="bootstrap", n_bootstrap=1000)
+        >>> fcst.to_dataframe(entity="USA")
         >>>
         >>> # Evaluate accuracy
-        >>> accuracy = fcst.evaluate(actual_data, entity='USA')
+        >>> accuracy = fcst.evaluate(actual_data, entity="USA")
         >>> print(accuracy)
 
         Notes
@@ -1514,7 +1528,7 @@ class PanelVARResult:
         self,
         steps: int,
         y_history: np.ndarray,
-        exog_future: Optional[np.ndarray],
+        exog_future: np.ndarray | None,
     ) -> np.ndarray:
         """
         Generate iterative forecasts.
@@ -1567,11 +1581,11 @@ class PanelVARResult:
         self,
         steps: int,
         y_history: np.ndarray,
-        exog_future: Optional[np.ndarray],
+        exog_future: np.ndarray | None,
         ci_level: float,
         n_bootstrap: int,
-        seed: Optional[int],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        seed: int | None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Generate bootstrap confidence intervals for forecasts.
 
@@ -1647,7 +1661,7 @@ class PanelVARResult:
         steps: int,
         forecasts: np.ndarray,
         ci_level: float,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Generate analytical confidence intervals.
 
@@ -1703,7 +1717,7 @@ class PanelVARResult:
 
         return ci_lower, ci_upper
 
-    def _compute_ma_matrices(self, max_horizon: int) -> List[np.ndarray]:
+    def _compute_ma_matrices(self, max_horizon: int) -> list[np.ndarray]:
         """
         Compute MA representation matrices Φ_s for s=0, 1, ..., max_horizon.
 
@@ -1757,21 +1771,21 @@ class PanelVARGMMResult(PanelVARResult):
 
     def __init__(
         self,
-        params_by_eq: List[np.ndarray],
-        std_errors_by_eq: List[np.ndarray],
-        cov_by_eq: List[np.ndarray],
-        resid_by_eq: List[np.ndarray],
-        fitted_by_eq: List[np.ndarray],
-        endog_names: List[str],
-        exog_names: List[str],
-        model_info: Dict[str, Any],
-        data_info: Dict[str, Any],
+        params_by_eq: list[np.ndarray],
+        std_errors_by_eq: list[np.ndarray],
+        cov_by_eq: list[np.ndarray],
+        resid_by_eq: list[np.ndarray],
+        fitted_by_eq: list[np.ndarray],
+        endog_names: list[str],
+        exog_names: list[str],
+        model_info: dict[str, Any],
+        data_info: dict[str, Any],
         instruments: np.ndarray,
         n_instruments: int,
         instrument_type: str = "all",
         gmm_step: str = "two-step",
-        entity_ids: Optional[np.ndarray] = None,
-        n_instruments_by_eq: Optional[List[int]] = None,
+        entity_ids: np.ndarray | None = None,
+        n_instruments_by_eq: list[int] | None = None,
         windmeijer_corrected: bool = False,
     ):
         # Initialize parent class
@@ -1828,7 +1842,7 @@ class PanelVARGMMResult(PanelVARResult):
 
         return self._gmm_diagnostics
 
-    def hansen_j_test(self) -> Dict:
+    def hansen_j_test(self) -> dict:
         """
         Perform Hansen J test for over-identifying restrictions.
 
@@ -1844,7 +1858,7 @@ class PanelVARGMMResult(PanelVARResult):
         """
         return self.gmm_diagnostics.hansen_j_test()
 
-    def sargan_test(self) -> Dict:
+    def sargan_test(self) -> dict:
         """
         Perform Sargan test (non-robust alternative to Hansen J).
 
@@ -1855,7 +1869,7 @@ class PanelVARGMMResult(PanelVARResult):
         """
         return self.gmm_diagnostics.sargan_test()
 
-    def ar_test(self, order: int = 1) -> Dict:
+    def ar_test(self, order: int = 1) -> dict:
         """
         Perform Arellano-Bond AR test for serial correlation.
 
@@ -1893,7 +1907,7 @@ class PanelVARGMMResult(PanelVARResult):
             include_ar_tests=(self.entity_ids is not None)
         )
 
-    def compare_one_step_two_step(self, result_other: "PanelVARGMMResult") -> str:
+    def compare_one_step_two_step(self, result_other: PanelVARGMMResult) -> str:
         """
         Compare one-step and two-step GMM results.
 
@@ -1914,8 +1928,8 @@ class PanelVARGMMResult(PanelVARResult):
 
         Examples
         --------
-        >>> result_1step = model.fit_gmm(gmm_step='one-step')
-        >>> result_2step = model.fit_gmm(gmm_step='two-step')
+        >>> result_1step = model.fit_gmm(gmm_step="one-step")
+        >>> result_2step = model.fit_gmm(gmm_step="two-step")
         >>> print(result_1step.compare_one_step_two_step(result_2step))
         """
         import numpy as np
@@ -1994,7 +2008,7 @@ class PanelVARGMMResult(PanelVARResult):
 
         return "\n".join(lines)
 
-    def summary(self, equation: Optional[int] = None) -> str:
+    def summary(self, equation: int | None = None) -> str:
         """
         Generate summary report with GMM diagnostics.
 
@@ -2046,16 +2060,14 @@ class PanelVARGMMResult(PanelVARResult):
             # AR(1)
             ar1_result = self.ar_test(order=1)
             gmm_lines.append(
-                f"  AR(1): z = {ar1_result['statistic']:.3f}, "
-                f"p-value = {ar1_result['p_value']:.4f}"
+                f"  AR(1): z = {ar1_result['statistic']:.3f}, p-value = {ar1_result['p_value']:.4f}"
             )
             gmm_lines.append(f"    {ar1_result['interpretation']}")
 
             # AR(2)
             ar2_result = self.ar_test(order=2)
             gmm_lines.append(
-                f"  AR(2): z = {ar2_result['statistic']:.3f}, "
-                f"p-value = {ar2_result['p_value']:.4f}"
+                f"  AR(2): z = {ar2_result['statistic']:.3f}, p-value = {ar2_result['p_value']:.4f}"
             )
             gmm_lines.append(f"    {ar2_result['interpretation']}")
 
@@ -2088,7 +2100,7 @@ class LagOrderResult:
         Dictionary mapping criterion name to selected lag order
     """
 
-    def __init__(self, criteria_df: pd.DataFrame, selected: Dict[str, int]):
+    def __init__(self, criteria_df: pd.DataFrame, selected: dict[str, int]):
         self.criteria_df = criteria_df
         self.selected = selected
 
@@ -2156,7 +2168,7 @@ class LagOrderResult:
         Examples
         --------
         >>> lag_results = model.select_lag_order(max_lags=8)
-        >>> fig = lag_results.plot(backend='plotly')
+        >>> fig = lag_results.plot(backend="plotly")
         >>> fig.show()
         """
         if backend == "plotly":
@@ -2166,7 +2178,7 @@ class LagOrderResult:
             except ImportError:
                 raise ImportError(
                     "Plotly is required for this plot. Install with: pip install plotly"
-                )
+                ) from None
 
             # Create subplots - one for each criterion
             criteria = [c for c in ["AIC", "BIC", "HQIC", "MBIC"] if c in self.criteria_df.columns]
@@ -2184,8 +2196,8 @@ class LagOrderResult:
                         y=self.criteria_df[criterion],
                         mode="lines+markers",
                         name=criterion,
-                        line=dict(width=2),
-                        marker=dict(size=8),
+                        line={"width": 2},
+                        marker={"size": 8},
                         showlegend=False,
                     ),
                     row=1,
@@ -2203,12 +2215,12 @@ class LagOrderResult:
                             x=[selected_lag],
                             y=[selected_value],
                             mode="markers",
-                            marker=dict(
-                                size=12,
-                                color="red",
-                                symbol="star",
-                                line=dict(width=2, color="darkred"),
-                            ),
+                            marker={
+                                "size": 12,
+                                "color": "red",
+                                "symbol": "star",
+                                "line": {"width": 2, "color": "darkred"},
+                            },
                             name=f"Selected (p={selected_lag})",
                             showlegend=False,
                         ),
@@ -2235,7 +2247,7 @@ class LagOrderResult:
             except ImportError:
                 raise ImportError(
                     "Matplotlib is required for this plot. Install with: pip install matplotlib"
-                )
+                ) from None
 
             criteria = [c for c in ["AIC", "BIC", "HQIC", "MBIC"] if c in self.criteria_df.columns]
             n_criteria = len(criteria)

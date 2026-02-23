@@ -21,11 +21,13 @@ Examples
 >>> results = fe.fit()
 >>>
 >>> # Bootstrap inference
->>> bootstrap = pb.PanelBootstrap(results, n_bootstrap=1000, method='pairs')
+>>> bootstrap = pb.PanelBootstrap(results, n_bootstrap=1000, method="pairs")
 >>> bootstrap.run()
 >>> ci = bootstrap.conf_int()
 >>> print(ci)
 """
+
+from __future__ import annotations
 
 from panelbox.validation.robustness.bootstrap import PanelBootstrap
 from panelbox.validation.robustness.checks import RobustnessChecker
@@ -36,16 +38,16 @@ from panelbox.validation.robustness.outliers import OutlierDetector, OutlierResu
 from panelbox.validation.robustness.sensitivity import SensitivityAnalysis, SensitivityResults
 
 __all__ = [
-    "PanelBootstrap",
-    "SensitivityAnalysis",
-    "SensitivityResults",
-    "TimeSeriesCV",
     "CVResults",
-    "PanelJackknife",
+    "InfluenceDiagnostics",
+    "InfluenceResults",
     "JackknifeResults",
     "OutlierDetector",
     "OutlierResults",
-    "InfluenceDiagnostics",
-    "InfluenceResults",
+    "PanelBootstrap",
+    "PanelJackknife",
     "RobustnessChecker",
+    "SensitivityAnalysis",
+    "SensitivityResults",
+    "TimeSeriesCV",
 ]

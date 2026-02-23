@@ -2,9 +2,14 @@
 Validation report container.
 """
 
+from __future__ import annotations
+
+import logging
 from typing import Any, Dict, List, Optional
 
 from panelbox.validation.base import ValidationTestResult
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationReport:
@@ -53,6 +58,127 @@ class ValidationReport:
         )
         return f"ValidationReport(model='{self.model_info.get('model_type')}', tests={n_tests})"
 
+    def _test_categories(self):
+        """Return the ordered list of (category_key, label, tests) tuples."""
+        return [
+            ("specification", "Specification", self.specification_tests),
+            ("serial correlation", "Serial Correlation", self.serial_tests),
+            ("heteroskedasticity", "Heteroskedasticity", self.het_tests),
+            ("cross-sectional dependence", "Cross-Sectional Dep.", self.cd_tests),
+        ]
+
+    def _summary_as_dataframe(self):
+        """Return summary as a pandas DataFrame."""
+        import pandas as pd
+
+        rows = []
+        for _key, label, tests in self._test_categories():
+            for name, result in tests.items():
+                rows.append(
+                    {
+                        "category": label,
+                        "test": name,
+                        "statistic": result.statistic,
+                        "pvalue": result.pvalue,
+                        "reject": result.reject_null,
+                        "conclusion": result.conclusion,
+                    }
+                )
+        return pd.DataFrame(rows)
+
+    def _build_header_lines(self) -> list[str]:
+        """Build model information header."""
+        return [
+            "=" * 78,
+            "MODEL VALIDATION REPORT",
+            "=" * 78,
+            "",
+            "Model Information:",
+            f"  Type:    {self.model_info.get('model_type', 'Unknown')}",
+            f"  Formula: {self.model_info.get('formula', 'Unknown')}",
+            f"  N obs:   {self.model_info.get('nobs', 'Unknown')}",
+            f"  N entities: {self.model_info.get('n_entities', 'Unknown')}",
+            "",
+        ]
+
+    def _build_summary_table(self) -> list[str]:
+        """Build the summary table of all tests."""
+        lines = [
+            "=" * 78,
+            "VALIDATION TESTS SUMMARY",
+            "=" * 78,
+            f"{'Test':<35} {'Statistic':<12} {'P-value':<10} {'Result':<10}",
+            "-" * 78,
+        ]
+
+        section_labels = {
+            "specification": "Specification Tests:",
+            "serial correlation": "Serial Correlation Tests:",
+            "heteroskedasticity": "Heteroskedasticity Tests:",
+            "cross-sectional dependence": "Cross-Sectional Dependence Tests:",
+        }
+        for key, _label, tests in self._test_categories():
+            if tests:
+                lines.append("")
+                lines.append(section_labels[key])
+                for name, result in tests.items():
+                    stat_str = f"{result.statistic:.3f}"
+                    pval_str = f"{result.pvalue:.4f}"
+                    verdict = "REJECT" if result.reject_null else "OK"
+                    lines.append(f"  {name:<33} {stat_str:<12} {pval_str:<10} {verdict:<10}")
+
+        lines.extend(["=" * 78, ""])
+        return lines
+
+    def _build_diagnostics(self) -> list[str]:
+        """Build the diagnostics / recommendations section."""
+        problems = []
+        for key, _label, tests in self._test_categories():
+            for name, result in tests.items():
+                if result.reject_null:
+                    problems.append((key, f"  - {name}: {key}"))
+
+        lines = []
+        if problems:
+            lines.append("\u26a0\ufe0f  POTENTIAL ISSUES DETECTED:")
+            lines.extend(p for _, p in problems)
+            lines.append("")
+            lines.append("Consider:")
+            categories_with_issues = {cat for cat, _ in problems}
+            recommendations = {
+                "serial correlation": "  \u2022 Use clustered standard errors or HAC errors",
+                "heteroskedasticity": "  \u2022 Use robust standard errors",
+                "cross-sectional dependence": "  \u2022 Use Driscoll-Kraay standard errors",
+                "specification": "  \u2022 Review model specification",
+            }
+            for cat, rec in recommendations.items():
+                if cat in categories_with_issues:
+                    lines.append(rec)
+        else:
+            lines.append("\u2713 No major issues detected in validation tests")
+
+        lines.extend(["", "=" * 78, ""])
+        return lines
+
+    def _build_detailed_results(self) -> list[str]:
+        """Build verbose detailed results section."""
+        verbose_labels = {
+            "specification": "SPECIFICATION TESTS",
+            "serial correlation": "SERIAL CORRELATION TESTS",
+            "heteroskedasticity": "HETEROSKEDASTICITY TESTS",
+            "cross-sectional dependence": "CROSS-SECTIONAL DEPENDENCE TESTS",
+        }
+        lines = ["", "DETAILED TEST RESULTS", "=" * 78, ""]
+        for key, _label, tests in self._test_categories():
+            if tests:
+                lines.append("")
+                lines.append(verbose_labels[key])
+                lines.append("-" * 78)
+                for _name, result in tests.items():
+                    lines.append("")
+                    lines.append(result.summary())
+        return lines
+
     def summary(self, verbose: bool = True, as_dataframe: bool = False):
         """
         Generate formatted summary of all validation tests.
@@ -73,152 +199,15 @@ class ValidationReport:
             Formatted validation report (str) or summary table (DataFrame)
         """
         if as_dataframe:
-            try:
-                import pandas as pd
-            except ImportError as exc:
-                raise ImportError("pandas is required for as_dataframe=True") from exc
+            return self._summary_as_dataframe()
 
-            rows = []
-            for category, label, tests in [
-                ("specification", "Specification", self.specification_tests),
-                ("serial", "Serial Correlation", self.serial_tests),
-                ("heteroskedasticity", "Heteroskedasticity", self.het_tests),
-                ("cross_sectional", "Cross-Sectional Dep.", self.cd_tests),
-            ]:
-                for name, result in tests.items():
-                    rows.append(
-                        {
-                            "category": label,
-                            "test": name,
-                            "statistic": result.statistic,
-                            "pvalue": result.pvalue,
-                            "reject": result.reject_null,
-                            "conclusion": result.conclusion,
-                        }
-                    )
-            return pd.DataFrame(rows)
-        lines = []
-        lines.append("=" * 78)
-        lines.append("MODEL VALIDATION REPORT")
-        lines.append("=" * 78)
-        lines.append("")
+        lines = self._build_header_lines()
+        lines.extend(self._build_summary_table())
+        lines.extend(self._build_diagnostics())
 
-        # Model information
-        lines.append("Model Information:")
-        lines.append(f"  Type:    {self.model_info.get('model_type', 'Unknown')}")
-        lines.append(f"  Formula: {self.model_info.get('formula', 'Unknown')}")
-        lines.append(f"  N obs:   {self.model_info.get('nobs', 'Unknown')}")
-        lines.append(f"  N entities: {self.model_info.get('n_entities', 'Unknown')}")
-        lines.append("")
-
-        # Summary table
-        lines.append("=" * 78)
-        lines.append("VALIDATION TESTS SUMMARY")
-        lines.append("=" * 78)
-        lines.append(f"{'Test':<35} {'Statistic':<12} {'P-value':<10} {'Result':<10}")
-        lines.append("-" * 78)
-
-        # Helper function to add test row
-        def add_test_row(test_name, test_result):
-            if test_result is None:
-                return
-
-            stat_str = f"{test_result.statistic:.3f}"
-            pval_str = f"{test_result.pvalue:.4f}"
-            result = "REJECT" if test_result.reject_null else "OK"
-
-            lines.append(f"{test_name:<35} {stat_str:<12} {pval_str:<10} {result:<10}")
-
-        # Specification tests
-        if self.specification_tests:
-            lines.append("")
-            lines.append("Specification Tests:")
-            for name, result in self.specification_tests.items():
-                add_test_row(f"  {name}", result)
-
-        # Serial correlation tests
-        if self.serial_tests:
-            lines.append("")
-            lines.append("Serial Correlation Tests:")
-            for name, result in self.serial_tests.items():
-                add_test_row(f"  {name}", result)
-
-        # Heteroskedasticity tests
-        if self.het_tests:
-            lines.append("")
-            lines.append("Heteroskedasticity Tests:")
-            for name, result in self.het_tests.items():
-                add_test_row(f"  {name}", result)
-
-        # Cross-sectional dependence tests
-        if self.cd_tests:
-            lines.append("")
-            lines.append("Cross-Sectional Dependence Tests:")
-            for name, result in self.cd_tests.items():
-                add_test_row(f"  {name}", result)
-
-        lines.append("=" * 78)
-        lines.append("")
-
-        # Diagnostics summary
-        problems = []
-
-        for category, tests in [
-            ("specification", self.specification_tests),
-            ("serial correlation", self.serial_tests),
-            ("heteroskedasticity", self.het_tests),
-            ("cross-sectional dependence", self.cd_tests),
-        ]:
-            for name, result in tests.items():
-                if result.reject_null:
-                    problems.append(f"  - {name}: {category}")
-
-        if problems:
-            lines.append("⚠️  POTENTIAL ISSUES DETECTED:")
-            lines.extend(problems)
-            lines.append("")
-            lines.append("Consider:")
-
-            if any("serial correlation" in p for p in problems):
-                lines.append("  • Use clustered standard errors or HAC errors")
-
-            if any("heteroskedasticity" in p for p in problems):
-                lines.append("  • Use robust standard errors")
-
-            if any("cross-sectional dependence" in p for p in problems):
-                lines.append("  • Use Driscoll-Kraay standard errors")
-
-            if any("specification" in p for p in problems):
-                lines.append("  • Review model specification")
-        else:
-            lines.append("✓ No major issues detected in validation tests")
-
-        lines.append("")
-        lines.append("=" * 78)
-        lines.append("")
-
-        # Verbose output: detailed results
-        if verbose and (
-            self.specification_tests or self.serial_tests or self.het_tests or self.cd_tests
-        ):
-            lines.append("")
-            lines.append("DETAILED TEST RESULTS")
-            lines.append("=" * 78)
-            lines.append("")
-
-            for category, tests in [
-                ("SPECIFICATION TESTS", self.specification_tests),
-                ("SERIAL CORRELATION TESTS", self.serial_tests),
-                ("HETEROSKEDASTICITY TESTS", self.het_tests),
-                ("CROSS-SECTIONAL DEPENDENCE TESTS", self.cd_tests),
-            ]:
-                if tests:
-                    lines.append("")
-                    lines.append(category)
-                    lines.append("-" * 78)
-                    for name, result in tests.items():
-                        lines.append("")
-                        lines.append(result.summary())
+        has_tests = self.specification_tests or self.serial_tests or self.het_tests or self.cd_tests
+        if verbose and has_tests:
+            lines.extend(self._build_detailed_results())
 
         return "\n".join(lines)
 
@@ -241,6 +230,7 @@ class ValidationReport:
 
         # Helper to convert test result to dict
         def test_to_dict(test):
+            """Convert a test result to a dictionary representation."""
             return {
                 "statistic": test.statistic,
                 "pvalue": test.pvalue,

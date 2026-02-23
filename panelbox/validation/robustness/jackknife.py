@@ -13,6 +13,9 @@ Shao, J., & Tu, D. (1995). The Jackknife and Bootstrap.
     Springer Science & Business Media.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
 from dataclasses import dataclass
 from typing import Optional
@@ -21,6 +24,8 @@ import numpy as np
 import pandas as pd
 
 from panelbox.core.results import PanelResults
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -65,7 +70,7 @@ class JackknifeResults:
         lines.append("Parameter Estimates and Bias:")
         lines.append("-" * 70)
         lines.append(
-            f"{'Parameter':<15} {'Original':>12} {'Jackknife':>12} " f"{'Bias':>12} {'SE (JK)':>12}"
+            f"{'Parameter':<15} {'Original':>12} {'Jackknife':>12} {'Bias':>12} {'SE (JK)':>12}"
         )
         lines.append("-" * 70)
 
@@ -124,7 +129,7 @@ class PanelJackknife:
     >>> import pandas as pd
     >>>
     >>> # Fit model
-    >>> data = pd.read_csv('panel_data.csv')
+    >>> data = pd.read_csv("panel_data.csv")
     >>> fe = pb.FixedEffects("y ~ x1 + x2", data, "entity_id", "time")
     >>> results = fe.fit()
     >>>
@@ -193,9 +198,9 @@ class PanelJackknife:
            - Influence: (N-1) * (original - theta_i)
         """
         if self.verbose:
-            print("Starting jackknife procedure...")
-            print(f"Total entities: {self.n_entities}")
-            print("")
+            logger.info("Starting jackknife procedure...")
+            logger.info(f"Total entities: {self.n_entities}")
+            logger.info("")
 
         # Storage for jackknife estimates
         jackknife_estimates = []
@@ -207,7 +212,7 @@ class PanelJackknife:
         # Perform leave-one-out
         for i, entity in enumerate(self.entities, 1):
             if self.verbose:
-                print(f"Jackknife sample {i}/{self.n_entities}: " f"Excluding entity {entity}")
+                logger.info(f"Jackknife sample {i}/{self.n_entities}: Excluding entity {entity}")
 
             try:
                 # Remove entity i
@@ -226,7 +231,7 @@ class PanelJackknife:
                 )
 
             except Exception as e:
-                warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {str(e)}")
+                warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {e!s}")
                 failed_samples.append(entity)
                 continue
 
@@ -235,8 +240,8 @@ class PanelJackknife:
             raise RuntimeError("All jackknife samples failed")
 
         if self.verbose and failed_samples:
-            print(f"\nWarning: {len(failed_samples)} samples failed")
-            print(f"Successfully completed: {len(jackknife_estimates)}/{self.n_entities}")
+            logger.warning(f"{len(failed_samples)} samples failed")
+            logger.info(f"Successfully completed: {len(jackknife_estimates)}/{self.n_entities}")
 
         # Convert to DataFrame
         jackknife_df = pd.DataFrame(jackknife_estimates)
@@ -276,8 +281,8 @@ class PanelJackknife:
         )
 
         if self.verbose:
-            print("\nJackknife Complete!")
-            print(f"Successful samples: {N}/{self.n_entities}")
+            logger.info("Jackknife Complete!")
+            logger.info(f"Successful samples: {N}/{self.n_entities}")
 
         return self.jackknife_results_
 

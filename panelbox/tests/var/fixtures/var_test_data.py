@@ -1,5 +1,6 @@
-# tests/var/fixtures/var_test_data.py
+from __future__ import annotations
 
+# tests/var/fixtures/var_test_data.py
 import numpy as np
 import pandas as pd
 

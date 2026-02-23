@@ -5,11 +5,16 @@ This module provides formula parsing functionality similar to R's formula syntax
 adapted for panel data econometrics.
 """
 
+from __future__ import annotations
+
+import logging
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import pandas as pd
 import patsy
+
+logger = logging.getLogger(__name__)
 
 
 class FormulaParser:
@@ -63,14 +68,14 @@ class FormulaParser:
             )
 
         self.formula = formula.strip()
-        self.dependent: Optional[str] = None
-        self.regressors: List[str] = []
+        self.dependent: str | None = None
+        self.regressors: list[str] = []
         self.has_intercept: bool = True
         self.has_instruments: bool = False
-        self._instrument_spec: Optional[str] = None
+        self._instrument_spec: str | None = None
         self._parsed: bool = False
 
-    def parse(self) -> "FormulaParser":
+    def parse(self) -> FormulaParser:
         """
         Parse the formula string.
 
@@ -116,7 +121,7 @@ class FormulaParser:
         self._parsed = True
         return self
 
-    def _extract_variable_names(self, rhs: str) -> List[str]:
+    def _extract_variable_names(self, rhs: str) -> list[str]:
         """
         Extract basic variable names from RHS.
 
@@ -173,7 +178,7 @@ class FormulaParser:
 
         return variables
 
-    def _extract_var_from_term(self, term: str) -> Optional[str]:
+    def _extract_var_from_term(self, term: str) -> str | None:
         """
         Extract variable name from a single term.
 
@@ -214,7 +219,7 @@ class FormulaParser:
 
     def build_design_matrices(
         self, data: pd.DataFrame, return_type: str = "dataframe"
-    ) -> Tuple[Any, Any]:
+    ) -> tuple[Any, Any]:
         """
         Build design matrices using patsy.
 
@@ -270,7 +275,7 @@ class FormulaParser:
 
         return y, X
 
-    def get_variable_names(self, data: pd.DataFrame) -> List[str]:
+    def get_variable_names(self, data: pd.DataFrame) -> list[str]:
         """
         Get the names of variables in the design matrix.
 

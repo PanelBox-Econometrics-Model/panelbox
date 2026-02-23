@@ -5,10 +5,15 @@ This module provides transformers to extract and prepare data from PanelResults
 and PanelData objects for panel-specific charts.
 """
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 class PanelDataTransformer:
@@ -21,7 +26,7 @@ class PanelDataTransformer:
     """
 
     @staticmethod
-    def extract_entity_effects(panel_results) -> Dict[str, Any]:
+    def extract_entity_effects(panel_results) -> dict[str, Any]:
         """
         Extract entity fixed effects from panel estimation results.
 
@@ -117,13 +122,13 @@ class PanelDataTransformer:
 
         except Exception as e:
             raise ValueError(
-                f"Failed to extract entity effects: {str(e)}\n"
+                f"Failed to extract entity effects: {e!s}\n"
                 "Expected PanelResults object with entity_effects attribute or "
                 "compatible structure."
-            )
+            ) from e
 
     @staticmethod
-    def extract_time_effects(panel_results) -> Dict[str, Any]:
+    def extract_time_effects(panel_results) -> dict[str, Any]:
         """
         Extract time fixed effects from panel estimation results.
 
@@ -218,15 +223,15 @@ class PanelDataTransformer:
 
         except Exception as e:
             raise ValueError(
-                f"Failed to extract time effects: {str(e)}\n"
+                f"Failed to extract time effects: {e!s}\n"
                 "Expected PanelResults object with time_effects attribute or "
                 "compatible structure."
-            )
+            ) from e
 
     @staticmethod
     def calculate_between_within(
-        panel_data, variables: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        panel_data, variables: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Calculate between and within variance decomposition.
 
@@ -300,12 +305,12 @@ class PanelDataTransformer:
 
         except Exception as e:
             raise ValueError(
-                f"Failed to calculate between-within decomposition: {str(e)}\n"
+                f"Failed to calculate between-within decomposition: {e!s}\n"
                 "Expected PanelData or DataFrame with MultiIndex (entity, time)."
-            )
+            ) from e
 
     @staticmethod
-    def analyze_panel_structure(panel_data) -> Dict[str, Any]:
+    def analyze_panel_structure(panel_data) -> dict[str, Any]:
         """
         Analyze panel data structure and balance.
 
@@ -398,12 +403,12 @@ class PanelDataTransformer:
 
         except Exception as e:
             raise ValueError(
-                f"Failed to analyze panel structure: {str(e)}\n"
+                f"Failed to analyze panel structure: {e!s}\n"
                 "Expected PanelData or DataFrame with MultiIndex (entity, time)."
-            )
+            ) from e
 
     @staticmethod
-    def prepare_panel_summary(panel_data) -> Dict[str, Any]:
+    def prepare_panel_summary(panel_data) -> dict[str, Any]:
         """
         Prepare comprehensive summary of panel data.
 

@@ -17,16 +17,20 @@ Lee, L.F. & Yu, J. (2010). "Estimation of spatial autoregressive panel data mode
     with fixed effects." Journal of Econometrics, 154(2), 165-185.
 """
 
+from __future__ import annotations
+
+import logging
 import warnings
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from scipy import linalg, optimize
-from scipy.sparse import issparse
+from scipy import optimize
 
 from .base_spatial import SpatialPanelModel
 from .spatial_lag import SpatialPanelResults
+
+logger = logging.getLogger(__name__)
 
 
 class DynamicSpatialPanel(SpatialPanelModel):
@@ -76,7 +80,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
         entity_col: str,
         time_col: str,
         W: np.ndarray,
-        weights: Optional[np.ndarray] = None,
+        weights: np.ndarray | None = None,
     ):
         """Initialize Dynamic Spatial Panel model."""
         super().__init__(formula, data, entity_col, time_col, W, weights)
@@ -91,7 +95,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
         lags: int = 1,
         spatial_lags: int = 1,
         time_lags: int = 2,
-        initial_values: Optional[Dict] = None,
+        initial_values: dict | None = None,
         maxiter: int = 1000,
         tol: float = 1e-6,
         verbose: bool = False,
@@ -167,7 +171,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
         N = self.n_entities
         T = self.n_periods
 
-        if T <= time_lags + lags:
+        if time_lags + lags >= T:
             raise ValueError(
                 f"Need T > {time_lags + lags} for GMM with {lags} lags "
                 f"and {time_lags} instrument lags"
@@ -197,7 +201,9 @@ class DynamicSpatialPanel(SpatialPanelModel):
         Z_valid = Z[start_idx : start_idx + valid_obs]
 
         if verbose:
-            print(f"GMM estimation with {valid_obs} observations, {Z_valid.shape[1]} instruments")
+            logger.info(
+                f"GMM estimation with {valid_obs} observations, {Z_valid.shape[1]} instruments"
+            )
 
         # First stage: 2SLS for initial consistent estimates
         initial_params = self._gmm_first_stage(
@@ -205,7 +211,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
         )
 
         if verbose:
-            print(
+            logger.info(
                 f"First stage estimates: γ={initial_params['gamma']:.3f}, "
                 f"ρ={initial_params['rho']:.3f}"
             )
@@ -243,8 +249,9 @@ class DynamicSpatialPanel(SpatialPanelModel):
                     1
                     - pd.Series(np.abs(t_stats)).apply(
                         lambda x: pd.Series([x]).apply(
-                            lambda z: 1
-                            - 0.5 * (1 + np.sign(z) * (1 - np.exp(-2 * z**2 / np.pi) ** 0.5))
+                            lambda z: (
+                                1 - 0.5 * (1 + np.sign(z) * (1 - np.exp(-2 * z**2 / np.pi) ** 0.5))
+                            )
                         )[0]
                     )
                 ),
@@ -361,7 +368,6 @@ class DynamicSpatialPanel(SpatialPanelModel):
 
     def _gmm_first_stage(self, y, X, y_lag, Wy, Z, initial_values):
         """First stage 2SLS estimation for initial consistent estimates."""
-
         # Stack endogenous regressors
         W_endo = np.column_stack([y_lag, Wy])
 
@@ -384,7 +390,6 @@ class DynamicSpatialPanel(SpatialPanelModel):
 
     def _gmm_second_stage(self, y, X, y_lag, Wy, Z, initial_params, maxiter, tol, verbose):
         """Second stage optimal GMM estimation."""
-
         # Compute initial residuals
         gamma_init = initial_params["gamma"]
         rho_init = initial_params["rho"]
@@ -397,6 +402,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
 
         # GMM objective function
         def gmm_objective(params):
+            """Compute the GMM objective function."""
             gamma, rho = params[:2]
             beta = params[2:]
 
@@ -428,7 +434,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
         )
 
         if not result.success and verbose:
-            warnings.warn(f"GMM optimization did not converge: {result.message}")
+            warnings.warn(f"GMM optimization did not converge: {result.message}", stacklevel=2)
 
         # Extract optimized parameters
         gamma_opt = result.x[0]
@@ -439,7 +445,6 @@ class DynamicSpatialPanel(SpatialPanelModel):
 
     def _gmm_weight_matrix(self, residuals: np.ndarray, Z: np.ndarray) -> np.ndarray:
         """Compute optimal GMM weight matrix."""
-
         n_obs = len(residuals)
 
         # Moment conditions at observation level
@@ -452,14 +457,15 @@ class DynamicSpatialPanel(SpatialPanelModel):
         try:
             W_opt = np.linalg.inv(S)
         except np.linalg.LinAlgError:
-            warnings.warn("Moment covariance matrix is singular, using pseudo-inverse")
+            warnings.warn(
+                "Moment covariance matrix is singular, using pseudo-inverse", stacklevel=2
+            )
             W_opt = np.linalg.pinv(S)
 
         return W_opt
 
     def _gmm_covariance_matrix(self, y, X, y_lag, Wy, Z, params):
         """Compute GMM covariance matrix for parameter estimates."""
-
         gamma = params["gamma"]
         rho = params["rho"]
         beta = params["beta"]
@@ -493,14 +499,14 @@ class DynamicSpatialPanel(SpatialPanelModel):
         try:
             cov_matrix = np.linalg.inv(GWG) / n_obs
         except np.linalg.LinAlgError:
-            warnings.warn("Cannot compute covariance matrix, using identity")
+            warnings.warn("Cannot compute covariance matrix, using identity", stacklevel=2)
             cov_matrix = np.eye(k_params)
 
         return cov_matrix
 
     def _hansen_j_test(
         self, residuals: np.ndarray, Z: np.ndarray, cov_matrix: np.ndarray
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Hansen J-test for overidentifying restrictions.
 
@@ -554,10 +560,10 @@ class DynamicSpatialPanel(SpatialPanelModel):
         This is more complex than GMM and follows Lee & Yu (2010).
         """
         raise NotImplementedError(
-            "QML estimation for Dynamic Spatial Panel " "is not yet implemented. Use method='gmm'."
+            "QML estimation for Dynamic Spatial Panel is not yet implemented. Use method='gmm'."
         )
 
-    def predict(self, steps: int = 1, X_future: Optional[np.ndarray] = None) -> np.ndarray:
+    def predict(self, steps: int = 1, X_future: np.ndarray | None = None) -> np.ndarray:
         """
         Multi-step ahead prediction for dynamic spatial model.
 

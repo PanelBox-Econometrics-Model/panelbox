@@ -6,20 +6,24 @@ vary across the conditional distribution, justifying the use of quantile
 regression over mean-based methods.
 """
 
-from typing import Any, List, Optional, Tuple, Union
+from __future__ import annotations
+
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
+logger = logging.getLogger(__name__)
+
 
 class HeterogeneityTests:
-    """
-    Tests for heterogeneous effects across quantiles.
-    """
+    """Tests for heterogeneous effects across quantiles."""
 
     def __init__(self, result):
         """
+        Initialize HeterogeneityTests.
+
         Parameters
         ----------
         result : QuantilePanelResult
@@ -33,9 +37,9 @@ class HeterogeneityTests:
 
     def test_slope_equality(
         self,
-        var_idx: Optional[Union[int, List[int]]] = None,
-        tau_pairs: Optional[List[Tuple[float, float]]] = None,
-    ) -> "SlopeEqualityTestResult":
+        var_idx: int | list[int] | None = None,
+        tau_pairs: list[tuple[float, float]] | None = None,
+    ) -> SlopeEqualityTestResult:
         """
         Test equality of slopes across quantiles.
 
@@ -104,8 +108,8 @@ class HeterogeneityTests:
         )
 
     def test_joint_equality(
-        self, tau_subset: Optional[List[float]] = None
-    ) -> "JointEqualityTestResult":
+        self, tau_subset: list[float] | None = None
+    ) -> JointEqualityTestResult:
         """
         Joint test that all slope coefficients are equal across quantiles.
 
@@ -132,7 +136,7 @@ class HeterogeneityTests:
 
         # Test statistic
         test_stat = 0
-        for i, tau in enumerate(tau_subset):
+        for i, _tau in enumerate(tau_subset):
             if i == ref_idx:
                 continue
 
@@ -144,7 +148,7 @@ class HeterogeneityTests:
 
             try:
                 test_stat += diff @ np.linalg.inv(V_sum) @ diff
-            except:
+            except Exception:
                 test_stat += diff @ np.linalg.pinv(V_sum) @ diff
 
         # Degrees of freedom
@@ -162,7 +166,7 @@ class HeterogeneityTests:
             coef_matrix=coef_matrix,
         )
 
-    def test_monotonicity(self, var_idx: int) -> "MonotonicityTestResult":
+    def test_monotonicity(self, var_idx: int) -> MonotonicityTestResult:
         """
         Test if coefficient is monotonic in τ.
 
@@ -198,7 +202,7 @@ class HeterogeneityTests:
             var_idx=var_idx,
         )
 
-    def interquantile_range_test(self) -> Tuple[float, float]:
+    def interquantile_range_test(self) -> tuple[float, float]:
         """
         Test if interquantile range varies with covariates.
 
@@ -225,27 +229,27 @@ class HeterogeneityTests:
         # Wald test
         try:
             test_stat = iqr_test @ np.linalg.inv(V_iqr) @ iqr_test
-        except:
+        except Exception:
             test_stat = iqr_test @ np.linalg.pinv(V_iqr) @ iqr_test
 
         df = len(test_idx)
         p_value = 1 - stats.chi2.cdf(test_stat, df)
 
-        print("\nInterquantile Range Test")
-        print("=" * 50)
-        print("H0: IQR does not vary with covariates")
-        print(f"Test Statistic: {test_stat:.4f}")
-        print(f"P-value: {p_value:.4f}")
+        logger.info("Interquantile Range Test")
+        logger.info("=" * 50)
+        logger.info("H0: IQR does not vary with covariates")
+        logger.info("Test Statistic: %.4f", test_stat)
+        logger.info("P-value: %.4f", p_value)
 
         if p_value < 0.05:
-            print("Conclusion: Reject H0 - heteroskedasticity detected")
+            logger.info("Conclusion: Reject H0 - heteroskedasticity detected")
         else:
-            print("Conclusion: Cannot reject H0 - constant IQR")
+            logger.info("Conclusion: Cannot reject H0 - constant IQR")
 
         return test_stat, p_value
 
     def plot_coefficient_paths(
-        self, var_names: Optional[List[str]] = None, confidence_bands: bool = True
+        self, var_names: list[str] | None = None, confidence_bands: bool = True
     ):
         """
         Plot how coefficients change across quantiles.
@@ -260,17 +264,14 @@ class HeterogeneityTests:
         n_params = len(self.result.results[self.tau_list[0]].params)
 
         if var_names is None:
-            var_names = [f"β{i+1}" for i in range(n_params)]
+            var_names = [f"β{i + 1}" for i in range(n_params)]
 
         # Create subplots
         n_cols = 2
         n_rows = (n_params + n_cols - 1) // n_cols
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 4 * n_rows))
 
-        if n_params == 1:
-            axes = [axes]
-        else:
-            axes = axes.flatten()
+        axes = [axes] if n_params == 1 else axes.flatten()
 
         for i in range(n_params):
             ax = axes[i]
@@ -327,9 +328,9 @@ class SlopeEqualityTestResult:
         statistic: float,
         p_value: float,
         df: int,
-        tau_pairs: List[Tuple[float, float]],
-        var_idx: List[int],
-        individual_stats: List[float],
+        tau_pairs: list[tuple[float, float]],
+        var_idx: list[int],
+        individual_stats: list[float],
     ):
         self.statistic = statistic
         self.p_value = p_value
@@ -368,7 +369,7 @@ class JointEqualityTestResult:
         statistic: float,
         p_value: float,
         df: int,
-        tau_subset: List[float],
+        tau_subset: list[float],
         coef_matrix: np.ndarray,
     ):
         self.statistic = statistic
@@ -405,7 +406,7 @@ class MonotonicityTestResult:
         is_increasing: bool,
         is_decreasing: bool,
         coef_path: np.ndarray,
-        tau_list: List[float],
+        tau_list: list[float],
         var_idx: int,
     ):
         self.correlation = correlation
@@ -443,8 +444,8 @@ class MonotonicityTestResult:
         # Coefficient path
         ax1.plot(self.tau_list, self.coef_path, "o-", linewidth=2, markersize=8)
         ax1.set_xlabel("Quantile (τ)")
-        ax1.set_ylabel(f"Coefficient β{self.var_idx+1}")
-        ax1.set_title(f"Coefficient Path: Variable {self.var_idx+1}")
+        ax1.set_ylabel(f"Coefficient β{self.var_idx + 1}")
+        ax1.set_title(f"Coefficient Path: Variable {self.var_idx + 1}")
         ax1.grid(True, alpha=0.3)
 
         # Add trend line
@@ -486,7 +487,7 @@ class MonotonicityTestResult:
             0.95,
             pattern,
             transform=ax1.transAxes,
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+            bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
         )
 
         plt.suptitle("Monotonicity Analysis", fontsize=14)

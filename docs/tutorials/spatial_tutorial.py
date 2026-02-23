@@ -6,7 +6,6 @@ Executar este script para testar funcionalidades espaciais.
 import numpy as np
 import pandas as pd
 
-import panelbox as pb
 from panelbox import PanelExperiment, SpatialWeights
 from panelbox.experiment.spatial_extension import extend_panel_experiment
 
@@ -20,7 +19,6 @@ def create_spatial_data():
 
     # Panel dimensions
     n_states = 48
-    n_years = 20
     years = range(2000, 2020)
 
     # Create panel structure
@@ -87,7 +85,7 @@ def main():
 
     # Estimate OLS
     print("\n3. Estimating baseline OLS...")
-    ols_result = experiment.fit_model("pooled_ols", name="OLS")
+    experiment.fit_model("pooled_ols", name="OLS")
 
     # Spatial diagnostics
     print("\n4. Running spatial diagnostics...")

@@ -1,0 +1,10 @@
+# Gitleaks configuration for PanelBox
+# Allowlist for false positives in test fixtures and example data
+
+[allowlist]
+description = "PanelBox allowlist"
+paths = [
+    '''tests/.*''',
+    '''examples/.*''',
+    '''docs/.*''',
+]

@@ -1,5 +1,5 @@
 """
-Discrete Choice Models - Solutions
+Discrete Choice Models - Solutions.
 
 Part of the PanelBox tutorial series on discrete choice econometrics.
 

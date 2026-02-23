@@ -6,7 +6,6 @@ diagnostic visualizations, and bootstrap distributions.
 """
 
 from pathlib import Path
-from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,7 +62,7 @@ def plot_coefficient_comparison(
     matplotlib Axes
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(8, 5))
+        _fig, ax = plt.subplots(figsize=(8, 5))
 
     names = list(estimates.keys())
     points = [v[0] for v in estimates.values()]
@@ -242,7 +241,7 @@ def plot_bootstrap_distribution(
     matplotlib Axes
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(8, 5))
+        _fig, ax = plt.subplots(figsize=(8, 5))
 
     ax.hist(
         bootstrap_estimates,
@@ -316,7 +315,7 @@ def plot_convergence(
     matplotlib Axes
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(8, 5))
+        _fig, ax = plt.subplots(figsize=(8, 5))
 
     ax.plot(range(1, len(iterations) + 1), iterations, "o-", color="steelblue", markersize=5)
     ax.set_xlabel("Iteration")

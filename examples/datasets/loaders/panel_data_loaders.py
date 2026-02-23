@@ -1,5 +1,5 @@
 """
-Panel Data Loading Utilities
+Panel Data Loading Utilities.
 
 This module provides standardized loading functions for tutorial datasets.
 """
@@ -7,7 +7,6 @@ This module provides standardized loading functions for tutorial datasets.
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 # Determine base path for datasets
@@ -287,8 +286,8 @@ def get_dataset_info(dataset_name: str) -> dict:
 
     Examples
     --------
-    >>> info = get_dataset_info('grunfeld')
-    >>> print(info['description'])
+    >>> info = get_dataset_info("grunfeld")
+    >>> print(info["description"])
     """
     info_dict = {
         "grunfeld": {
