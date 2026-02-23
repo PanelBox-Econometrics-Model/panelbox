@@ -119,6 +119,17 @@ extra:
   #   provider: google
   #   property: G-XXXXXXXXXX  # Add your Google Analytics ID here
 
+validation:
+  links:
+    not_found: info
+    anchors: info
+    absolute_links: info
+    unrecognized_links: info
+  nav:
+    omitted_files: info
+    not_found: info
+    absolute_links: info
+
 extra_css:
   - stylesheets/extra.css
 
