@@ -560,7 +560,7 @@ class MonotonicityComparison:
         """
         if methods is None:
             methods = ["unconstrained", "rearrangement", "isotonic", "constrained"]
-        from ..pooled import PooledQuantile
+        from .pooled import PooledQuantile
 
         comparison = []
 
