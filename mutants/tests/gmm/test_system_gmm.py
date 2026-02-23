@@ -156,7 +156,7 @@ class TestSystemGMMValidation:
 
     def test_invalid_dep_var(self, balanced_panel_data):
         """Test error when dependent variable doesn't exist."""
-        with pytest.raises(ValueError, match="Dependent variable .* not found"):
+        with pytest.raises(ValueError, match=r"Dependent variable .* not found"):
             SystemGMM(
                 data=balanced_panel_data,
                 dep_var="nonexistent",

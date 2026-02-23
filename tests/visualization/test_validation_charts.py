@@ -208,7 +208,7 @@ class TestPValueDistributionChart:
         """Test validation with missing p-values."""
         chart = PValueDistributionChart()
 
-        with pytest.raises(ValueError, match="must contain.*pvalues"):
+        with pytest.raises(ValueError, match=r"must contain.*pvalues"):
             chart.create({"test_names": ["Test1", "Test2"]})
 
     def test_to_html(self, sample_pvalue_data):

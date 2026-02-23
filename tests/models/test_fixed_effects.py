@@ -393,7 +393,7 @@ class TestModelComparison:
         assert results_twoway.df_resid < results_oneway.df_resid
 
 
-class TestCovarianceTypes:
+class TestCovarianceTypesAdvanced:
     """Tests for different covariance types."""
 
     def test_fit_with_twoway_clustering(self, balanced_panel_data):

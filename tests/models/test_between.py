@@ -47,7 +47,7 @@ class TestBetweenEstimator:
             from panelbox import load_grunfeld
 
             return load_grunfeld()
-        except:
+        except Exception:
             pytest.skip("Grunfeld dataset not available")
 
     def test_initialization(self, simple_panel_data):

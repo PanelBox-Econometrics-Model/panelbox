@@ -243,7 +243,7 @@ class TestPanelCorrectedStandardErrors:
         X = np.random.randn(n_entities * n_periods, 2)
         resid = np.random.randn(n_entities * n_periods)
 
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning):  # noqa: PT030
             pcse_est = PanelCorrectedStandardErrors(X, resid, entity_ids, time_ids)
 
         summary = pcse_est.diagnostic_summary()

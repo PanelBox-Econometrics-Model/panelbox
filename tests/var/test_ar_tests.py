@@ -442,7 +442,7 @@ class TestARWithPanelVARDGP:
             # Simulate residuals from VAR(1) estimation (misspecified)
             # The VAR(1) residuals will contain AR(2) correlation
             # because we omitted the second lag
-            for t in range(1, len(y_fod)):
+            for _t in range(1, len(y_fod)):
                 # Mis-specified residuals include omitted lag effect
                 pass
 

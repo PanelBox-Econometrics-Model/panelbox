@@ -360,7 +360,7 @@ def test_plot_backend_plotly(simple_irf_result):
     """Test plotly backend (interactive)."""
     # This test is skipped for now as plotly backend may not be implemented
     try:
-        import plotly.graph_objects as go
+        import plotly.graph_objects as go  # noqa: F401
 
         fig = simple_irf_result.plot(backend="plotly", show=False)
 

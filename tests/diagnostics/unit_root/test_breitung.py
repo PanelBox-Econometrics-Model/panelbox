@@ -97,7 +97,7 @@ class TestBreitungTest:
         data = pd.DataFrame({"entity": [1, 1, 2, 2], "time": [0, 1, 0, 1], "y": [1, 2, 3, 4]})
 
         # Invalid variable name
-        with pytest.raises(ValueError, match="Variable .* not found"):
+        with pytest.raises(ValueError, match=r"Variable .* not found"):
             breitung_test(data, "nonexistent")
 
         # Invalid trend specification

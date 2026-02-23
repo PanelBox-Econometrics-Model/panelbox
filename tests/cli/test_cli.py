@@ -239,7 +239,8 @@ def test_info_results():
     print("Testing info command (results)...")
 
     data_file = create_test_data()
-    output_file = tempfile.mktemp(suffix=".pkl")
+    output_fd, output_file = tempfile.mkstemp(suffix=".pkl")
+    os.close(output_fd)
 
     try:
         # First estimate

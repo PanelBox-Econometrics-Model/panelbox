@@ -137,14 +137,14 @@ class TestForwardOrthogonalDeviation:
         """Test error when entity column not found"""
         df = pd.DataFrame({"time": [1, 2], "y": [1.0, 2.0]})
 
-        with pytest.raises(ValueError, match="Entity column.*not found"):
+        with pytest.raises(ValueError, match=r"Entity column.*not found"):
             forward_orthogonal_deviation(df, entity_col="entity")
 
     def test_fod_invalid_time_column(self):
         """Test error when time column not found"""
         df = pd.DataFrame({"entity": [1, 1], "y": [1.0, 2.0]})
 
-        with pytest.raises(ValueError, match="Time column.*not found"):
+        with pytest.raises(ValueError, match=r"Time column.*not found"):
             forward_orthogonal_deviation(df, time_col="time")
 
     def test_fod_no_numeric_columns(self):

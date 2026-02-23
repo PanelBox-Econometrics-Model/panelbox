@@ -38,7 +38,7 @@ from panelbox.frontier import StochasticFrontier
 
 def generate_cost_frontier_data(
     n: int = 100,
-    beta: np.ndarray = np.array([2.0, 0.5, 0.3]),
+    beta: np.ndarray | None = None,
     sigma_v: float = 0.1,
     sigma_u: float = 0.2,
     seed: int = 42,
@@ -53,6 +53,8 @@ def generate_cost_frontier_data(
         df: DataFrame com dados
         true_params: Dicionário com parâmetros verdadeiros
     """
+    if beta is None:
+        beta = np.array([2.0, 0.5, 0.3])
     np.random.seed(seed)
 
     # Variáveis explicativas
@@ -101,13 +103,15 @@ def generate_cost_frontier_data(
 def generate_panel_cost_data(
     n_entities: int = 30,
     n_time: int = 5,
-    beta: np.ndarray = np.array([2.0, 0.6, 0.4]),
+    beta: np.ndarray | None = None,
     sigma_v: float = 0.1,
     sigma_u: float = 0.3,
     time_invariant: bool = True,
     seed: int = 42,
 ) -> tuple:
     """Gerar dados de painel para fronteira de custo"""
+    if beta is None:
+        beta = np.array([2.0, 0.6, 0.4])
     np.random.seed(seed)
 
     n_obs = n_entities * n_time

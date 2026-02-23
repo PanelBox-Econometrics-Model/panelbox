@@ -188,7 +188,7 @@ class TestQuantileTreatmentEffects:
             }
         )
 
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning):  # noqa: PT030
             qte = QuantileTreatmentEffects(df, outcome="y", treatment="treatment", covariates=["X"])
 
         # Should have converted to binary

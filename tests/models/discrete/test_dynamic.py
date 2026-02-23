@@ -168,7 +168,7 @@ class TestDynamicBinaryPanel:
 
     def test_missing_identifiers(self):
         """Test error handling for missing entity/time identifiers."""
-        with pytest.raises(ValueError, match="Entity and time identifiers required"):
+        with pytest.raises(ValueError, match="Entity and time identifiers required"):  # noqa: PT012
             model = DynamicBinaryPanel(self.y, self.X, entity=None, time=None)
             model.fit()
 

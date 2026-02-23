@@ -6,8 +6,8 @@ import pytest
 
 plotly = pytest.importorskip("plotly")
 
-from panelbox.visualization import ChartFactory
-from panelbox.visualization.plotly.basic import BarChart
+from panelbox.visualization import ChartFactory  # noqa: E402
+from panelbox.visualization.plotly.basic import BarChart  # noqa: E402
 
 
 def test_bar_chart_simple():

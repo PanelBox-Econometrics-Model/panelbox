@@ -92,12 +92,12 @@ class TestPanelIVInitialization:
 
     def test_instrument_not_in_data(self, simple_iv_data):
         """Test error when instrument is not in data."""
-        with pytest.raises(ValueError, match="Instrument .* not found"):
+        with pytest.raises(ValueError, match=r"Instrument .* not found"):
             PanelIV("y ~ x | nonexistent_var", simple_iv_data, entity_col="entity", time_col="time")
 
     def test_no_endogenous_variables(self, simple_iv_data):
         """Test error when no endogenous variables are identified."""
-        with pytest.raises(ValueError, match="No endogenous variables"):
+        with pytest.raises(ValueError, match="No endogenous variables"):  # noqa: PT012
             iv = PanelIV("y ~ x | x", simple_iv_data, entity_col="entity", time_col="time")
             iv.fit()
 
@@ -105,7 +105,7 @@ class TestPanelIVInitialization:
         """Test error for under-identified model."""
         simple_iv_data["x2"] = np.random.randn(len(simple_iv_data))
 
-        with pytest.raises(ValueError, match="under-identified"):
+        with pytest.raises(ValueError, match="under-identified"):  # noqa: PT012
             iv = PanelIV("y ~ x + x2 | z", simple_iv_data, entity_col="entity", time_col="time")
             iv.fit()
 

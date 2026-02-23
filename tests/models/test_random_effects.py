@@ -226,7 +226,7 @@ class TestComparisonWithOtherModels:
         assert "const_var" in results.params.index
 
 
-class TestCovarianceTypes:
+class TestCovarianceTypesAdvanced:
     """Tests for different covariance types."""
 
     @pytest.mark.parametrize("cov_type", ["twoway", "driscoll_kraay", "newey_west"])

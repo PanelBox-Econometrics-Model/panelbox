@@ -307,7 +307,7 @@ class TestCUEGMM:
                 cue_results = cue_model.fit(verbose=False)
                 if cue_model.converged_:
                     cue_estimates.append(cue_results.params)
-            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
+            except Exception:
                 pass
 
             # Estimate two-step GMM
@@ -319,7 +319,7 @@ class TestCUEGMM:
                 estimator = GMMEstimator()
                 ts_params, _, _, _ = estimator.two_step(y_arr, X_arr, Z_arr)
                 ts_estimates.append(ts_params.flatten())
-            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
+            except Exception:
                 pass
 
         # Compare variances
@@ -712,7 +712,7 @@ class TestCUEGMM:
                     # Check if true parameter is in CI
                     if ci.loc["x", "lower"] <= beta1_true <= ci.loc["x", "upper"]:
                         coverage_count += 1
-            except Exception:  # noqa: S110 — skip failed Monte Carlo iterations
+            except Exception:
                 pass
 
         # Coverage should be approximately 95% (allow wide margin for test)

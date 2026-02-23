@@ -379,7 +379,7 @@ class TestBiasCorrectedGMM:
 
                     bc_errors.append(bc_rho - true_rho)
                     gmm_errors.append(gmm_rho - true_rho)
-            except Exception:  # noqa: S110 — skip failed Monte Carlo simulations
+            except Exception:
                 pass
 
         if len(bc_errors) >= 30 and len(gmm_errors) >= 30:

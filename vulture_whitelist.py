@@ -4,7 +4,7 @@
 # ── TYPE_CHECKING imports (used in quoted type annotations) ──────────────
 # These are imported under `if TYPE_CHECKING:` and used in string annotations
 # like Optional["gpd.GeoDataFrame"]. Vulture can't trace these.
-import geopandas as gpd  # noqa: used in TYPE_CHECKING for "gpd.GeoDataFrame" annotations
+import geopandas as gpd  # used in TYPE_CHECKING for "gpd.GeoDataFrame" annotations
 
 gpd  # ensure vulture sees usage of the gpd name
 

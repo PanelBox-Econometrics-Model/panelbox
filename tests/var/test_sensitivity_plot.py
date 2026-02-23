@@ -74,7 +74,7 @@ class TestSensitivityPlot:
     def test_plot_plotly_returns_figure(self, mock_sensitivity_results):
         """Test plotly plotting returns figure when show=False."""
         try:
-            import plotly.graph_objects as go
+            import plotly.graph_objects as go  # noqa: F401
         except ImportError:
             pytest.skip("plotly not available")
 

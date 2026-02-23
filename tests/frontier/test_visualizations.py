@@ -323,12 +323,12 @@ class TestEdgeCases:
 
     def test_invalid_backend(self, fitted_model):
         """Test invalid backend raises error."""
-        with pytest.raises(ValueError, match="Unknown backend"):
-            from panelbox.frontier.visualization.efficiency_plots import (
-                plot_efficiency_distribution,
-            )
+        from panelbox.frontier.visualization.efficiency_plots import (
+            plot_efficiency_distribution,
+        )
 
-            eff_df = fitted_model.efficiency(estimator="bc")
+        eff_df = fitted_model.efficiency(estimator="bc")
+        with pytest.raises(ValueError, match="Unknown backend"):
             plot_efficiency_distribution(eff_df, backend="invalid")
 
     def test_invalid_plot_kind(self, fitted_model):

@@ -3,7 +3,7 @@
 import pytest
 
 try:
-    import matplotlib
+    import matplotlib  # noqa: F401
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:

@@ -138,7 +138,7 @@ class TestMultinomialLogit:
         y_invalid = self.y.copy()
         y_invalid[0] = 10  # Invalid choice
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT012
             model = MultinomialLogit(y_invalid, self.X, n_alternatives=self.n_alternatives)
             model.fit()
 
@@ -200,7 +200,7 @@ class TestMultinomialLogitFixedEffects:
         )
 
         # Should raise warning about feasibility
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning):  # noqa: PT030
             result = model.fit(maxiter=100)
 
         # Basic checks

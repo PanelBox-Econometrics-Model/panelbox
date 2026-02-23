@@ -174,6 +174,9 @@ exclude = [
     "env",
     "desenvolvimento",
     "htmlcov",
+    "vulture_whitelist.py",
+    "mutants",
+    "*.ipynb",
 ]
 
 [tool.ruff.format]
@@ -250,10 +253,17 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403", "D104"]
-"tests/**/*.py" = ["S101", "S311", "S106", "ANN", "D"]
-"panelbox/tests/**/*.py" = ["S101", "S311", "S106", "ANN", "D"]
-"panelbox/gmm/test_*.py" = ["S101", "S311", "S106", "ANN", "D"]
+"__init__.py" = ["F401", "F403", "D104", "E402"]
+"tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
+"mutants/tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
+"panelbox/tests/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
+"panelbox/gmm/test_*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D"]
+"vulture_whitelist.py" = ["B018", "F821", "D100", "F811", "ANN"]
+"**/*.ipynb" = ["E402", "E722", "N816", "S101", "S110", "B007", "B904", "B005", "D", "ANN", "F401", "F402", "F811", "F821", "F841", "N811", "N814", "S301", "S102", "S112", "S603", "S607", "PD101", "C901"]
+"examples/**/*.py" = ["E402", "E722", "S101", "S110", "S112", "B007", "B904", "B005", "D", "ANN", "F401", "S301", "S102", "S108", "S306", "S603", "S607", "PD101", "C901", "N811"]
+"benchmarks/**/*.py" = ["E402", "S101", "D", "ANN", "C901"]
+"tests/benchmarks/**/*.py" = ["S101", "S311", "S106", "S110", "S112", "S108", "S306", "S603", "S607", "ANN", "D", "C901"]
+"docs/**/*.py" = ["E402", "S101", "D", "ANN"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

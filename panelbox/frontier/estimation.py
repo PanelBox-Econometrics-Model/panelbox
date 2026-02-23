@@ -14,8 +14,6 @@ from typing import Callable
 import numpy as np
 from scipy.optimize import minimize
 
-logger = logging.getLogger(__name__)
-
 from .data import FrontierType
 from .likelihoods import (
     gradient_exponential,
@@ -28,6 +26,8 @@ from .likelihoods import (
 )
 from .result import SFResult
 from .starting_values import check_starting_values, get_starting_values
+
+logger = logging.getLogger(__name__)
 
 
 def estimate_mle(  # noqa: C901

@@ -216,7 +216,7 @@ class TestBatteseCoelli92:
         )
 
         # Compare with Pitt-Lee
-        theta_pl = theta[: k + 2].tolist() + [0.0]  # Add mu=0 for truncated normal
+        theta_pl = [*theta[: k + 2].tolist(), 0.0]  # Add mu=0 for truncated normal
         ll_pl = loglik_pitt_lee_truncated_normal(
             np.array(theta_pl),
             panel_data["y"],

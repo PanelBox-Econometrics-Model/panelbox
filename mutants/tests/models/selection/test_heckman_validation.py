@@ -529,5 +529,5 @@ if __name__ == "__main__":
     print(create_heckman_validation_report())
 
     # Save R script
-    with open("/tmp/validate_heckman.R", "w") as f:
+    with open("/tmp/validate_heckman.R", "w") as f:  # noqa: S108
         f.write(create_r_validation_script())

@@ -41,7 +41,7 @@ def check_r_available():
         """
         result = subprocess.run(["R", "--slave", "-e", r_code], capture_output=True, text=True)
         return result.returncode == 0
-    except:
+    except Exception:
         return False
 
 

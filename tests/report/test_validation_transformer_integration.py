@@ -400,25 +400,27 @@ class TestPrepareVisualizationDataMethod:
 
     def test_prepare_visualization_data_is_used_by_new_mode(self, mock_validation_report):
         """Test that new mode actually uses prepare_visualization_data."""
-        with patch(
-            "panelbox.report.validation_transformer.create_validation_charts"
-        ) as mock_create:
-            with patch.object(ValidationTransformer, "prepare_visualization_data") as mock_prepare:
-                mock_prepare.return_value = {"tests": [], "model_info": {}, "charts": {}}
+        with (
+            patch(
+                "panelbox.report.validation_transformer.create_validation_charts"
+            ) as mock_create,
+            patch.object(ValidationTransformer, "prepare_visualization_data") as mock_prepare,
+        ):
+            mock_prepare.return_value = {"tests": [], "model_info": {}, "charts": {}}
 
-                mock_chart = Mock()
-                mock_chart.to_html.return_value = "<div>Chart</div>"
-                mock_create.return_value = {
-                    "test_overview": mock_chart,
-                    "pvalue_distribution": mock_chart,
-                    "test_statistics": mock_chart,
-                }
+            mock_chart = Mock()
+            mock_chart.to_html.return_value = "<div>Chart</div>"
+            mock_create.return_value = {
+                "test_overview": mock_chart,
+                "pvalue_distribution": mock_chart,
+                "test_statistics": mock_chart,
+            }
 
-                transformer = ValidationTransformer(mock_validation_report)
-                transformer.transform(include_charts=True, use_new_visualization=True)
+            transformer = ValidationTransformer(mock_validation_report)
+            transformer.transform(include_charts=True, use_new_visualization=True)
 
-                # Verify prepare_visualization_data was called
-                assert mock_prepare.called
+            # Verify prepare_visualization_data was called
+            assert mock_prepare.called
 
 
 class TestTransformerIntegration:

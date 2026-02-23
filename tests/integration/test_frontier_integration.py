@@ -315,7 +315,13 @@ def test_import_from_panelbox():
 
     # Verificar que pode importar diretamente de panelbox
     try:
-        from panelbox import DistributionType, FrontierType, ModelType, SFResult, StochasticFrontier
+        from panelbox import (  # noqa: F401
+            DistributionType,
+            FrontierType,
+            ModelType,
+            SFResult,
+            StochasticFrontier,
+        )
 
         print("  ✓ All imports successful from panelbox")
 

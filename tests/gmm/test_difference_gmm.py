@@ -186,7 +186,7 @@ class TestDifferenceGMMValidation:
 
     def test_invalid_dep_var(self, balanced_panel_data):
         """Test error when dependent variable doesn't exist."""
-        with pytest.raises(ValueError, match="Dependent variable .* not found"):
+        with pytest.raises(ValueError, match=r"Dependent variable .* not found"):
             DifferenceGMM(
                 data=balanced_panel_data,
                 dep_var="nonexistent",
@@ -211,7 +211,7 @@ class TestDifferenceGMMValidation:
 
     def test_invalid_exog_var(self, balanced_panel_data):
         """Test error when exogenous variable doesn't exist."""
-        with pytest.raises(ValueError, match="Variable .* not found"):
+        with pytest.raises(ValueError, match=r"Variable .* not found"):
             DifferenceGMM(
                 data=balanced_panel_data,
                 dep_var="y",

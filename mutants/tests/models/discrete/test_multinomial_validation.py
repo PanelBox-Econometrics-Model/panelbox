@@ -300,7 +300,7 @@ class TestRComparisonScript:
         """
 
         # Save for reference
-        with open("/tmp/validate_multinomial.R", "w") as f:
+        with open("/tmp/validate_multinomial.R", "w") as f:  # noqa: S108
             f.write(r_code)
 
         assert r_code  # Code exists

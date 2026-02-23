@@ -191,7 +191,7 @@ class TestGMMDiagnostics:
             assert weak_test["cragg_donald_f"] < 20
             assert weak_test["warning_level"] in ["CRITICAL", "WARNING"]
 
-        except Exception:  # noqa: S110 — model may not converge with very weak instruments
+        except Exception:
             pass
 
     def test_diagnostic_tests_summary(self, simple_iv_model):

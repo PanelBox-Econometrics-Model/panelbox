@@ -361,7 +361,7 @@ def test_plot_with_confidence_intervals(simple_fevd_result):
 def test_plot_backend_plotly(simple_fevd_result):
     """Test plotly backend (interactive)."""
     try:
-        import plotly.graph_objects as go
+        import plotly.graph_objects as go  # noqa: F401
 
         fig = simple_fevd_result.plot(backend="plotly", show=False)
 

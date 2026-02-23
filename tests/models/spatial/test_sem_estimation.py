@@ -477,7 +477,7 @@ class TestSEMComparison:
         W_obj = SpatialWeights(W)
 
         # Estimate SEM model
-        SpatialError(
+        model = SpatialError(
             formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
         )
 
