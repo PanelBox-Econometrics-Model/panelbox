@@ -93,7 +93,9 @@ jobs:
           pip install pip-audit
 
       - name: Audit dependencies
-        run: pip-audit --strict --desc on --skip-editable
+        run: |
+          pip freeze --exclude-editable > /tmp/requirements-audit.txt
+          pip-audit --strict --desc on -r /tmp/requirements-audit.txt
 
   # ============================================
   # Job 4: Build
