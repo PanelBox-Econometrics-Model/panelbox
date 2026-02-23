@@ -110,7 +110,7 @@ class TestQuantileTreatmentEffects:
                 )
 
         df = pd.DataFrame(data_list)
-        panel_data = PanelData(df, entity="entity", time="time")
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
 
         qte = QuantileTreatmentEffects(
             panel_data, outcome="y", treatment="treatment", entity_col="entity", time_col="time"

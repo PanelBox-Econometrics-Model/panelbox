@@ -55,7 +55,7 @@ class TestLocationScale:
             }
         )
 
-        return PanelData(df, entity="entity", time="time")
+        return PanelData(df, entity_col="entity", time_col="time")
 
     def test_basic_estimation(self, simulated_data):
         """Test basic location-scale estimation."""
@@ -279,7 +279,7 @@ class TestLocationScaleWithRealData:
 
         # Create data
         df = pd.DataFrame({"y": y, "X1": X[:, 0], "X2": X[:, 1], "entity": np.arange(n), "time": 0})
-        panel_data = PanelData(df, entity="entity", time="time")
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
 
         # Estimate
         model = LocationScale(
@@ -307,7 +307,7 @@ class TestLocationScaleWithRealData:
 
         # Create data
         df = pd.DataFrame({"y": y, "X1": X[:, 0], "X2": X[:, 1], "entity": np.arange(n), "time": 0})
-        panel_data = PanelData(df, entity="entity", time="time")
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
 
         # Test different distributions
         for dist in ["normal", "logistic", "t"]:

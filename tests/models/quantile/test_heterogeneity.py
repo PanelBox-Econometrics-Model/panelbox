@@ -55,7 +55,7 @@ class TestHeterogeneityTests:
             {"y": y, "X1": X1, "X2": X2, "entity_id": entity_ids, "time_id": time_ids}
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     @pytest.fixture
     def panel_data_homogeneous(self):
@@ -86,7 +86,7 @@ class TestHeterogeneityTests:
             {"y": y, "X1": X1, "X2": X2, "entity_id": entity_ids, "time_id": time_ids}
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     def test_slope_equality_heterogeneous(self, panel_data_heterogeneous):
         """Test slope equality test detects heterogeneity."""
@@ -316,7 +316,7 @@ class TestLocationShiftTest:
             {"y": y, "X1": X1, "X2": X2, "entity_id": entity_ids, "time_id": time_ids}
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     @pytest.fixture
     def non_location_shift_data(self):
@@ -357,7 +357,7 @@ class TestLocationShiftTest:
             {"y": y, "X1": X1, "X2": X2, "entity_id": entity_ids, "time_id": time_ids}
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     def test_location_shift_accepted(self, location_shift_data):
         """Test that location shift test accepts valid data."""

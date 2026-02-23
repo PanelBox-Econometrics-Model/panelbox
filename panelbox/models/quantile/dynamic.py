@@ -410,7 +410,7 @@ class DynamicQuantile(QuantilePanelModel):
         for i in range(self.X_dynamic.shape[1]):
             fs_data[f"X{i}"] = self.X_dynamic[:, i]
 
-        fs_panel = PanelData(fs_data, entity="entity", time="time")
+        fs_panel = PanelData(fs_data, entity_col="entity", time_col="time")
 
         # Estimate first stage
         from ..linear.pooled import PooledOLS

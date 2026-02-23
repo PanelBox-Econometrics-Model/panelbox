@@ -242,7 +242,7 @@ class TestPerformanceMonitor:
             }
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     def test_monitor_initialization(self):
         """Test monitor initialization."""
@@ -348,7 +348,7 @@ class TestIntegrationWithModels:
             {"y": y, "X1": X1, "X2": X2, "entity_id": entity_ids, "time_id": time_ids}
         )
 
-        return PanelData(df, entity="entity_id", time="time_id")
+        return PanelData(df, entity_col="entity_id", time_col="time_id")
 
     def test_fixed_effects_with_optimizer(self, panel_data):
         """Test fixed effects model uses penalized optimizer."""

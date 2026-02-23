@@ -48,7 +48,7 @@ class TestDynamicQuantile:
             data_list.append(entity_df)
 
         df = pd.concat(data_list, ignore_index=True)
-        return PanelData(df, entity="entity", time="time")
+        return PanelData(df, entity_col="entity", time_col="time")
 
     def test_basic_dynamic_estimation(self, dynamic_panel_data):
         """Test basic dynamic QR estimation."""
@@ -159,7 +159,7 @@ class TestDynamicQuantile:
             data_list.append(entity_df)
 
         df = pd.concat(data_list, ignore_index=True)
-        panel_data = PanelData(df, entity="entity", time="time")
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
 
         model = DynamicQuantile(panel_data, formula="y ~ X", tau=0.5, lags=1)
 
