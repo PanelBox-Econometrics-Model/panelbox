@@ -390,15 +390,14 @@ def marginal_effects_bc95(
     model = result.model
     params = result.params
 
-    # Extract parameters using .iloc for positional access
+    # Extract parameters using positional indexing
     k = model.n_exog
     m = len(model.ineff_var_names)
+    params_arr = np.asarray(params).flatten()
 
     # Parameter positions (β, σ²_v, σ²_u, δ)
-    # beta = params.iloc[:k].values  (not used here)
-    # sigma_v_sq = params.iloc[k]  (not used here)
-    sigma_u_sq = params.iloc[k + 1]
-    delta = params.iloc[k + 2 : k + 2 + m].values
+    sigma_u_sq = params_arr[k + 1]
+    delta = params_arr[k + 2 : k + 2 + m]
 
     sigma_u = np.sqrt(max(sigma_u_sq, 1e-10))
 
