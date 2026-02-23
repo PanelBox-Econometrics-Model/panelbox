@@ -38,6 +38,16 @@ class MockModel:
         self.hetero_vars = hetero_vars
         self.inefficiency_vars = inefficiency_vars
 
+        # Build Z matrix (constant + inefficiency determinants)
+        if inefficiency_vars and isinstance(data, pd.DataFrame):
+            z_cols = [data[v].values for v in inefficiency_vars if v in data.columns]
+            if z_cols:
+                self.Z = np.column_stack([np.ones(len(data))] + z_cols)
+            else:
+                self.Z = np.ones((len(data), 1))
+        else:
+            self.Z = np.ones((len(data), 1))
+
 
 class MockResult:
     """Mock SFA result for testing."""
