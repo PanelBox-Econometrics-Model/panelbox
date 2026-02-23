@@ -172,11 +172,7 @@ class SpatialDurbin(SpatialPanelModel):
         2. Concentrated log-likelihood optimization over ρ
         3. Conditional OLS for β and θ given optimal ρ
         """
-        y = (
-            self.endog.values.flatten()
-            if hasattr(self.endog, "values")
-            else np.asarray(self.endog).flatten()
-        )
+        y = np.asarray(self.endog).flatten()
         X = np.asarray(self.exog)
 
         # Add constant if not already present
@@ -455,11 +451,7 @@ class SpatialDurbin(SpatialPanelModel):
         NT = N * T
 
         # Prepare data
-        y = (
-            self.endog.values.flatten()
-            if hasattr(self.endog, "values")
-            else np.asarray(self.endog).flatten()
-        )
+        y = np.asarray(self.endog).flatten()
         X = np.asarray(self.exog)
         WX = self._spatial_lag(X)
         X_augmented = np.column_stack([X, WX])

@@ -146,7 +146,7 @@ class SpatialLag(SpatialPanelModel):
             logger.info("Estimating SAR-FE using Quasi-ML (Lee & Yu 2010)")
 
         # Apply within transformation
-        y_within = self._within_transformation(self.endog.values.reshape(-1, 1)).flatten()
+        y_within = self._within_transformation(np.asarray(self.endog).reshape(-1, 1)).flatten()
         X_within = self._within_transformation(self.exog)
 
         # Remove intercept column if present (becomes all zeros after demeaning)
@@ -383,7 +383,7 @@ class SpatialLag(SpatialPanelModel):
         if verbose:
             logger.info("Estimating pooled SAR using Quasi-ML")
 
-        y = self.endog.values.flatten()
+        y = np.asarray(self.endog).flatten()
         X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
         # Add constant if not present; track whether we added one
@@ -572,8 +572,8 @@ class SpatialLag(SpatialPanelModel):
         n_obs = N * T
 
         # Prepare data
-        y = self.endog.values.flatten()
-        X = self.exog.values if hasattr(self.exog, "values") else self.exog
+        y = np.asarray(self.endog).flatten()
+        X = np.asarray(self.exog)
         k = X.shape[1]
 
         # Create spatial lag of y - need to handle panel structure

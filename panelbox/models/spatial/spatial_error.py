@@ -132,7 +132,7 @@ class SpatialError(SpatialPanelModel):
             logger.info("Estimating SEM-FE using GMM with spatial instruments")
 
         # Apply within transformation
-        y_within = self._within_transformation(self.endog.values.reshape(-1, 1)).flatten()
+        y_within = self._within_transformation(np.asarray(self.endog).reshape(-1, 1)).flatten()
         X_within = self._within_transformation(self.exog)
 
         # Construct instrument matrix Z = [X, WX, W²X, ...]
@@ -368,7 +368,7 @@ class SpatialError(SpatialPanelModel):
         if verbose:
             logger.info("Estimating pooled SEM using GMM")
 
-        y = self.endog.values.flatten()
+        y = np.asarray(self.endog).flatten()
         X = np.asarray(self.exog)  # ensure numpy array (self.exog may be a DataFrame)
 
         # Add constant if not present; track whether we added one
@@ -491,11 +491,11 @@ class SpatialError(SpatialPanelModel):
 
         # Apply transformations
         if effects == "fixed":
-            y = self._within_transformation(self.endog.values.reshape(-1, 1)).flatten()
+            y = self._within_transformation(np.asarray(self.endog).reshape(-1, 1)).flatten()
             X = self._within_transformation(self.exog)
         else:
-            y = self.endog.values.flatten()
-            X = self.exog
+            y = np.asarray(self.endog).flatten()
+            X = np.asarray(self.exog)
 
         # Get bounds
         lambda_bounds = self._spatial_coefficient_bounds()

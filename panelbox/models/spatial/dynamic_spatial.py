@@ -583,7 +583,7 @@ class DynamicSpatialPanel(SpatialPanelModel):
             raise ValueError("Model must be fitted before prediction")
 
         # Get last period values
-        y_last = self.endog.values[-self.n_entities :].flatten()
+        y_last = np.asarray(self.endog)[-self.n_entities :].flatten()
 
         predictions = []
 
