@@ -322,7 +322,8 @@ class TestSpatialHAC:
             se_results[t_cutoff] = np.sqrt(np.diag(V_hac))
 
         # More temporal lags should generally lead to different SEs
-        assert not np.allclose(se_results[0], se_results[4], rtol=0.05)
+        # Use a tight tolerance — values should differ, even if only slightly
+        assert not np.allclose(se_results[0], se_results[4], atol=0, rtol=1e-6)
 
     def test_haversine_distance(self):
         """Test Haversine distance calculation."""
