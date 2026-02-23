@@ -208,7 +208,9 @@ class LocationScale(QuantilePanelModel):
         y_var = self.formula.split("~")[0].strip()
         x_vars = [v.strip() for v in self.formula.split("~")[1].split("+")]
         self.y = self.data.data[y_var].values
-        self.X = self.data.data[x_vars].values
+        X_raw = self.data.data[x_vars].values
+        # Add intercept to match OLS params (which include intercept)
+        self.X = np.column_stack([np.ones(len(X_raw)), X_raw])
         self.location_fitted_ = self.y - self.location_residuals_
 
     def _estimate_scale(self, robust: bool = True):
