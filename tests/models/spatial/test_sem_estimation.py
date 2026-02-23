@@ -369,7 +369,6 @@ class TestSEMGMMInstruments:
         """Test that spatial instruments are constructed correctly."""
         n = 25
         t = 10
-        k = 2
         W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
         W_obj = SpatialWeights(W)
 
@@ -403,6 +402,7 @@ class TestSEMGMMInstruments:
 
         # Check dimensions
         # Should have X, WX, W²X columns
+        k = X_within.shape[1]  # actual number of exog columns (may include intercept)
         expected_cols = k * (n_lags + 1)
         assert Z.shape[1] == expected_cols
 
