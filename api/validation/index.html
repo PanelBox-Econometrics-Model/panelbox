@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/logo.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -460,6 +460,8 @@
       
         
       
+        
+      
     
     
     
@@ -578,6 +580,34 @@
     
   
     Tutorial 3: Introduction to GMM for Panel Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/standard_errors_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Standard Errors Series
   
 
     
@@ -1464,189 +1494,281 @@
 
 
 
-        <div class="language-text highlight"><pre><span></span><code>Hausman specification test for panel data.
-
-Tests the null hypothesis that the Random Effects estimator is consistent
-(and efficient) against the alternative that it is inconsistent.
-
-The test compares Fixed Effects (always consistent under standard assumptions)
-with Random Effects (consistent only if E[u_i | X_it] = 0).
-</code></pre></div>
+        <p>Hausman specification test for panel data.</p>
+<p>Tests the null hypothesis that the Random Effects estimator is consistent
+(and efficient) against the alternative that it is inconsistent.</p>
+<p>The test compares Fixed Effects (always consistent under standard assumptions)
+with Random Effects (consistent only if E[u_i | X_it] = 0).</p>
 
 
-<details class="----parameters" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>Parameters
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>fe_results : PanelResults
-    Results from Fixed Effects estimation
-re_results : PanelResults
-    Results from Random Effects estimation
-alpha : float, default=0.05
-    Significance level for test (automatically runs test on initialization)
-</code></pre></div>
-</details>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fe_results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from Fixed Effects estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>re_results</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="panelbox.core.results.PanelResults" href="../results/#panelbox.core.results.PanelResults">PanelResults</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Results from Random Effects estimation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Significance level for test (automatically runs test on initialization)</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-<details class="----attributes" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>Attributes
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>statistic : float
-    Chi-squared test statistic
-pvalue : float
-    P-value for the test
-df : int
-    Degrees of freedom
-conclusion : str
-    Interpretation of test result
-recommendation : str
-    Recommended estimator (&quot;Fixed Effects&quot; or &quot;Random Effects&quot;)
-reject_null : bool
-    Whether to reject the null hypothesis at the given significance level
-</code></pre></div>
-</details>
 
-<details class="----notes" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>Notes
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>**Theoretical Foundation:**
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.statistic">statistic</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Chi-squared test statistic</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.pvalue">pvalue</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>P-value for the test</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.df">df</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Degrees of freedom</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.conclusion">conclusion</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Interpretation of test result</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.recommendation">recommendation</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Recommended estimator ("Fixed Effects" or "Random Effects")</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="panelbox.validation.specification.hausman.HausmanTest.reject_null">reject_null</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to reject the null hypothesis at the given significance level</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-The Hausman test is based on the principle that under the null hypothesis
+
+<details class="note" open>
+  <summary>Notes</summary>
+  <p><strong>Theoretical Foundation:</strong></p>
+<p>The Hausman test is based on the principle that under the null hypothesis
 (no correlation between regressors and individual effects), both FE and RE
 are consistent, but RE is more efficient. Under the alternative (correlation
-exists), FE remains consistent while RE becomes inconsistent.
-
-**Test Statistic:**
-
-The Hausman statistic is computed as:
-
-    H = (β̂_FE - β̂_RE)&#39; [Var(β̂_FE) - Var(β̂_RE)]^{-1} (β̂_FE - β̂_RE)
-
-Under H0, this follows χ²(k) where k is the number of coefficients tested.
-
-**Hypotheses:**
-
-- H0: Cov(X_it, α_i) = 0 → Random Effects is consistent and efficient
-- H1: Cov(X_it, α_i) ≠ 0 → Random Effects is inconsistent, use Fixed Effects
-
-**Decision Rule:**
-
-- **Reject H0** (p-value &lt; α): Use Fixed Effects
-  - Evidence of correlation between X and α_i
-  - RE estimates are biased and inconsistent
-  - FE estimates are consistent (albeit less efficient)
-
-- **Fail to reject H0** (p-value ≥ α): Use Random Effects
-  - No evidence of correlation between X and α_i
-  - RE estimates are consistent and efficient
-  - Gain efficiency over FE, especially with time-invariant regressors
-
-**Interpretation Guidelines:**
-
-| P-value | Decision | Interpretation |
-|---------|----------|----------------|
-| &lt; 0.01  | Strong rejection | Strong evidence for FE |
-| 0.01-0.05 | Rejection | Moderate evidence for FE |
-| 0.05-0.10 | Borderline | Consider robustness checks |
-| &gt; 0.10  | Fail to reject | Use RE for efficiency |
-
-**Common Issues:**
-
-1. **Negative test statistic**: Can occur due to:
-   - Small sample sizes
-   - Weak instruments in RE estimation
-   - Solution: Use generalized inverse (automatically handled)
-
-2. **Large differences in coefficients**: Suggests:
-   - Strong correlation between X and α_i
-   - FE and RE model different relationships
-   - Decision clear: use FE
-
-3. **Small differences but significant test**: Can indicate:
-   - Large sample size detecting small deviations
-   - Consider economic significance, not just statistical
-
-**Practical Considerations:**
-
-- Always estimate both FE and RE before testing
-- Examine coefficient differences, not just test statistic
-- Consider theory: does correlation make sense?
-- RE allows time-invariant regressors; FE does not
-- For GMM models, use Hansen/Sargan tests instead
+exists), FE remains consistent while RE becomes inconsistent.</p>
+<p><strong>Test Statistic:</strong></p>
+<p>The Hausman statistic is computed as:</p>
+<div class="language-text highlight"><pre><span></span><code>H = (β̂_FE - β̂_RE)&#39; [Var(β̂_FE) - Var(β̂_RE)]^{-1} (β̂_FE - β̂_RE)
 </code></pre></div>
+<p>Under H0, this follows χ²(k) where k is the number of coefficients tested.</p>
+<p><strong>Hypotheses:</strong></p>
+<ul>
+<li>H0: Cov(X_it, α_i) = 0 → Random Effects is consistent and efficient</li>
+<li>H1: Cov(X_it, α_i) ≠ 0 → Random Effects is inconsistent, use Fixed Effects</li>
+</ul>
+<p><strong>Decision Rule:</strong></p>
+<ul>
+<li><strong>Reject H0</strong> (p-value &lt; α): Use Fixed Effects</li>
+<li>Evidence of correlation between X and α_i</li>
+<li>RE estimates are biased and inconsistent</li>
+<li>
+<p>FE estimates are consistent (albeit less efficient)</p>
+</li>
+<li>
+<p><strong>Fail to reject H0</strong> (p-value ≥ α): Use Random Effects</p>
+</li>
+<li>No evidence of correlation between X and α_i</li>
+<li>RE estimates are consistent and efficient</li>
+<li>Gain efficiency over FE, especially with time-invariant regressors</li>
+</ul>
+<p><strong>Interpretation Guidelines:</strong></p>
+<table>
+<thead>
+<tr>
+<th>P-value</th>
+<th>Decision</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt; 0.01</td>
+<td>Strong rejection</td>
+<td>Strong evidence for FE</td>
+</tr>
+<tr>
+<td>0.01-0.05</td>
+<td>Rejection</td>
+<td>Moderate evidence for FE</td>
+</tr>
+<tr>
+<td>0.05-0.10</td>
+<td>Borderline</td>
+<td>Consider robustness checks</td>
+</tr>
+<tr>
+<td>&gt; 0.10</td>
+<td>Fail to reject</td>
+<td>Use RE for efficiency</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Common Issues:</strong></p>
+<ol>
+<li><strong>Negative test statistic</strong>: Can occur due to:</li>
+<li>Small sample sizes</li>
+<li>Weak instruments in RE estimation</li>
+<li>
+<p>Solution: Use generalized inverse (automatically handled)</p>
+</li>
+<li>
+<p><strong>Large differences in coefficients</strong>: Suggests:</p>
+</li>
+<li>Strong correlation between X and α_i</li>
+<li>FE and RE model different relationships</li>
+<li>
+<p>Decision clear: use FE</p>
+</li>
+<li>
+<p><strong>Small differences but significant test</strong>: Can indicate:</p>
+</li>
+<li>Large sample size detecting small deviations</li>
+<li>Consider economic significance, not just statistical</li>
+</ol>
+<p><strong>Practical Considerations:</strong></p>
+<ul>
+<li>Always estimate both FE and RE before testing</li>
+<li>Examine coefficient differences, not just test statistic</li>
+<li>Consider theory: does correlation make sense?</li>
+<li>RE allows time-invariant regressors; FE does not</li>
+<li>For GMM models, use Hansen/Sargan tests instead</li>
+</ul>
 </details>
 
-<details class="----references" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>References
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>.. [1] Hausman, J. A. (1978). &quot;Specification tests in econometrics.&quot;
-       *Econometrica*, 46(6), 1251-1271.
-
-.. [2] Wooldridge, J. M. (2010). &quot;Econometric Analysis of Cross Section
-       and Panel Data&quot; (2nd ed.). MIT Press. Chapter 10.
-
-.. [3] Baltagi, B. H. (2021). &quot;Econometric Analysis of Panel Data&quot;
-       (6th ed.). Springer. Chapter 4.
-</code></pre></div>
+<details class="references" open>
+  <summary>References</summary>
+  <p>.. [1] Hausman, J. A. (1978). "Specification tests in econometrics."
+       <em>Econometrica</em>, 46(6), 1251-1271.</p>
+<p>.. [2] Wooldridge, J. M. (2010). "Econometric Analysis of Cross Section
+       and Panel Data" (2<sup>nd</sup> ed.). MIT Press. Chapter 10.</p>
+<p>.. [3] Baltagi, B. H. (2021). "Econometric Analysis of Panel Data"
+       (6<sup>th</sup> ed.). Springer. Chapter 4.</p>
 </details>
 
-<details class="----see-also" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>See Also
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>FixedEffects : Fixed Effects estimator (within transformation)
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <p>FixedEffects : Fixed Effects estimator (within transformation)
 RandomEffects : Random Effects estimator (GLS)
-MundlakTest : Alternative specification test including time-averages
-</code></pre></div>
+MundlakTest : Alternative specification test including time-averages</p>
 </details>
 
-<details class="----examples" open>
-  <summary><div class="language-text highlight"><pre><span></span><code>Examples
-</code></pre></div></summary>
-  <div class="language-text highlight"><pre><span></span><code>**Basic usage:**
+<p><span class="doc-section-title">Examples:</span></p>
+    <p><strong>Basic usage:</strong></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">panelbox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pb</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fe_results</span> <span class="o">=</span> <span class="n">fe</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">re</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">RandomEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">re_results</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">hausman</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">HausmanTest</span><span class="p">(</span><span class="n">fe_results</span><span class="p">,</span> <span class="n">re_results</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">hausman</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
 
-&gt;&gt;&gt; import panelbox as pb
-&gt;&gt;&gt;
-&gt;&gt;&gt; # Estimate both models
-&gt;&gt;&gt; fe = pb.FixedEffects(data, &quot;y&quot;, [&quot;x1&quot;, &quot;x2&quot;], &quot;firm&quot;, &quot;year&quot;)
-&gt;&gt;&gt; fe_results = fe.fit()
-&gt;&gt;&gt;
-&gt;&gt;&gt; re = pb.RandomEffects(data, &quot;y&quot;, [&quot;x1&quot;, &quot;x2&quot;], &quot;firm&quot;, &quot;year&quot;)
-&gt;&gt;&gt; re_results = re.fit()
-&gt;&gt;&gt;
-&gt;&gt;&gt; # Run Hausman test
-&gt;&gt;&gt; hausman = pb.HausmanTest(fe_results, re_results)
-&gt;&gt;&gt; result = hausman.run()
-&gt;&gt;&gt; print(result)
-&gt;&gt;&gt;
-&gt;&gt;&gt; # Use recommendation
-&gt;&gt;&gt; if result.recommendation == &quot;Fixed Effects&quot;:
-...     final_results = fe_results
-&gt;&gt;&gt; else:
-...     final_results = re_results
-
-**Interpreting results:**
-
-&gt;&gt;&gt; # Examine test statistic and p-value
-&gt;&gt;&gt; print(f&quot;Chi2 statistic: {result.statistic:.3f}&quot;)
-&gt;&gt;&gt; print(f&quot;P-value: {result.pvalue:.4f}&quot;)
-&gt;&gt;&gt; print(f&quot;Degrees of freedom: {result.df}&quot;)
-&gt;&gt;&gt;
-&gt;&gt;&gt; # Check coefficient differences
-&gt;&gt;&gt; print(&quot;
-</code></pre></div>
-<p>Coefficient Comparison:")
-    &gt;&gt;&gt; for var in result.fe_params.index:
-    ...     diff_pct = 100 * result.diff[var] / result.fe_params[var]
-    ...     print(f"{var}: {diff_pct:.1f}% difference")</p>
-<div class="language-text highlight"><pre><span></span><code>**Different significance levels:**
-
-&gt;&gt;&gt; # Test at 1% level for more stringent requirement
-&gt;&gt;&gt; result_strict = hausman.run(alpha=0.01)
-&gt;&gt;&gt; print(result_strict.conclusion)
-&gt;&gt;&gt;
-&gt;&gt;&gt; # Test at 10% level for more lenient requirement
-&gt;&gt;&gt; result_lenient = hausman.run(alpha=0.10)
-&gt;&gt;&gt; print(result_lenient.conclusion)
-</code></pre></div>
-</details>
 
 
 
@@ -1862,7 +1984,7 @@ where K is the number of coefficients being tested.</p>
 
 
 <a href="#panelbox.validation.serial_correlation.wooldridge_ar.WooldridgeARTest" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">WooldridgeARTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">WooldridgeARTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
@@ -2234,7 +2356,7 @@ BreuschGodfreyTest : Lagrange Multiplier test for serial correlation</p>
 
 
 <a href="#panelbox.validation.heteroskedasticity.breusch_pagan.BreuschPaganTest" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
@@ -2453,7 +2575,7 @@ under the null hypothesis, where k is the number of regressors
 
 
 <a href="#panelbox.validation.cross_sectional_dependence.breusch_pagan_lm.BreuschPaganLMTest" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
@@ -2491,10 +2613,12 @@ observations for each entity pair.</p>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">PooledOLS</span><span class="p">(</span><span class="s2">&quot;y ~ x1 + x2&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">)</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt;</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.cross_sectional_dependence.breusch_pagan_lm</span><span class="w"> </span><span class="kn">import</span> <span class="n">BreuschPaganLMTest</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panelbox.validation.cross_sectional_dependence.breusch_pagan_lm</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">... </span>    <span class="n">BreuschPaganLMTest</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gp">... </span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">BreuschPaganLMTest</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </span></code></pre></div>
 
         <p>Initialize Breusch-Pagan LM test.</p>
@@ -2655,7 +2779,7 @@ For large N, this can be computationally intensive.</p>
 
 
 <a href="#panelbox.validation.cross_sectional_dependence.pesaran_cd.PesaranCDTest" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">PesaranCDTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="s1">&#39;PanelResults&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">PesaranCDTest</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">PanelResults</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
@@ -2783,8 +2907,7 @@ H1: Cross-sectional dependence present</p>
 <ol>
 <li>
 <p><strong>Include time fixed effects</strong> to control for common shocks:
-   <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                    <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fe</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">FixedEffects</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="s2">&quot;firm&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div></p>
 </li>
 <li>
