@@ -70,7 +70,7 @@ jobs:
 
     - name: Upload validation report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: validation-report
         path: |
@@ -157,7 +157,7 @@ jobs:
         python tests/validation/quantile/run_benchmarks.py
 
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: benchmark_results/
