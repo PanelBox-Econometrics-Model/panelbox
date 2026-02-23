@@ -110,11 +110,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=10, T=5)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         assert model.model_type == "SAR"
@@ -128,11 +128,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=25, T=10, rho=0.3, lambda_param=0.0, seed=42)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         # Fit model
@@ -157,11 +157,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=20, T=5, rho=0.2)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         # Fit pooled model
@@ -177,11 +177,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=15, T=8)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         bounds = model._spatial_coefficient_bounds()
@@ -196,11 +196,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=10, T=5)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         model.fit(effects="fixed")
@@ -216,11 +216,11 @@ class TestSpatialLag:
         data, W = generate_spatial_panel_data(N=10, T=5, rho=0.3)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         result = model.fit(effects="fixed")
@@ -251,11 +251,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=10, T=5)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         assert model.model_type == "SEM"
@@ -268,11 +268,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=20, T=8, rho=0.0, lambda_param=0.4, seed=42)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         # Fit with GMM
@@ -294,11 +294,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=15, T=6)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         # Fit pooled model
@@ -313,11 +313,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=10, T=5, lambda_param=0.3)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         # Fit with ML
@@ -332,11 +332,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=12, T=6)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         bounds = model._spatial_coefficient_bounds()
@@ -351,11 +351,11 @@ class TestSpatialError:
         data, W = generate_spatial_panel_data(N=10, T=4)
 
         model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         model.fit(effects="fixed", method="gmm")
@@ -376,21 +376,21 @@ class TestSpatialModelComparison:
 
         # Fit SAR
         sar_model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
         sar_result = sar_model.fit(effects="fixed")
 
         # Fit SEM
         sem_model = SpatialError(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
         sem_result = sem_model.fit(effects="fixed", method="gmm")
 
@@ -410,11 +410,11 @@ class TestSpatialModelComparison:
         data, W = generate_spatial_panel_data(N=15, T=6)
 
         model = SpatialLag(
-            endog=data["y"],
-            exog=data[["x1", "x2"]],
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
             W=W,
-            entity_id=data["entity"],
-            time_id=data["time"],
         )
 
         result = model.fit(effects="fixed")
