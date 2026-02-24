@@ -75,6 +75,9 @@ class TestPPML:
         error = np.random.randn(len(df)) * (0.5 + 0.1 * df["log_distance"])
         lambda_it = np.exp(linear_pred + error)
 
+        # Clip lambda to avoid overflow in np.random.poisson
+        lambda_it = np.clip(lambda_it, 0, 1e15)
+
         # Generate Poisson counts
         df["trade_flow"] = np.random.poisson(lambda_it)
 

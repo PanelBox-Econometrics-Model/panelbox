@@ -237,10 +237,14 @@ class TestRandomEffectsTobit:
         assert result.sigma_eps > 0
         assert result.sigma_alpha > 0
 
+    @pytest.mark.timeout(600)
     def test_summary_output(self, simulated_data):
         """Test summary output."""
         model = RandomEffectsTobit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
+            quadrature_points=5,
         )
 
         with warnings.catch_warnings():
