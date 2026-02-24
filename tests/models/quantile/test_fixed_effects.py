@@ -44,12 +44,10 @@ class TestFixedEffectsQuantile:
         y = 1 + 2 * X1 + 3 * X2 + entity_effects_expanded + np.random.randn(n)
 
         # Create DataFrame
-        df = pd.DataFrame({"y": y, "X1": X1, "X2": X2})
+        df = pd.DataFrame({"entity": entity_ids, "time": time_ids, "y": y, "X1": X1, "X2": X2})
 
         # Create PanelData
         panel_data = PanelData(df, entity_col="entity", time_col="time")
-        panel_data.entity_ids = pd.Series(entity_ids, name="entity")
-        panel_data.time_ids = pd.Series(time_ids, name="time")
 
         return panel_data, entity_effects
 
@@ -73,10 +71,10 @@ class TestFixedEffectsQuantile:
 
         df = pd.DataFrame(X, columns=[f"X{i + 1}" for i in range(5)])
         df["y"] = y
+        df["entity"] = entity_ids
+        df["time"] = time_ids
 
         panel_data = PanelData(df, entity_col="entity", time_col="time")
-        panel_data.entity_ids = pd.Series(entity_ids, name="entity")
-        panel_data.time_ids = pd.Series(time_ids, name="time")
 
         return panel_data
 
@@ -88,12 +86,12 @@ class TestFixedEffectsQuantile:
         model = FixedEffectsQuantile(data, formula="y ~ X1 + X2", tau=0.5)
         assert model.lambda_fe == "auto"
         assert model.n_entities == 20
-        assert model.tau == [0.5]
+        assert_allclose(model.tau, [0.5])
 
         # Test with fixed lambda
         model = FixedEffectsQuantile(data, formula="y ~ X1 + X2", tau=[0.25, 0.75], lambda_fe=0.1)
         assert model.lambda_fe == 0.1
-        assert model.tau == [0.25, 0.75]
+        assert_allclose(model.tau, [0.25, 0.75])
 
     def test_check_loss_functions(self, simple_panel_data):
         """Test check loss and gradient computation."""
@@ -253,10 +251,8 @@ class TestFixedEffectsQuantile:
         X2 = X1 + np.random.randn(n) * 0.1  # Highly correlated
         y = X1 + X2 + np.random.randn(n)
 
-        df = pd.DataFrame({"y": y, "X1": X1, "X2": X2})
+        df = pd.DataFrame({"entity": entity_ids, "time": time_ids, "y": y, "X1": X1, "X2": X2})
         panel_data = PanelData(df, entity_col="entity", time_col="time")
-        panel_data.entity_ids = pd.Series(entity_ids, name="entity")
-        panel_data.time_ids = pd.Series(time_ids, name="time")
 
         model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5, lambda_fe=0.1)
         result = model.fit(verbose=False)
@@ -269,7 +265,12 @@ class TestFixedEffectsQuantile:
         """Test performance with larger dataset."""
         import time
 
-        model = FixedEffectsQuantile(large_panel_data, tau=0.5, lambda_fe=1.0)
+        model = FixedEffectsQuantile(
+            large_panel_data,
+            formula="y ~ X1 + X2 + X3 + X4 + X5",
+            tau=0.5,
+            lambda_fe=1.0,
+        )
 
         start = time.time()
         result = model.fit(verbose=False)
@@ -343,12 +344,12 @@ class TestShrinkagePath:
 
         df = pd.DataFrame(X, columns=["X1", "X2"])
         df["y"] = y
+        df["entity"] = entity_ids
+        df["time"] = time_ids
 
         panel_data = PanelData(df, entity_col="entity", time_col="time")
-        panel_data.entity_ids = pd.Series(entity_ids, name="entity")
-        panel_data.time_ids = pd.Series(time_ids, name="time")
 
-        model = FixedEffectsQuantile(panel_data, tau=0.5)
+        model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5)
 
         # Compute path for a small grid
         lambda_grid = np.array([0.01, 0.1, 1.0, 10.0])
