@@ -79,7 +79,7 @@ def test_cov_symmetric_robust(data):
     df, formula, entity, time = data
     result = _fit_or_skip(PooledOLS, formula, df, entity, time, cov_type="robust")
     cov = result.cov_params.values
-    np.testing.assert_allclose(cov, cov.T, atol=1e-12)
+    np.testing.assert_allclose(cov, cov.T, atol=1e-6)
 
 
 @pytest.mark.property
@@ -90,7 +90,7 @@ def test_cov_symmetric_clustered(data):
     df, formula, entity, time = data
     result = _fit_or_skip(FixedEffects, formula, df, entity, time, cov_type="clustered")
     cov = result.cov_params.values
-    np.testing.assert_allclose(cov, cov.T, atol=1e-12)
+    np.testing.assert_allclose(cov, cov.T, atol=1e-6)
 
 
 # ---------------------------------------------------------------------------

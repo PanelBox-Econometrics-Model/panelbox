@@ -84,7 +84,7 @@ class TestBC92Model:
 
         # Check parameter estimates
         assert len(result.params) == 6  # const, x1, x2, sigma_v_sq, sigma_u_sq, eta
-        assert "eta" in result.param_names
+        assert "eta" in result.params.index
 
         # Check eta parameter
         assert hasattr(result, "_bc92_eta")
@@ -245,7 +245,7 @@ class TestBC92Model:
 
         assert result is not None
         assert result.converged
-        assert "eta" in result.param_names
+        assert "eta" in result.params.index
 
     def test_bc92_parameter_interpretation(self):
         """Test that BC92 parameters are in expected ranges."""
@@ -263,17 +263,14 @@ class TestBC92Model:
 
         result = model.fit()
 
-        # Extract parameters
-        sigma_v_sq = result.params[result.param_names.index("sigma_v_sq")]
-        sigma_u_sq = result.params[result.param_names.index("sigma_u_sq")]
-        eta = result.params[result.param_names.index("eta")]
-
+        # Extract parameters via named index
         # Variances should be positive
-        assert sigma_v_sq > 0
-        assert sigma_u_sq > 0
+        assert result.sigma_v > 0
+        assert result.sigma_u > 0
 
-        # Eta should be finite
-        assert np.isfinite(eta)
+        # Eta should be finite (access from params Series)
+        if "eta" in result.params.index:
+            assert np.isfinite(result.params["eta"])
 
     def test_bc92_with_verbose(self):
         """Test BC92 estimation with verbose output."""

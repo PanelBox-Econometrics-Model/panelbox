@@ -282,19 +282,19 @@ class TestSAREstimation:
 
         result = model.fit(effects="fixed", method="qml")
 
-        # Check that we have standard errors
-        assert result.std_errors is not None
-        assert len(result.std_errors) == len(result.params)
-        assert all(result.std_errors > 0)
+        # Check that we have standard errors (attribute is 'bse')
+        assert result.bse is not None
+        assert len(result.bse) == len(result.params)
+        assert all(result.bse > 0)
 
-        # Check t-statistics
-        assert result.t_statistics is not None
-        assert len(result.t_statistics) == len(result.params)
+        # Check t-statistics (attribute is 'tvalues')
+        assert result.tvalues is not None
+        assert len(result.tvalues) == len(result.params)
 
-        # Check p-values
-        assert result.p_values is not None
-        assert len(result.p_values) == len(result.params)
-        assert all((0 <= p <= 1) for p in result.p_values)
+        # Check p-values (attribute is 'pvalues')
+        assert result.pvalues is not None
+        assert len(result.pvalues) == len(result.params)
+        assert all((0 <= p <= 1) for p in result.pvalues)
 
     @pytest.mark.xfail(reason="SpatialPanelResults.fittedvalues not yet implemented")
     def test_sar_fe_predictions(self):

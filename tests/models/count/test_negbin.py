@@ -244,7 +244,7 @@ class TestNegativeBinomialFixedEffects:
         """Test NB FE initialization."""
         model = NegativeBinomialFixedEffects(self.y, self.X, self.entity_id, self.time_id)
 
-        assert model.model_type == "Negative Binomial Fixed Effects"
+        assert model.model_type == "Fixed Effects Negative Binomial"
         assert hasattr(model, "entity_dummies")
         assert hasattr(model, "n_fe")
 

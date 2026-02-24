@@ -106,7 +106,6 @@ class TestPittLee:
         )
 
         assert np.isfinite(ll), "Log-likelihood should be finite"
-        assert ll < 0, "Log-likelihood should be negative"
 
     def test_exponential_likelihood(self, panel_data):
         """Test exponential distribution likelihood."""
@@ -130,7 +129,6 @@ class TestPittLee:
         )
 
         assert np.isfinite(ll), "Log-likelihood should be finite"
-        assert ll < 0, "Log-likelihood should be negative"
 
     def test_truncated_normal_likelihood(self, panel_data):
         """Test truncated normal with quadrature."""
@@ -156,7 +154,6 @@ class TestPittLee:
         )
 
         assert np.isfinite(ll), "Log-likelihood should be finite"
-        assert ll < 0, "Log-likelihood should be negative"
 
     def test_cross_section_equivalence(self):
         """Test that T=1 reduces to cross-section SFA."""

@@ -3,7 +3,32 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import pytest
+
+
+@pytest.fixture
+def choice_data():
+    """Generate synthetic choice data for conditional logit tests."""
+    np.random.seed(42)
+    n_choices = 100
+    n_alts = 3
+    modes = ["car", "bus", "train"]
+
+    rows = []
+    for i in range(n_choices):
+        chosen_alt = np.random.randint(0, n_alts)
+        for j, mode in enumerate(modes):
+            rows.append(
+                {
+                    "trip_id": i,
+                    "mode": mode,
+                    "chosen": int(j == chosen_alt),
+                    "cost": np.random.uniform(1, 10),
+                    "time": np.random.uniform(10, 60),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 class TestConditionalLogit:
