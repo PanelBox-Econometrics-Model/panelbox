@@ -12,13 +12,23 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from panelbox.optimization.quantile import smooth_qr
 from panelbox.optimization.quantile.interior_point import (
     check_loss,
+    frisch_newton_qr,
+    smooth_qr,
 )
-from panelbox.optimization.quantile.interior_point import (
-    frisch_newton_qr as interior_point_qr,
-)
+
+
+def interior_point_qr(y, X, tau=0.5, maxiter=1000, tol=1e-8, params_init=None):
+    """Wrapper that adapts frisch_newton_qr to the test's expected API.
+
+    The actual function has signature ``frisch_newton_qr(X, y, tau, max_iter, tol)``
+    and returns ``(params, info_dict)`` where ``info_dict["converged"]`` is a bool.
+    The tests expect ``(params, converged_bool)`` with ``(y, X)`` argument order
+    and ``maxiter`` / ``params_init`` keyword arguments.
+    """
+    params, info = frisch_newton_qr(X, y, tau=tau, max_iter=maxiter, tol=tol)
+    return params, info["converged"]
 
 
 class TestInteriorPoint:

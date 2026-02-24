@@ -121,6 +121,21 @@ class SpatialLag(SpatialPanelModel):
                 f"Combination effects='{effects}' and method='{method}' not yet implemented"
             )
 
+    def _get_param_names(self, n_beta: int) -> list[str]:
+        """Build parameter name list ['rho', var1, var2, ...]."""
+        col_names = getattr(self, "_exog_names", None)
+        if col_names is None and hasattr(self.exog, "columns"):
+            col_names = list(self.exog.columns)
+        if col_names is not None:
+            if (
+                hasattr(self, "formula_parser")
+                and self.formula_parser.has_intercept
+                and len(col_names) > n_beta
+            ):
+                col_names = col_names[1:]
+            return ["rho", *col_names]
+        return ["rho"] + [f"x{i}" for i in range(n_beta)]
+
     def _fit_qml_fe(
         self,
         rho_grid_size: int = 20,
@@ -265,19 +280,7 @@ class SpatialLag(SpatialPanelModel):
         params = np.concatenate([[rho_hat], beta_hat])
 
         # Get parameter names
-        # Note: If intercept was removed after demeaning, adjust names accordingly
-        if hasattr(self.exog, "columns"):
-            col_names = list(self.exog.columns)
-            # If we removed the intercept column, remove it from names too
-            if (
-                hasattr(self, "formula_parser")
-                and self.formula_parser.has_intercept
-                and len(col_names) > X_within.shape[1]
-            ):
-                col_names = col_names[1:]  # Remove first column name (intercept)
-            param_names = ["rho", *col_names]
-        else:
-            param_names = ["rho"] + [f"x{i}" for i in range(X_within.shape[1])]
+        param_names = self._get_param_names(X_within.shape[1])
 
         # Create results object
         results = SpatialPanelResults(

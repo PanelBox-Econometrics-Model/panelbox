@@ -154,13 +154,13 @@ class TestMultinomialLogitValidation:
         # Compute marginal effects at the mean
         me = result.marginal_effects(at="mean")
 
-        # Should have effects for each alternative
-        assert len(me) == self.n_alternatives
+        # marginal_effects returns a numpy array of shape (n_alternatives, n_vars)
+        assert me.shape == (self.n_alternatives, self.n_vars)
 
         # Effects should sum to zero across alternatives for each variable
         me_sum = np.zeros(self.n_vars)
         for j in range(self.n_alternatives):
-            me_sum += me[f"alternative_{j}"]
+            me_sum += me[j]
 
         np.testing.assert_allclose(me_sum, 0, atol=1e-10)
 

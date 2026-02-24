@@ -13,6 +13,16 @@ from panelbox.models.censored import PooledTobit
 from panelbox.models.count import NegativeBinomial, PoissonFixedEffects, PooledPoisson
 from panelbox.models.discrete.binary import FixedEffectsLogit, PooledLogit, PooledProbit
 
+# Skip the entire module if R benchmark data files are missing
+_data_dir = Path("tests/resposta_limitada/data")
+_results_dir = Path(__file__).parent / "r" / "results"
+if not _data_dir.exists() or not _results_dir.exists():
+    pytest.skip(
+        "R validation data not found (tests/resposta_limitada/data/ or tests/validation_r/r/results/). "
+        "Run generate_test_data.py and R benchmark scripts first.",
+        allow_module_level=True,
+    )
+
 # Tolerances
 COEF_RTOL = 0.05  # 5% relative tolerance for coefficients
 SE_RTOL = 0.10  # 10% relative tolerance for standard errors

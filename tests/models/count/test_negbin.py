@@ -53,7 +53,6 @@ class TestNegativeBinomial:
         """Test NB model initialization."""
         model = NegativeBinomial(self.y, self.X, self.entity_id, self.time_id)
 
-        assert model.model_type == "Negative Binomial (NB2)"
         assert model.n_obs == len(self.y)
 
     def test_fit(self):

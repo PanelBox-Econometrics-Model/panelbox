@@ -199,7 +199,7 @@ def _simulation_inference(  # noqa: C901
     """
     # Get parameter estimates and covariance
     params = result.params
-    cov_matrix = result.cov_matrix
+    cov_matrix = result.cov_params
 
     # Identify relevant parameters
     model_type = result.model.spatial_model_type
@@ -362,9 +362,9 @@ def _delta_method_inference(
         var_idx = list(result.params.index).index(var)
         rho_idx = list(result.params.index).index("rho")
 
-        beta_var = result.cov_matrix[var_idx, var_idx]
-        rho_var = result.cov_matrix[rho_idx, rho_idx]
-        beta_rho_cov = result.cov_matrix[var_idx, rho_idx]
+        beta_var = result.cov_params[var_idx, var_idx]
+        rho_var = result.cov_params[rho_idx, rho_idx]
+        beta_rho_cov = result.cov_params[var_idx, rho_idx]
 
         beta = result.params[var]
 
@@ -402,7 +402,7 @@ def _delta_method_inference(
             if theta_name in result.params.index:
                 result.params[theta_name]
                 theta_idx = list(result.params.index).index(theta_name)
-                theta_var = result.cov_matrix[theta_idx, theta_idx]
+                theta_var = result.cov_params[theta_idx, theta_idx]
 
                 # Simplified variance calculation
                 var_direct = beta_var + theta_var + rho_var

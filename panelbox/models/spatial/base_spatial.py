@@ -89,6 +89,8 @@ class SpatialPanelModel(PanelModel):
             )
             self._y_orig = y.values if hasattr(y, "values") else y
             self._X_orig = X.values if hasattr(X, "values") else X
+            # Store column names for parameter naming in results
+            self._exog_names = list(X.columns) if hasattr(X, "columns") else None
 
         # Validate and store W
         self.W = self._validate_weight_matrix(W)
@@ -165,9 +167,7 @@ class SpatialPanelModel(PanelModel):
         else:
             return W.copy()
 
-    def _within_transformation(
-        self, X: np.ndarray | pd.DataFrame | None = None
-    ) -> np.ndarray:
+    def _within_transformation(self, X: np.ndarray | pd.DataFrame | None = None) -> np.ndarray:
         """
         Apply within transformation (entity demeaning).
 
@@ -222,6 +222,9 @@ class SpatialPanelModel(PanelModel):
             X = X.values
 
         # Handle panel structure
+        # PanelData stores data in entity-major order:
+        #   [e0_t0, e0_t1, ..., e0_tT, e1_t0, e1_t1, ..., e1_tT, ...]
+        # So reshape(N, T) gives (entities, time_periods).
         if X.ndim == 1:
             # Single cross-section
             if len(X) == self.n_entities:
@@ -231,11 +234,11 @@ class SpatialPanelModel(PanelModel):
             T = self.T
             N = self.n_entities
 
-            # Reshape to (T, N)
-            X_reshaped = X.reshape(T, N)
+            # Reshape to (N, T) — entity-major order
+            X_reshaped = X.reshape(N, T)
             WX = np.zeros_like(X_reshaped)
             for t in range(T):
-                WX[t] = self.W_normalized @ X_reshaped[t]
+                WX[:, t] = self.W_normalized @ X_reshaped[:, t]
             return WX.flatten()
 
         # Multiple variables
@@ -244,11 +247,12 @@ class SpatialPanelModel(PanelModel):
         K = X.shape[1] if X.ndim == 2 else 1
 
         if len(X) == N * T:
-            X_reshaped = X.reshape(T, N, K)
+            # Reshape to (N, T, K) — entity-major order
+            X_reshaped = X.reshape(N, T, K)
             WX = np.zeros_like(X_reshaped)
             for t in range(T):
                 for k in range(K):
-                    WX[t, :, k] = self.W_normalized @ X_reshaped[t, :, k]
+                    WX[:, t, k] = self.W_normalized @ X_reshaped[:, t, k]
             return WX.reshape(N * T, K)
 
         return self.W_normalized @ X
