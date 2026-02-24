@@ -86,18 +86,18 @@ class TestLocationScale:
             simulated_data, formula="y ~ X1 + X2", tau=tau_grid, distribution="normal"
         )
 
-        result = model.fit()
+        model.fit()
 
-        # Check non-crossing by examining predictions
-        X_test = model.X[:10]  # Test on first 10 observations
-        predictions = np.zeros((len(X_test), len(tau_grid)))
-
-        for i, tau in enumerate(tau_grid):
-            predictions[:, i] = X_test @ result.results[tau].params
+        # Check non-crossing using predict_quantiles which uses the correct
+        # MSS formula: Q(tau|X) = X'alpha + exp(X'gamma/2) * q(tau)
+        X_test = model.X[:10]
+        predictions = model.predict_quantiles(X_test, tau=tau_grid, ci=False)
 
         # Check monotonicity across quantiles for each observation
+        pred_cols = [f"q{int(t * 100)}" for t in tau_grid]
         for i in range(len(X_test)):
-            diffs = np.diff(predictions[i, :])
+            vals = predictions.iloc[i][pred_cols].values.astype(float)
+            diffs = np.diff(vals)
             assert np.all(diffs >= -1e-10), f"Crossing detected for obs {i}"
 
     def test_different_distributions(self, simulated_data):

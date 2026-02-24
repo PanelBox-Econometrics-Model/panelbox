@@ -181,9 +181,9 @@ class LocationScale(QuantilePanelModel):
         Uses OLS or Fixed Effects OLS depending on specification.
         """
         if self.fixed_effects:
-            from ..static.fixed_effects import FixedEffectsOLS
+            from ..static.fixed_effects import FixedEffects
 
-            location_model = FixedEffectsOLS(
+            location_model = FixedEffects(
                 formula=self.formula,
                 data=self.data.data,
                 entity_col=self.data.entity_col,
@@ -246,19 +246,23 @@ class LocationScale(QuantilePanelModel):
         # Create temporary data for scale regression
         import pandas as pd
 
-        # Create a temporary DataFrame for scale regression
-        scale_data = pd.DataFrame(self.X, columns=[f"X{i}" for i in range(self.X.shape[1])])
+        # Create a temporary DataFrame for scale regression.
+        # self.X includes the intercept column (column 0), so we skip it
+        # because PooledOLS/FixedEffectsOLS will add their own intercept.
+        n_cols = self.X.shape[1]
+        x_cols = [f"X{i}" for i in range(1, n_cols)]
+        scale_data = pd.DataFrame(self.X[:, 1:], columns=x_cols)
         scale_data["y_scale"] = y_scale
         scale_data["entity"] = self.data.data[self.data.entity_col].values
         scale_data["time"] = self.data.data[self.data.time_col].values
 
-        # Estimate scale model
-        scale_formula = "y_scale ~ " + " + ".join([f"X{i}" for i in range(self.X.shape[1])])
+        # Estimate scale model (intercept is added automatically by the estimator)
+        scale_formula = "y_scale ~ " + " + ".join(x_cols)
 
         if self.fixed_effects:
-            from ..static.fixed_effects import FixedEffectsOLS
+            from ..static.fixed_effects import FixedEffects
 
-            scale_model = FixedEffectsOLS(
+            scale_model = FixedEffects(
                 formula=scale_formula, data=scale_data, entity_col="entity", time_col="time"
             )
         else:
@@ -285,7 +289,9 @@ class LocationScale(QuantilePanelModel):
         """
         if self.distribution == "normal":
             # E[log|Z|] for Z ~ N(0,1)
-            return -0.5 * (np.log(2) + np.log(np.pi)) - np.euler_gamma / 2
+            # |Z| is half-normal; Z^2 ~ Chi^2(1) = Gamma(1/2, 2)
+            # E[log(Z^2)] = digamma(1/2) + log(2), so E[log|Z|] = (digamma(1/2) + log(2)) / 2
+            return (digamma(0.5) + np.log(2)) / 2
         elif self.distribution == "logistic":
             # E[log|Z|] for Z ~ Logistic(0,1)
             return -np.log(2)

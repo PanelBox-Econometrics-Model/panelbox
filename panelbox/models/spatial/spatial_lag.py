@@ -779,8 +779,7 @@ class SpatialLag(SpatialPanelModel):
             },
         )
 
-        # Store additional attributes
-        results.rho = rho_hat
+        # Store additional attributes (rho is already in params, accessed via property)
         results.beta = beta_hat
         results.fitted_values = fitted
         results.aic = aic
