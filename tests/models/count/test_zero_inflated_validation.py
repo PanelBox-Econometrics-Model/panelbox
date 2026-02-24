@@ -348,10 +348,7 @@ class TestRComparisonScript:
         pred_mean <- predict(zip_model, type = "response")
         """
 
-        # Save for reference
-        with open("/tmp/validate_zero_inflated.R", "w") as f:
-            f.write(r_code)
-
+        # Validate R code was generated (skip file write for cross-platform compat)
         assert r_code  # Code exists
 
 

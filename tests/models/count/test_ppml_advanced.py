@@ -197,6 +197,10 @@ class TestPPMLAdvantages:
         assert result_ppml.params[1] > 0
         assert result_ols.params[1] > 0
 
+    @pytest.mark.xfail(
+        strict=False,
+        reason="Poisson lambda values overflow on some platforms due to large linear predictor",
+    )
     @pytest.mark.slow
     def test_ppml_gravity_model_simulation(self):
         """

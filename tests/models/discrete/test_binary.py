@@ -283,10 +283,10 @@ class TestPooledProbit:
         probit_results = probit_model.fit()
 
         # Signs should match
-        assert np.sign(logit_results.params[1]) == np.sign(probit_results.params[1])
+        assert np.sign(logit_results.params.iloc[1]) == np.sign(probit_results.params.iloc[1])
 
         # Logit coefficients ≈ 1.6 * Probit coefficients (rough approximation)
-        ratio = logit_results.params[1] / probit_results.params[1]
+        ratio = logit_results.params.iloc[1] / probit_results.params.iloc[1]
         assert 1.2 < ratio < 2.0
 
 

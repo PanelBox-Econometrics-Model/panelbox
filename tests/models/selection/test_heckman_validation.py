@@ -534,6 +534,4 @@ if __name__ == "__main__":
     # Print validation report
     print(create_heckman_validation_report())
 
-    # Save R script
-    with open("/tmp/validate_heckman.R", "w") as f:
-        f.write(create_r_validation_script())
+    # Skip R script save for cross-platform compatibility
