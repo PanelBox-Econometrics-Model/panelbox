@@ -211,10 +211,10 @@ class PPMLResult(PanelModelResults):
             var_name = exog_names[i] if i < len(exog_names) else f"x{i}"
 
             ppml_coef = self.params[i]
-            ppml_se = np.sqrt(self.cov[i, i])
+            ppml_se = np.sqrt(self.vcov[i, i])
 
             ols_coef = ols_result.params[i]
-            ols_se = np.sqrt(ols_result.cov[i, i])
+            ols_se = np.sqrt(ols_result.cov_params()[i, i])
 
             # Difference
             diff = ppml_coef - ols_coef
