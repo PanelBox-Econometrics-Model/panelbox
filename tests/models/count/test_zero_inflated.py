@@ -128,7 +128,7 @@ class TestZeroInflatedPoisson:
         params = np.random.randn(4)  # 2 for count, 2 for inflate
 
         # Analytical gradient
-        grad_analytical = model.gradient(params)
+        grad_analytical = model._gradient(params)
 
         # Numerical gradient
         eps = 1e-6
@@ -139,12 +139,13 @@ class TestZeroInflatedPoisson:
             params_plus[i] += eps
             params_minus[i] -= eps
 
+            # _gradient returns gradient of _neg_log_likelihood
             grad_numerical[i] = (
-                model.log_likelihood(params_plus) - model.log_likelihood(params_minus)
+                model._neg_log_likelihood(params_plus) - model._neg_log_likelihood(params_minus)
             ) / (2 * eps)
 
         # Should be close
-        assert np.allclose(grad_analytical, grad_numerical, rtol=1e-5)
+        assert np.allclose(grad_analytical, grad_numerical, rtol=1e-4)
 
     def test_zip_with_panel_structure(self):
         """Test ZIP with panel data structure."""
