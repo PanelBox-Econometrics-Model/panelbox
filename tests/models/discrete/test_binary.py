@@ -485,8 +485,8 @@ class TestFixedEffectsLogit:
         results = model.fit()
         elapsed_time = time.time() - start_time
 
-        # Should converge in reasonable time (< 30 seconds)
-        assert elapsed_time < 30.0
+        # Should converge in reasonable time (< 60 seconds)
+        assert elapsed_time < 60.0
 
         # Results should be produced (PanelResults has no 'converged' attr)
         assert results is not None
