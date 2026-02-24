@@ -38,15 +38,39 @@ class MockModel:
         self.hetero_vars = hetero_vars
         self.inefficiency_vars = inefficiency_vars
 
-        # Build Z matrix (constant + inefficiency determinants)
+        # Build Z matrix (NO constant) from inefficiency determinants
+        # The source code extracts delta with len(ineff_var_names) elements,
+        # so Z must have exactly that many columns (no intercept).
         if inefficiency_vars and isinstance(data, pd.DataFrame):
             z_cols = [data[v].values for v in inefficiency_vars if v in data.columns]
             if z_cols:
-                self.Z = np.column_stack([np.ones(len(data)), *z_cols])
+                self.Z = np.column_stack(z_cols)
+            else:
+                self.Z = np.ones((len(data), 1))
+        elif ineff_var_names and isinstance(data, pd.DataFrame):
+            z_cols = [data[v].values for v in ineff_var_names if v in data.columns]
+            if z_cols:
+                self.Z = np.column_stack(z_cols)
             else:
                 self.Z = np.ones((len(data), 1))
         else:
             self.Z = np.ones((len(data), 1))
+
+        # Build W matrix (NO constant) from heteroscedasticity determinants
+        # The source code extracts gamma with len(hetero_var_names) elements,
+        # so W must have exactly that many columns (no intercept).
+        if hetero_vars and isinstance(data, pd.DataFrame):
+            w_cols = [data[v].values for v in hetero_vars if v in data.columns]
+            if w_cols:
+                self.W = np.column_stack(w_cols)
+            else:
+                self.W = np.ones((len(data), 1))
+        elif hetero_var_names and isinstance(data, pd.DataFrame):
+            w_cols = [data[v].values for v in hetero_var_names if v in data.columns]
+            if w_cols:
+                self.W = np.column_stack(w_cols)
+            else:
+                self.W = np.ones((len(data), 1))
 
 
 class MockResult:

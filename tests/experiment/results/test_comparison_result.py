@@ -22,6 +22,7 @@ class TestComparisonResult:
         results1.df_model = 3
         results1.df_resid = 96
         results1.loglik = -150.5
+        results1.resid = None
 
         results2 = Mock()
         results2.rsquared = 0.90
@@ -31,6 +32,7 @@ class TestComparisonResult:
         results2.df_model = 3
         results2.df_resid = 96
         results2.loglik = -145.2
+        results2.resid = None
 
         return {"Model1": results1, "Model2": results2}
 
