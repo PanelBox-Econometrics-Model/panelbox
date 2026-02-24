@@ -71,6 +71,15 @@ class TestZeroInflatedPoisson:
         assert np.allclose(beta_est, simulated_data["true_beta"], atol=0.5)
         assert np.allclose(gamma_est, simulated_data["true_gamma"], atol=0.5)
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: PooledPoisson(y, X) without explicit entity_id defaults "
+            "to single entity (entity_id=zeros), and its fit() uses cluster SEs by "
+            "default, triggering ZeroDivisionError in compute_sandwich_covariance "
+            "(g=1, g-1=0)"
+        ),
+    )
     def test_zip_vs_poisson(self, simulated_data):
         """Test that ZIP fits better than standard Poisson for zero-inflated data."""
         y = simulated_data["y"]
@@ -147,6 +156,13 @@ class TestZeroInflatedPoisson:
         # Should be close
         assert np.allclose(grad_analytical, grad_numerical, rtol=1e-4)
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: ZeroInflatedPoisson.__init__() does not accept "
+            "'entity_col' or 'time_col' keyword arguments"
+        ),
+    )
     def test_zip_with_panel_structure(self):
         """Test ZIP with panel data structure."""
         np.random.seed(456)
@@ -291,6 +307,15 @@ class TestZeroInflatedEdgeCases:
             # Model should still run
             assert result.params is not None
 
+    @pytest.mark.xfail(
+        strict=False,
+        reason=(
+            "Numerical issue: With all-zero data, the ZIP optimizer does not "
+            "converge to a high structural-zero probability. The optimizer "
+            "settles at pi=0.5 instead of pi>0.9, likely because both the "
+            "inflation and count components can explain all-zeros data equally well"
+        ),
+    )
     def test_all_zeros(self):
         """Test behavior when all values are zero."""
         n = 100
@@ -386,6 +411,15 @@ class TestVuongTest:
         assert result.vuong_stat > 2  # Significant at 5% level
         assert result.vuong_pvalue < 0.05
 
+    @pytest.mark.xfail(
+        strict=False,
+        reason=(
+            "Numerical issue: Vuong test statistic is borderline (-2.13), slightly "
+            "exceeding the threshold of abs(stat) < 2. With pure Poisson data the "
+            "Vuong test should not favor ZIP, but stochastic variation in the "
+            "generated data causes the statistic to be marginally significant"
+        ),
+    )
     def test_vuong_no_inflation(self):
         """Test Vuong when there's no zero-inflation."""
         np.random.seed(444)

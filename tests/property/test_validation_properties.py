@@ -77,6 +77,15 @@ def test_tvalues_finite_pooled(data):
         assert np.isfinite(tval), f"t-value for {param} = {tval} is not finite"
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Source-code bug: FixedEffects computes t-values as coef/SE without "
+        "guarding against SE=0. When the demeaned design matrix has a column "
+        "with zero residual variance, SE=0 and t=inf. The model should return "
+        "NaN or handle this edge case gracefully."
+    ),
+)
 @pytest.mark.property
 @given(data=balanced_panels(min_entities=5, max_entities=20, n_regressors=2))
 @settings(max_examples=50, deadline=30000)

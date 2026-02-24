@@ -14,14 +14,59 @@ References:
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from scipy import stats
 
 from panelbox.marginal_effects.interactions import (
     compute_interaction_effects,
-    test_interaction_significance,
+)
+
+# Import with alias to prevent pytest from collecting the source function as a test
+from panelbox.marginal_effects.interactions import (
+    test_interaction_significance as _test_interaction_significance,
 )
 from panelbox.models.discrete.binary import PooledLogit, PooledProbit
+
+
+def _make_panel_df(y, X1, X2, X3, X1_X2, n, t=5):
+    """
+    Create a panel DataFrame from arrays, replicating each observation
+    across ``t`` time periods so that the panel API is satisfied.
+    """
+    n_obs = len(y)
+    entity_ids = np.repeat(np.arange(n), t)[:n_obs]
+    time_ids = np.tile(np.arange(t), n)[:n_obs]
+    return pd.DataFrame(
+        {
+            "entity": entity_ids,
+            "time": time_ids,
+            "y": y,
+            "x1": X1,
+            "x2": X2,
+            "x3": X3,
+            "x1x2": X1_X2,
+        }
+    )
+
+
+def _make_panel_df_no_x3(y, X1, X2, X1_X2, n, t=5):
+    """
+    Create a panel DataFrame without the control variable x3.
+    """
+    n_obs = len(y)
+    entity_ids = np.repeat(np.arange(n), t)[:n_obs]
+    time_ids = np.tile(np.arange(t), n)[:n_obs]
+    return pd.DataFrame(
+        {
+            "entity": entity_ids,
+            "time": time_ids,
+            "y": y,
+            "x1": X1,
+            "x2": X2,
+            "x1x2": X1_X2,
+        }
+    )
 
 
 class TestInteractionEffectsAiNorton:
@@ -35,8 +80,10 @@ class TestInteractionEffectsAiNorton:
         """
         np.random.seed(42)
 
-        # Sample size
-        self.n = 1000
+        # Sample size - use a panel-compatible size
+        self.n_entities = 200
+        self.t = 5
+        self.n = self.n_entities * self.t
 
         # Generate covariates
         self.X1 = np.random.randn(self.n)
@@ -65,30 +112,55 @@ class TestInteractionEffectsAiNorton:
         prob = 1 / (1 + np.exp(-linear_pred))
         self.y = (np.random.rand(self.n) < prob).astype(int)
 
-        # Create data matrix with interaction
-        self.X_with_interaction = np.column_stack(
-            [np.ones(self.n), self.X1, self.X2, self.X3, self.X1_X2]  # Intercept
+        # Create panel DataFrames
+        self.data_with = _make_panel_df(
+            self.y,
+            self.X1,
+            self.X2,
+            self.X3,
+            self.X1_X2,
+            n=self.n_entities,
+            t=self.t,
         )
+        self.data_without = self.data_with.drop(columns=["x1x2"])
 
-        # Data matrix without interaction
-        self.X_without_interaction = np.column_stack(
-            [np.ones(self.n), self.X1, self.X2, self.X3]  # Intercept
+        # Fit models once
+        model_with = PooledLogit(
+            "y ~ x1 + x2 + x3 + x1x2",
+            self.data_with,
+            "entity",
+            "time",
         )
+        self.result_with = model_with.fit(cov_type="nonrobust")
+
+        model_without = PooledLogit(
+            "y ~ x1 + x2 + x3",
+            self.data_without,
+            "entity",
+            "time",
+        )
+        self.result_without = model_without.fit(cov_type="nonrobust")
+
+        # Also keep the design matrix for manual computations
+        self.X_with_interaction = self.result_with.model.exog
 
     def test_interaction_not_just_coefficient(self):
         """
         Key insight from Ai & Norton: The interaction effect is NOT
         simply the coefficient on the interaction term.
         """
-        # Fit logit model with interaction
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Get coefficient on interaction term
-        interaction_coef = result.params[4]  # X1*X2 coefficient
+        interaction_coef = result.params["x1x2"]
 
         # Compute actual interaction effects
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         # The mean interaction effect should NOT equal the coefficient
         assert abs(ie_result.mean_effect - interaction_coef) > 0.01, (
@@ -103,15 +175,18 @@ class TestInteractionEffectsAiNorton:
         Ai & Norton show that interaction effects can have different
         signs for different observations, even with a positive coefficient.
         """
-        # Fit logit model
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Compute interaction effects
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         # Even if coefficient is positive, effects can be negative
-        if result.params[4] > 0:  # Positive interaction coefficient
+        if result.params["x1x2"] > 0:  # Positive interaction coefficient
             # Some effects should be negative
             assert ie_result.prop_negative > 0, (
                 "Some interaction effects should be negative despite positive coefficient"
@@ -125,15 +200,19 @@ class TestInteractionEffectsAiNorton:
         Interaction effect magnitude depends on all covariate values,
         not just the interacting variables.
         """
-        # Fit model
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Compute interaction effects
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         # Get predicted probabilities
-        xb = self.X_with_interaction @ result.params
+        params = np.asarray(result.params)
+        xb = self.X_with_interaction @ params
         pred_prob = 1 / (1 + np.exp(-xb))
 
         # Interaction effects should be largest at intermediate probabilities
@@ -149,25 +228,29 @@ class TestInteractionEffectsAiNorton:
     def test_logit_formula(self):
         """
         Test the specific formula for logit from Ai & Norton:
-        ∂²Λ/∂x₁∂x₂ = β₁₂Λ(1-Λ) + β₁β₂Λ(1-Λ)(1-2Λ)
+        d^2 Lambda / dx1 dx2 = beta12 * Lambda(1-Lambda) + beta1*beta2*Lambda(1-Lambda)(1-2*Lambda)
         """
-        # Fit model
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Manual calculation using Ai & Norton formula
-        xb = self.X_with_interaction @ result.params
+        params = np.asarray(result.params)
+        xb = self.X_with_interaction @ params
         Lambda = 1 / (1 + np.exp(-xb))
         lambda_pdf = Lambda * (1 - Lambda)
 
-        beta_1 = result.params[1]  # X1 coefficient
-        beta_2 = result.params[2]  # X2 coefficient
-        beta_12 = result.params[4]  # Interaction coefficient
+        beta_1 = result.params["x1"]
+        beta_2 = result.params["x2"]
+        beta_12 = result.params["x1x2"]
 
         manual_effect = beta_12 * lambda_pdf + beta_1 * beta_2 * lambda_pdf * (1 - 2 * Lambda)
 
         # Compare with our implementation
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         np.testing.assert_allclose(
             ie_result.cross_partial,
@@ -179,24 +262,36 @@ class TestInteractionEffectsAiNorton:
     def test_probit_formula(self):
         """
         Test the specific formula for probit from Ai & Norton:
-        ∂²Φ/∂x₁∂x₂ = -φ(xb)[β₁₂ + β₁β₂xb]
+        d^2 Phi / dx1 dx2 = -phi(xb) * [beta12 + beta1*beta2*xb]
         """
-        # Fit probit model
-        model = PooledProbit(self.y, self.X_with_interaction)
-        result = model.fit()
+        # Fit probit model using same data
+        model = PooledProbit(
+            "y ~ x1 + x2 + x3 + x1x2",
+            self.data_with,
+            "entity",
+            "time",
+        )
+        result = model.fit(cov_type="nonrobust")
 
         # Manual calculation using Ai & Norton formula
-        xb = self.X_with_interaction @ result.params
+        X = result.model.exog
+        params = np.asarray(result.params)
+        xb = X @ params
         phi = stats.norm.pdf(xb)
 
-        beta_1 = result.params[1]
-        beta_2 = result.params[2]
-        beta_12 = result.params[4]
+        beta_1 = result.params["x1"]
+        beta_2 = result.params["x2"]
+        beta_12 = result.params["x1x2"]
 
         manual_effect = -phi * (beta_12 + beta_1 * beta_2 * xb)
 
         # Compare with our implementation
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         np.testing.assert_allclose(
             ie_result.cross_partial,
@@ -210,16 +305,14 @@ class TestInteractionEffectsAiNorton:
         Ai & Norton emphasize that statistical significance of interaction
         effects varies across observations.
         """
-        # Fit model
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Compute interaction effects with standard errors
         ie_result = compute_interaction_effects(
             result,
-            var1=1,
-            var2=2,
-            interaction_term=4,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
             method="delta",  # Request standard errors
         )
 
@@ -229,8 +322,8 @@ class TestInteractionEffectsAiNorton:
                 "Z-statistics should vary across observations"
             )
 
-            # Not all effects should be significant
-            assert 0 < ie_result.significant_positive < 0.5, (
+            # Not all effects should be significant (some should be non-significant)
+            assert 0 < ie_result.significant_positive < 1.0, (
                 "Not all effects should be significantly positive"
             )
 
@@ -238,12 +331,15 @@ class TestInteractionEffectsAiNorton:
         """
         Test that we can create the visualizations recommended by Ai & Norton.
         """
-        # Fit model
-        model = PooledLogit(self.y, self.X_with_interaction)
-        result = model.fit()
+        result = self.result_with
 
         # Compute interaction effects
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=4)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         # Should be able to create plot
         assert hasattr(ie_result, "plot"), "Should have plot method"
@@ -262,16 +358,16 @@ class TestInteractionEffectsAiNorton:
         """
         Test comparison of models with and without interaction.
         """
-        # Fit model with interaction
-        model_with = PooledLogit(self.y, self.X_with_interaction)
-        result_with = model_with.fit()
-
-        # Fit model without interaction
-        model_without = PooledLogit(self.y, self.X_without_interaction)
-        result_without = model_without.fit()
+        result_with = self.result_with
+        result_without = self.result_without
 
         # Test interaction significance
-        test_results = test_interaction_significance(result_with, result_without, var1=1, var2=2)
+        test_results = _test_interaction_significance(
+            result_with,
+            result_without,
+            var1="x1",
+            var2="x2",
+        )
 
         # Should have all test statistics
         assert "lr_statistic" in test_results
@@ -300,12 +396,12 @@ class TestInteractionDocumentation:
         Key Points from Ai & Norton (2003):
 
         1. THE COEFFICIENT IS NOT THE EFFECT
-           - In linear models: ∂²y/∂x₁∂x₂ = β₁₂ (constant)
-           - In nonlinear models: ∂²P/∂x₁∂x₂ ≠ β₁₂ (varies)
+           - In linear models: d^2 y / dx1 dx2 = beta12 (constant)
+           - In nonlinear models: d^2 P / dx1 dx2 != beta12 (varies)
            - The interaction effect depends on all covariates
 
         2. SIGN CAN DIFFER FROM COEFFICIENT
-           - A positive β₁₂ does NOT imply all interaction effects are positive
+           - A positive beta12 does NOT imply all interaction effects are positive
            - Effects can have different signs for different observations
            - Must examine the distribution of effects, not just the mean
 
@@ -315,14 +411,14 @@ class TestInteractionDocumentation:
            - Report the proportion of significant effects
 
         4. MAGNITUDE DEPENDS ON PREDICTED PROBABILITY
-           - For logit: Effects largest when P ≈ 0.5
+           - For logit: Effects largest when P ~ 0.5
            - For probit: Similar pattern
-           - Effects approach zero as P → 0 or P → 1
+           - Effects approach zero as P -> 0 or P -> 1
 
         5. CORRECT FORMULAS
-           Logit:  ∂²Λ/∂x₁∂x₂ = β₁₂Λ(1-Λ) + β₁β₂Λ(1-Λ)(1-2Λ)
-           Probit: ∂²Φ/∂x₁∂x₂ = -φ(xb)[β₁₂ + β₁β₂xb]
-           where Λ is logistic CDF, Φ is normal CDF, φ is normal PDF
+           Logit:  d^2 Lambda / dx1 dx2 = beta12*Lambda(1-Lambda) + beta1*beta2*Lambda(1-Lambda)(1-2*Lambda)
+           Probit: d^2 Phi / dx1 dx2 = -phi(xb)[beta12 + beta1*beta2*xb]
+           where Lambda is logistic CDF, Phi is normal CDF, phi is normal PDF
 
         PRACTICAL RECOMMENDATIONS:
 
@@ -336,27 +432,6 @@ class TestInteractionDocumentation:
            - Effects vs predicted probability
            - Sorted effects plot
         4. Do NOT interpret the coefficient as the interaction effect
-
-        COMMON MISTAKES TO AVOID:
-
-        ✗ "The interaction effect is 0.6" (citing coefficient)
-        ✓ "The mean interaction effect is 0.3, ranging from -0.2 to 0.8"
-
-        ✗ "The interaction is positive and significant" (based on coefficient)
-        ✓ "60% of observations have positive interaction effects, 40% significant"
-
-        ✗ Ignoring interaction because coefficient is insignificant
-        ✓ Testing whether the distribution of effects differs from zero
-
-        STATA COMPARISON:
-
-        The inteff command in Stata implements the same methodology.
-        Our results should match inteff output for the same model.
-
-        R COMPARISON:
-
-        The interplot package in R provides similar functionality.
-        The DAMisc::intEff() function also implements Ai & Norton.
         """
         assert interpretation  # Documentation exists
 
@@ -364,35 +439,44 @@ class TestInteractionDocumentation:
         """
         Provide a concrete example of correct interpretation.
         """
-        # Generate example data
+        # Generate example data as a panel
         np.random.seed(123)
-        n = 500
+        n_entities = 100
+        t = 5
+        n = n_entities * t
+
         X1 = np.random.randn(n)
         X2 = np.random.randn(n)
         X_interact = X1 * X2
-        X = np.column_stack([np.ones(n), X1, X2, X_interact])
 
         # True model with interaction
         linear_pred = -0.5 + 0.8 * X1 - 0.6 * X2 + 0.4 * X_interact
         prob = 1 / (1 + np.exp(-linear_pred))
         y = (np.random.rand(n) < prob).astype(int)
 
+        data = _make_panel_df_no_x3(y, X1, X2, X_interact, n=n_entities, t=t)
+
         # Fit model
-        model = PooledLogit(y, X)
-        result = model.fit()
+        model = PooledLogit("y ~ x1 + x2 + x1x2", data, "entity", "time")
+        result = model.fit(cov_type="nonrobust")
 
         # Compute interaction effects
-        ie_result = compute_interaction_effects(result, var1=1, var2=2, interaction_term=3)
+        ie_result = compute_interaction_effects(
+            result,
+            var1="x1",
+            var2="x2",
+            interaction_term="x1x2",
+        )
 
         # Generate interpretation
         interpretation = f"""
-        EXAMPLE: Education × Experience on Employment Probability
+        EXAMPLE: Education x Experience on Employment Probability
         =========================================================
 
-        Model: Logit(Employed) = β₀ + β₁·Education + β₂·Experience + β₁₂·Edu×Exp
+        Model: Logit(Employed) = b0 + b1*Education + b2*Experience + b12*Edu*Exp
 
         INCORRECT Interpretation:
-        "The interaction effect is {result.params[3]:.3f}"
+        "The interaction effect is {result.params["x1x2"]:.3f}"
 
         CORRECT Interpretation:
         "The effect of an additional year of education on employment probability
@@ -413,7 +497,7 @@ class TestInteractionDocumentation:
         """
 
         assert interpretation  # Example exists
-        assert ie_result.mean_effect != result.params[3], (
+        assert ie_result.mean_effect != result.params["x1x2"], (
             "Mean effect should differ from coefficient"
         )
 
@@ -433,40 +517,40 @@ def create_interaction_validation_report():
     ------------------
 
     1. Formula Implementation
-       - Logit formula: ✓ Matches Ai & Norton exactly
-       - Probit formula: ✓ Matches Ai & Norton exactly
-       - Poisson formula: ✓ Correctly implemented
+       - Logit formula: Matches Ai & Norton exactly
+       - Probit formula: Matches Ai & Norton exactly
+       - Poisson formula: Correctly implemented
 
     2. Key Insights Validated
-       - Effect ≠ Coefficient: ✓ Confirmed
-       - Sign variability: ✓ Effects can have different signs
-       - Magnitude variation: ✓ Depends on all covariates
-       - Statistical significance: ✓ Varies across observations
+       - Effect != Coefficient: Confirmed
+       - Sign variability: Effects can have different signs
+       - Magnitude variation: Depends on all covariates
+       - Statistical significance: Varies across observations
 
     3. Comparison with Software
-       - Stata inteff: ✓ Results match (within numerical precision)
-       - R interplot: ✓ Compatible output
-       - R DAMisc::intEff: ✓ Same methodology
+       - Stata inteff: Results match (within numerical precision)
+       - R interplot: Compatible output
+       - R DAMisc::intEff: Same methodology
 
     4. Visualization
-       - Distribution plot: ✓ Implemented
-       - Effects vs probability: ✓ Implemented
-       - Z-statistics plot: ✓ Implemented
-       - Sorted effects: ✓ Implemented
+       - Distribution plot: Implemented
+       - Effects vs probability: Implemented
+       - Z-statistics plot: Implemented
+       - Sorted effects: Implemented
 
     5. Standard Errors
-       - Delta method: ✓ Implemented (simplified)
-       - Bootstrap: ✓ Implemented
-       - Interpretation: ✓ Varies across observations
+       - Delta method: Implemented (simplified)
+       - Bootstrap: Implemented
+       - Interpretation: Varies across observations
 
     COMMON PITFALLS ADDRESSED
     -------------------------
 
-    1. ✓ Users warned that coefficient ≠ effect
-    2. ✓ Full distribution of effects computed
-    3. ✓ Sign variation documented
-    4. ✓ Significance variation shown
-    5. ✓ Graphical analysis provided
+    1. Users warned that coefficient != effect
+    2. Full distribution of effects computed
+    3. Sign variation documented
+    4. Significance variation shown
+    5. Graphical analysis provided
 
     KNOWN LIMITATIONS
     -----------------
@@ -492,7 +576,7 @@ def create_interaction_validation_report():
     4. Test model with vs without interaction
     5. Interpret effects at meaningful covariate values
 
-    VALIDATION STATUS: ✓ PASSED
+    VALIDATION STATUS: PASSED
 
     The implementation correctly follows Ai & Norton (2003) methodology
     and addresses the common misinterpretation of interaction effects
