@@ -21,9 +21,9 @@ class TestRandomEffectsTobit:
         """Generate simulated panel data with censoring."""
         np.random.seed(42)
 
-        # Panel dimensions
-        N = 50  # Number of entities
-        T = 10  # Time periods
+        # Panel dimensions (kept small for CI speed)
+        N = 30  # Number of entities
+        T = 5  # Time periods
         K = 3  # Number of covariates
 
         # True parameters
@@ -91,11 +91,11 @@ class TestRandomEffectsTobit:
             exog=simulated_data["X"],
             groups=simulated_data["groups"],
             time=simulated_data["time"],
-            quadrature_points=8,  # Use fewer points for speed
+            quadrature_points=5,  # Use fewer points for speed
         )
 
         # Fit with limited iterations for testing
-        result = model.fit(maxiter=50)
+        result = model.fit(maxiter=20)
 
         assert hasattr(result, "params")
         assert hasattr(result, "llf")
@@ -147,10 +147,10 @@ class TestRandomEffectsTobit:
             quadrature_points=5,
         )
 
-        # Fit model
+        # Fit model (limited iterations for speed)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            result = model.fit(maxiter=30)
+            result = model.fit(maxiter=15)
 
         # Predict latent values
         y_latent = result.predict(pred_type="latent")
