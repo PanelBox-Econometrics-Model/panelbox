@@ -290,7 +290,11 @@ class TestLocationScaleWithRealData:
 
         # Check that scale parameters capture heteroskedasticity
         # X1 should have positive scale effect
-        assert model.scale_params_[1] > 0.5  # Should be close to 0.8
+        scale_params = model.scale_params_
+        if hasattr(scale_params, "iloc"):
+            assert scale_params.iloc[1] > 0.5  # Should be close to 0.8
+        else:
+            assert scale_params[1] > 0.5  # Should be close to 0.8
 
     def test_skewed_errors(self):
         """Test with skewed error distribution."""
