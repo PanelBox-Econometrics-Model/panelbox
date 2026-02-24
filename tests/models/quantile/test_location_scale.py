@@ -214,14 +214,14 @@ class TestLocationScale:
 
         # Check that quantile effects vary with tau
         tau_list = sorted(result.results.keys())
-        coef_var_1 = [result.results[tau].params[1] for tau in tau_list]
+        coef_var_1 = [result.results[tau].params.iloc[1] for tau in tau_list]
 
         # Coefficients should vary across quantiles
         assert np.std(coef_var_1) > 0.01
 
         # Middle quantile should be close to location parameter
-        median_coef = result.results[0.5].params[1]
-        location_coef = result.location_result.params[1]
+        median_coef = result.results[0.5].params.iloc[1]
+        location_coef = result.location_result.params.iloc[1]
         assert abs(median_coef - location_coef) < 0.1
 
     def test_covariance_estimation(self, simulated_data):

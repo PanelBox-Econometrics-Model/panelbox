@@ -95,8 +95,8 @@ class TestCSSIntegration:
 
         # Check parameter estimates are reasonable
         assert len(result.params) == 2  # x1, x2
-        assert 0.3 < result.params[0] < 0.7  # Approximately 0.5
-        assert 0.1 < result.params[1] < 0.5  # Approximately 0.3
+        assert 0.3 < result.params.iloc[0] < 0.7  # Approximately 0.5
+        assert 0.1 < result.params.iloc[1] < 0.5  # Approximately 0.3
 
     def test_css_model_linear_time_trend(self):
         """Test CSS model with linear time trend."""
