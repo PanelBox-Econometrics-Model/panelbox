@@ -76,7 +76,8 @@ class TestPPML:
         lambda_it = np.exp(linear_pred + error)
 
         # Clip lambda to avoid overflow in np.random.poisson on some platforms
-        lambda_it = np.clip(lambda_it, 0, 1e10)
+        # (numpy threshold varies across versions; 1e8 is safe everywhere)
+        lambda_it = np.clip(lambda_it, 0, 1e8)
 
         # Generate Poisson counts
         df["trade_flow"] = np.random.poisson(lambda_it)
