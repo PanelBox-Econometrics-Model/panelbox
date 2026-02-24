@@ -141,7 +141,10 @@ class TestRandomEffectsTobit:
     def test_predict_latent(self, simulated_data):
         """Test prediction of latent variable."""
         model = RandomEffectsTobit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
+            quadrature_points=5,
         )
 
         # Fit model
@@ -162,7 +165,10 @@ class TestRandomEffectsTobit:
     def test_predict_censored(self, simulated_data):
         """Test prediction accounting for censoring."""
         model = RandomEffectsTobit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
+            quadrature_points=5,
         )
 
         with warnings.catch_warnings():
