@@ -1,221 +1,324 @@
+---
+title: "API Reference"
+description: "Complete API reference for PanelBox — panel data econometrics in Python"
+---
+
 # API Reference
 
-Complete API documentation for PanelBox.
+PanelBox provides 70+ models, 50+ diagnostic tests, and interactive HTML reports for panel data econometrics. This reference documents every public class, function, and result container.
 
-## Overview
+## Quick Navigation
 
-PanelBox provides a comprehensive API for panel data econometrics organized into the following modules:
+| Module | Import Path | Key Classes |
+|--------|-------------|-------------|
+| [Core](core.md) | `panelbox.core` | `PanelData`, `PanelResults`, `SerializableMixin` |
+| [Static Models](static-models.md) | `panelbox.models.static` | `PooledOLS`, `FixedEffects`, `RandomEffects`, `BetweenEstimator`, `FirstDifferenceEstimator` |
+| [GMM](gmm.md) | `panelbox.gmm` | `DifferenceGMM`, `SystemGMM`, `ContinuousUpdatedGMM`, `BiasCorrectedGMM` |
+| [Spatial](spatial.md) | `panelbox.models.spatial` | `SpatialLag`, `SpatialError`, `SpatialDurbin`, `DynamicSpatialPanel`, `GeneralNestingSpatial` |
+| [Frontier](frontier.md) | `panelbox.frontier` | `StochasticFrontier`, `FourComponentSFA`, True FE/RE |
+| [Quantile](quantile.md) | `panelbox.models.quantile` | `PooledQuantile`, `FixedEffectsQuantile`, `CanayTwoStep`, `LocationScale` |
+| [VAR](var.md) | `panelbox.var` | `PanelVAR`, `PanelVECM`, `PanelVARData` |
+| [Discrete](discrete.md) | `panelbox.models.discrete` | `PooledLogit`, `PooledProbit`, `FixedEffectsLogit`, `MultinomialLogit`, `OrderedLogit` |
+| [Count](count.md) | `panelbox.models.count` | `PooledPoisson`, `NegativeBinomial`, `PPML`, `ZeroInflatedPoisson` |
+| [Censored & Selection](censored.md) | `panelbox.models.censored`, `.selection` | `PooledTobit`, `HonoreTrimmedEstimator`, `PanelHeckman` |
+| [IV](iv.md) | `panelbox.models.iv` | `PanelIV` |
+| [Standard Errors](standard-errors.md) | `panelbox.standard_errors` | `RobustStandardErrors`, `ClusteredStandardErrors`, `DriscollKraayStandardErrors` |
+| [Marginal Effects](marginal-effects.md) | `panelbox.marginal_effects` | `compute_ame`, `compute_mem`, `compute_mer` |
+| [Validation](validation.md) | `panelbox.validation` | `HausmanTest`, `WooldridgeARTest`, `ModifiedWaldTest`, `PesaranCDTest` |
+| [Diagnostics](diagnostics.md) | `panelbox.diagnostics` | `hadri_test`, `breitung_test`, `kao_test`, `pedroni_test` |
+| [Visualization](visualization.md) | `panelbox.visualization` | `ChartFactory`, `ChartRegistry`, themes |
+| [Report](report.md) | `panelbox.report` | `ReportManager`, `HTMLExporter`, `LaTeXExporter` |
+| [Experiment](experiment.md) | `panelbox.experiment` | `PanelExperiment`, result containers |
+| [Datasets](datasets.md) | `panelbox.datasets` | `load_grunfeld`, `load_abdata`, `list_datasets` |
 
-### 📊 [Static Models](models.md)
+## Module Categories
 
-Panel models without dynamics:
+### Data & Infrastructure
 
-- **PooledOLS**: Pooled Ordinary Least Squares
-- **FixedEffects**: Fixed Effects (Within) estimator
-- **RandomEffects**: Random Effects (GLS) estimator
-- **Between**: Between estimator (entity means)
-- **FirstDifferences**: First Differences estimator
+<div class="grid cards" markdown>
 
-### 🔄 [GMM Models](gmm.md)
+-   **[Core](core.md)**
 
-Dynamic panel GMM estimators:
+    ---
 
-- **DifferenceGMM**: Arellano-Bond Difference GMM (1991)
-- **SystemGMM**: Blundell-Bond System GMM (1998)
+    `PanelData` container, `PanelResults` base class, serialization, formula parsing.
 
-### 📈 [Results](results.md)
+    `from panelbox.core import PanelData, PanelResults`
 
-Results container class:
+-   **[Datasets](datasets.md)**
 
-- **PanelResults**: Estimation results with summary, tests, export
+    ---
 
-### ✅ [Validation](validation.md)
+    Built-in example datasets for learning and testing.
 
-Diagnostic and specification tests:
+    `from panelbox.datasets import load_grunfeld, load_abdata`
 
-- **HausmanTest**: Fixed Effects vs Random Effects
-- **BreuschPaganLM**: Random effects test
-- **BreuschPaganTest**: Heteroskedasticity test
-- **WooldridgeTest**: Serial correlation test
-- **Hansen J, Sargan**: GMM overidentification tests
-- **AR tests**: GMM serial correlation tests
+</div>
 
-### 📦 [Datasets](datasets.md)
+### Linear Models
 
-Example datasets for learning and testing:
+<div class="grid cards" markdown>
 
-- **load_grunfeld()**: Grunfeld investment data
-- **load_abdata()**: Arellano-Bond employment data
-- **list_datasets()**: List available datasets
-- **get_dataset_info()**: Dataset information
+-   **[Static Models](static-models.md)**
 
-### 📋 [Report](report.md)
+    ---
 
-Reporting and export utilities:
+    Pooled OLS, Fixed Effects, Random Effects, Between, First Difference.
 
-- **PanelExperiment**: High-level API for panel data analysis (NEW in v0.8.0)
-- **ValidationResult**: Container for validation test results with HTML export (NEW in v0.8.0)
-- **ComparisonResult**: Container for model comparison with HTML export (NEW in v0.8.0)
-- **ResidualResult**: Container for residual diagnostics with HTML export (NEW in v0.7.0)
-- **ValidationTest**: Test runner with configurable presets (NEW in v0.8.0)
-- **ComparisonTest**: Multi-model comparison runner (NEW in v0.8.0)
-- **to_latex()**: Export to LaTeX tables
-- **summary()**: Formatted summary tables
-- **save_html()**: Generate interactive HTML reports (NEW in v0.8.0)
-- **save_master_report()**: Generate master report with navigation (NEW in v0.8.0)
+    `from panelbox.models.static import FixedEffects`
 
-## Quick Links
+-   **[IV](iv.md)**
 
-| Topic | API Documentation |
-|-------|-------------------|
-| Estimate Fixed Effects | [FixedEffects](models.md#fixedeffects) |
-| Estimate Random Effects | [RandomEffects](models.md#randomeffects) |
-| Run Hausman Test | [HausmanTest](validation.md#hausmantest) |
-| Estimate Difference GMM | [DifferenceGMM](gmm.md#differencegmm) |
-| Estimate System GMM | [SystemGMM](gmm.md#systemgmm) |
-| Check Hansen J Test | [Results](results.md#hansen-j-test) |
-| Load Example Data | [load_grunfeld](datasets.md#load_grunfeld) |
-| Export to LaTeX | [to_latex](report.md#to_latex) |
-| Create Experiment | [PanelExperiment](report.md#panelexperiment) |
-| Validate Model | [ValidationTest](report.md#validationtest) |
-| Compare Models | [ComparisonTest](report.md#comparisontest) |
-| Generate HTML Report | [save_html](report.md#save_html) |
-| Master Report | [save_master_report](report.md#save_master_report) |
+    ---
 
-## Usage Patterns
+    Instrumental Variables / 2SLS for endogenous regressors.
 
-### Basic Workflow
+    `from panelbox.models.iv import PanelIV`
+
+</div>
+
+### Dynamic Models
+
+<div class="grid cards" markdown>
+
+-   **[GMM](gmm.md)**
+
+    ---
+
+    Arellano-Bond, Blundell-Bond, CUE-GMM, Bias-Corrected GMM.
+
+    `from panelbox.gmm import DifferenceGMM, SystemGMM`
+
+-   **[VAR](var.md)**
+
+    ---
+
+    Panel VAR, VECM, impulse responses, Granger causality, forecasting.
+
+    `from panelbox.var import PanelVAR, PanelVECM`
+
+</div>
+
+### Spatial Models
+
+<div class="grid cards" markdown>
+
+-   **[Spatial](spatial.md)**
+
+    ---
+
+    SAR, SEM, SDM, Dynamic Spatial, GNS with direct/indirect effects.
+
+    `from panelbox.models.spatial import SpatialLag, SpatialDurbin`
+
+</div>
+
+### Nonlinear Models
+
+<div class="grid cards" markdown>
+
+-   **[Discrete Choice](discrete.md)**
+
+    ---
+
+    Logit, Probit, FE Logit, Multinomial, Conditional, Ordered models.
+
+    `from panelbox.models.discrete import PooledLogit, MultinomialLogit`
+
+-   **[Count](count.md)**
+
+    ---
+
+    Poisson, Negative Binomial, PPML, Zero-Inflated models.
+
+    `from panelbox.models.count import PooledPoisson, PPML`
+
+-   **[Censored & Selection](censored.md)**
+
+    ---
+
+    Tobit, Honore trimmed estimator, Heckman selection correction.
+
+    `from panelbox.models.censored import PooledTobit`
+
+-   **[Frontier](frontier.md)**
+
+    ---
+
+    Stochastic Frontier Analysis, Four-Component SFA, True FE/RE.
+
+    `from panelbox.frontier import StochasticFrontier`
+
+-   **[Quantile](quantile.md)**
+
+    ---
+
+    Pooled, FE, Canay, Location-Scale, Dynamic quantile regression.
+
+    `from panelbox.models.quantile import PooledQuantile`
+
+</div>
+
+### Inference & Diagnostics
+
+<div class="grid cards" markdown>
+
+-   **[Standard Errors](standard-errors.md)**
+
+    ---
+
+    Robust, clustered, Driscoll-Kraay, Newey-West, PCSE, Spatial HAC.
+
+    `from panelbox.standard_errors import robust_covariance, driscoll_kraay`
+
+-   **[Marginal Effects](marginal-effects.md)**
+
+    ---
+
+    Average, at-mean, and at-representative marginal effects.
+
+    `from panelbox.marginal_effects import compute_ame`
+
+-   **[Validation](validation.md)**
+
+    ---
+
+    Hausman, Mundlak, Wooldridge AR, Breusch-Pagan, Pesaran CD, unit roots.
+
+    `from panelbox.validation import HausmanTest, WooldridgeARTest`
+
+-   **[Diagnostics](diagnostics.md)**
+
+    ---
+
+    Unit root, cointegration, specification, spatial diagnostics.
+
+    `from panelbox.diagnostics.unit_root import hadri_test`
+
+</div>
+
+### Reporting & Workflow
+
+<div class="grid cards" markdown>
+
+-   **[Visualization](visualization.md)**
+
+    ---
+
+    28+ chart types with Plotly, professional/academic/presentation themes.
+
+    `from panelbox.visualization import ChartFactory`
+
+-   **[Report](report.md)**
+
+    ---
+
+    HTML, LaTeX, and Markdown export with interactive reports.
+
+    `from panelbox.report import ReportManager`
+
+-   **[Experiment](experiment.md)**
+
+    ---
+
+    Factory-based model management with automated validation.
+
+    `from panelbox import PanelExperiment`
+
+</div>
+
+## Common Patterns
+
+### Model Estimation
+
+All model classes follow a consistent `model.fit()` pattern:
+
+```python
+from panelbox import FixedEffects
+
+# Create model
+model = FixedEffects("y ~ x1 + x2", data, entity_col="firm", time_col="year")
+
+# Fit with default standard errors
+result = model.fit()
+
+# Fit with robust standard errors
+result = model.fit(cov_type="robust")
+
+# Fit with clustered standard errors
+result = model.fit(cov_type="clustered")
+
+# View results
+print(result.summary())
+```
+
+### Result Objects
+
+All estimation results inherit from `PanelResults` and share common attributes:
+
+```python
+result.params        # Coefficient estimates (pd.Series)
+result.std_errors    # Standard errors (pd.Series)
+result.tstats        # t-statistics (pd.Series)
+result.pvalues       # p-values (pd.Series)
+result.conf_int()    # Confidence intervals (pd.DataFrame)
+result.rsquared      # R-squared
+result.nobs          # Number of observations
+result.summary()     # Formatted summary table
+```
+
+### Top-Level Imports
+
+The most common classes are available directly from the `panelbox` namespace:
 
 ```python
 import panelbox as pb
 
-# 1. Load data
-data = pb.load_grunfeld()
+# Core
+pb.PanelData, pb.PanelResults
 
-# 2. Create model
-model = pb.FixedEffects(
-    formula="invest ~ value + capital",
-    data=data,
-    entity_col="firm",
-    time_col="year"
-)
+# Static models
+pb.PooledOLS, pb.FixedEffects, pb.RandomEffects
 
-# 3. Fit model
-results = model.fit(cov_type='clustered')
+# GMM
+pb.DifferenceGMM, pb.SystemGMM
 
-# 4. View results
-print(results.summary())
+# Datasets
+pb.load_grunfeld(), pb.load_abdata()
 
-# 5. Export
-results.to_latex("table1.tex")
+# Experiment
+pb.PanelExperiment
 ```
 
-### Advanced Workflow (GMM)
-
-```python
-# 1. Load data
-data = pb.load_grunfeld()
-
-# 2. Create GMM model
-gmm = pb.SystemGMM(
-    data=data,
-    dep_var='invest',
-    lags=1,
-    exog_vars=['value', 'capital'],
-    id_var='firm',
-    time_var='year',
-    collapse=True,
-    robust=True
-)
-
-# 3. Fit
-results = gmm.fit()
-
-# 4. Check diagnostics
-print(f"Hansen J: {results.hansen_j.pvalue:.3f}")
-print(f"AR(2): {results.ar2_test.pvalue:.3f}")
-
-# 5. If tests pass, view results
-if results.hansen_j.pvalue > 0.10 and results.ar2_test.pvalue > 0.10:
-    print(results.summary())
-```
-
-### Complete Workflow with Reports (NEW in v0.8.0)
+### Complete Workflow Example
 
 ```python
 import panelbox as pb
 
-# 1. Load data
+# Load data
 data = pb.load_grunfeld()
 
-# 2. Create experiment
-experiment = pb.PanelExperiment(
-    data=data,
-    formula="invest ~ value + capital",
-    entity_col="firm",
-    time_col="year"
-)
+# Estimate models
+fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
+re = pb.RandomEffects("invest ~ value + capital", data, "firm", "year")
+fe_result = fe.fit(cov_type="robust")
+re_result = re.fit()
 
-# 3. Fit multiple models
-experiment.fit_model('pooled_ols', name='ols')
-experiment.fit_model('fixed_effects', name='fe')
-experiment.fit_model('random_effects', name='re')
+# Hausman test: FE vs RE
+from panelbox.validation import HausmanTest
+hausman = HausmanTest()
+h_result = hausman.run(fe_result, re_result)
+print(h_result.summary())
 
-# 4. Generate validation report
-validation = experiment.validate_model('fe', config='full')
-validation.save_html('validation.html', test_type='validation', theme='professional')
-
-# 5. Generate comparison report
-comparison = experiment.compare_models(['ols', 'fe', 're'])
-comparison.save_html('comparison.html', test_type='comparison', theme='professional')
-
-# 6. Generate residual diagnostics
-residuals = experiment.analyze_residuals('fe')
-residuals.save_html('residuals.html', test_type='residuals', theme='professional')
-
-# 7. Generate master report
-experiment.save_master_report('master.html', theme='professional', reports=[
-    {'type': 'validation', 'title': 'Model Validation',
-     'description': 'Specification tests', 'file_path': 'validation.html'},
-    {'type': 'comparison', 'title': 'Model Comparison',
-     'description': 'Compare OLS, FE, RE', 'file_path': 'comparison.html'},
-    {'type': 'residuals', 'title': 'Residual Diagnostics',
-     'description': 'Diagnostic plots', 'file_path': 'residuals.html'}
-])
-
-# Open master.html in your browser!
+# Generate report
+experiment = pb.PanelExperiment(data, "invest ~ value + capital", "firm", "year")
+experiment.fit_all_models(names=["fe", "re"])
+experiment.save_master_report("panel_analysis.html")
 ```
 
-## Module Organization
+## See Also
 
-```
-panelbox/
-├── models/
-│   ├── static/
-│   │   ├── pooled_ols.py      → PooledOLS
-│   │   ├── fixed_effects.py   → FixedEffects
-│   │   ├── random_effects.py  → RandomEffects
-│   │   ├── between.py         → Between
-│   │   └── first_differences.py → FirstDifferences
-│   └── base.py                → PanelModel (base class)
-├── gmm/
-│   ├── difference_gmm.py      → DifferenceGMM
-│   └── system_gmm.py          → SystemGMM
-├── core/
-│   └── results.py             → PanelResults
-├── validation/
-│   ├── specification/
-│   │   ├── hausman.py         → HausmanTest
-│   │   └── breusch_pagan_lm.py → BreuschPaganLM
-│   └── ...
-├── datasets/
-│   └── load.py                → load_grunfeld, etc.
-└── report/
-    └── latex.py               → LaTeX export
-```
-
-## Next Steps
-
-- Browse specific API documentation in the navigation
-- See [Tutorials](../tutorials/01_getting_started.md) for hands-on examples
-- Check [How-To Guides](../how-to/choose_model.md) for task-oriented help
+- [Getting Started Guide](../getting-started/index.md) — Installation and first steps
+- [Tutorials](../tutorials/index.md) — Step-by-step guides for each model family
+- [Theory](../theory/panel-fundamentals.md) — Econometric theory and derivations
+- [FAQ](../faq/general.md) — Frequently asked questions

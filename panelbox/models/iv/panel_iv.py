@@ -563,22 +563,24 @@ class PanelIV(PanelModel):
             df = self._get_dataframe()
             entity_index = df[self.data.entity_col].values
             cluster_id = cov_kwds.get("cluster", entity_index)
-            cov_params = cluster_by_entity(X, residuals, cluster_id)
+            result = cluster_by_entity(X, residuals, cluster_id)
+            cov_params = result.cov_matrix
 
         elif cov_type == "twoway":
             # Two-way clustering
             df = self._get_dataframe()
             entity_index = df[self.data.entity_col].values
             time_index = df[self.data.time_col].values
-            cov_params = twoway_cluster(X, residuals, entity_index, time_index)
+            result = twoway_cluster(X, residuals, entity_index, time_index)
+            cov_params = result.cov_matrix
 
         elif cov_type == "driscoll_kraay":
             # Driscoll-Kraay
             df = self._get_dataframe()
-            entity_index = df[self.data.entity_col].values
             time_index = df[self.data.time_col].values
             maxlags = cov_kwds.get("maxlags")
-            cov_params = driscoll_kraay(X, residuals, entity_index, time_index, max_lags=maxlags)
+            result = driscoll_kraay(X, residuals, time_index, max_lags=maxlags)
+            cov_params = result.cov_matrix
 
         else:
             raise ValueError(f"Unknown covariance type: {cov_type}")

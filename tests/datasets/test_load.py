@@ -275,3 +275,112 @@ class TestIntegration:
 
         # Should have same columns (panel may have extra index cols)
         assert set(df.columns).issubset(set(panel.data.columns))
+
+
+class TestUncoveredBranches:
+    """Tests for uncovered branches in load.py."""
+
+    def test_load_abdata_missing_file_returns_none(self, tmp_path, monkeypatch):
+        """Test load_abdata returns None when the CSV file does not exist (line 188)."""
+        # Monkeypatch _get_data_path to return a directory without abdata.csv
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+        result = load_abdata()
+        assert result is None
+
+    def test_list_datasets_missing_data_dir(self, tmp_path, monkeypatch):
+        """Test list_datasets when data directory doesn't exist (line 223->229)."""
+        nonexistent = str(tmp_path / "no_such_dir")
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: nonexistent)
+        datasets = list_datasets()
+        assert datasets == []
+
+    def test_list_datasets_empty_dir(self, tmp_path, monkeypatch):
+        """Test list_datasets when data directory exists but has no CSVs (line 225->224)."""
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+        datasets = list_datasets()
+        assert datasets == []
+
+    def test_get_dataset_info_for_arbitrary_csv(self, tmp_path, monkeypatch):
+        """Test get_dataset_info for a CSV that isn't grunfeld or abdata (line 302)."""
+        # Create a test CSV in the data directory
+        csv_path = tmp_path / "testdata.csv"
+        test_df = pd.DataFrame(
+            {
+                "entity_id": [1, 1, 2, 2],
+                "period": [1, 2, 1, 2],
+                "value": [10.0, 20.0, 30.0, 40.0],
+            }
+        )
+        test_df.to_csv(csv_path, index=False)
+
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+
+        info = get_dataset_info("testdata")
+        assert isinstance(info, dict)
+        assert info["name"] == "testdata"
+        assert "n_obs" in info
+        assert info["n_obs"] == 4
+        assert "variables" in info
+        assert "entity_id" in info["variables"]
+
+    def test_get_dataset_info_nonexistent_csv_returns_base(self, tmp_path, monkeypatch):
+        """Test get_dataset_info returns base info when dataset not found (line 304)."""
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+
+        info = get_dataset_info("totally_missing")
+        assert isinstance(info, dict)
+        assert info["name"] == "totally_missing"
+        assert info["description"] == "Unknown dataset"
+        # Should not have statistics since file doesn't exist
+        assert "n_obs" not in info
+
+    def test_get_dataset_info_exception_handling(self, tmp_path, monkeypatch):
+        """Test get_dataset_info catches exceptions (lines 319-320)."""
+        # Create a corrupted/invalid CSV
+        bad_csv = tmp_path / "baddata.csv"
+        bad_csv.write_text("col1,col2\n1,2\n")
+
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+
+        # Monkeypatch pd.read_csv to raise for this specific call path
+        original_read_csv = pd.read_csv
+
+        def failing_read_csv(path, *args, **kwargs):
+            if "baddata" in str(path):
+                raise RuntimeError("Simulated read error")
+            return original_read_csv(path, *args, **kwargs)
+
+        monkeypatch.setattr("panelbox.datasets.load.pd.read_csv", failing_read_csv)
+
+        info = get_dataset_info("baddata")
+        assert isinstance(info, dict)
+        assert "error" in info
+        assert "Simulated read error" in info["error"]
+
+    def test_load_dataset_arbitrary_csv(self, tmp_path, monkeypatch):
+        """Test load_dataset for a CSV that isn't grunfeld/abdata (line 350)."""
+        csv_path = tmp_path / "custom.csv"
+        test_df = pd.DataFrame(
+            {
+                "x": [1, 2, 3],
+                "y": [4, 5, 6],
+            }
+        )
+        test_df.to_csv(csv_path, index=False)
+
+        monkeypatch.setattr("panelbox.datasets.load._get_data_path", lambda: str(tmp_path))
+
+        result = load_dataset("custom")
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 3
+        assert list(result.columns) == ["x", "y"]
+
+    def test_load_abdata_panel_data_infers_columns(self):
+        """Test load_abdata with return_panel_data=True infers entity/time cols (line 195)."""
+        data = load_abdata(return_panel_data=True)
+        if data is not None:
+            assert isinstance(data, PanelData)
+            # abdata has 'id' column -> entity_col should be 'id'
+            assert data.entity_col == "id"
+            # abdata has 'year' column -> time_col should be 'year'
+            assert data.time_col == "year"

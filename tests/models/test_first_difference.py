@@ -332,5 +332,162 @@ class TestFirstDifferenceEstimator:
         assert "x1" in results.params.index
 
 
+class TestFirstDifferenceCoverageBatch4:
+    """Additional tests targeting uncovered branches in first_difference.py."""
+
+    @pytest.fixture
+    def simple_panel_data(self):
+        """Create simple balanced panel dataset for testing."""
+        np.random.seed(42)
+        n_entities = 10
+        n_periods = 5
+
+        entities = np.repeat(range(n_entities), n_periods)
+        times = np.tile(range(n_periods), n_entities)
+
+        entity_effects = np.repeat(np.arange(n_entities) * 5, n_periods)
+        x1 = np.random.normal(10, 2, n_entities * n_periods)
+        x2 = np.random.normal(5, 1, n_entities * n_periods)
+        y = (
+            2
+            + 0.5 * x1
+            + 1.5 * x2
+            + entity_effects
+            + np.random.normal(0, 1, n_entities * n_periods)
+        )
+
+        data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+        return data
+
+    def test_formula_without_intercept(self, simple_panel_data):
+        """Test FD when formula explicitly excludes intercept (no Intercept in var_names).
+
+        Covers line 257->263: the branch where 'Intercept' is NOT in var_names.
+        """
+        # Use a formula that suppresses the intercept via patsy syntax
+        model = FirstDifferenceEstimator("y ~ x1 + x2 - 1", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="nonrobust")
+
+        assert isinstance(results, PanelResults)
+        assert "Intercept" not in results.params.index
+        assert len(results.params) == 2  # x1, x2
+        assert "x1" in results.params.index
+        assert "x2" in results.params.index
+
+    def test_insufficient_obs_after_differencing(self):
+        """Test ValueError when too few observations remain after differencing.
+
+        Covers line 276: raise ValueError for n_obs_differenced < k.
+        """
+        # Create data where after differencing we have fewer obs than parameters
+        # 1 entity with 2 periods -> 1 difference, but 3+ variables
+        data = pd.DataFrame(
+            {
+                "entity": [0, 0],
+                "time": [0, 1],
+                "y": [1.0, 2.0],
+                "x1": [1.0, 2.0],
+                "x2": [3.0, 4.0],
+                "x3": [5.0, 6.0],
+            }
+        )
+
+        model = FirstDifferenceEstimator("y ~ x1 + x2 + x3", data, "entity", "time")
+
+        with pytest.raises(ValueError, match="Insufficient observations after differencing"):
+            model.fit()
+
+    def test_insufficient_degrees_of_freedom(self):
+        """Test ValueError when df_resid <= 0.
+
+        Covers line 292: raise ValueError for df_resid <= 0.
+        """
+        # 2 entities with 2 periods each -> 2 differences, 2 variables -> df = 0
+        data = pd.DataFrame(
+            {
+                "entity": [0, 0, 1, 1],
+                "time": [0, 1, 0, 1],
+                "y": [1.0, 2.0, 3.0, 4.0],
+                "x1": [1.0, 3.0, 2.0, 5.0],
+                "x2": [2.0, 4.0, 3.0, 6.0],
+            }
+        )
+
+        model = FirstDifferenceEstimator("y ~ x1 + x2", data, "entity", "time")
+
+        with pytest.raises(ValueError, match="Insufficient degrees of freedom"):
+            model.fit()
+
+    def test_pcse_covariance_type(self, simple_panel_data):
+        """Test fitting with PCSE standard errors.
+
+        Covers lines 349-350: pcse covariance type branch.
+        """
+        model = FirstDifferenceEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="pcse")
+
+        assert isinstance(results, PanelResults)
+        assert results.cov_type == "pcse"
+        assert len(results.params) == 2
+
+    def test_predict_no_newdata(self, simple_panel_data):
+        """Test predict() with no arguments returns fitted values.
+
+        Covers line 436: if newdata is None: return fittedvalues.
+        """
+        model = FirstDifferenceEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Call predict with no newdata
+        predicted = results.predict()
+
+        # Should return the fitted values
+        np.testing.assert_array_equal(predicted, results.fittedvalues)
+
+    def test_predict_with_newdata(self, simple_panel_data):
+        """Test predict() with new data applies first-differencing.
+
+        Covers the predict with newdata path (lines 438-459).
+        """
+        model = FirstDifferenceEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Use original data as newdata to test the prediction path
+        predicted = results.predict(newdata=simple_panel_data)
+
+        # Should return predictions for differenced observations
+        # (first period per entity is dropped)
+        assert len(predicted) == 40  # 10 entities * (5-1) differences
+        assert not np.any(np.isnan(predicted))
+
+    def test_predict_with_newdata_no_parser(self, simple_panel_data):
+        """Test predict() when formula_parser is None.
+
+        Covers lines 445-447: if parser is None, reconstruct FormulaParser.
+        """
+        model = FirstDifferenceEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Force formula_parser to None to trigger fallback
+        results._formula_parser = None
+
+        predicted = results.predict(newdata=simple_panel_data)
+
+        # Should still produce valid predictions
+        assert len(predicted) == 40
+        assert not np.any(np.isnan(predicted))
+
+    def test_estimate_coefficients_no_intercept_formula(self, simple_panel_data):
+        """Test _estimate_coefficients with formula that has no intercept.
+
+        Covers lines 574->578: the branch where has_intercept is False.
+        """
+        model = FirstDifferenceEstimator("y ~ x1 + x2 - 1", simple_panel_data, "entity", "time")
+        coeffs = model._estimate_coefficients()
+
+        assert isinstance(coeffs, np.ndarray)
+        assert len(coeffs) == 2
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

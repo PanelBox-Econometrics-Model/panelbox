@@ -179,3 +179,31 @@ class TestWooldridgeAR:
         # Should raise AttributeError about missing indices
         with pytest.raises(AttributeError, match="entity_index"):
             test.run()
+
+    def test_no_valid_observations_after_differencing(self, balanced_panel_data):
+        """Test ValueError when all observations are NaN after differencing (line 246)."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        test = WooldridgeARTest(results)
+
+        # Create residual data where residuals are NaN so that
+        # diff() and shift() produce all NaN, and dropna removes everything.
+        # T=3 per entity passes the min_T >= 3 check.
+        nan_resid_df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 2, 2, 2],
+                "time": [1, 2, 3, 1, 2, 3],
+                "resid": [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            }
+        )
+
+        with (
+            patch.object(type(test), "_prepare_residual_data", return_value=nan_resid_df),
+            pytest.raises(ValueError, match="No valid observations after differencing"),
+        ):
+            test.run()

@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from panelbox.diagnostics.cointegration import KaoResult, kao_test
+from panelbox.validation.cointegration.kao import KaoTest, KaoTestResult
 
 
 @pytest.fixture
@@ -311,3 +312,327 @@ class TestKaoVsPedroni:
         # Both should produce valid results
         assert not np.isnan(kao_result.statistic["ADF"])
         assert not np.isnan(pedroni_result.statistic["panel_ADF"])
+
+
+# ---------------------------------------------------------------------------
+# Tests for panelbox.validation.cointegration.kao.KaoTest class
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def kao_coint_panel():
+    """Generate cointegrated panel data for KaoTest (validation module)."""
+    np.random.seed(789)
+    N = 10
+    T = 60
+    beta = 2.0
+
+    rows = []
+    for i in range(N):
+        x = np.cumsum(np.random.randn(T))
+        eps = 0.4 * np.random.randn(T)
+        y = beta * x + eps
+        for t in range(T):
+            rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+    return pd.DataFrame(rows)
+
+
+@pytest.fixture
+def kao_non_coint_panel():
+    """Generate non-cointegrated panel data for KaoTest."""
+    np.random.seed(321)
+    N = 10
+    T = 60
+
+    rows = []
+    for i in range(N):
+        y = np.cumsum(np.random.randn(T))
+        x = np.cumsum(np.random.randn(T))
+        for t in range(T):
+            rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+    return pd.DataFrame(rows)
+
+
+class TestKaoTestClass:
+    """Tests for the KaoTest class in validation.cointegration.kao."""
+
+    def test_basic_run_constant(self, kao_coint_panel):
+        """Test basic run() with constant trend."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="c",
+        )
+        result = test.run()
+
+        assert isinstance(result, KaoTestResult)
+        assert np.isfinite(result.statistic)
+        assert 0.0 <= result.pvalue <= 1.0
+        assert result.n_entities == 10
+        assert result.n_obs > 0
+        assert result.trend == "Constant"
+
+    def test_run_with_trend_ct(self, kao_coint_panel):
+        """Test run() with constant + trend."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="ct",
+        )
+        result = test.run()
+
+        assert isinstance(result, KaoTestResult)
+        assert result.trend == "Constant and Trend"
+        assert np.isfinite(result.statistic)
+        assert 0.0 <= result.pvalue <= 1.0
+
+    def test_run_multiple_independents(self, kao_coint_panel):
+        """Test run() with multiple independent variables."""
+        data = kao_coint_panel.copy()
+        np.random.seed(99)
+        data["x2"] = data["x"] * 0.5 + np.random.randn(len(data)) * 0.2
+        test = KaoTest(
+            data=data,
+            dependent="y",
+            independents=["x", "x2"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        assert isinstance(result, KaoTestResult)
+        assert np.isfinite(result.statistic)
+
+    def test_non_cointegrated_data(self, kao_non_coint_panel):
+        """Test with non-cointegrated data."""
+        test = KaoTest(
+            data=kao_non_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        assert isinstance(result, KaoTestResult)
+        assert np.isfinite(result.statistic)
+
+    def test_result_stored(self, kao_coint_panel):
+        """Test that result is stored on the test object."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        assert test.result is None
+        result = test.run()
+        assert test.result is result
+
+
+class TestKaoTestValidation:
+    """Test input validation for KaoTest."""
+
+    def test_missing_dependent(self, kao_coint_panel):
+        """Test error when dependent variable is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            KaoTest(
+                data=kao_coint_panel,
+                dependent="nonexistent",
+                independents=["x"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_missing_independent(self, kao_coint_panel):
+        """Test error when independent variable is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            KaoTest(
+                data=kao_coint_panel,
+                dependent="y",
+                independents=["nonexistent"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_missing_entity_col(self, kao_coint_panel):
+        """Test error when entity column is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            KaoTest(
+                data=kao_coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="bad_entity",
+                time_col="time",
+            )
+
+    def test_missing_time_col(self, kao_coint_panel):
+        """Test error when time column is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            KaoTest(
+                data=kao_coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="entity",
+                time_col="bad_time",
+            )
+
+    def test_invalid_trend(self, kao_coint_panel):
+        """Test error for invalid trend specification."""
+        with pytest.raises(ValueError, match="trend must be"):
+            KaoTest(
+                data=kao_coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="entity",
+                time_col="time",
+                trend="invalid",
+            )
+
+    def test_string_independent_converted_to_list(self, kao_coint_panel):
+        """Test that a single string independent is converted to list."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents="x",
+            entity_col="entity",
+            time_col="time",
+        )
+        assert test.independents == ["x"]
+
+
+class TestKaoTestResultDisplay:
+    """Test KaoTestResult display methods."""
+
+    def test_str_representation(self, kao_coint_panel):
+        """Test __str__ method of KaoTestResult."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        result_str = str(result)
+        assert "Kao Panel Cointegration Test" in result_str
+        assert "ADF statistic:" in result_str
+        assert "P-value:" in result_str
+        assert "Observations:" in result_str
+        assert "Cross-sections:" in result_str
+        assert "H0: No cointegration" in result_str
+        assert "H1: Cointegration exists" in result_str
+        assert "Conclusion:" in result_str
+
+    def test_conclusion_reject(self):
+        """Test conclusion when pvalue < 0.05."""
+        result = KaoTestResult(
+            statistic=-3.5,
+            pvalue=0.001,
+            n_obs=500,
+            n_entities=10,
+            trend="Constant",
+        )
+        assert "Reject H0" in result.conclusion
+        assert "Evidence of cointegration" in result.conclusion
+
+    def test_conclusion_fail_to_reject(self):
+        """Test conclusion when pvalue >= 0.05."""
+        result = KaoTestResult(
+            statistic=-0.5,
+            pvalue=0.30,
+            n_obs=500,
+            n_entities=10,
+            trend="Constant",
+        )
+        assert "Fail to reject H0" in result.conclusion
+        assert "No evidence of cointegration" in result.conclusion
+
+    def test_str_with_trend_ct(self, kao_coint_panel):
+        """Test __str__ with constant and trend specification."""
+        test = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="ct",
+        )
+        result = test.run()
+        result_str = str(result)
+        assert "Constant and Trend" in result_str
+
+    def test_default_hypotheses(self):
+        """Test default null and alternative hypothesis strings."""
+        result = KaoTestResult(
+            statistic=-2.0,
+            pvalue=0.05,
+            n_obs=100,
+            n_entities=5,
+            trend="Constant",
+        )
+        assert result.null_hypothesis == "No cointegration"
+        assert result.alternative_hypothesis == "Cointegration exists"
+
+
+class TestKaoTestEdgeCases:
+    """Edge cases for KaoTest."""
+
+    def test_small_panel(self):
+        """Test with small panel dimensions."""
+        np.random.seed(42)
+        N, T = 3, 20
+        rows = []
+        for i in range(N):
+            x = np.cumsum(np.random.randn(T))
+            y = 2.0 * x + 0.5 * np.random.randn(T)
+            for t in range(T):
+                rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+        data = pd.DataFrame(rows)
+        test = KaoTest(
+            data=data,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        assert isinstance(result, KaoTestResult)
+        assert np.isfinite(result.statistic)
+
+    def test_both_trends_produce_different_results(self, kao_coint_panel):
+        """Test that different trend specs produce different statistics."""
+        test_c = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="c",
+        )
+        result_c = test_c.run()
+
+        test_ct = KaoTest(
+            data=kao_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="ct",
+        )
+        result_ct = test_ct.run()
+
+        # Different trend specs should produce different statistics
+        assert result_c.statistic != result_ct.statistic

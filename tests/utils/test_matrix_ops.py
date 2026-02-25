@@ -184,3 +184,23 @@ class TestIntegration:
 
         # Check that it runs without error
         assert beta.shape[0] == 2
+
+
+class TestComputeOLS2DWithWeights:
+    """Test compute_ols when y is already 2D and weights are provided."""
+
+    def test_compute_ols_2d_y_with_weights(self):
+        """Test WLS with y already shaped as 2D column vector (branch 87->90)."""
+        X = np.array([[1, 1], [1, 2], [1, 3], [1, 4]])
+        y_2d = np.array([[1], [2], [3], [4]])  # Already 2D
+        weights = np.array([1.0, 1.0, 1.0, 1.0])
+
+        beta, resid, fitted = compute_ols(y_2d, X, weights)
+
+        # With equal weights, should match unweighted OLS
+        beta_unweighted, _, _ = compute_ols(y_2d, X)
+
+        assert np.allclose(beta, beta_unweighted)
+        assert beta.shape == (2, 1)
+        assert resid.shape == (4,)
+        assert fitted.shape == (4,)

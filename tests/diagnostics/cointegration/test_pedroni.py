@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from panelbox.diagnostics.cointegration import PedroniResult, pedroni_test
+from panelbox.validation.cointegration.pedroni import PedroniTest, PedroniTestResult
 
 
 @pytest.fixture
@@ -295,3 +296,368 @@ class TestPedroniComparison:
 
         # They should be different (not identical)
         assert result.statistic["panel_rho"] != result.statistic["group_rho"]
+
+
+# ---------------------------------------------------------------------------
+# Tests for panelbox.validation.cointegration.pedroni.PedroniTest class
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def coint_panel():
+    """Generate cointegrated panel data for PedroniTest (validation module)."""
+    np.random.seed(42)
+    N = 10
+    T = 50
+    beta = 1.5
+
+    rows = []
+    for i in range(N):
+        x = np.cumsum(np.random.randn(T))
+        eps = 0.3 * np.random.randn(T)
+        y = beta * x + eps
+        for t in range(T):
+            rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+    return pd.DataFrame(rows)
+
+
+@pytest.fixture
+def non_coint_panel():
+    """Generate non-cointegrated panel data for PedroniTest."""
+    np.random.seed(456)
+    N = 10
+    T = 50
+
+    rows = []
+    for i in range(N):
+        y = np.cumsum(np.random.randn(T))
+        x = np.cumsum(np.random.randn(T))
+        for t in range(T):
+            rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+    return pd.DataFrame(rows)
+
+
+class TestPedroniTestClass:
+    """Tests for the PedroniTest class in validation.cointegration.pedroni."""
+
+    def test_basic_run(self, coint_panel):
+        """Test basic run() with constant trend."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="c",
+        )
+        result = test.run()
+
+        assert isinstance(result, PedroniTestResult)
+        assert np.isfinite(result.panel_v)
+        assert np.isfinite(result.panel_rho)
+        assert np.isfinite(result.panel_pp)
+        assert np.isfinite(result.panel_adf)
+        assert np.isfinite(result.group_rho)
+        assert np.isfinite(result.group_pp)
+        assert np.isfinite(result.group_adf)
+        assert result.n_entities == 10
+        assert result.n_obs > 0
+        assert result.trend == "Constant"
+
+    def test_run_with_trend_ct(self, coint_panel):
+        """Test run() with constant + trend."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="ct",
+        )
+        result = test.run()
+
+        assert isinstance(result, PedroniTestResult)
+        assert result.trend == "Constant and Trend"
+        assert np.isfinite(result.panel_pp)
+
+    def test_run_with_lags(self, coint_panel):
+        """Test run() with explicit lags parameter."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            lags=3,
+        )
+        result = test.run()
+
+        assert isinstance(result, PedroniTestResult)
+        assert np.isfinite(result.panel_adf)
+
+    def test_run_multiple_independents(self, coint_panel):
+        """Test run() with multiple independent variables."""
+        data = coint_panel.copy()
+        np.random.seed(99)
+        data["x2"] = data["x"] * 0.5 + np.random.randn(len(data)) * 0.2
+        test = PedroniTest(
+            data=data,
+            dependent="y",
+            independents=["x", "x2"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        assert isinstance(result, PedroniTestResult)
+        assert np.isfinite(result.group_pp)
+
+    def test_pvalues_present(self, coint_panel):
+        """Test that p-values are computed for all statistics."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        expected_keys = [
+            "panel_v",
+            "panel_rho",
+            "panel_pp",
+            "panel_adf",
+            "group_rho",
+            "group_pp",
+            "group_adf",
+        ]
+        for key in expected_keys:
+            assert key in result.pvalues, f"Missing p-value for {key}"
+            assert 0.0 <= result.pvalues[key] <= 1.0
+
+    def test_non_cointegrated_data(self, non_coint_panel):
+        """Test with non-cointegrated data."""
+        test = PedroniTest(
+            data=non_coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        assert isinstance(result, PedroniTestResult)
+        assert np.isfinite(result.panel_rho)
+
+    def test_result_stored(self, coint_panel):
+        """Test that result is stored in the test object."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        assert test.result is None
+        result = test.run()
+        assert test.result is result
+
+
+class TestPedroniTestValidation:
+    """Test input validation for PedroniTest."""
+
+    def test_missing_dependent(self, coint_panel):
+        """Test error when dependent variable is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            PedroniTest(
+                data=coint_panel,
+                dependent="nonexistent",
+                independents=["x"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_missing_independent(self, coint_panel):
+        """Test error when independent variable is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            PedroniTest(
+                data=coint_panel,
+                dependent="y",
+                independents=["nonexistent"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_missing_entity_col(self, coint_panel):
+        """Test error when entity column is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            PedroniTest(
+                data=coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="bad_entity",
+                time_col="time",
+            )
+
+    def test_missing_time_col(self, coint_panel):
+        """Test error when time column is missing."""
+        with pytest.raises(ValueError, match="not found"):
+            PedroniTest(
+                data=coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="entity",
+                time_col="bad_time",
+            )
+
+    def test_invalid_trend(self, coint_panel):
+        """Test error for invalid trend specification."""
+        with pytest.raises(ValueError, match="trend must be"):
+            PedroniTest(
+                data=coint_panel,
+                dependent="y",
+                independents=["x"],
+                entity_col="entity",
+                time_col="time",
+                trend="invalid",
+            )
+
+    def test_string_independent_converted_to_list(self, coint_panel):
+        """Test that a single string independent is converted to list."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents="x",
+            entity_col="entity",
+            time_col="time",
+        )
+        assert test.independents == ["x"]
+
+
+class TestPedroniTestResultDisplay:
+    """Test PedroniTestResult display methods."""
+
+    def test_str_representation(self, coint_panel):
+        """Test __str__ method of PedroniTestResult."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+
+        result_str = str(result)
+        assert "Pedroni Panel Cointegration Tests" in result_str
+        assert "Panel v-statistic:" in result_str
+        assert "Panel rho-statistic:" in result_str
+        assert "Panel PP-statistic:" in result_str
+        assert "Panel ADF-statistic:" in result_str
+        assert "Group rho-statistic:" in result_str
+        assert "Group PP-statistic:" in result_str
+        assert "Group ADF-statistic:" in result_str
+        assert "H0: No cointegration" in result_str
+        assert "Conclusion:" in result_str
+
+    def test_summary_conclusion_reject(self):
+        """Test summary_conclusion when majority of tests reject H0."""
+        result = PedroniTestResult(
+            panel_v=5.0,
+            panel_rho=-3.0,
+            panel_pp=-4.0,
+            panel_adf=-3.5,
+            group_rho=-2.5,
+            group_pp=-3.0,
+            group_adf=-2.8,
+            pvalues={
+                "panel_v": 0.01,
+                "panel_rho": 0.02,
+                "panel_pp": 0.01,
+                "panel_adf": 0.03,
+                "group_rho": 0.04,
+                "group_pp": 0.01,
+                "group_adf": 0.02,
+            },
+            n_obs=500,
+            n_entities=10,
+            trend="Constant",
+        )
+        assert "Reject H0" in result.summary_conclusion
+        assert "Evidence of cointegration" in result.summary_conclusion
+
+    def test_summary_conclusion_fail_to_reject(self):
+        """Test summary_conclusion when majority of tests fail to reject H0."""
+        result = PedroniTestResult(
+            panel_v=0.5,
+            panel_rho=-0.3,
+            panel_pp=-0.2,
+            panel_adf=-0.4,
+            group_rho=-0.1,
+            group_pp=-0.3,
+            group_adf=-0.2,
+            pvalues={
+                "panel_v": 0.60,
+                "panel_rho": 0.70,
+                "panel_pp": 0.80,
+                "panel_adf": 0.50,
+                "group_rho": 0.65,
+                "group_pp": 0.55,
+                "group_adf": 0.45,
+            },
+            n_obs=500,
+            n_entities=10,
+            trend="Constant",
+        )
+        assert "Fail to reject H0" in result.summary_conclusion
+        assert "No evidence of cointegration" in result.summary_conclusion
+
+    def test_str_with_trend_ct(self, coint_panel):
+        """Test __str__ with constant and trend specification."""
+        test = PedroniTest(
+            data=coint_panel,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+            trend="ct",
+        )
+        result = test.run()
+        result_str = str(result)
+        assert "Constant and Trend" in result_str
+
+
+class TestPedroniTestEdgeCases:
+    """Edge cases for PedroniTest."""
+
+    def test_short_entity_series(self):
+        """Test behavior with very short entity time series."""
+        np.random.seed(42)
+        rows = []
+        # Create entities with only 2 observations (< 3 should be skipped)
+        for i in range(5):
+            x = np.cumsum(np.random.randn(2))
+            y = 1.5 * x + np.random.randn(2) * 0.1
+            for t in range(2):
+                rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+        # Also add entities with enough data
+        for i in range(5, 15):
+            x = np.cumsum(np.random.randn(30))
+            y = 1.5 * x + np.random.randn(30) * 0.1
+            for t in range(30):
+                rows.append({"entity": i, "time": t, "y": y[t], "x": x[t]})
+
+        data = pd.DataFrame(rows)
+        test = PedroniTest(
+            data=data,
+            dependent="y",
+            independents=["x"],
+            entity_col="entity",
+            time_col="time",
+        )
+        result = test.run()
+        assert isinstance(result, PedroniTestResult)
+        assert np.isfinite(result.panel_pp)

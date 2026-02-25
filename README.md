@@ -11,6 +11,7 @@
 [![PyPI version](https://badge.fury.io/py/panelbox.svg)](https://badge.fury.io/py/panelbox)
 [![Python versions](https://img.shields.io/pypi/pyversions/panelbox)](https://pypi.org/project/panelbox/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Development Status](https://img.shields.io/badge/development%20status-beta-orange)
 
 </div>
 

@@ -149,7 +149,9 @@ class TestMaxInstruments:
         builder_limited = PanelVARInstruments(
             var_lags=1, n_vars=2, instrument_type="all", max_instruments=2
         )
-        _Z_limited, meta_limited = builder_limited.construct_instruments(df, value_cols=["y1", "y2"])
+        _Z_limited, meta_limited = builder_limited.construct_instruments(
+            df, value_cols=["y1", "y2"]
+        )
 
         # Limited should have fewer or equal total instruments
         assert meta_limited["total_instruments"] <= meta_unlimited["total_instruments"]
@@ -368,3 +370,128 @@ class TestMetadata:
         assert "GMM Instrument Matrix Summary" in summary
         assert "Instrument type:" in summary
         assert "Total instruments:" in summary
+
+
+class TestAutoDetectValueCols:
+    """Tests for automatic value column detection (value_cols=None)."""
+
+    def test_construct_instruments_auto_detect_value_cols(self):
+        """Test that value_cols=None auto-detects numeric columns (line 106)."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1, 2, 2, 2, 2],
+                "time": [1, 2, 3, 4, 1, 2, 3, 4],
+                "y1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                "y2": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0],
+            }
+        )
+
+        builder = PanelVARInstruments(var_lags=1, n_vars=2)
+        # Pass value_cols=None to trigger auto-detection at line 106
+        Z, meta = builder.construct_instruments(df, value_cols=None)
+
+        assert Z.shape[0] > 0
+        assert meta["total_instruments"] > 0
+        assert meta["instruments_type"] == "all"
+
+    def test_auto_detect_excludes_non_numeric(self):
+        """Test that auto-detection excludes non-numeric columns."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1],
+                "time": [1, 2, 3, 4],
+                "y1": [1.0, 2.0, 3.0, 4.0],
+                "y2": [10.0, 20.0, 30.0, 40.0],
+                "label": ["a", "b", "c", "d"],  # Non-numeric, should be excluded
+            }
+        )
+
+        builder = PanelVARInstruments(var_lags=1, n_vars=2)
+        Z, meta = builder.construct_instruments(df, value_cols=None)
+
+        # Should detect y1 and y2 only (not 'label')
+        assert Z.shape[0] > 0
+        assert meta["total_instruments"] > 0
+
+    def test_auto_detect_via_convenience_function(self):
+        """Test auto-detection through build_gmm_instruments."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1, 2, 2, 2, 2],
+                "time": [1, 2, 3, 4, 1, 2, 3, 4],
+                "y1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                "y2": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0],
+            }
+        )
+
+        # value_cols=None triggers auto-detection
+        Z, meta = build_gmm_instruments(df, var_lags=1, n_vars=2, value_cols=None)
+
+        assert Z.shape[0] > 0
+        assert meta["instruments_type"] == "all"
+
+
+class TestSummaryBranches:
+    """Tests for summary branches in get_instrument_count_summary."""
+
+    def test_summary_with_max_instruments(self):
+        """Test summary includes max_instruments line (line 339)."""
+        df = pd.DataFrame(
+            {
+                "entity": [1] * 10,
+                "time": list(range(1, 11)),
+                "y1": np.arange(10, dtype=float),
+                "y2": np.arange(10, dtype=float) * 10,
+            }
+        )
+
+        builder = PanelVARInstruments(
+            var_lags=1, n_vars=2, instrument_type="all", max_instruments=3
+        )
+        _Z, meta = builder.construct_instruments(df, value_cols=["y1", "y2"])
+
+        summary = builder.get_instrument_count_summary(meta)
+
+        assert "Max instruments limit:" in summary
+        assert "3" in summary
+
+    def test_summary_with_collapsed_instruments(self):
+        """Test summary includes lag depths line for collapsed (line 342)."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1, 2, 2, 2, 2],
+                "time": [1, 2, 3, 4, 1, 2, 3, 4],
+                "y1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                "y2": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0],
+            }
+        )
+
+        builder = PanelVARInstruments(var_lags=1, n_vars=2, instrument_type="collapsed")
+        _Z, meta = builder.construct_instruments(df, value_cols=["y1", "y2"])
+
+        summary = builder.get_instrument_count_summary(meta)
+
+        assert "Lag depths used:" in summary
+        assert "collapsed" in summary
+
+    def test_summary_collapsed_with_max_instruments(self):
+        """Test summary with both collapsed and max_instruments."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
+                "time": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5],
+                "y1": np.arange(10, dtype=float),
+                "y2": np.arange(10, dtype=float) * 10,
+            }
+        )
+
+        builder = PanelVARInstruments(
+            var_lags=1, n_vars=2, instrument_type="collapsed", max_instruments=2
+        )
+        _Z, meta = builder.construct_instruments(df, value_cols=["y1", "y2"])
+
+        summary = builder.get_instrument_count_summary(meta)
+
+        # Both branches should be covered
+        assert "Max instruments limit:" in summary
+        assert "Lag depths used:" in summary

@@ -57,7 +57,7 @@ class TestLLCTest:
             import panelbox as pb
 
             return pb.load_grunfeld()
-        except:
+        except Exception:
             pytest.skip("Grunfeld dataset not available")
 
     def test_llc_initialization(self, stationary_panel_data):
@@ -225,7 +225,7 @@ class TestLLCTest:
         )
 
         with pytest.warns(UserWarning, match="unbalanced"):
-            llc = LLCTest(data, "y", "entity", "time", lags=0, trend="c")
+            LLCTest(data, "y", "entity", "time", lags=0, trend="c")
 
     def test_llc_small_sample(self):
         """Test LLC with very small sample."""

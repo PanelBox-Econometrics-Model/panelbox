@@ -285,3 +285,106 @@ class TestInternalMethods:
         # Standard errors typically differ (both should be positive)
         assert (results_robust.std_errors > 0).all()
         assert (results_clustered.std_errors > 0).all()
+
+
+class TestEstimateCoefficientsDirectly:
+    """Tests for _estimate_coefficients() method (lines 522-534)."""
+
+    def test_estimate_coefficients_directly(self, balanced_panel_data):
+        """Test calling _estimate_coefficients() directly."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        beta = model._estimate_coefficients()
+
+        assert beta is not None
+        # Should have 3 coefficients: Intercept, x1, x2
+        assert len(beta.ravel()) == 3
+
+    def test_estimate_coefficients_matches_fit(self, balanced_panel_data):
+        """Test that _estimate_coefficients() gives same betas as fit()."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        beta_direct = model._estimate_coefficients().ravel()
+
+        results = model.fit()
+        beta_fit = results.params.values
+
+        np.testing.assert_array_almost_equal(beta_direct, beta_fit)
+
+    def test_estimate_coefficients_sets_variance_components(self, balanced_panel_data):
+        """Test that _estimate_coefficients() also computes variance components."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        # Before calling, sigma2_u/e/theta should be None
+        assert model.sigma2_u is None
+        assert model.sigma2_e is None
+        assert model.theta is None
+
+        model._estimate_coefficients()
+
+        # After calling, variance components should be populated
+        assert model.sigma2_u is not None
+        assert model.sigma2_e is not None
+        assert model.theta is not None
+
+
+class TestComputeVcovRobustDirectly:
+    """Tests for _compute_vcov_robust() method (lines 577-587)."""
+
+    def test_compute_vcov_robust_directly(self, balanced_panel_data):
+        """Test _compute_vcov_robust() with GLS-transformed data."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Reconstruct GLS-transformed X and residuals
+        y, X = model.formula_parser.build_design_matrices(model.data.data, return_type="array")
+        entities = model.data.data[model.data.entity_col].values
+
+        y_gls, X_gls = model._gls_transform(y, X, entities)
+        from panelbox.utils.matrix_ops import compute_ols
+
+        _, resid_gls, _ = compute_ols(y_gls, X_gls, model.weights)
+
+        df_resid = results.df_resid
+
+        vcov = model._compute_vcov_robust(X_gls, resid_gls, df_resid)
+
+        # Covariance matrix should be 3x3 (Intercept, x1, x2)
+        assert vcov.shape == (3, 3)
+        # Diagonal elements (variances) should be positive
+        assert vcov[0, 0] > 0
+        assert vcov[1, 1] > 0
+        assert vcov[2, 2] > 0
+        # Should be symmetric
+        np.testing.assert_array_almost_equal(vcov, vcov.T)
+
+
+class TestComputeVcovClusteredDirectly:
+    """Tests for _compute_vcov_clustered() method (lines 589-612)."""
+
+    def test_compute_vcov_clustered_directly(self, balanced_panel_data):
+        """Test _compute_vcov_clustered() with GLS-transformed data."""
+        model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Reconstruct GLS-transformed X and residuals
+        y, X = model.formula_parser.build_design_matrices(model.data.data, return_type="array")
+        entities = model.data.data[model.data.entity_col].values
+
+        y_gls, X_gls = model._gls_transform(y, X, entities)
+        from panelbox.utils.matrix_ops import compute_ols
+
+        _, resid_gls, _ = compute_ols(y_gls, X_gls, model.weights)
+
+        df_resid = results.df_resid
+
+        vcov = model._compute_vcov_clustered(X_gls, resid_gls, entities, df_resid)
+
+        # Covariance matrix should be 3x3 (Intercept, x1, x2)
+        assert vcov.shape == (3, 3)
+        # Diagonal elements (variances) should be positive
+        assert vcov[0, 0] > 0
+        assert vcov[1, 1] > 0
+        assert vcov[2, 2] > 0
+        # Should be symmetric
+        np.testing.assert_array_almost_equal(vcov, vcov.T)

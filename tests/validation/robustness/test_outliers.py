@@ -178,9 +178,11 @@ def test_plot_without_matplotlib(mock_results):
     """Test that plotting without matplotlib gives error."""
     detector = OutlierDetector(mock_results, verbose=False)
 
-    with patch.dict("sys.modules", {"matplotlib": None, "matplotlib.pyplot": None}):
-        with pytest.raises(ImportError, match="matplotlib is required"):
-            detector.plot_diagnostics()
+    with (
+        patch.dict("sys.modules", {"matplotlib": None, "matplotlib.pyplot": None}),
+        pytest.raises(ImportError, match="matplotlib is required"),
+    ):
+        detector.plot_diagnostics()
 
 
 # Integration Tests
@@ -255,17 +257,21 @@ class TestSingularCovariance:
         detector = OutlierDetector(mock_results, verbose=False)
 
         # Force singular covariance by patching
-        with patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError):
-            with pytest.warns(UserWarning, match="singular"):
-                detector.detect_outliers_multivariate()
+        with (
+            patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError),
+            pytest.warns(UserWarning, match="singular"),
+        ):
+            detector.detect_outliers_multivariate()
 
     def test_leverage_with_singular_cov_warning(self, mock_results):
         """Test that singular covariance in leverage triggers warning."""
         detector = OutlierDetector(mock_results, verbose=False)
 
-        with patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError):
-            with pytest.warns(UserWarning, match="pseudo-inverse"):
-                detector.detect_leverage_points()
+        with (
+            patch("numpy.linalg.inv", side_effect=np.linalg.LinAlgError),
+            pytest.warns(UserWarning, match="pseudo-inverse"),
+        ):
+            detector.detect_leverage_points()
 
 
 class TestSummaryFormats:
@@ -460,6 +466,194 @@ class TestLeverageDefaultThreshold:
         leverage_df2 = detector.detect_leverage_points(threshold=expected_threshold)
 
         assert (leverage_df["is_high_leverage"] == leverage_df2["is_high_leverage"]).all()
+
+
+class TestOutlierResultPropertiesBatch4:
+    """Tests targeting uncovered properties of OutlierResults."""
+
+    def test_outlier_table_property(self, mock_results):
+        """Test outlier_table property returns only flagged rows.
+
+        Covers line 60: outlier_table property.
+        """
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_univariate(method="iqr", threshold=1.5)
+
+        table = results.outlier_table
+
+        assert isinstance(table, pd.DataFrame)
+        # All rows in the table should be flagged as outliers
+        assert table["is_outlier"].all()
+        assert len(table) == results.n_outliers
+
+    def test_outlier_table_empty_when_no_outliers(self):
+        """Test outlier_table when no outliers are detected."""
+        outliers_df = pd.DataFrame(
+            {
+                "entity": [0, 1, 2],
+                "time": [0, 1, 2],
+                "value": [1.0, 2.0, 3.0],
+                "is_outlier": [False, False, False],
+                "distance": [0.1, 0.2, 0.1],
+            }
+        )
+
+        results = OutlierResults(outliers=outliers_df, method="Test", threshold=2.0, n_outliers=0)
+
+        table = results.outlier_table
+        assert len(table) == 0
+
+    def test_studentized_residuals_property_with_studentized(self, mock_results):
+        """Test studentized_residuals property with studentized_residual column.
+
+        Covers line 65-66: first branch of studentized_residuals property.
+        """
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_residuals(method="studentized")
+
+        resids = results.studentized_residuals
+
+        assert resids is not None
+        assert isinstance(resids, pd.Series)
+        assert len(resids) == len(results.outliers)
+
+    def test_studentized_residuals_property_with_standardized(self, mock_results):
+        """Test studentized_residuals property fallback to standardized_residual.
+
+        Covers lines 67-68: second branch (standardized_residual fallback).
+        """
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers_residuals(method="standardized")
+
+        resids = results.studentized_residuals
+
+        assert resids is not None
+        assert isinstance(resids, pd.Series)
+
+    def test_studentized_residuals_property_returns_none(self):
+        """Test studentized_residuals property returns None when no residual columns.
+
+        Covers line 69: return None branch.
+        """
+        outliers_df = pd.DataFrame(
+            {
+                "entity": [0, 1],
+                "time": [0, 1],
+                "value": [1.0, 2.0],
+                "is_outlier": [False, True],
+                "distance": [0.1, 2.5],
+            }
+        )
+
+        results = OutlierResults(outliers=outliers_df, method="IQR", threshold=1.5, n_outliers=1)
+
+        resids = results.studentized_residuals
+        assert resids is None
+
+
+class TestSummaryZeroOutliersBatch4:
+    """Test summary when zero outliers are detected."""
+
+    def test_summary_no_outliers_detected(self):
+        """Test summary output when n_outliers == 0.
+
+        Covers lines 81->88: the branch where n_outliers is 0 (no 'Top 10' section).
+        """
+        outliers_df = pd.DataFrame(
+            {
+                "entity": [0, 1, 2, 3],
+                "time": [0, 0, 0, 0],
+                "value": [1.0, 2.0, 3.0, 4.0],
+                "is_outlier": [False, False, False, False],
+                "distance": [0.1, 0.2, 0.1, 0.3],
+            }
+        )
+
+        results = OutlierResults(
+            outliers=outliers_df, method="Z-score", threshold=3.0, n_outliers=0
+        )
+
+        summary = results.summary()
+
+        assert "Outlier Detection Results" in summary
+        assert "0.00%" in summary
+        # Should NOT have the "Top 10 outliers" section
+        assert "Top 10 outliers" not in summary
+
+
+class TestDetectOutliersAliasBatch4:
+    """Test the detect_outliers convenience alias."""
+
+    def test_detect_outliers_alias(self, mock_results):
+        """Test detect_outliers() convenience method.
+
+        Covers line 423: return self.detect_outliers_residuals().
+        """
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers(method="standardized", threshold=3.0)
+
+        assert isinstance(results, OutlierResults)
+        assert results.method == "Standardized residuals"
+        assert results.threshold == 3.0
+
+    def test_detect_outliers_alias_studentized(self, mock_results):
+        """Test detect_outliers() with studentized method."""
+        detector = OutlierDetector(mock_results, verbose=False)
+        results = detector.detect_outliers(method="studentized", threshold=2.5)
+
+        assert isinstance(results, OutlierResults)
+        assert results.method == "Studentized residuals"
+
+
+class TestVerboseResidualsBatch4:
+    """Test verbose logging for residual-based detection."""
+
+    def test_verbose_residuals_standardized(self, mock_results, caplog):
+        """Test verbose output for standardized residual detection.
+
+        Covers line 398: if self.verbose: logger.info(...) in detect_outliers_residuals.
+        """
+        import logging
+
+        detector = OutlierDetector(mock_results, verbose=True)
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.detect_outliers_residuals(method="standardized")
+
+        assert "Detected" in caplog.text
+        assert "standardized" in caplog.text
+
+    def test_verbose_residuals_studentized(self, mock_results, caplog):
+        """Test verbose output for studentized residual detection."""
+        import logging
+
+        detector = OutlierDetector(mock_results, verbose=True)
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.detect_outliers_residuals(method="studentized")
+
+        assert "Detected" in caplog.text
+        assert "studentized" in caplog.text
+
+
+class TestPlotDiagnosticsSaveBatch4:
+    """Test plot_diagnostics with save_path and verbose."""
+
+    def test_plot_diagnostics_save_with_verbose(self, mock_results, tmp_path, caplog):
+        """Test saving diagnostic plots with verbose logging.
+
+        Covers line 566: if save_path: ... if self.verbose: logger.info(...)
+        """
+        import logging
+
+        pytest.importorskip("matplotlib")
+
+        detector = OutlierDetector(mock_results, verbose=True)
+
+        save_path = tmp_path / "diag.png"
+        with caplog.at_level(logging.INFO, logger="panelbox"):
+            detector.plot_diagnostics(save_path=str(save_path))
+
+        assert save_path.exists()
+        assert "Plot saved" in caplog.text
 
 
 if __name__ == "__main__":

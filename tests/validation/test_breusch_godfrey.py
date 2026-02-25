@@ -89,7 +89,7 @@ class TestBreuschGodfrey:
         assert result is not None
 
         # lags=3 should fail (insufficient periods)
-        with pytest.raises(ValueError, match="(Insufficient observations|No valid observations)"):
+        with pytest.raises(ValueError, match=r"(Insufficient observations|No valid observations)"):
             test.run(lags=3)
 
     def test_result_attributes(self, panel_with_ar1):

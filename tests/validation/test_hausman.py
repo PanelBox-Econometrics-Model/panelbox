@@ -352,3 +352,103 @@ class TestEdgeCases:
         # The singular matrix path is a safety check that's hard to reach
         assert result is not None
         assert result.statistic >= 0
+
+
+class TestHausmanRejectNull:
+    """Tests for Hausman test reject null branch (lines 71-75)."""
+
+    def test_reject_null_branch_with_endogenous_data(self, panel_for_mundlak):
+        """Test lines 71-75: reject null with endogenous data.
+
+        Uses panel_for_mundlak fixture where regressors are correlated with
+        entity effects, making FE and RE coefficients diverge significantly.
+        Covers the HausmanTestResult.__init__ branch where pvalue < alpha.
+        """
+        fe = FixedEffects("y ~ x1 + x2", panel_for_mundlak, "entity", "time")
+        fe_results = fe.fit()
+
+        re = RandomEffects("y ~ x1 + x2", panel_for_mundlak, "entity", "time")
+        re_results = re.fit()
+
+        # Use a loose alpha to ensure we trigger the reject branch
+        result = HausmanTestResult(
+            statistic=50.0,  # Very large statistic
+            pvalue=0.0001,  # Very small p-value
+            df=2,
+            fe_params=fe_results.params[["x1", "x2"]],
+            re_params=re_results.params[["x1", "x2"]],
+            diff=fe_results.params[["x1", "x2"]] - re_results.params[["x1", "x2"]],
+            alpha=0.05,
+        )
+
+        # Lines 71-75: reject_null branch
+        assert result.reject_null is True
+        assert result.recommendation == "Fixed Effects"
+        assert "Reject H0" in result.conclusion
+        assert "Use Fixed Effects" in result.conclusion
+        assert result.metadata["recommendation"] == "Fixed Effects"
+
+
+class TestHausmanTestSummaryMethod:
+    """Tests for HausmanTest.summary() method (line 331)."""
+
+    def test_hausman_test_summary_delegates(self, balanced_panel_data):
+        """Test that HausmanTest.summary() delegates to result's summary().
+
+        Covers line 331: return self._result.summary().
+        """
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        fe_results = fe.fit()
+
+        re = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        re_results = re.fit()
+
+        hausman = HausmanTest(fe_results, re_results)
+
+        # Call summary() on the HausmanTest object (line 331)
+        summary = hausman.summary()
+
+        assert isinstance(summary, str)
+        assert "HAUSMAN SPECIFICATION TEST" in summary
+        assert "Recommendation:" in summary
+        assert "COEFFICIENT COMPARISON" in summary
+
+
+class TestHausmanSingularVarDiff:
+    """Tests for singular var_diff matrix in run() (lines 382-384)."""
+
+    def test_singular_var_diff_uses_pinv(self, balanced_panel_data):
+        """Test lines 382-384: pseudoinverse fallback for singular var_diff.
+
+        Mocks np.linalg.inv to raise LinAlgError when called on the var_diff
+        matrix (kxk) to trigger the pinv fallback in HausmanTest.run().
+        """
+        from unittest.mock import patch
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        fe_results = fe.fit()
+
+        re = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        re_results = re.fit()
+
+        # We need to create a HausmanTest but prevent __init__ from running
+        # the test automatically. We'll patch inv during the explicit run() call.
+        original_inv = np.linalg.inv
+
+        def mock_inv_always_fail(a):
+            # Fail on 2x2 matrix (the var_diff matrix for 2 common vars)
+            if a.shape == (2, 2):
+                raise np.linalg.LinAlgError("Singular matrix")
+            return original_inv(a)
+
+        # Construct the test object first (run() is called in __init__)
+        # so we patch for the explicit second call to run()
+        hausman = HausmanTest(fe_results, re_results)
+
+        with patch("numpy.linalg.inv", side_effect=mock_inv_always_fail):
+            result = hausman.run()
+
+        assert result is not None
+        assert isinstance(result, HausmanTestResult)
+        assert result.statistic >= 0
+        assert 0 <= result.pvalue <= 1

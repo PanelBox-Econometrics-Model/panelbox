@@ -5,9 +5,11 @@ Author: PanelBox Developers
 License: MIT
 """
 
+import logging
 import warnings
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from panelbox.models.censored import HonoreTrimmedEstimator
@@ -307,3 +309,407 @@ class TestHonoreTrimmedEstimator:
             # Only entities 0 and 1 can create pairwise differences
             # Entity 2 has only 1 observation, so no differences
             assert len(delta_y) == 2  # One pair from entity 0, one from entity 1
+
+
+class TestHonoreResultsPredict:
+    """Tests for HonoreResults.predict() method."""
+
+    def test_predict_with_none_exog_raises(self):
+        """Test that predict with None exog raises ValueError."""
+        result = HonoreResults(
+            params=np.array([0.5, -0.3]),
+            converged=True,
+            n_iter=10,
+            n_obs=30,
+            n_entities=10,
+            n_trimmed=5,
+        )
+
+        with pytest.raises(ValueError, match="exog is required"):
+            result.predict(exog=None)
+
+    def test_predict_with_ndarray(self):
+        """Test predict with numpy array input."""
+        result = HonoreResults(
+            params=np.array([0.5, -0.3]),
+            converged=True,
+            n_iter=10,
+            n_obs=30,
+            n_entities=10,
+            n_trimmed=5,
+        )
+
+        X_new = np.array([[1.0, 2.0], [3.0, 4.0]])
+        predictions = result.predict(exog=X_new)
+
+        assert len(predictions) == 2
+        np.testing.assert_allclose(predictions, X_new @ np.array([0.5, -0.3]))
+
+    def test_predict_with_dataframe_and_exog_names(self):
+        """Test predict with DataFrame and exog_names set."""
+        result = HonoreResults(
+            params=np.array([0.5, -0.3]),
+            converged=True,
+            n_iter=10,
+            n_obs=30,
+            n_entities=10,
+            n_trimmed=5,
+            exog_names=["x1", "x2"],
+        )
+
+        df = pd.DataFrame({"x1": [1.0, 3.0], "x2": [2.0, 4.0], "extra": [99.0, 100.0]})
+        predictions = result.predict(exog=df)
+
+        assert len(predictions) == 2
+        expected = np.array([1.0 * 0.5 + 2.0 * (-0.3), 3.0 * 0.5 + 4.0 * (-0.3)])
+        np.testing.assert_allclose(predictions, expected)
+
+    def test_predict_with_dataframe_missing_columns(self):
+        """Test predict with DataFrame missing required columns."""
+        result = HonoreResults(
+            params=np.array([0.5, -0.3]),
+            converged=True,
+            n_iter=10,
+            n_obs=30,
+            n_entities=10,
+            n_trimmed=5,
+            exog_names=["x1", "x2"],
+        )
+
+        df = pd.DataFrame({"x1": [1.0, 3.0], "other_col": [2.0, 4.0]})
+
+        with pytest.raises(ValueError, match="Missing columns"):
+            result.predict(exog=df)
+
+    def test_predict_with_dataframe_no_exog_names(self):
+        """Test predict with DataFrame when exog_names is None."""
+        result = HonoreResults(
+            params=np.array([0.5, -0.3]),
+            converged=True,
+            n_iter=10,
+            n_obs=30,
+            n_entities=10,
+            n_trimmed=5,
+            exog_names=None,
+        )
+
+        df = pd.DataFrame({"x1": [1.0, 3.0], "x2": [2.0, 4.0]})
+        predictions = result.predict(exog=df)
+
+        assert len(predictions) == 2
+
+
+class TestHonoreUncoveredBranches:
+    """Tests covering previously uncovered branches in honore.py."""
+
+    def test_dimension_mismatch_endog_exog(self):
+        """Test error when endog and exog have different number of observations."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            with pytest.raises(ValueError, match="Dimension mismatch"):
+                HonoreTrimmedEstimator(
+                    endog=np.array([1.0, 2.0, 3.0]),
+                    exog=np.array([[1.0], [2.0]]),  # Wrong length
+                    groups=np.array([0, 0, 1]),
+                    time=np.array([0, 1, 0]),
+                )
+
+    def test_groups_length_mismatch(self):
+        """Test error when groups has different length from endog."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            with pytest.raises(ValueError, match="groups and time must have same length"):
+                HonoreTrimmedEstimator(
+                    endog=np.array([1.0, 2.0, 3.0]),
+                    exog=np.array([[1.0], [2.0], [3.0]]),
+                    groups=np.array([0, 0]),  # Wrong length
+                    time=np.array([0, 1, 0]),
+                )
+
+    def test_time_length_mismatch(self):
+        """Test error when time has different length from endog."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            with pytest.raises(ValueError, match="groups and time must have same length"):
+                HonoreTrimmedEstimator(
+                    endog=np.array([1.0, 2.0, 3.0]),
+                    exog=np.array([[1.0], [2.0], [3.0]]),
+                    groups=np.array([0, 0, 1]),
+                    time=np.array([0, 1]),  # Wrong length
+                )
+
+    def test_no_valid_pairwise_differences_raises(self):
+        """Test error when all entities have only single observation."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Each entity has only 1 observation
+            model = HonoreTrimmedEstimator(
+                endog=np.array([1.0, 2.0, 3.0]),
+                exog=np.array([[1.0], [2.0], [3.0]]),
+                groups=np.array([0, 1, 2]),  # Different entities
+                time=np.array([0, 0, 0]),
+            )
+
+            with pytest.raises(ValueError, match="No valid pairwise differences"):
+                model._create_pairwise_differences()
+
+    def test_fit_with_few_retained_obs_zeros_start(self):
+        """Test fit starting with zeros when retained obs <= n_features."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Create data where almost all observations are censored
+            N, T, K = 3, 2, 3  # K=3 features, only 3 pairs possible
+            y = np.array([0, 0.1, 0, 0, 0, 0.2])
+            X = np.random.randn(N * T, K)
+            groups = np.repeat(np.arange(N), T)
+            time = np.tile(np.arange(T), N)
+
+            model = HonoreTrimmedEstimator(
+                endog=y, exog=X, groups=groups, time=time, censoring_point=0
+            )
+
+            # With many censored pairs, retained might be <= K
+            results = model.fit(maxiter=5, verbose=False)
+            assert isinstance(results, HonoreResults)
+
+    def test_fit_verbose_true(self):
+        """Test fit with verbose=True exercises logging branches."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        beta_true = np.array([0.5, -0.3])
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y_star = X @ beta_true + alpha + np.random.randn(N * T) * 0.3
+        y = np.maximum(0, y_star)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            # Set logging level to capture log output
+            logger = logging.getLogger("panelbox.models.censored.honore")
+            logger.setLevel(logging.DEBUG)
+
+            results = model.fit(maxiter=10, verbose=True)
+            assert isinstance(results, HonoreResults)
+
+    def test_fit_nelder_mead_method(self):
+        """Test fit with non-L-BFGS-B method (Nelder-Mead)."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        beta_true = np.array([0.5, -0.3])
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y_star = X @ beta_true + alpha + np.random.randn(N * T) * 0.3
+        y = np.maximum(0, y_star)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            results = model.fit(method="Nelder-Mead", maxiter=10, verbose=False)
+            assert isinstance(results, HonoreResults)
+            assert results.params.shape == (K,)
+
+    def test_fit_powell_method(self):
+        """Test fit with Powell method."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+            results = model.fit(method="Powell", maxiter=10, verbose=False)
+            assert isinstance(results, HonoreResults)
+
+    def test_predict_before_fit_raises(self):
+        """Test that predict before fit raises ValueError."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            N, T = 5, 2
+            y = np.random.randn(N * T)
+            X = np.random.randn(N * T, 1)
+            groups = np.repeat(np.arange(N), T)
+            time = np.tile(np.arange(T), N)
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            with pytest.raises(ValueError, match="Model must be fitted"):
+                model.predict()
+
+    def test_predict_with_dataframe(self):
+        """Test predict with DataFrame input on the estimator."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+            model.fit(maxiter=10, verbose=False)
+
+            # Predict with DataFrame (no exog_names set)
+            df = pd.DataFrame(np.random.randn(5, K), columns=["a", "b"])
+            predictions = model.predict(exog=df)
+            assert len(predictions) == 5
+
+    def test_predict_with_dataframe_and_exog_names(self):
+        """Test predict with DataFrame when exog_names is set on estimator."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+            model.fit(maxiter=10, verbose=False)
+            model.exog_names = ["x1", "x2"]
+
+            df = pd.DataFrame({"x1": [1.0, 2.0], "x2": [3.0, 4.0]})
+            predictions = model.predict(exog=df)
+            assert len(predictions) == 2
+
+    def test_predict_with_dataframe_missing_columns(self):
+        """Test predict with DataFrame missing required columns."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+            model.fit(maxiter=10, verbose=False)
+            model.exog_names = ["x1", "x2"]
+
+            df = pd.DataFrame({"x1": [1.0, 2.0], "wrong_col": [3.0, 4.0]})
+
+            with pytest.raises(ValueError, match="Missing columns"):
+                model.predict(exog=df)
+
+    def test_fit_verbose_converged_logging(self):
+        """Test verbose logging when optimization converges."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            logger = logging.getLogger("panelbox.models.censored.honore")
+            logger.setLevel(logging.DEBUG)
+            handler = logging.StreamHandler()
+            logger.addHandler(handler)
+
+            try:
+                results = model.fit(maxiter=500, verbose=True, tol=1e-4)
+                assert isinstance(results, HonoreResults)
+            finally:
+                logger.removeHandler(handler)
+
+    def test_fit_verbose_not_converged_logging(self):
+        """Test verbose logging when optimization does not converge."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            logger = logging.getLogger("panelbox.models.censored.honore")
+            logger.setLevel(logging.DEBUG)
+            handler = logging.StreamHandler()
+            logger.addHandler(handler)
+
+            try:
+                # Very few iterations to force non-convergence
+                results = model.fit(maxiter=1, verbose=True, tol=1e-20)
+                assert isinstance(results, HonoreResults)
+            finally:
+                logger.removeHandler(handler)
+
+    def test_fit_with_custom_start_params(self):
+        """Test fit with user-provided start_params."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 2
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y = np.maximum(0, X @ np.array([0.5, -0.3]) + alpha + np.random.randn(N * T) * 0.3)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(endog=y, exog=X, groups=groups, time=time)
+
+            start_params = np.array([0.1, -0.1])
+            results = model.fit(start_params=start_params, maxiter=10, verbose=False)
+            assert isinstance(results, HonoreResults)
+
+    def test_different_censoring_point(self):
+        """Test estimator with non-zero censoring point."""
+        np.random.seed(42)
+        N, T, K = 10, 3, 1
+        X = np.random.randn(N * T, K)
+        alpha = np.repeat(np.random.randn(N) * 0.5, T)
+        y_star = X @ np.array([1.0]) + alpha + np.random.randn(N * T) * 0.3
+        censoring_point = -0.5
+        y = np.maximum(censoring_point, y_star)
+        groups = np.repeat(np.arange(N), T)
+        time = np.tile(np.arange(T), N)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            model = HonoreTrimmedEstimator(
+                endog=y, exog=X, groups=groups, time=time, censoring_point=censoring_point
+            )
+
+            assert model.censoring_point == censoring_point
+            results = model.fit(maxiter=10, verbose=False)
+            assert isinstance(results, HonoreResults)

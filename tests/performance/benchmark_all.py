@@ -441,9 +441,7 @@ class PerformanceBenchmarker:
             # Breitung test
             try:
                 start = time.time()
-                breitung_test(
-                    data=data, variable="y", entity_var="entity", time_var="time"
-                )
+                breitung_test(data=data, variable="y", entity_var="entity", time_var="time")
                 elapsed = time.time() - start
                 print(f"    Breitung test: {elapsed:.3f}s")
 

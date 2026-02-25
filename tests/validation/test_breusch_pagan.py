@@ -191,7 +191,6 @@ class TestBreuschPagan:
         test = BreuschPaganTest(results)
 
         # Mock np.linalg.solve to raise LinAlgError
-        original_solve = np.linalg.solve
 
         def mock_solve(a, b):
             # Raise LinAlgError to trigger fallback to lstsq

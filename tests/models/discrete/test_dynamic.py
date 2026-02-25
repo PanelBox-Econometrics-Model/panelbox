@@ -210,3 +210,200 @@ class TestDynamicBinaryPanel:
                 idx = i * self.n_periods + t
                 prev_idx = idx - 1
                 assert model.endog_lagged[idx] == self.y[prev_idx]
+
+    def test_heckman_initial_conditions(self):
+        """Test Heckman approach for initial conditions."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="heckman",
+            effects="pooled",
+        )
+
+        result = model.fit()
+
+        assert result.converged
+        assert hasattr(result, "gamma")  # Lag coefficient
+        assert hasattr(result, "beta")
+        # Heckman delegates to Wooldridge data prep, but result class
+        # treats it as non-wooldridge (else branch), so no delta_y0/delta_xbar
+
+    def test_simple_initial_conditions_summary(self):
+        """Test summary for simple initial conditions (non-wooldridge branch in summary)."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
+        )
+
+        result = model.fit()
+        summary = result.summary()
+
+        assert "Dynamic Binary Panel Model" in summary
+        assert "Initial Conditions: simple" in summary
+        assert "Effects: pooled" in summary
+        assert "Log-likelihood:" in summary
+        assert "Converged:" in summary
+
+    def test_simple_random_effects_summary(self):
+        """Test summary for simple initial conditions with random effects."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="random",
+        )
+
+        result = model.fit()
+        summary = result.summary()
+
+        assert "Dynamic Binary Panel Model" in summary
+        assert "Effects: random" in summary
+        # sigma_u should be in summary for random effects
+        if hasattr(result, "sigma_u"):
+            assert "σ_u" in summary
+
+    def test_predict_with_exog(self):
+        """Test predict with explicit exog argument on result."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="wooldridge",
+            effects="pooled",
+        )
+
+        result = model.fit()
+        # When exog is provided, it uses beta directly
+        new_exog = np.random.randn(5, self.n_vars)
+        predictions = result.predict(exog=new_exog)
+
+        assert len(predictions) == 5
+        assert np.all((predictions >= 0) & (predictions <= 1))
+
+    def test_model_predict_with_exog_pooled(self):
+        """Test DynamicBinaryPanel.predict with explicit exog for pooled model."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
+        )
+        result = model.fit()
+
+        # Model predict with exog (pooled branch)
+        new_exog = model.exog_augmented[:5]
+        predictions = model.predict(params=result.params, exog=new_exog)
+        assert len(predictions) == 5
+        assert np.all((predictions >= 0) & (predictions <= 1))
+
+    def test_model_predict_with_exog_random(self):
+        """Test DynamicBinaryPanel.predict with explicit exog for random effects."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="wooldridge",
+            effects="random",
+        )
+        result = model.fit()
+
+        # Model predict with exog (random effects branch)
+        new_exog = model.exog_augmented[:5]
+        predictions = model.predict(params=result.params, exog=new_exog)
+        assert len(predictions) == 5
+        assert np.all((predictions >= 0) & (predictions <= 1))
+
+    def test_model_predict_no_params_no_result_raises(self):
+        """Test that predict raises ValueError when model not fitted."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
+        )
+        model._prepare_data()
+
+        with pytest.raises(ValueError, match="Model not fitted"):
+            model.predict()
+
+    def test_model_predict_no_params_uses_results(self):
+        """Test that predict uses stored results when params is None."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="wooldridge",
+            effects="random",
+        )
+        result = model.fit()
+        # Store results on model
+        model.results = result
+
+        predictions = model.predict()
+        assert len(predictions) > 0
+        assert np.all((predictions >= 0) & (predictions <= 1))
+
+    def test_result_params_simple_random_effects(self):
+        """Test result parameter extraction for simple initial conditions with RE."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="random",
+        )
+        result = model.fit()
+
+        assert hasattr(result, "beta")
+        assert hasattr(result, "gamma")
+        assert hasattr(result, "sigma_u")
+        assert result.sigma_u > 0
+
+    def test_data_preparation_with_series_input(self):
+        """Test _prepare_data when endog is pd.Series and exog is pd.DataFrame."""
+        import pandas as pd
+
+        model = DynamicBinaryPanel(
+            pd.Series(self.y),
+            pd.DataFrame(self.X, columns=["x1", "x2"]),
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
+        )
+
+        model._prepare_data()
+        # After _prepare_data, should be np arrays
+        assert isinstance(model.endog, np.ndarray)
+        assert isinstance(model.exog, np.ndarray)
+
+    def test_marginal_effects_with_re(self):
+        """Test marginal effects with random effects model (params[:-1] is correct here)."""
+        model = DynamicBinaryPanel(
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="wooldridge",
+            effects="random",
+        )
+        result = model.fit()
+        me = result.marginal_effects()
+        assert len(me) == self.n_vars + 1
+        assert np.all(np.isfinite(me))

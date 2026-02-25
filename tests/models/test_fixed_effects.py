@@ -471,3 +471,226 @@ class TestInternalMethods:
         # Standard errors typically differ (both should be positive)
         assert (results_robust.std_errors > 0).all()
         assert (results_clustered.std_errors > 0).all()
+
+
+class TestDriscollKraayAndNeweyWestCov:
+    """Tests for Driscoll-Kraay and Newey-West covariance paths."""
+
+    def test_driscoll_kraay_cov_type(self, balanced_panel_data):
+        """Test fitting with Driscoll-Kraay standard errors (lines 255-260)."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="driscoll_kraay", max_lags=2)
+
+        assert results is not None
+        assert results.cov_type == "driscoll_kraay"
+        assert len(results.params) == 2
+        assert (results.std_errors > 0).all()
+
+    def test_driscoll_kraay_default_lags(self, balanced_panel_data):
+        """Test Driscoll-Kraay with default (None) max_lags."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="driscoll_kraay")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+    def test_driscoll_kraay_with_kernel(self, balanced_panel_data):
+        """Test Driscoll-Kraay with explicit kernel argument."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="driscoll_kraay", max_lags=1, kernel="bartlett")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+    def test_newey_west_cov_type(self, balanced_panel_data):
+        """Test fitting with Newey-West standard errors (lines 262-265)."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="newey_west", max_lags=2)
+
+        assert results is not None
+        assert results.cov_type == "newey_west"
+        assert len(results.params) == 2
+        assert (results.std_errors > 0).all()
+
+    def test_newey_west_default_lags(self, balanced_panel_data):
+        """Test Newey-West with default (None) max_lags."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="newey_west")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+    def test_newey_west_with_kernel(self, balanced_panel_data):
+        """Test Newey-West with explicit kernel argument."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit(cov_type="newey_west", max_lags=1, kernel="bartlett")
+
+        assert results is not None
+        assert (results.std_errors > 0).all()
+
+
+class TestInsufficientDegreesOfFreedom:
+    """Tests for insufficient degrees of freedom error (line 395)."""
+
+    def test_insufficient_df_raises_error(self):
+        """Test that df_resid <= 0 raises ValueError."""
+        # Create a panel where n - k - n_fe_entity - n_fe_time <= 0
+        # 6 entities, 2 time periods = 12 obs
+        # 5 regressors + 6 entity FE + 2 time FE = 13 > 12
+        np.random.seed(99)
+        data = pd.DataFrame(
+            {
+                "entity": np.repeat(range(6), 2),
+                "time": np.tile([1, 2], 6),
+                "y": np.random.randn(12),
+                "x1": np.random.randn(12),
+                "x2": np.random.randn(12),
+                "x3": np.random.randn(12),
+                "x4": np.random.randn(12),
+                "x5": np.random.randn(12),
+            }
+        )
+
+        model = FixedEffects(
+            "y ~ x1 + x2 + x3 + x4 + x5",
+            data,
+            "entity",
+            "time",
+            entity_effects=True,
+            time_effects=True,
+        )
+
+        with pytest.raises(ValueError, match="Insufficient degrees of freedom"):
+            model.fit()
+
+
+class TestFStatisticEdgeCase:
+    """Tests for F-test nan when df1 or df2 <= 0 (line 583)."""
+
+    def test_f_test_nan_with_single_entity(self):
+        """Test that F-test returns nan when n_fe_entity = 1 (df1 = 0)."""
+        # 1 entity -> df1 = n_fe_entity - 1 = 0 -> returns nan
+        data = pd.DataFrame(
+            {
+                "entity": [1, 1, 1, 1, 1],
+                "time": [1, 2, 3, 4, 5],
+                "y": np.random.randn(5),
+                "x1": np.random.randn(5),
+            }
+        )
+
+        model = FixedEffects("y ~ x1", data, "entity", "time")
+        results = model.fit()
+
+        # With 1 entity, df1 = 0, so F-stat should be nan
+        assert np.isnan(results.f_statistic)
+        assert np.isnan(results.f_pvalue)
+
+
+class TestEstimateCoefficientsDirectly:
+    """Tests for _estimate_coefficients() method (lines 688-710)."""
+
+    @pytest.mark.parametrize(
+        ("entity_effects", "time_effects"),
+        [(True, False), (False, True), (True, True)],
+        ids=["entity", "time", "twoway"],
+    )
+    def test_estimate_coefficients_directly(
+        self, balanced_panel_data, entity_effects, time_effects
+    ):
+        """Test _estimate_coefficients() directly for all effect types."""
+        model = FixedEffects(
+            "y ~ x1 + x2",
+            balanced_panel_data,
+            "entity",
+            "time",
+            entity_effects=entity_effects,
+            time_effects=time_effects,
+        )
+
+        beta = model._estimate_coefficients()
+
+        # Should return coefficient array
+        assert beta is not None
+        assert len(beta.ravel()) == 2  # x1 and x2
+
+    def test_estimate_coefficients_matches_fit(self, balanced_panel_data):
+        """Test that _estimate_coefficients() returns same betas as fit()."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+
+        # Get coefficients from _estimate_coefficients()
+        beta_direct = model._estimate_coefficients().ravel()
+
+        # Get coefficients from fit()
+        results = model.fit()
+        beta_fit = results.params.values
+
+        np.testing.assert_array_almost_equal(beta_direct, beta_fit)
+
+
+class TestComputeVcovRobustDirectly:
+    """Tests for _compute_vcov_robust() method (lines 730-745)."""
+
+    def test_compute_vcov_robust_directly(self, balanced_panel_data):
+        """Test _compute_vcov_robust() with demeaned X and residuals."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Reconstruct demeaned X and residuals
+        y_orig, X_orig = model.formula_parser.build_design_matrices(
+            model.data.data, return_type="array"
+        )
+        if model.formula_parser.has_intercept:
+            X_orig = X_orig[:, 1:]
+
+        entities = model.data.data[model.data.entity_col].values
+        times = model.data.data[model.data.time_col].values
+
+        y_dm, X_dm = model._apply_demeaning(y_orig, X_orig, entities, times)
+        resid_dm = y_dm - (X_dm @ results.params.values)
+
+        df_resid = results.df_resid
+
+        vcov = model._compute_vcov_robust(X_dm, resid_dm, df_resid)
+
+        # Covariance matrix should be 2x2 (for x1 and x2)
+        assert vcov.shape == (2, 2)
+        # Diagonal elements (variances) should be positive
+        assert vcov[0, 0] > 0
+        assert vcov[1, 1] > 0
+        # Should be symmetric
+        np.testing.assert_array_almost_equal(vcov, vcov.T)
+
+
+class TestComputeVcovClusteredDirectly:
+    """Tests for _compute_vcov_clustered() method (lines 769-793)."""
+
+    def test_compute_vcov_clustered_directly(self, balanced_panel_data):
+        """Test _compute_vcov_clustered() with demeaned data."""
+        model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Reconstruct demeaned X and residuals
+        y_orig, X_orig = model.formula_parser.build_design_matrices(
+            model.data.data, return_type="array"
+        )
+        if model.formula_parser.has_intercept:
+            X_orig = X_orig[:, 1:]
+
+        entities = model.data.data[model.data.entity_col].values
+        times = model.data.data[model.data.time_col].values
+
+        y_dm, X_dm = model._apply_demeaning(y_orig, X_orig, entities, times)
+        resid_dm = y_dm - (X_dm @ results.params.values)
+
+        df_resid = results.df_resid
+
+        vcov = model._compute_vcov_clustered(X_dm, resid_dm, entities, df_resid)
+
+        # Covariance matrix should be 2x2 (for x1 and x2)
+        assert vcov.shape == (2, 2)
+        # Diagonal elements (variances) should be positive
+        assert vcov[0, 0] > 0
+        assert vcov[1, 1] > 0
+        # Should be symmetric
+        np.testing.assert_array_almost_equal(vcov, vcov.T)

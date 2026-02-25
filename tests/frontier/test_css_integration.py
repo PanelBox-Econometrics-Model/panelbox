@@ -328,5 +328,191 @@ class TestCSSIntegration:
         assert result is not None
 
 
+class TestCSSDirectCoverageBatch4:
+    """Tests targeting uncovered branches in frontier/css.py directly."""
+
+    @pytest.fixture
+    def css_data(self):
+        """Generate data arrays for direct CSS function calls."""
+        np.random.seed(42)
+        N, T = 15, 8
+        n = N * T
+
+        entity_id = np.repeat(np.arange(N), T)
+        time_id = np.tile(np.arange(T), N)
+
+        X = np.column_stack(
+            [
+                np.random.normal(10, 2, n),
+                np.random.normal(5, 1, n),
+            ]
+        )
+
+        # Build y with entity and time structure
+        alpha = np.repeat(np.random.normal(5, 0.5, N), T)
+        y = alpha + 0.5 * X[:, 0] + 0.3 * X[:, 1] + np.random.normal(0, 0.1, n)
+
+        return y, X, entity_id, time_id
+
+    def test_css_result_summary(self, css_data):
+        """Test CSSResult.summary() method.
+
+        Covers lines 74-82: CSSResult.summary().
+        """
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+        result = estimate_css_model(y, X, entity_id, time_id, time_trend="quadratic")
+
+        summary_df = result.summary()
+
+        assert isinstance(summary_df, pd.DataFrame)
+        assert "Parameter" in summary_df.columns
+        assert "Estimate" in summary_df.columns
+        assert len(summary_df) == 2  # Two parameters (x0, x1)
+        assert summary_df["Parameter"].tolist() == ["x0", "x1"]
+
+    def test_estimate_css_invalid_time_trend(self, css_data):
+        """Test that invalid time_trend raises ValueError directly.
+
+        Covers line 183: direct call to estimate_css_model.
+        """
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+
+        with pytest.raises(ValueError, match="time_trend must be"):
+            estimate_css_model(y, X, entity_id, time_id, time_trend="cubic")
+
+    def test_estimate_css_invalid_frontier_type(self, css_data):
+        """Test that invalid frontier_type raises ValueError directly.
+
+        Covers line 186: direct call to estimate_css_model.
+        """
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+
+        with pytest.raises(ValueError, match="frontier_type must be"):
+            estimate_css_model(y, X, entity_id, time_id, frontier_type="revenue")
+
+    def test_estimate_css_singular_design_matrix(self):
+        """Test handling of singular design matrix.
+
+        Covers lines 244-245: except np.linalg.LinAlgError branch.
+        """
+        from panelbox.frontier.css import estimate_css_model
+
+        np.random.seed(42)
+        N, T = 5, 6
+        n = N * T
+
+        entity_id = np.repeat(np.arange(N), T)
+        time_id = np.tile(np.arange(T), N)
+
+        # Create X where columns are perfectly collinear
+        x1 = np.random.normal(0, 1, n)
+        X = np.column_stack([x1, 2 * x1])  # Perfectly collinear
+
+        y = np.random.normal(0, 1, n)
+
+        with pytest.raises(ValueError, match="singular"):
+            estimate_css_model(y, X, entity_id, time_id, time_trend="quadratic")
+
+    def test_time_trend_specification_function(self, css_data):
+        """Test test_time_trend_specification function.
+
+        Covers lines 367-425: the entire function.
+        """
+        from panelbox.frontier.css import test_time_trend_specification
+
+        y, X, entity_id, time_id = css_data
+
+        summary = test_time_trend_specification(y, X, entity_id, time_id)
+
+        assert isinstance(summary, pd.DataFrame)
+        assert len(summary) == 3
+        assert list(summary["Specification"]) == ["None (FE only)", "Linear", "Quadratic"]
+        assert "R\u00b2" in summary.columns
+        assert "\u03c3_v" in summary.columns
+        assert "Mean_Efficiency" in summary.columns
+
+        # R-squared should increase or stay same with more flexible model
+        assert summary["R\u00b2"].iloc[0] <= summary["R\u00b2"].iloc[2] + 0.01
+
+    def test_time_trend_specification_cost_frontier(self, css_data):
+        """Test test_time_trend_specification with cost frontier.
+
+        Covers the cost frontier path in test_time_trend_specification.
+        """
+        from panelbox.frontier.css import test_time_trend_specification
+
+        y, X, entity_id, time_id = css_data
+
+        summary = test_time_trend_specification(y, X, entity_id, time_id, frontier_type="cost")
+
+        assert isinstance(summary, pd.DataFrame)
+        assert len(summary) == 3
+        # All efficiencies should be in valid range
+        assert all(summary["Mean_Efficiency"] > 0)
+        assert all(summary["Mean_Efficiency"] <= 1)
+
+    def test_estimate_css_direct_cost_frontier(self, css_data):
+        """Test estimate_css_model directly with cost frontier.
+
+        Ensures the cost efficiency calculation path is tested directly.
+        """
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+
+        result = estimate_css_model(
+            y,
+            X,
+            entity_id,
+            time_id,
+            time_trend="quadratic",
+            frontier_type="cost",
+        )
+
+        assert result.frontier_type == "cost"
+        assert np.all(result.efficiency_it > 0)
+        assert np.all(result.efficiency_it <= 1)
+
+    def test_estimate_css_none_time_trend_direct(self, css_data):
+        """Test estimate_css_model directly with no time trend."""
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+
+        result = estimate_css_model(
+            y,
+            X,
+            entity_id,
+            time_id,
+            time_trend="none",
+        )
+
+        assert result.time_trend == "none"
+        assert result.n_entities == 15
+        assert result.n_periods == 8
+
+    def test_estimate_css_linear_time_trend_direct(self, css_data):
+        """Test estimate_css_model directly with linear time trend."""
+        from panelbox.frontier.css import estimate_css_model
+
+        y, X, entity_id, time_id = css_data
+
+        result = estimate_css_model(
+            y,
+            X,
+            entity_id,
+            time_id,
+            time_trend="linear",
+        )
+
+        assert result.time_trend == "linear"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

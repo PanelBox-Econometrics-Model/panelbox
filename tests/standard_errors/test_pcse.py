@@ -387,3 +387,79 @@ class TestEdgeCases:
         # Should still work with very small residuals
         assert np.all(result.std_errors > 0)
         assert np.all(result.std_errors < 1e-5)  # Should be small
+
+
+class TestSingularXtOmegaX:
+    """Tests for singular X'OmegaX matrix fallback (lines 270-276)."""
+
+    def test_singular_xtomegax_uses_pseudoinverse(self):
+        """Test that singular X'OmegaX matrix triggers pseudoinverse fallback.
+
+        Covers lines 270-276: the except branch when np.linalg.inv(XtOmegaX) fails.
+        We mock np.linalg.inv to raise LinAlgError specifically when called on the
+        XtOmegaX matrix (a kxk matrix) while allowing other inv calls to succeed.
+        """
+        from unittest.mock import patch
+
+        n_entities = 3
+        n_periods = 5
+        entity_ids = np.repeat(np.arange(n_entities), n_periods)
+        time_ids = np.tile(np.arange(n_periods), n_entities)
+
+        np.random.seed(99)
+        X = np.random.randn(n_entities * n_periods, 2)
+        resid = np.random.randn(n_entities * n_periods) * 0.5
+
+        pcse_est = PanelCorrectedStandardErrors(X, resid, entity_ids, time_ids)
+
+        # Patch np.linalg.inv to fail on the k x k XtOmegaX matrix
+        # but succeed on the N x N sigma matrix
+        original_inv = np.linalg.inv
+        call_count = [0]
+
+        def mock_inv(a):
+            call_count[0] += 1
+            # The first inv call is for sigma (NxN = 3x3)
+            # The second inv call is for XtOmegaX (kxk = 2x2)
+            if call_count[0] == 2:
+                raise np.linalg.LinAlgError("Singular matrix")
+            return original_inv(a)
+
+        with (
+            patch("numpy.linalg.inv", side_effect=mock_inv),
+            pytest.warns(UserWarning, match="X.*matrix is singular"),
+        ):
+            result = pcse_est.compute()
+
+        assert isinstance(result, PCSEResult)
+        assert result.std_errors.shape == (2,)
+        # Pseudoinverse should still produce valid standard errors
+        assert np.all(np.isfinite(result.std_errors))
+
+
+class TestDiagnosticSufficientTN:
+    """Tests for diagnostic summary when T >= 2N (lines 320-321)."""
+
+    def test_diagnostic_summary_sufficient_t_n_ratio(self):
+        """Test diagnostic summary when T >= 2*N shows success message.
+
+        Covers lines 320-321: the else branch showing T/N ratio as sufficient.
+        """
+        n_entities = 3
+        n_periods = 10  # T=10 >= 2*N=6
+        entity_ids = np.repeat(np.arange(n_entities), n_periods)
+        time_ids = np.tile(np.arange(n_periods), n_entities)
+
+        np.random.seed(42)
+        X = np.random.randn(n_entities * n_periods, 2)
+        resid = np.random.randn(n_entities * n_periods) * 0.5
+
+        pcse_est = PanelCorrectedStandardErrors(X, resid, entity_ids, time_ids)
+        summary = pcse_est.diagnostic_summary()
+
+        # T/N ratio = 10/3 = 3.33, which is >= 2
+        assert "T/N ratio:" in summary
+        assert "Sufficient for PCSE estimation" in summary
+        # Should NOT show warnings
+        assert "CRITICAL" not in summary
+        assert "WARNING" not in summary

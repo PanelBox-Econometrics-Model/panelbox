@@ -996,3 +996,77 @@ class TestHansenJPerIndividual:
         expected_J = (1.0 / N) * (zs.T @ W2_inv @ zs).item()
         assert abs(result.statistic - expected_J) < 1e-10
         assert abs(result.statistic - 0.25) < 1e-10
+
+
+# ============================================================================
+# Test 1D y input (reshape branch)
+# ============================================================================
+
+
+class TestOneD_y_Input:
+    """Test that 1D y arrays are handled correctly (reshape to column)."""
+
+    def test_one_step_with_1d_y(self, simple_gmm_data):
+        """Test one_step with 1D y input (covers line 143)."""
+        y, X, Z = simple_gmm_data
+        y_1d = y.flatten()  # Make 1D
+
+        estimator = GMMEstimator()
+        beta, _W, _residuals = estimator.one_step(y_1d, X, Z)
+
+        assert beta.shape[0] == X.shape[1]
+        assert not np.any(np.isnan(beta))
+
+    def test_two_step_with_1d_y(self, simple_gmm_data):
+        """Test two_step with 1D y input (covers line 283)."""
+        y, X, Z = simple_gmm_data
+        y_1d = y.flatten()  # Make 1D
+
+        estimator = GMMEstimator()
+        beta, _vcov, _W, _residuals = estimator.two_step(y_1d, X, Z, robust=True)
+
+        assert beta.shape[0] == X.shape[1]
+        assert not np.any(np.isnan(beta))
+
+    def test_iterative_with_1d_y(self, simple_gmm_data):
+        """Test iterative with 1D y input (covers line 386)."""
+        y, X, Z = simple_gmm_data
+        y_1d = y.flatten()  # Make 1D
+
+        estimator = GMMEstimator()
+        beta, _vcov, _W, _converged = estimator.iterative(y_1d, X, Z)
+
+        assert beta.shape[0] == X.shape[1]
+        assert not np.any(np.isnan(beta))
+
+
+class TestIterativeNonConvergence:
+    """Test iterative GMM non-convergence warning."""
+
+    def test_iterative_non_convergence_warning(self):
+        """Test that non-convergence produces a warning (covers line 433)."""
+        import warnings as w_mod
+
+        np.random.seed(42)
+        n = 50
+        z1 = np.random.normal(0, 1, n)
+        z2 = np.random.normal(0, 1, n)
+        x1 = 0.5 * z1 + np.random.normal(0, 1, n)
+        x2 = 0.5 * z2 + np.random.normal(0, 1, n)
+        y = 0.5 * x1 + 0.3 * x2 + np.random.normal(0, 0.3, n)
+        y = y.reshape(-1, 1)
+        X = np.column_stack([x1, x2])
+        Z = np.column_stack([z1, z2])
+
+        # Use impossibly tight tolerance and max_iter=2 to force non-convergence
+        # The iterative method re-weights, so the beta changes each iteration
+        # With tol=0 it can never converge (requires exact equality)
+        estimator = GMMEstimator(tol=0.0, max_iter=2)
+
+        with w_mod.catch_warnings(record=True) as caught:
+            w_mod.simplefilter("always")
+            _beta, _vcov, _W, converged = estimator.iterative(y, X, Z)
+
+        assert converged is False
+        convergence_warnings = [w for w in caught if "did not converge" in str(w.message)]
+        assert len(convergence_warnings) >= 1

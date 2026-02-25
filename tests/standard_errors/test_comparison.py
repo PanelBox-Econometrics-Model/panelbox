@@ -421,5 +421,272 @@ class TestIntegration:
 # Run Tests
 # ===========================
 
+# ===========================
+# New tests for uncovered lines
+# ===========================
+
+
+class TestExtractModelInfoFallback:
+    """Test _extract_model_info fallback logic (lines 167-177).
+
+    When model_results has no _model attribute but has a model attribute,
+    or when neither is available, test the fallback paths.
+    """
+
+    def test_extract_model_via_model_attribute(self, panel_data):
+        """Test that _extract_model_info falls back to 'model' attribute.
+
+        When _model is not set but a plain 'model' attribute is, it should use it.
+        We create a simple mock object that has 'model' instead of '_model'.
+        """
+        fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Create a wrapper that has 'model' but not '_model'
+        original_model = results._model
+
+        class MockResults:
+            """Mimics PanelResults but exposes model as plain attribute."""
+
+            pass
+
+        mock_results = MockResults()
+        # Copy necessary attributes from real results
+        mock_results.params = results.params
+        mock_results.df_resid = results.df_resid
+        mock_results.resid = results.resid
+        mock_results.fittedvalues = results.fittedvalues
+        mock_results.nobs = results.nobs
+        # Set model as a plain attribute (not _model)
+        mock_results.model = original_model
+
+        comparison = StandardErrorComparison(mock_results)
+
+        # Should have found the model via the 'model' attribute
+        assert comparison._has_model is True
+        assert comparison.model is not None
+
+    def test_extract_model_no_model_at_all(self, panel_data):
+        """Test fallback when neither _model nor model is available.
+
+        Should set _has_model=False and store resid/fittedvalues.
+        """
+        fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Create a mock results object with no _model and no model
+        class MockResults:
+            pass
+
+        mock_results = MockResults()
+        mock_results.params = results.params
+        mock_results.df_resid = results.df_resid
+        mock_results.resid = results.resid
+        mock_results.fittedvalues = results.fittedvalues
+
+        comparison = StandardErrorComparison(mock_results)
+
+        assert comparison._has_model is False
+        assert comparison.model is None
+        assert hasattr(comparison, "resid")
+        assert hasattr(comparison, "fittedvalues")
+
+
+class TestCompareAllModelRefit:
+    """Test compare_all model refit loop (lines 233-237).
+
+    When model is None, compare_all cannot refit and should log warnings.
+    """
+
+    def test_compare_all_without_model_raises(self, panel_data):
+        """When model is None, no SE types can be computed -> ValueError."""
+        fe = FixedEffects("y ~ x1 + x2", panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Create a mock results object with no model
+        class MockResults:
+            pass
+
+        mock_results = MockResults()
+        mock_results.params = results.params
+        mock_results.df_resid = results.df_resid
+        mock_results.resid = results.resid
+        mock_results.fittedvalues = results.fittedvalues
+
+        comparison = StandardErrorComparison(mock_results)
+        assert comparison.model is None
+
+        # Trying to compare should fail since no SE types can be computed
+        with pytest.raises(ValueError, match="No SE types could be computed"):
+            comparison.compare_all(se_types=["nonrobust", "robust"])
+
+    def test_compare_all_with_failing_se_type(self, fe_results):
+        """If one SE type fails, others should still succeed."""
+        comparison = StandardErrorComparison(fe_results)
+
+        # Include an SE type that will fail alongside one that works
+        result = comparison.compare_all(se_types=["nonrobust", "totally_invalid_se_type"])
+
+        # Should succeed with at least the valid type
+        assert "nonrobust" in result.se_comparison.columns
+        # The invalid type should not appear
+        assert "totally_invalid_se_type" not in result.se_comparison.columns
+
+
+class TestSummaryInconsistentInference:
+    """Test summary with inconsistent inference detection (lines 496-503)."""
+
+    def test_summary_inconsistent_inference(self, capsys):
+        """Test that summary prints inconsistent inference when it exists.
+
+        We create a mock ComparisonResult where a coefficient is significant
+        under one SE type but not another.
+        """
+        # Create a mock results object that works with StandardErrorComparison
+        # by building ComparisonResult directly
+        coef_names = ["x1", "x2"]
+        coefficients = np.array([2.5, 0.15])
+
+        # x1 is significant under both; x2 is significant under nonrobust
+        # but NOT under clustered (larger SE)
+        se_dict = {
+            "nonrobust": np.array([0.5, 0.07]),
+            "clustered": np.array([0.6, 0.10]),
+        }
+
+        from scipy import stats as sp_stats
+
+        se_comparison = pd.DataFrame(se_dict, index=coef_names)
+        se_ratios = se_comparison.div(se_comparison["nonrobust"], axis=0)
+
+        t_stats = pd.DataFrame(
+            {se_type: coefficients / se_dict[se_type] for se_type in se_dict},
+            index=coef_names,
+        )
+
+        # Use a large df_resid for near-normal critical values
+        df_resid = 100
+        p_values = pd.DataFrame(
+            {
+                se_type: 2 * (1 - sp_stats.t.cdf(np.abs(t_stats[se_type]), df_resid))
+                for se_type in se_dict
+            },
+            index=coef_names,
+        )
+
+        t_crit = sp_stats.t.ppf(0.975, df_resid)
+        ci_lower = pd.DataFrame(
+            {se_type: coefficients - t_crit * se_dict[se_type] for se_type in se_dict},
+            index=coef_names,
+        )
+        ci_upper = pd.DataFrame(
+            {se_type: coefficients + t_crit * se_dict[se_type] for se_type in se_dict},
+            index=coef_names,
+        )
+
+        significance = p_values.map(
+            lambda p: "***" if p < 0.01 else ("**" if p < 0.05 else ("*" if p < 0.1 else ""))
+        )
+
+        summary_stats = pd.DataFrame(
+            {
+                "mean_se": se_comparison.mean(axis=1),
+                "std_se": se_comparison.std(axis=1),
+                "min_se": se_comparison.min(axis=1),
+                "max_se": se_comparison.max(axis=1),
+                "range_se": se_comparison.max(axis=1) - se_comparison.min(axis=1),
+                "cv_se": se_comparison.std(axis=1) / se_comparison.mean(axis=1),
+            }
+        )
+
+        comp_result = ComparisonResult(
+            se_comparison=se_comparison,
+            se_ratios=se_ratios,
+            t_stats=t_stats,
+            p_values=p_values,
+            ci_lower=ci_lower,
+            ci_upper=ci_upper,
+            significance=significance,
+            summary_stats=summary_stats,
+        )
+
+        # Check if x2 actually has inconsistent inference
+        # x2 with nonrobust: t = 0.15/0.07 = 2.14, p ~ 0.035 (significant at 5%)
+        # x2 with clustered: t = 0.15/0.10 = 1.50, p ~ 0.137 (not significant)
+        assert p_values.loc["x2", "nonrobust"] < 0.05
+        assert p_values.loc["x2", "clustered"] > 0.05
+
+        # Now we need a StandardErrorComparison object to call summary on.
+        # We'll create a minimal mock.
+        class MockComparison:
+            def __init__(self):
+                self.coef_names = coef_names
+                self.coefficients = coefficients
+
+            def compare_all(self):
+                return comp_result
+
+            def summary(self, result=None):
+                # Use the actual implementation from StandardErrorComparison
+                StandardErrorComparison.summary(self, result)
+
+        mock = MockComparison()
+        mock.summary(comp_result)
+
+        captured = capsys.readouterr()
+
+        # Should show inconsistent inference warning
+        assert "inconsistent inference" in captured.out.lower() or "Inconsistent" in captured.out
+        assert "x2" in captured.out
+
+    def test_summary_consistent_inference(self, fe_results, capsys):
+        """Test that summary reports consistent inference when all agree.
+
+        With random data and small coefficients, all SE types likely agree
+        on non-significance, producing the 'consistent' message.
+        """
+        comparison = StandardErrorComparison(fe_results)
+        result = comparison.compare_all(se_types=["nonrobust", "robust"])
+
+        # Check: if all coefficients are either all-significant or all-non-significant
+        sig_matrix = result.p_values < 0.05
+        inconsistent_count = sig_matrix.sum(axis=1)
+        inconsistent = inconsistent_count[
+            (inconsistent_count > 0) & (inconsistent_count < len(result.p_values.columns))
+        ]
+
+        comparison.summary(result)
+        captured = capsys.readouterr()
+
+        if len(inconsistent) == 0:
+            assert "consistent" in captured.out.lower() or "Consistent" in captured.out
+        else:
+            assert "inconsistent" in captured.out.lower() or "Inconsistent" in captured.out
+
+
+class TestPlotComparisonImportError:
+    """Test plot_comparison ImportError handling (lines 370-371)."""
+
+    def test_plot_comparison_import_error(self, fe_results, monkeypatch):
+        """Test that plot_comparison raises ImportError with helpful message
+        when matplotlib is not available.
+        """
+        import builtins
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "matplotlib.pyplot" or name == "matplotlib":
+                raise ImportError("No module named 'matplotlib'")
+            return real_import(name, *args, **kwargs)
+
+        comparison = StandardErrorComparison(fe_results)
+
+        monkeypatch.setattr(builtins, "__import__", mock_import)
+
+        with pytest.raises(ImportError, match="Matplotlib is required"):
+            comparison.plot_comparison()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

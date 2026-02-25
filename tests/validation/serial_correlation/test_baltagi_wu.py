@@ -224,7 +224,6 @@ class TestBaltagiWuTest:
         test = BaltagiWuTest(results)
 
         # Mock dropna to return empty DataFrame
-        original_dropna = pd.DataFrame.dropna
 
         def mock_dropna(self, *args, **kwargs):
             # Return empty DataFrame
@@ -269,6 +268,8 @@ class TestBaltagiWuTest:
                 return 0.0
             return result
 
-        with patch("numpy.sqrt", side_effect=mock_sqrt):
-            with pytest.raises(ValueError, match="Standard error is zero"):
-                test.run()
+        with (
+            patch("numpy.sqrt", side_effect=mock_sqrt),
+            pytest.raises(ValueError, match="Standard error is zero"),
+        ):
+            test.run()

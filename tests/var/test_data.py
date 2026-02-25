@@ -533,3 +533,494 @@ class TestPanelVARDataRegressorNames:
         names = pvar_data.get_regressor_names()
         expected = ["L1.y1", "L1.y2", "L2.y1", "L2.y2", "x1", "const", "trend"]
         assert names == expected
+
+
+class TestPanelVARDataInputValidation:
+    """Tests for uncovered validation branches in PanelVARData._validate_inputs."""
+
+    def test_data_not_dataframe_raises_type_error(self):
+        """Line 166: data is not a DataFrame raises TypeError."""
+        with pytest.raises(TypeError, match="must be a DataFrame"):
+            PanelVARData(
+                "not_a_dataframe",
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_data_dict_raises_type_error(self):
+        """Line 166: passing a dict (not DataFrame) raises TypeError."""
+        with pytest.raises(TypeError, match="must be a DataFrame"):
+            PanelVARData(
+                {"y1": [1, 2], "entity": [1, 1], "time": [1, 2]},
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_data_numpy_array_raises_type_error(self):
+        """Line 166: passing a numpy array raises TypeError."""
+        with pytest.raises(TypeError, match="must be a DataFrame"):
+            PanelVARData(
+                np.array([[1, 2], [3, 4]]),
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_missing_time_col_raises_value_error(self):
+        """Line 173: missing time_col in data raises ValueError."""
+        df = pd.DataFrame({"y1": [1, 2, 3], "y2": [4, 5, 6], "entity": [1, 1, 1]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="nonexistent",
+                lags=1,
+            )
+
+    def test_missing_entity_col_only(self):
+        """Line 171: only entity_col missing (time_col exists)."""
+        df = pd.DataFrame({"y1": [1.0, 2.0], "time": [1, 2]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="nonexistent_entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_missing_endog_var_columns(self):
+        """Line 181: missing endogenous variable columns."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1", "nonexistent_var"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_missing_exog_var_columns(self):
+        """Line 188: missing exogenous variable columns."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                exog_vars=["nonexistent_exog"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    def test_multiple_missing_exog_columns(self):
+        """Line 181/188: multiple missing exog columns all listed."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                exog_vars=["missing_x1", "missing_x2"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+
+class TestPanelVARDataEquationDataEdgeCases:
+    """Tests for uncovered branches in equation_data()."""
+
+    def test_equation_index_too_large(self):
+        """Line 427: k >= K raises ValueError."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(k=5)
+
+    def test_equation_index_negative(self):
+        """Line 427: k < 0 raises ValueError."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(k=-1)
+
+    def test_equation_index_exactly_K(self):
+        """Line 427: k == K (boundary) raises ValueError."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        # K=2, so k=2 is out of bounds
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(k=2)
+
+    def test_equation_data_no_constant_no_trend(self):
+        """Line 469: empty X_list when trend='none' and include_constant=False."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="none",
+        )
+
+        # With lags=1, X should still have lag columns even with include_constant=False
+        y, X = pvar_data.equation_data(0, include_constant=False)
+        # K*p = 2*1 = 2 lag columns, no constant, no trend
+        assert X.shape[1] == 2
+        assert y.shape[0] == X.shape[0]
+
+    def test_repr(self):
+        """Test __repr__ output."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        r = repr(pvar_data)
+        assert "PanelVARData" in r
+        assert "K=2" in r
+        assert "p=1" in r
+        assert "N=3" in r
+
+
+class TestPanelVARDataCoverageExtras:
+    """Additional tests targeting uncovered lines in panelbox/var/data.py."""
+
+    # ------------------------------------------------------------------ #
+    # Line 188: empty endog_vars list → "Must have at least 1 endogenous variable"
+    # ------------------------------------------------------------------ #
+    def test_empty_endog_vars_raises_value_error(self):
+        """Line 188: len(endog_vars) < 1 raises ValueError."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1],
+                "time": [1, 2, 3],
+                "y1": [1.0, 2.0, 3.0],
+            }
+        )
+        with pytest.raises(ValueError, match="at least 1 endogenous variable"):
+            PanelVARData(
+                df,
+                endog_vars=[],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 316: _verify_no_cross_contamination ValueError
+    # This is difficult to trigger through the public API because
+    # _construct_lags always builds correct lags. We test it by
+    # manually corrupting the lag column after construction and
+    # calling the verification method directly.
+    # ------------------------------------------------------------------ #
+    def test_cross_contamination_detection(self):
+        """Line 316: Cross-contamination detected raises ValueError."""
+        np.random.seed(42)
+        data = []
+        for entity in ["A", "B"]:
+            for t in range(6):
+                data.append(
+                    {
+                        "entity": entity,
+                        "time": t,
+                        "y": float(t) + (0.0 if entity == "A" else 100.0),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        # Create a valid PanelVARData first
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        # Now corrupt the lag column so verification would fail
+        # Swap a lagged value to create a mismatch
+        corrupted_df = pvar_data.data_with_lags.copy()
+        # Find entity A rows and corrupt L1.y
+        mask_a = corrupted_df["entity"] == "A"
+        a_indices = corrupted_df[mask_a].index
+        if len(a_indices) > 1:
+            # Set a lagged value to something clearly wrong
+            corrupted_df.loc[a_indices[1], "L1.y"] = 999999.0
+
+        # Overwrite and re-run verification → should raise
+        pvar_data.data_with_lags = corrupted_df
+        with pytest.raises(ValueError, match="Cross-contamination detected"):
+            pvar_data._verify_no_cross_contamination()
+
+    # ------------------------------------------------------------------ #
+    # Line 427: equation_data with k out of range (additional boundary)
+    # ------------------------------------------------------------------ #
+    def test_equation_data_k_exactly_minus1(self):
+        """Line 427: k = -1 raises ValueError."""
+        np.random.seed(42)
+        data = []
+        for i in range(2):
+            for t in range(5):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(k=-1)
+
+    # ------------------------------------------------------------------ #
+    # Line 469: empty X matrix path
+    # With lags >= 1, lag columns always exist, so the truly empty path
+    # (len(X_list) == 0) is unreachable. Instead we test the closest
+    # scenario: trend='none' + include_constant=False, which produces
+    # an X with only lag columns and no deterministic terms.
+    # ------------------------------------------------------------------ #
+    def test_equation_data_include_constant_false_trend_none(self):
+        """Line 469 vicinity: minimal X with include_constant=False and trend='none'."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(8):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="none",
+        )
+
+        y, X = pvar_data.equation_data(0, include_constant=False)
+        # Only lag columns: K*p = 1*1 = 1
+        assert X.shape[1] == 1
+        assert y.shape[0] == X.shape[0]
+
+    # ------------------------------------------------------------------ #
+    # Line 173: missing time_col specifically (entity_col present)
+    # ------------------------------------------------------------------ #
+    def test_missing_time_col_with_entity_present(self):
+        """Line 173: time_col not in data columns."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1],
+                "y1": [1.0, 2.0, 3.0],
+            }
+        )
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="date",  # not present
+                lags=1,
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 181: missing exog variable column
+    # ------------------------------------------------------------------ #
+    def test_missing_exog_column(self):
+        """Line 181: exog_vars column not found in data."""
+        df = pd.DataFrame(
+            {
+                "entity": [1, 1, 1],
+                "time": [1, 2, 3],
+                "y1": [1.0, 2.0, 3.0],
+            }
+        )
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                exog_vars=["z_not_present"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
+
+    # ------------------------------------------------------------------ #
+    # equation_data with include_constant=True + trend='both' verifies
+    # both constant and trend columns are added.
+    # ------------------------------------------------------------------ #
+    def test_equation_data_include_constant_true_trend_both(self):
+        """Verify include_constant=True with trend='both' adds constant and trend."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(8):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="both",
+        )
+
+        _y, X = pvar_data.equation_data(0, include_constant=True)
+        # K*p lags + constant + trend = 2*1 + 1 + 1 = 4
+        assert X.shape[1] == 4
+        # Second-to-last column should be all ones (constant)
+        assert np.allclose(X[:, -2], 1.0)
+        # Last column should be a trend (1, 2, 3, ...)
+        assert X[0, -1] == 1.0
+        assert X[1, -1] == 2.0
+
+    def test_equation_data_include_constant_false_trend_both(self):
+        """Verify include_constant=False suppresses constant and trend even when trend='both'."""
+        np.random.seed(42)
+        data = []
+        for i in range(3):
+            for t in range(8):
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
+                )
+        df = pd.DataFrame(data)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="both",
+        )
+
+        _y, X = pvar_data.equation_data(0, include_constant=False)
+        # Only lag columns: K*p = 2*1 = 2
+        assert X.shape[1] == 2

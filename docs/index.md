@@ -1,375 +1,272 @@
-<div align="center" style="background: white; padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
-  <img src="assets/images/logo.svg" alt="PanelBox Logo" width="600" style="max-width: 100%; height: auto;">
-</div>
+---
+title: PanelBox - Panel Data Econometrics for Python
+description: Complete Python library for panel data econometrics with 70+ models, 50+ diagnostic tests, and interactive HTML reports
+---
 
-<div align="center">
-  <h1>PanelBox</h1>
-  <p style="font-size: 1.2em;"><strong>Python library for panel data econometrics</strong></p>
+# PanelBox
 
-  <p>
-    <a href="https://pypi.org/project/panelbox/"><img src="https://img.shields.io/pypi/v/panelbox.svg" alt="PyPI version"></a>
-    <a href="https://pypi.org/project/panelbox/"><img src="https://img.shields.io/pypi/pyversions/panelbox.svg" alt="Python versions"></a>
-    <img src="https://img.shields.io/badge/status-stable-brightgreen.svg" alt="Development Status">
-    <a href="https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
-  </p>
+**The complete Python toolkit for panel data econometrics.**
+
+[![PyPI](https://img.shields.io/pypi/v/panelbox)](https://pypi.org/project/panelbox/)
+[![Python](https://img.shields.io/pypi/pyversions/panelbox)](https://pypi.org/project/panelbox/)
+[![Tests](https://img.shields.io/badge/tests-3986%20passed-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-85--92%25-brightgreen)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE)
+![Development Status](https://img.shields.io/badge/development%20status-beta-orange)
+
+70+ econometric models | 50+ diagnostic tests | Interactive HTML reports | Google Colab tutorials
+
+---
+
+## Quick Start
+
+=== "Fixed Effects (3 lines)"
+
+    ```python
+    from panelbox import FixedEffects
+    model = FixedEffects("invest ~ value + capital", data, "firm", "year")
+    print(model.fit(cov_type="clustered").summary())
+    ```
+
+=== "System GMM (5 lines)"
+
+    ```python
+    from panelbox.gmm import SystemGMM
+    model = SystemGMM("n ~ L.n + w + k", data, "id", "year",
+                       gmm_instruments=["L.n"], iv_instruments=["w", "k"])
+    results = model.fit(two_step=True)
+    print(results.summary())  # Includes Hansen J, AR(1)/AR(2) tests
+    ```
+
+=== "Full Experiment (6 lines)"
+
+    ```python
+    from panelbox.experiment import PanelExperiment
+    exp = PanelExperiment(data, "invest ~ value + capital", "firm", "year")
+    exp.fit_all_models(["pooled", "fe", "re"])
+    validation = exp.validate_model("fe")  # 15+ automatic tests
+    comparison = exp.compare_models(["pooled", "fe", "re"])
+    exp.save_master_report("analysis.html")  # Interactive HTML report
+    ```
+
+---
+
+## What's Inside
+
+<div class="grid cards" markdown>
+
+-   :material-chart-line: **Static Models**
+
+    ---
+
+    Pooled OLS, Fixed Effects, Random Effects, Between, First Difference
+
+    [:octicons-arrow-right-24: User Guide](user-guide/static-models/index.md)
+
+-   :material-chart-timeline-variant: **Dynamic GMM**
+
+    ---
+
+    Arellano-Bond, Blundell-Bond, CUE-GMM, Bias-Corrected
+
+    [:octicons-arrow-right-24: User Guide](user-guide/gmm/index.md)
+
+-   :material-map-marker-radius: **Spatial Econometrics**
+
+    ---
+
+    SAR, SEM, SDM, Dynamic Spatial, General Nesting Spatial
+
+    [:octicons-arrow-right-24: User Guide](user-guide/spatial/index.md)
+
+-   :material-factory: **Stochastic Frontier**
+
+    ---
+
+    Production/Cost frontiers, Four-Component (unique in Python), TFP
+
+    [:octicons-arrow-right-24: User Guide](user-guide/frontier/index.md)
+
+-   :material-chart-scatter-plot: **Quantile Regression**
+
+    ---
+
+    Pooled, FE, Canay Two-Step, Location-Scale, Dynamic, Treatment Effects
+
+    [:octicons-arrow-right-24: User Guide](user-guide/quantile/index.md)
+
+-   :material-swap-horizontal: **Panel VAR**
+
+    ---
+
+    VAR, VECM, Impulse Response, FEVD, Granger Causality, Forecasting
+
+    [:octicons-arrow-right-24: User Guide](user-guide/var/index.md)
+
+-   :material-toggle-switch: **Discrete Choice**
+
+    ---
+
+    Logit/Probit, FE Logit, RE Probit, Ordered, Multinomial, Dynamic
+
+    [:octicons-arrow-right-24: User Guide](user-guide/discrete/index.md)
+
+-   :material-counter: **Count Data**
+
+    ---
+
+    Poisson, PPML, Negative Binomial, Zero-Inflated
+
+    [:octicons-arrow-right-24: User Guide](user-guide/count/index.md)
+
+-   :material-content-cut: **Censored & Selection**
+
+    ---
+
+    Tobit, Honore, Panel Heckman (Wooldridge 1995)
+
+    [:octicons-arrow-right-24: User Guide](user-guide/censored/index.md)
+
+-   :material-vector-line: **Instrumental Variables**
+
+    ---
+
+    Panel IV/2SLS with first-stage diagnostics
+
+    [:octicons-arrow-right-24: User Guide](user-guide/iv/index.md)
+
+-   :material-shield-check: **Standard Errors**
+
+    ---
+
+    HC0-HC3, Clustered, Driscoll-Kraay, Newey-West, PCSE, Spatial HAC
+
+    [:octicons-arrow-right-24: Inference Guide](inference/index.md)
+
+-   :material-test-tube: **50+ Diagnostic Tests**
+
+    ---
+
+    Specification, serial correlation, heteroskedasticity, unit root, cointegration
+
+    [:octicons-arrow-right-24: Diagnostics Guide](diagnostics/index.md)
+
+-   :material-chart-bar: **Visualization & Reports**
+
+    ---
+
+    35+ Plotly charts, HTML/LaTeX/Markdown reports, Master Reports
+
+    [:octicons-arrow-right-24: Visualization Guide](visualization/charts/index.md)
+
 </div>
 
 ---
 
-## Overview
+## PanelBox vs. Stata, R, and linearmodels
 
-PanelBox is a comprehensive Python library for **panel data econometrics**, providing implementations of:
-
-- **Static panel models**: Pooled OLS, Fixed Effects, Random Effects, Between, First Differences
-- **Dynamic panel GMM**: Difference GMM (Arellano-Bond 1991), System GMM (Blundell-Bond 1998)
-- **HTML Report System** (NEW in v0.8.0): Interactive validation, comparison, and residual diagnostic reports
-- **Test Runners** (NEW in v0.8.0): ValidationTest and ComparisonTest with configurable presets
-- **Master Reports** (NEW in v0.8.0): Comprehensive overview with navigation to all sub-reports
-- **Robust inference**: 8+ types of standard errors (clustered, HAC, heteroskedasticity-robust)
-- **Diagnostic tests**: Hansen J, Sargan, AR tests, Hausman, Wooldridge, Breusch-Pagan
-- **Validation**: Cross-validated against Stata's `xtabond2` and R's `plm`
-
-**Design Philosophy:**
-
-- 🎯 **Ease of use**: R-style formulas, pandas-friendly API
-- 🔬 **Academic rigor**: Implementations match published econometrics papers
-- ⚡ **Performance**: Numba-optimized critical paths (up to 348x speedup)
-- 📊 **Publication-ready**: LaTeX export, formatted output tables
-
----
-
-## Quick Example
-
-```python
-import panelbox as pb
-
-# Load example data
-data = pb.load_grunfeld()
-
-# Create experiment and fit multiple models (NEW in v0.8.0!)
-experiment = pb.PanelExperiment(
-    data=data,
-    formula="invest ~ value + capital",
-    entity_col="firm",
-    time_col="year"
-)
-
-# Fit models
-experiment.fit_model('pooled_ols', name='ols')
-experiment.fit_model('fixed_effects', name='fe')
-experiment.fit_model('random_effects', name='re')
-
-# Generate reports with one line each (NEW in v0.8.0!)
-validation = experiment.validate_model('fe')
-validation.save_html('validation.html', test_type='validation')
-
-comparison = experiment.compare_models(['ols', 'fe', 're'])
-comparison.save_html('comparison.html', test_type='comparison')
-
-# Generate master report (NEW in v0.8.0!)
-experiment.save_master_report('master.html', reports=[
-    {'type': 'validation', 'title': 'Model Validation', 'file_path': 'validation.html'},
-    {'type': 'comparison', 'title': 'Model Comparison', 'file_path': 'comparison.html'}
-])
-```
-
-**Output:**
-
-Three interactive HTML reports are generated:
-- `validation.html`: Comprehensive diagnostic tests with pass/fail indicators
-- `comparison.html`: Side-by-side model comparison with coefficients and metrics
-- `master.html`: Overview dashboard with navigation to all reports
-
-Open `master.html` in your browser for an interactive analysis experience!
+| Feature | PanelBox | Stata | R (plm/splm) | linearmodels |
+|:--------|:--------:|:-----:|:------------:|:------------:|
+| Static Models (FE/RE) | :white_check_mark: | :white_check_mark: xtreg | :white_check_mark: plm | :white_check_mark: |
+| Difference GMM | :white_check_mark: | :white_check_mark: xtabond2 | :white_check_mark: pgmm | :white_check_mark: |
+| System GMM | :white_check_mark: | :white_check_mark: xtabond2 | :white_check_mark: pgmm | :white_check_mark: |
+| CUE-GMM | :white_check_mark: | :x: | :x: | :x: |
+| Spatial Models (SAR/SEM/SDM) | :white_check_mark: | :white_check_mark: spxtregress | :white_check_mark: splm | :x: |
+| Dynamic Spatial | :white_check_mark: | :x: | :x: | :x: |
+| Four-Component SFA | :white_check_mark: | :x: | :x: | :x: |
+| Quantile FE (Canay) | :white_check_mark: | :x: | :white_check_mark: quantreg | :x: |
+| Panel VAR/VECM | :white_check_mark: | :white_check_mark: pvar | :white_check_mark: panelvar | :x: |
+| Interactive HTML Reports | :white_check_mark: | :x: | :x: | :x: |
+| Experiment Pattern | :white_check_mark: | :x: | :x: | :x: |
+| Google Colab Tutorials | :white_check_mark: 100+ | :x: | :x: | :x: |
 
 ---
 
 ## Installation
 
-Install PanelBox via pip:
-
 ```bash
 pip install panelbox
 ```
 
-**Requirements:**
-- Python ≥ 3.9
-- NumPy ≥ 1.24.0
-- Pandas ≥ 2.0.0
-- SciPy ≥ 1.10.0
+With optional extras:
 
-**Optional dependencies:**
 ```bash
-pip install panelbox[plots]        # Matplotlib for plotting
-pip install panelbox[performance]  # Numba for speed
-pip install panelbox[all]          # Everything
+pip install panelbox[dev]     # Development tools
+pip install panelbox[docs]    # Documentation tools
+pip install panelbox[test]    # Testing tools
 ```
 
-See [Installation Guide](how-to/install.md) for detailed instructions.
+See the [Installation Guide](getting-started/installation.md) for detailed instructions.
 
 ---
 
-## Features
+## Explore by Topic
 
-### Static Panel Models
+<div class="grid cards" markdown>
 
-**Estimators:**
-- **Pooled OLS**: Baseline model ignoring panel structure
-- **Fixed Effects (Within)**: Controls for time-invariant entity heterogeneity
-- **Random Effects (GLS)**: Efficient if effects uncorrelated with regressors
-- **Between**: Cross-sectional regression of entity means
-- **First Differences**: Simple differencing to eliminate fixed effects
+-   :material-rocket-launch: **Getting Started**
 
-**Standard Errors (8 types):**
-- Heteroskedasticity-robust: HC0, HC1, HC2, HC3
-- Cluster-robust: One-way and two-way clustering
-- HAC: Driscoll-Kraay, Newey-West
-- Panel-corrected (PCSE)
+    ---
 
-**Specification Tests:**
-- Hausman test (FE vs RE)
-- Breusch-Pagan LM test (random effects)
-- Wooldridge test (serial correlation)
-- F-test for fixed effects
+    Install and run your first model in 5 minutes
 
-### Dynamic Panel GMM
+    [:octicons-arrow-right-24: Quick Start](getting-started/quickstart.md)
 
-**Estimators:**
-- **Difference GMM** (Arellano-Bond 1991)
-  - First-difference transformation
-  - Lagged levels as instruments
-  - Handles short panels (small T, large N)
+-   :material-book-open-variant: **User Guide**
 
-- **System GMM** (Blundell-Bond 1998)
-  - Combines difference and level equations
-  - More efficient for persistent series
-  - Additional moment conditions
+    ---
 
-**Features:**
-- One-step and two-step estimation
-- Windmeijer finite-sample correction (2005)
-- Instrument collapse (Roodman 2009) to avoid proliferation
-- Robust to unbalanced panels
+    Comprehensive guides for all 13 model families
 
-**Diagnostic Tests:**
-- Hansen J test (overidentification)
-- Sargan test (alternative)
-- AR(1) and AR(2) tests (serial correlation)
-- Difference-in-Hansen test (System GMM levels)
+    [:octicons-arrow-right-24: User Guide](user-guide/index.md)
 
-### HTML Report System (NEW in v0.8.0)
+-   :material-test-tube: **Diagnostics**
 
-**Report Types:**
-- **Validation Reports**: Comprehensive diagnostic tests with interactive visualizations
-- **Comparison Reports**: Side-by-side model comparison with coefficients and fit metrics
-- **Residual Reports**: Diagnostic plots (QQ plots, residuals vs fitted, ACF/PACF)
-- **Master Reports**: Overview dashboard with navigation to all sub-reports
+    ---
 
-**Features:**
-- **Three Professional Themes**: Professional (blue), Academic (gray), Presentation (purple)
-- **Test Runners**: ValidationTest and ComparisonTest with configurable presets (quick, basic, full)
-- **Self-Contained**: HTML files work offline, no external dependencies
-- **Interactive**: Plotly charts, sortable tables, responsive design
-- **Export Options**: JSON export for programmatic analysis
+    50+ validation and diagnostic tests
 
-**Quick Start:**
-```python
-# Create experiment
-experiment = pb.PanelExperiment(data, formula, entity_col, time_col)
+    [:octicons-arrow-right-24: Diagnostics](diagnostics/index.md)
 
-# Fit models
-experiment.fit_model('fixed_effects', name='fe')
+-   :material-notebook: **Tutorials**
 
-# Generate reports
-validation = experiment.validate_model('fe')
-validation.save_html('report.html', test_type='validation', theme='professional')
-```
+    ---
 
-### Data and Reporting
+    100+ interactive notebooks with Google Colab
 
-**Datasets:**
-- Grunfeld investment data (10 firms, 20 years)
-- Arellano-Bond employment data (optional)
+    [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
 
-**Output Formats:**
-- Interactive HTML reports (NEW in v0.8.0)
-- Console-friendly summary tables
-- LaTeX export for publications
-- Pandas DataFrames for further analysis
-- JSON export for programmatic analysis (NEW in v0.8.0)
+-   :material-code-tags: **API Reference**
+
+    ---
+
+    Complete technical reference for all classes and functions
+
+    [:octicons-arrow-right-24: API Reference](api/index.md)
+
+-   :material-sigma: **Theory**
+
+    ---
+
+    Mathematical foundations and econometric background
+
+    [:octicons-arrow-right-24: Theory](theory/panel-fundamentals.md)
+
+</div>
 
 ---
 
-## Documentation
+## Library Metrics
 
-### 📘 Getting Started
-
-- **[Installation](how-to/install.md)**: Install PanelBox on your system
-- **[Quick Start Tutorial](tutorials/01_getting_started.md)**: Your first panel model in 15 minutes
-- **[Choose a Model](how-to/choose_model.md)**: Decision guide for selecting the right estimator
-
-### 📚 Tutorials (Learning-Oriented)
-
-1. **[Getting Started](tutorials/01_getting_started.md)**: Load data, estimate Pooled OLS, interpret results
-2. **[Static Panel Models](tutorials/02_static_models.md)**: Fixed Effects, Random Effects, Hausman test
-3. **[GMM Introduction](tutorials/03_gmm_intro.md)**: Difference GMM, System GMM, diagnostics
-4. **[HTML Report System](tutorials/04_html_reports.md)**: Generate professional reports (NEW in v0.8.0)
-
-### 🛠️ How-To Guides (Task-Oriented)
-
-- **[Install PanelBox](how-to/install.md)**: Installation on Windows, macOS, Linux
-- **[Load Your Data](how-to/load_data.md)**: Prepare panel data from various sources
-- **[Choose a Model](how-to/choose_model.md)**: Decision trees and workflows
-- **[Interpret Tests](how-to/interpret_tests.md)**: Understand diagnostic test output
-
-### 📖 Explanation Guides (Understanding-Oriented)
-
-- **[Panel Data Introduction](guides/panel_data_intro.md)**: What is panel data and when to use it
-- **[Fixed vs Random Effects](guides/fixed_vs_random.md)**: Deep dive into FE and RE
-- **[GMM Explained](guides/gmm_explained.md)**: Theory and mechanics of GMM estimation
-
-### 🔍 API Reference
-
-- **[Static Models API](api/models.md)**: PooledOLS, FixedEffects, RandomEffects, Between, FirstDifferences
-- **[GMM API](api/gmm.md)**: DifferenceGMM, SystemGMM
-- **[Results API](api/results.md)**: PanelResults class
-- **[Validation API](api/validation.md)**: Diagnostic tests
-- **[Datasets API](api/datasets.md)**: load_grunfeld, load_abdata
-
----
-
-## Why PanelBox?
-
-### 🎯 Designed for Researchers
-
-**PanelBox brings Stata and R panel econometrics to Python:**
-
-| Feature | PanelBox | Stata | R (plm) | linearmodels |
-|---------|----------|-------|---------|--------------|
-| Difference GMM | ✅ | ✅ (xtabond2) | ✅ | ❌ |
-| System GMM | ✅ | ✅ (xtabond2) | ✅ | ❌ |
-| Instrument collapse | ✅ | ✅ | ✅ | ❌ |
-| Windmeijer correction | ✅ | ✅ | ✅ | ❌ |
-| Unbalanced panels | ✅ | ✅ | ✅ | ⚠️ (limited) |
-| Hansen J test | ✅ | ✅ | ✅ | ❌ |
-| AR(1)/AR(2) tests | ✅ | ✅ | ✅ | ❌ |
-| Hausman test | ✅ | ✅ | ✅ | ✅ |
-
-**Validated against academic standards:**
-- Stata `xtabond2` (Roodman 2009) for GMM
-- R `plm` package for static models
-- 600+ unit tests with 93% passing
-- Reproduction of published results from seminal papers
-
-### ⚡ Performance
-
-**Numba-optimized critical paths:**
-
-| Operation | Pure Python | Numba | Speedup |
-|-----------|-------------|-------|---------|
-| GMM weighting matrix | 12.5s | 0.036s | **348x** |
-| Within transformation | 2.1s | 0.15s | **14x** |
-| Instrument construction | 5.3s | 0.41s | **13x** |
-
-**Benchmark:** N=5000, T=10, 2 lags (typical dynamic panel)
-
-### 📊 Publication-Ready
-
-**Export to LaTeX:**
-```python
-results.to_latex("table1.tex", caption="Investment Regression Results")
-```
-
-**Formatted tables:**
-- Coefficient estimates with stars (*, **, ***)
-- Standard errors in parentheses
-- R-squared, diagnostics footer
-- Customizable formatting
-
----
-
-## Examples
-
-### Fixed Effects
-
-```python
-import panelbox as pb
-
-data = pb.load_grunfeld()
-
-# Two-way fixed effects
-fe = pb.FixedEffects(
-    formula="invest ~ value + capital",
-    data=data,
-    entity_col="firm",
-    time_col="year",
-    entity_effects=True,
-    time_effects=True
-)
-
-results = fe.fit(cov_type='clustered')
-print(results.summary())
-```
-
-### Hausman Test (FE vs RE)
-
-```python
-# Estimate both models
-fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year").fit()
-re = pb.RandomEffects("invest ~ value + capital", data, "firm", "year").fit()
-
-# Test
-from panelbox.validation import HausmanTest
-hausman = HausmanTest(fe, re)
-print(hausman)
-
-# Output: p-value = 0.3113 → Use Random Effects (more efficient)
-```
-
-### System GMM with Diagnostics
-
-```python
-gmm = pb.SystemGMM(
-    data=data,
-    dep_var='invest',
-    lags=1,
-    exog_vars=['value', 'capital'],
-    id_var='firm',
-    time_var='year',
-    collapse=True,
-    robust=True
-)
-
-results = gmm.fit()
-
-# Check validity
-assert results.hansen_j.pvalue > 0.10, "Hansen J test failed"
-assert results.ar2_test.pvalue > 0.10, "AR(2) test failed"
-assert results.instrument_ratio < 2.0, "Too many instruments"
-
-print(results.summary())
-results.to_latex("gmm_results.tex")
-```
-
----
-
-## Roadmap
-
-**Completed (v1.0.0):**
-- ✅ Static panel models (Pooled, FE, RE, Between, FD)
-- ✅ Dynamic GMM (Difference and System)
-- ✅ Comprehensive diagnostic tests
-- ✅ Robust standard errors (8 types)
-- ✅ Validation against Stata and R
-- ✅ Complete documentation
-
-**Planned (v1.1.0+):**
-- 🔜 Panel cointegration tests (Pedroni, Kao, Westerlund)
-- 🔜 Panel unit root tests (Im-Pesaran-Shin, Levin-Lin-Chu)
-- 🔜 Panel VAR models
-- 🔜 Quantile regression for panels
-- 🔜 Spatial panel models
+| Metric | Value |
+|:-------|------:|
+| Lines of Code | 127,309 |
+| Models | 70+ |
+| Tests | 3,986 |
+| Coverage | 85-92% |
+| Diagnostic Tests | 50+ |
+| Interactive Charts | 35+ |
+| Tutorial Notebooks | 100+ |
 
 ---
 
@@ -378,49 +275,22 @@ results.to_latex("gmm_results.tex")
 If you use PanelBox in academic research, please cite:
 
 ```bibtex
-@software{panelbox2024,
-  author = {Haase, Gustavo and Dourado, Paulo},
+@software{panelbox2026,
   title = {PanelBox: Panel Data Econometrics for Python},
-  year = {2024},
-  version = {1.0.0},
-  url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
+  author = {PanelBox Development Team},
+  year = {2026},
+  url = {https://github.com/PanelBox-Econometrics-Model/panelbox},
+  version = {1.0.0}
 }
 ```
 
-**Key references implemented:**
-- Arellano, M., & Bond, S. (1991). "Some Tests of Specification for Panel Data", *Review of Economic Studies*, 58(2), 277-297.
-- Blundell, R., & Bond, S. (1998). "Initial Conditions and Moment Restrictions", *Journal of Econometrics*, 87(1), 115-143.
-- Roodman, D. (2009). "How to do xtabond2", *The Stata Journal*, 9(1), 86-136.
-- Windmeijer, F. (2005). "A Finite Sample Correction", *Journal of Econometrics*, 126(1), 25-51.
-
 ---
 
-## Contributing
+## Design Philosophy
 
-We welcome contributions! See [CONTRIBUTING.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
+PanelBox is built on four principles:
 
-**Ways to contribute:**
-- 🐛 Report bugs via [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
-- 💡 Suggest features or enhancements
-- 📝 Improve documentation
-- 🧪 Add tests or examples
-- 🔧 Submit pull requests
-
----
-
-## License
-
-PanelBox is released under the [MIT License](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE).
-
----
-
-## Support
-
-- **Documentation**: [https://panelbox-econometrics-model.github.io/panelbox](https://panelbox-econometrics-model.github.io/panelbox)
-- **Issues**: [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/PanelBox-Econometrics-Model/panelbox/discussions)
-- **PyPI**: [https://pypi.org/project/panelbox/](https://pypi.org/project/panelbox/)
-
----
-
-**Built with ❤️ for econometricians and data scientists**
+- **Ease of Use** -- R-style formulas and a pandas-friendly API let you go from data to results in three lines of code.
+- **Academic Rigor** -- Every estimator follows published econometrics papers and is cross-validated against Stata and R.
+- **Performance** -- Numba-optimized critical paths deliver up to 348x speedups on large panels.
+- **Publication-Ready Output** -- LaTeX tables, interactive HTML reports, and Plotly visualizations are built in, not bolted on.

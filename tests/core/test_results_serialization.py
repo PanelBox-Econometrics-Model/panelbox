@@ -18,6 +18,15 @@ import pandas as pd
 import pytest
 
 from panelbox.core.results import PanelResults
+from panelbox.core.serialization import SerializableMixin
+
+
+class _PicklableMixinResult(SerializableMixin):
+    """Module-level class for pickle tests (local classes cannot be pickled)."""
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 @pytest.fixture
@@ -738,6 +747,318 @@ class TestEdgeCases:
             assert loaded_results.n_periods is None
         finally:
             Path(filepath).unlink(missing_ok=True)
+
+
+class TestSerializableMixin:
+    """Tests for the SerializableMixin class in core/serialization.py."""
+
+    def test_mixin_save_pickle(self, tmp_path):
+        """Test SerializableMixin.save() with pickle format."""
+        obj = _PicklableMixinResult(coef=1.5, name="test")
+        filepath = tmp_path / "test.pkl"
+        obj.save(filepath, format="pickle")
+
+        assert filepath.exists()
+        assert filepath.stat().st_size > 0
+        # Check that version and timestamp metadata were set
+        assert hasattr(obj, "_panelbox_version")
+        assert hasattr(obj, "_save_timestamp")
+        assert obj._save_timestamp != ""
+
+    def test_mixin_save_pickle_roundtrip(self, tmp_path):
+        """Test SerializableMixin pickle save/load roundtrip."""
+        obj = _PicklableMixinResult(coef=3.14, name="roundtrip")
+        filepath = tmp_path / "roundtrip.pkl"
+        obj.save(filepath, format="pickle")
+
+        loaded = SerializableMixin.load(filepath)
+        assert loaded.coef == 3.14
+        assert loaded.name == "roundtrip"
+        assert hasattr(loaded, "_panelbox_version")
+
+    def test_mixin_save_json(self, tmp_path):
+        """Test SerializableMixin.save() with json format."""
+        from panelbox.core.serialization import SerializableMixin
+
+        obj = SerializableMixin()
+        obj.coef = 1.5
+        obj.name = "test"
+
+        filepath = tmp_path / "test.json"
+        obj.save(filepath, format="json")
+
+        assert filepath.exists()
+        with open(filepath) as f:
+            data = json.load(f)
+        assert data["coef"] == 1.5
+        assert data["name"] == "test"
+
+    def test_mixin_save_invalid_format(self, tmp_path):
+        """Test SerializableMixin.save() with invalid format raises ValueError."""
+        from panelbox.core.serialization import SerializableMixin
+
+        obj = SerializableMixin()
+        filepath = tmp_path / "test.xyz"
+        with pytest.raises(ValueError, match="not supported"):
+            obj.save(filepath, format="parquet")
+
+    def test_mixin_save_creates_parent_dirs(self, tmp_path):
+        """Test that save() creates parent directories."""
+        obj = _PicklableMixinResult(value=42)
+
+        filepath = tmp_path / "subdir1" / "subdir2" / "test.pkl"
+        obj.save(filepath, format="pickle")
+        assert filepath.exists()
+
+    def test_mixin_load(self, tmp_path):
+        """Test SerializableMixin.load() classmethod."""
+        obj = _PicklableMixinResult(coef=3.14, name="loaded")
+        filepath = tmp_path / "test.pkl"
+        obj.save(filepath, format="pickle")
+
+        loaded = SerializableMixin.load(filepath)
+        assert loaded.coef == 3.14
+        assert loaded.name == "loaded"
+
+    def test_mixin_load_nonexistent(self):
+        """Test SerializableMixin.load() with nonexistent file raises FileNotFoundError."""
+        from panelbox.core.serialization import SerializableMixin
+
+        with pytest.raises(FileNotFoundError, match="File not found"):
+            SerializableMixin.load("/nonexistent/path/file.pkl")
+
+    def test_mixin_load_path_object(self, tmp_path):
+        """Test SerializableMixin.load() accepts Path objects."""
+        obj = _PicklableMixinResult(val=99)
+        filepath = Path(tmp_path / "test.pkl")
+        obj.save(filepath, format="pickle")
+        loaded = SerializableMixin.load(filepath)
+        assert loaded.val == 99
+
+    def test_mixin_get_version(self):
+        """Test _get_version returns a non-empty string."""
+        from panelbox.core.serialization import SerializableMixin
+
+        version = SerializableMixin._get_version()
+        assert isinstance(version, str)
+        assert version != ""
+
+    def test_mixin_to_json_dict_skips_private(self):
+        """Test _to_json_dict skips attributes starting with _."""
+        from panelbox.core.serialization import SerializableMixin
+
+        obj = SerializableMixin()
+        obj.public_attr = "visible"
+        obj._private_attr = "hidden"
+
+        d = obj._to_json_dict()
+        assert "public_attr" in d
+        assert "_private_attr" not in d
+
+    def test_mixin_to_json_dict_with_dataclass(self):
+        """Test _to_json_dict includes dataclass fields."""
+        from dataclasses import dataclass
+
+        from panelbox.core.serialization import SerializableMixin
+
+        @dataclass
+        class DummyDC(SerializableMixin):
+            alpha: float = 1.0
+            beta: float = 2.0
+
+        obj = DummyDC()
+        d = obj._to_json_dict()
+        assert "alpha" in d
+        assert d["alpha"] == 1.0
+        assert "beta" in d
+        assert d["beta"] == 2.0
+
+    def test_mixin_json_serializer_ndarray(self):
+        """Test _json_serializer handles numpy arrays."""
+        from panelbox.core.serialization import SerializableMixin
+
+        arr = np.array([1.0, 2.0, 3.0])
+        result = SerializableMixin._json_serializer(arr)
+        assert result == [1.0, 2.0, 3.0]
+
+    def test_mixin_json_serializer_np_integer(self):
+        """Test _json_serializer handles numpy integers."""
+        from panelbox.core.serialization import SerializableMixin
+
+        val = np.int64(42)
+        result = SerializableMixin._json_serializer(val)
+        assert result == 42
+        assert isinstance(result, int)
+
+    def test_mixin_json_serializer_np_floating(self):
+        """Test _json_serializer handles numpy floating."""
+        from panelbox.core.serialization import SerializableMixin
+
+        val = np.float64(3.14)
+        result = SerializableMixin._json_serializer(val)
+        assert result == pytest.approx(3.14)
+        assert isinstance(result, float)
+
+    def test_mixin_json_serializer_pd_series(self):
+        """Test _json_serializer handles pandas Series."""
+        from panelbox.core.serialization import SerializableMixin
+
+        s = pd.Series([1, 2, 3], index=["a", "b", "c"])
+        result = SerializableMixin._json_serializer(s)
+        assert result == {"a": 1, "b": 2, "c": 3}
+
+    def test_mixin_json_serializer_pd_dataframe(self):
+        """Test _json_serializer handles pandas DataFrame."""
+        from panelbox.core.serialization import SerializableMixin
+
+        df = pd.DataFrame({"x": [1, 2], "y": [3, 4]})
+        result = SerializableMixin._json_serializer(df)
+        assert isinstance(result, dict)
+        assert "x" in result
+        assert "y" in result
+
+    def test_mixin_json_serializer_obj_with_to_dict(self):
+        """Test _json_serializer handles objects with to_dict method."""
+        from panelbox.core.serialization import SerializableMixin
+
+        class Dictable:
+            def to_dict(self):
+                return {"key": "value"}
+
+        obj = Dictable()
+        result = SerializableMixin._json_serializer(obj)
+        assert result == {"key": "value"}
+
+    def test_mixin_json_serializer_unsupported_type(self):
+        """Test _json_serializer raises TypeError for unsupported types."""
+        from panelbox.core.serialization import SerializableMixin
+
+        with pytest.raises(TypeError, match="not JSON serializable"):
+            SerializableMixin._json_serializer({1, 2, 3})
+
+    def test_mixin_save_json_with_numpy(self, tmp_path):
+        """Test mixin save json with numpy/pandas attributes uses custom serializer."""
+        from panelbox.core.serialization import SerializableMixin
+
+        obj = SerializableMixin()
+        obj.array = np.array([1.0, 2.0])
+        obj.series = pd.Series([10, 20], index=["a", "b"])
+        obj.integer = np.int64(7)
+
+        filepath = tmp_path / "complex.json"
+        obj.save(filepath, format="json")
+
+        with open(filepath) as f:
+            data = json.load(f)
+        assert data["array"] == [1.0, 2.0]
+        assert data["series"] == {"a": 10, "b": 20}
+        assert data["integer"] == 7
+
+
+class TestLoadModelFunction:
+    """Tests for the load_model convenience function in serialization.py."""
+
+    def test_load_model_basic(self, sample_results, tmp_path):
+        """Test load_model loads a PanelResults object."""
+        from panelbox.core.serialization import load_model
+
+        filepath = tmp_path / "model.pkl"
+        sample_results.save(filepath, format="pickle")
+
+        loaded = load_model(filepath)
+        assert isinstance(loaded, PanelResults)
+        assert loaded.nobs == 100
+
+    def test_load_model_nonexistent(self):
+        """Test load_model raises FileNotFoundError for missing file."""
+        from panelbox.core.serialization import load_model
+
+        with pytest.raises(FileNotFoundError, match="File not found"):
+            load_model("/nonexistent/path.pkl")
+
+    def test_load_model_with_string_path(self, sample_results, tmp_path):
+        """Test load_model works with string path."""
+        from panelbox.core.serialization import load_model
+
+        filepath = str(tmp_path / "model.pkl")
+        sample_results.save(filepath, format="pickle")
+
+        loaded = load_model(filepath)
+        assert isinstance(loaded, PanelResults)
+
+    def test_load_model_with_path_object(self, sample_results, tmp_path):
+        """Test load_model works with Path object."""
+        from panelbox.core.serialization import load_model
+
+        filepath = Path(tmp_path / "model.pkl")
+        sample_results.save(filepath, format="pickle")
+
+        loaded = load_model(filepath)
+        assert isinstance(loaded, PanelResults)
+
+    def test_load_model_preserves_params(self, sample_results, tmp_path):
+        """Test load_model preserves parameter values."""
+        from panelbox.core.serialization import load_model
+
+        filepath = tmp_path / "model.pkl"
+        sample_results.save(filepath, format="pickle")
+
+        loaded = load_model(filepath)
+        pd.testing.assert_series_equal(loaded.params, sample_results.params)
+        pd.testing.assert_series_equal(loaded.std_errors, sample_results.std_errors)
+
+    def test_load_model_roundtrip_preserves_type(self, sample_results, tmp_path):
+        """Test load_model preserves the type of the saved object."""
+        from panelbox.core.serialization import load_model
+
+        filepath = tmp_path / "roundtrip.pkl"
+        sample_results.save(filepath, format="pickle")
+
+        loaded = load_model(filepath)
+        assert type(loaded) is type(sample_results)
+        assert loaded.model_type == sample_results.model_type
+
+
+class TestResultsCovParamsAsNdarray:
+    """Test to_dict when cov_params is a numpy ndarray instead of DataFrame."""
+
+    def test_to_dict_cov_params_ndarray(self):
+        """Test to_dict handles cov_params as ndarray."""
+        params = pd.Series([1.0, 2.0], index=["x1", "x2"])
+        std_errors = pd.Series([0.1, 0.2], index=["x1", "x2"])
+        # Pass cov_params as ndarray instead of DataFrame
+        cov_array = np.array([[0.01, 0.002], [0.002, 0.04]])
+        resid = np.array([0.5, -0.3, 0.1])
+        fittedvalues = np.array([1.5, 2.5, 3.5])
+
+        model_info = {
+            "model_type": "Test",
+            "formula": "y ~ x1 + x2",
+            "cov_type": "nonrobust",
+            "cov_kwds": {},
+        }
+        data_info = {
+            "nobs": 3,
+            "n_entities": 1,
+            "n_periods": 3,
+            "df_model": 2,
+            "df_resid": 0,
+        }
+
+        results = PanelResults(
+            params=params,
+            std_errors=std_errors,
+            cov_params=cov_array,
+            resid=resid,
+            fittedvalues=fittedvalues,
+            model_info=model_info,
+            data_info=data_info,
+        )
+
+        result_dict = results.to_dict()
+        assert result_dict["cov_params"]["values"] == cov_array.tolist()
+        assert result_dict["cov_params"]["index"] == ["x1", "x2"]
+        assert result_dict["cov_params"]["columns"] == ["x1", "x2"]
 
 
 if __name__ == "__main__":

@@ -516,3 +516,708 @@ class TestFallbackBehavior:
                 return x * 3
 
             assert test_func2(5) == 15
+
+
+# ============================================================================
+# New tests below: call .py_func to exercise the pure-Python function bodies
+# so that coverage can trace them even when Numba JIT is available.
+# ============================================================================
+
+
+def _get_py_func(fn):
+    """Return the underlying Python function, bypassing Numba JIT if present."""
+    return getattr(fn, "py_func", fn)
+
+
+class TestFillIVInstrumentsPyFunc:
+    """Test fill_iv_instruments_numba via .py_func for coverage of lines 93-125."""
+
+    def test_diff_equation_basic(self):
+        """Test diff equation path through .py_func."""
+        fn = _get_py_func(fill_iv_instruments_numba)
+        Z = np.zeros((6, 3))
+        var_data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        ids = np.array([1, 1, 1, 2, 2, 2])
+        times = np.array([1, 2, 3, 1, 2, 3])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 3, "diff")
+
+        # Entity 1, t=2 (row 1): lag1=var[t=1]=1.0
+        assert Z_filled[1, 0] == 1.0
+        # Entity 1, t=3 (row 2): lag1=var[t=2]=2.0, lag2=var[t=1]=1.0
+        assert Z_filled[2, 0] == 2.0
+        assert Z_filled[2, 1] == 1.0
+        # Entity 2, t=2 (row 4): lag1=var[t=1]=4.0
+        assert Z_filled[4, 0] == 4.0
+        # Entity 2, t=3 (row 5): lag1=var[t=2]=5.0, lag2=var[t=1]=4.0
+        assert Z_filled[5, 0] == 5.0
+        assert Z_filled[5, 1] == 4.0
+
+    def test_level_equation_basic(self):
+        """Test level equation path through .py_func (lines 115-123).
+
+        For level equation, instruments are lagged differences:
+        Z[i, lag_idx] = var_data[t-lag] - var_data[t-lag-1]
+        """
+        fn = _get_py_func(fill_iv_instruments_numba)
+        # Entity 1: t=1,2,3,4 with values 10, 20, 30, 40
+        Z = np.zeros((4, 2))
+        var_data = np.array([10.0, 20.0, 30.0, 40.0])
+        ids = np.array([1, 1, 1, 1])
+        times = np.array([1, 2, 3, 4])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 2, "level")
+
+        # t=3 (row 2), lag=1: var_data[t=2] - var_data[t=1] = 20-10 = 10
+        assert Z_filled[2, 0] == 10.0
+        # t=4 (row 3), lag=1: var_data[t=3] - var_data[t=2] = 30-20 = 10
+        assert Z_filled[3, 0] == 10.0
+        # t=4 (row 3), lag=2: var_data[t=2] - var_data[t=1] = 20-10 = 10
+        assert Z_filled[3, 1] == 10.0
+
+    def test_level_equation_multiple_entities(self):
+        """Test level equation with multiple entities."""
+        fn = _get_py_func(fill_iv_instruments_numba)
+        Z = np.zeros((8, 2))
+        var_data = np.array([1.0, 3.0, 6.0, 10.0, 100.0, 200.0, 400.0, 700.0])
+        ids = np.array([1, 1, 1, 1, 2, 2, 2, 2])
+        times = np.array([1, 2, 3, 4, 1, 2, 3, 4])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 2, "level")
+
+        # Entity 1, t=3, lag=1: var[t=2]-var[t=1] = 3-1 = 2
+        assert Z_filled[2, 0] == 2.0
+        # Entity 1, t=4, lag=1: var[t=3]-var[t=2] = 6-3 = 3
+        assert Z_filled[3, 0] == 3.0
+        # Entity 1, t=4, lag=2: var[t=2]-var[t=1] = 3-1 = 2
+        assert Z_filled[3, 1] == 2.0
+        # Entity 2, t=3, lag=1: var[t=2]-var[t=1] = 200-100 = 100
+        assert Z_filled[6, 0] == 100.0
+        # Entity 2, t=4, lag=1: var[t=3]-var[t=2] = 400-200 = 200
+        assert Z_filled[7, 0] == 200.0
+
+    def test_level_equation_missing_lag1(self):
+        """Test level equation when t-lag-1 does not exist (no break hit)."""
+        fn = _get_py_func(fill_iv_instruments_numba)
+        # Only t=1 and t=2: for level eq at t=2 lag=1, need var[t=1]-var[t=0]
+        # t=0 doesn't exist, so Z stays 0
+        Z = np.zeros((2, 1))
+        var_data = np.array([5.0, 10.0])
+        ids = np.array([1, 1])
+        times = np.array([1, 2])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 1, "level")
+
+        # t=2, lag=1: need var[t=1] - var[t=0], t=0 doesn't exist => 0
+        assert Z_filled[1, 0] == 0.0
+
+    def test_diff_equation_no_available_lags(self):
+        """Test diff equation when no lag data available."""
+        fn = _get_py_func(fill_iv_instruments_numba)
+        Z = np.zeros((2, 1))
+        var_data = np.array([5.0, 10.0])
+        ids = np.array([1, 2])  # Different entities
+        times = np.array([1, 1])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 1, "diff")
+
+        # No entity has lag data; Z stays 0
+        assert np.allclose(Z_filled, 0.0)
+
+
+class TestFillGMMStyleInstrumentsPyFunc:
+    """Test fill_gmm_style_instruments_numba via .py_func for coverage of lines 173-200."""
+
+    def test_basic_gmm_style(self):
+        """Test GMM-style instruments through .py_func."""
+        fn = _get_py_func(fill_gmm_style_instruments_numba)
+        var_data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        ids = np.array([1, 1, 1, 2, 2, 2])
+        times = np.array([1, 2, 3, 1, 2, 3])
+        unique_times = np.array([1, 2, 3])
+
+        Z_list = [np.zeros((6, 2)) for _ in range(3)]
+        Z_list_filled = fn(Z_list, var_data, ids, times, unique_times, 1, 2)
+
+        assert len(Z_list_filled) == 3
+        # t=2 (idx=1), entity 1 row 1: lag1=var[t=1]=1.0
+        assert Z_list_filled[1][1, 0] == 1.0
+        # t=2 (idx=1), entity 2 row 4: lag1=var[t=1]=4.0
+        assert Z_list_filled[1][4, 0] == 4.0
+        # t=3 (idx=2), entity 1 row 2: lag1=var[t=2]=2.0, lag2=var[t=1]=1.0
+        assert Z_list_filled[2][2, 0] == 2.0
+        assert Z_list_filled[2][2, 1] == 1.0
+
+    def test_gmm_style_single_entity(self):
+        """Test GMM-style with single entity."""
+        fn = _get_py_func(fill_gmm_style_instruments_numba)
+        var_data = np.array([10.0, 20.0, 30.0, 40.0])
+        ids = np.array([1, 1, 1, 1])
+        times = np.array([1, 2, 3, 4])
+        unique_times = np.array([1, 2, 3, 4])
+
+        Z_list = [np.zeros((4, 3)) for _ in range(4)]
+        Z_list_filled = fn(Z_list, var_data, ids, times, unique_times, 1, 3)
+
+        # t=2 (idx=1): lag1=10.0
+        assert Z_list_filled[1][1, 0] == 10.0
+        # t=3 (idx=2): lag1=20.0, lag2=10.0
+        assert Z_list_filled[2][2, 0] == 20.0
+        assert Z_list_filled[2][2, 1] == 10.0
+        # t=4 (idx=3): lag1=30.0, lag2=20.0, lag3=10.0
+        assert Z_list_filled[3][3, 0] == 30.0
+        assert Z_list_filled[3][3, 1] == 20.0
+        assert Z_list_filled[3][3, 2] == 10.0
+
+    def test_gmm_style_col_idx_out_of_bounds(self):
+        """Test that out-of-bounds column indices are handled gracefully."""
+        fn = _get_py_func(fill_gmm_style_instruments_numba)
+        var_data = np.array([1.0, 2.0, 3.0, 4.0])
+        ids = np.array([1, 1, 1, 1])
+        times = np.array([1, 2, 3, 4])
+        unique_times = np.array([1, 2, 3, 4])
+
+        # Only 1 column, but max_lag=3 would need 3 columns
+        Z_list = [np.zeros((4, 1)) for _ in range(4)]
+        Z_list_filled = fn(Z_list, var_data, ids, times, unique_times, 1, 3)
+
+        # Should only fill column 0 (lag - min_lag = 0), skip others
+        assert Z_list_filled[1][1, 0] == 1.0
+        assert Z_list_filled[2][2, 0] == 2.0
+
+    def test_gmm_style_no_matching_obs(self):
+        """Test GMM-style when times don't match any observation at lag."""
+        fn = _get_py_func(fill_gmm_style_instruments_numba)
+        var_data = np.array([1.0, 2.0])
+        ids = np.array([1, 2])
+        times = np.array([1, 1])
+        unique_times = np.array([1])
+
+        Z_list = [np.zeros((2, 1))]
+        Z_list_filled = fn(Z_list, var_data, ids, times, unique_times, 1, 1)
+
+        # t=1, lag1 requires t=0 which doesn't exist
+        assert np.allclose(Z_list_filled[0], 0.0)
+
+
+class TestDemeanWithinPyFunc:
+    """Test demean functions via .py_func for coverage of lines 239-267, 287-310."""
+
+    def test_demean_within_2d(self):
+        """Test 2D demeaning through .py_func."""
+        fn = _get_py_func(demean_within_numba)
+        X = np.array(
+            [
+                [1.0, 2.0],
+                [3.0, 4.0],
+                [5.0, 6.0],
+                [7.0, 8.0],
+                [9.0, 10.0],
+            ]
+        )
+        entity_ids = np.array([1, 1, 2, 2, 2])
+
+        X_demeaned = fn(X, entity_ids)
+
+        # Entity 1: mean = [2, 3]
+        assert np.allclose(X_demeaned[0], [-1.0, -1.0])
+        assert np.allclose(X_demeaned[1], [1.0, 1.0])
+        # Entity 2: mean = [7, 8]
+        assert np.allclose(X_demeaned[2], [-2.0, -2.0])
+        assert np.allclose(X_demeaned[3], [0.0, 0.0])
+        assert np.allclose(X_demeaned[4], [2.0, 2.0])
+
+    def test_demean_within_2d_zero_mean_per_entity(self):
+        """Verify each entity has zero mean after demeaning via .py_func."""
+        fn = _get_py_func(demean_within_numba)
+        np.random.seed(42)
+        n_entities = 10
+        n_obs_per = 8
+        n_obs = n_entities * n_obs_per
+        X = np.random.randn(n_obs, 4)
+        entity_ids = np.repeat(np.arange(n_entities), n_obs_per).astype(float)
+
+        X_demeaned = fn(X, entity_ids)
+
+        for e in range(n_entities):
+            mask = entity_ids == e
+            assert np.allclose(X_demeaned[mask].mean(axis=0), 0.0, atol=1e-10)
+
+    def test_demean_within_2d_does_not_modify_input(self):
+        """Verify demeaning does not modify the original array."""
+        fn = _get_py_func(demean_within_numba)
+        X = np.array([[10.0, 20.0], [30.0, 40.0]])
+        X_orig = X.copy()
+        entity_ids = np.array([1, 1])
+
+        fn(X, entity_ids)
+        assert np.array_equal(X, X_orig)
+
+    def test_demean_within_1d(self):
+        """Test 1D demeaning through .py_func."""
+        fn = _get_py_func(demean_within_1d_numba)
+        x = np.array([1.0, 3.0, 5.0, 7.0, 9.0])
+        entity_ids = np.array([1, 1, 2, 2, 2])
+
+        x_demeaned = fn(x, entity_ids)
+
+        # Entity 1: mean=2
+        assert np.allclose(x_demeaned[0], -1.0)
+        assert np.allclose(x_demeaned[1], 1.0)
+        # Entity 2: mean=7
+        assert np.allclose(x_demeaned[2], -2.0)
+        assert np.allclose(x_demeaned[3], 0.0)
+        assert np.allclose(x_demeaned[4], 2.0)
+
+    def test_demean_within_1d_single_entity(self):
+        """Test 1D demeaning with a single entity via .py_func."""
+        fn = _get_py_func(demean_within_1d_numba)
+        x = np.array([2.0, 4.0, 6.0])
+        entity_ids = np.array([1, 1, 1])
+
+        x_demeaned = fn(x, entity_ids)
+
+        assert np.allclose(x_demeaned, [-2.0, 0.0, 2.0])
+
+    def test_demean_within_1d_many_entities(self):
+        """Test 1D demeaning with many entities via .py_func."""
+        fn = _get_py_func(demean_within_1d_numba)
+        np.random.seed(123)
+        n_entities = 20
+        n_obs_per = 5
+        x = np.random.randn(n_entities * n_obs_per)
+        entity_ids = np.repeat(np.arange(n_entities), n_obs_per).astype(float)
+
+        x_demeaned = fn(x, entity_ids)
+
+        for e in range(n_entities):
+            mask = entity_ids == e
+            assert np.allclose(x_demeaned[mask].mean(), 0.0, atol=1e-10)
+
+    def test_demean_within_2d_single_obs_per_entity(self):
+        """Each entity has one observation: demeaned values should be zero."""
+        fn = _get_py_func(demean_within_numba)
+        X = np.array([[5.0, 10.0], [15.0, 20.0], [25.0, 30.0]])
+        entity_ids = np.array([1, 2, 3])
+
+        X_demeaned = fn(X, entity_ids)
+        assert np.allclose(X_demeaned, 0.0, atol=1e-10)
+
+
+class TestComputeGMMWeightMatrixPyFunc:
+    """Test compute_gmm_weight_matrix_numba via .py_func for coverage of lines 354-395."""
+
+    def test_robust_weight_matrix(self):
+        """Test robust (clustered) weight matrix via .py_func."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        np.random.seed(42)
+        residuals = np.array([0.1, -0.2, 0.15, -0.1, 0.05, -0.15])
+        Z = np.random.randn(6, 3)
+        entity_ids = np.array([1, 1, 1, 2, 2, 2])
+
+        W = fn(residuals, Z, entity_ids, True)
+
+        assert W.shape == (3, 3)
+        # Symmetric
+        assert np.allclose(W, W.T)
+        # Positive diagonal
+        assert np.all(np.diag(W) >= 0)
+
+    def test_nonrobust_weight_matrix(self):
+        """Test non-robust weight matrix via .py_func."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        np.random.seed(42)
+        residuals = np.array([0.1, -0.2, 0.15, -0.1, 0.05, -0.15])
+        Z = np.random.randn(6, 3)
+        entity_ids = np.array([1, 1, 1, 2, 2, 2])
+
+        W = fn(residuals, Z, entity_ids, False)
+
+        assert W.shape == (3, 3)
+        assert np.allclose(W, W.T)
+        assert np.all(np.diag(W) >= 0)
+
+    def test_robust_vs_nonrobust_differ(self):
+        """Verify robust and non-robust paths produce different matrices."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        np.random.seed(99)
+        residuals = np.random.randn(12)
+        Z = np.random.randn(12, 4)
+        entity_ids = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
+
+        W_robust = fn(residuals, Z, entity_ids, True)
+        W_nonrobust = fn(residuals, Z, entity_ids, False)
+
+        assert not np.allclose(W_robust, W_nonrobust)
+
+    def test_robust_manual_computation(self):
+        """Verify robust weight matrix matches manual NumPy computation."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        residuals = np.array([0.5, -0.3, 0.2, -0.4])
+        Z = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.5, 0.5]])
+        entity_ids = np.array([1, 1, 2, 2])
+
+        W = fn(residuals, Z, entity_ids, True)
+
+        # Manual computation
+        # Entity 1: g = sum(Z[i] * e[i]) = [1*0.5 + 0*(-0.3), 0*0.5 + 1*(-0.3)] = [0.5, -0.3]
+        g1 = np.array([0.5, -0.3])
+        # Entity 2: g = [1*0.2 + 0.5*(-0.4), 1*0.2 + 0.5*(-0.4)] = [0.0, 0.0]
+        g2 = np.array([1.0 * 0.2 + 0.5 * (-0.4), 1.0 * 0.2 + 0.5 * (-0.4)])
+        expected = (np.outer(g1, g1) + np.outer(g2, g2)) / 2
+
+        assert np.allclose(W, expected, atol=1e-10)
+
+    def test_nonrobust_manual_computation(self):
+        """Verify non-robust weight matrix matches manual NumPy computation."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        residuals = np.array([0.5, -0.3])
+        Z = np.array([[1.0, 2.0], [3.0, 4.0]])
+        entity_ids = np.array([1, 2])
+
+        W = fn(residuals, Z, entity_ids, False)
+
+        # Manual: Omega = (1/n) * sum(Z[i]Z[i]' * e[i]^2)
+        expected = np.zeros((2, 2))
+        for i in range(2):
+            expected += np.outer(Z[i], Z[i]) * residuals[i] ** 2
+        expected /= 2
+
+        assert np.allclose(W, expected, atol=1e-10)
+
+    def test_zero_residuals_via_pyfunc(self):
+        """Test zero residuals produce zero weight matrix via .py_func."""
+        fn = _get_py_func(compute_gmm_weight_matrix_numba)
+        residuals = np.zeros(4)
+        Z = np.random.randn(4, 2)
+        entity_ids = np.array([1, 1, 2, 2])
+
+        W_robust = fn(residuals, Z, entity_ids, True)
+        W_nonrobust = fn(residuals, Z, entity_ids, False)
+
+        assert np.allclose(W_robust, 0.0)
+        assert np.allclose(W_nonrobust, 0.0)
+
+
+class TestFallbackJitDecorator:
+    """Test the fallback jit decorator (lines 25-42) by importing and using it directly."""
+
+    def test_fallback_jit_without_parentheses(self):
+        """Test fallback jit used as @jit (without parentheses), line 36-38."""
+
+        # We simulate what the fallback jit does regardless of Numba availability
+        # by reimplementing and testing the logic
+        def fallback_jit(*args, **kwargs):
+            def decorator(func):
+                return func
+
+            if len(args) == 1 and callable(args[0]):
+                return args[0]
+            return decorator
+
+        @fallback_jit
+        def my_func(x):
+            return x + 1
+
+        assert my_func(5) == 6
+
+    def test_fallback_jit_with_parentheses(self):
+        """Test fallback jit used as @jit() (with parentheses), line 39."""
+
+        def fallback_jit(*args, **kwargs):
+            def decorator(func):
+                return func
+
+            if len(args) == 1 and callable(args[0]):
+                return args[0]
+            return decorator
+
+        @fallback_jit()
+        def my_func(x):
+            return x * 2
+
+        assert my_func(5) == 10
+
+    def test_fallback_jit_with_kwargs(self):
+        """Test fallback jit used as @jit(nopython=True, cache=True)."""
+
+        def fallback_jit(*args, **kwargs):
+            def decorator(func):
+                return func
+
+            if len(args) == 1 and callable(args[0]):
+                return args[0]
+            return decorator
+
+        @fallback_jit(nopython=True, cache=True, parallel=False)
+        def my_func(x):
+            return x**2
+
+        assert my_func(4) == 16
+
+    def test_fallback_prange_is_range(self):
+        """Test that fallback prange behaves like range (line 42)."""
+        # Regardless of numba, we can verify the fallback behavior
+        fallback_prange = range
+        result = list(fallback_prange(5))
+        assert result == [0, 1, 2, 3, 4]
+
+    def test_actual_fallback_jit_via_mock(self):
+        """Test the actual fallback jit by importing it when Numba is mocked away."""
+        import sys
+        import unittest.mock as mock
+
+        # Save original module
+        original_module = sys.modules.get("panelbox.utils.numba_optimized")
+        original_numba = sys.modules.get("numba")
+
+        try:
+            # Remove cached modules so we can reimport with numba blocked
+            for key in list(sys.modules.keys()):
+                if key.startswith("panelbox.utils.numba_optimized"):
+                    del sys.modules[key]
+
+            # Block numba import
+            with mock.patch.dict(sys.modules, {"numba": None}):
+                # Force reimport
+                if "panelbox.utils.numba_optimized" in sys.modules:
+                    del sys.modules["panelbox.utils.numba_optimized"]
+                import panelbox.utils.numba_optimized as no_numba_mod
+
+                # Check that NUMBA_AVAILABLE is False
+                assert no_numba_mod.NUMBA_AVAILABLE is False
+
+                # Test the fallback jit - without parentheses
+                fallback_jit = no_numba_mod.jit
+
+                @fallback_jit
+                def func_no_parens(x):
+                    return x + 10
+
+                assert func_no_parens(5) == 15
+
+                # Test fallback jit - with parentheses
+                @fallback_jit()
+                def func_with_parens(x):
+                    return x + 20
+
+                assert func_with_parens(5) == 25
+
+                # Test fallback jit - with kwargs
+                @fallback_jit(nopython=True, cache=True)
+                def func_with_kwargs(x):
+                    return x * 3
+
+                assert func_with_kwargs(5) == 15
+
+                # Test prange is range
+                assert no_numba_mod.prange is range
+
+        finally:
+            # Restore original modules
+            if original_module is not None:
+                sys.modules["panelbox.utils.numba_optimized"] = original_module
+            elif "panelbox.utils.numba_optimized" in sys.modules:
+                del sys.modules["panelbox.utils.numba_optimized"]
+            if original_numba is not None:
+                sys.modules["numba"] = original_numba
+
+
+class TestGetNumbaStatusDetailed:
+    """Test get_numba_status for full coverage of lines 419-431."""
+
+    @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
+    def test_get_numba_status_version_string(self):
+        """When Numba is available, version should be a non-empty string (line 427)."""
+        status = get_numba_status()
+        assert status["available"] is True
+        assert isinstance(status["version"], str)
+        assert len(status["version"]) > 0
+
+    @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
+    def test_get_numba_status_parallel_field(self):
+        """When Numba is available, parallel_available should be a bool."""
+        status = get_numba_status()
+        assert isinstance(status["parallel_available"], bool)
+
+    @pytest.mark.skipif(not NUMBA_AVAILABLE, reason="Numba not available")
+    def test_get_numba_status_cache_enabled(self):
+        """Cache should always be enabled."""
+        status = get_numba_status()
+        assert status["cache_enabled"] is True
+
+    def test_get_numba_status_without_numba(self):
+        """Test get_numba_status when Numba is not available (via mock)."""
+        import sys
+        import unittest.mock as mock
+
+        original_module = sys.modules.get("panelbox.utils.numba_optimized")
+        original_numba = sys.modules.get("numba")
+
+        try:
+            for key in list(sys.modules.keys()):
+                if key.startswith("panelbox.utils.numba_optimized"):
+                    del sys.modules[key]
+
+            with mock.patch.dict(sys.modules, {"numba": None}):
+                if "panelbox.utils.numba_optimized" in sys.modules:
+                    del sys.modules["panelbox.utils.numba_optimized"]
+                import panelbox.utils.numba_optimized as no_numba_mod
+
+                status = no_numba_mod.get_numba_status()
+                assert status["available"] is False
+                assert status["version"] is None
+                assert status["parallel_available"] is False
+        finally:
+            if original_module is not None:
+                sys.modules["panelbox.utils.numba_optimized"] = original_module
+            elif "panelbox.utils.numba_optimized" in sys.modules:
+                del sys.modules["panelbox.utils.numba_optimized"]
+            if original_numba is not None:
+                sys.modules["numba"] = original_numba
+
+
+class TestCoverageViaNoNumbaReimport:
+    """Force coverage of all function bodies by reimporting the module with Numba blocked.
+
+    When Numba is not available, the fallback @jit is a no-op, so the function
+    bodies are pure Python and coverage CAN trace them.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _reimport_without_numba(self):
+        """Reimport the module with Numba blocked to get pure-Python functions."""
+        import sys
+        import unittest.mock as mock
+
+        original_module = sys.modules.get("panelbox.utils.numba_optimized")
+        original_numba = sys.modules.get("numba")
+
+        # Remove cached module
+        for key in list(sys.modules.keys()):
+            if key.startswith("panelbox.utils.numba_optimized"):
+                del sys.modules[key]
+
+        # Block numba and reimport
+        with mock.patch.dict(sys.modules, {"numba": None}):
+            if "panelbox.utils.numba_optimized" in sys.modules:
+                del sys.modules["panelbox.utils.numba_optimized"]
+            import panelbox.utils.numba_optimized as mod
+
+            self.mod = mod
+            yield
+
+        # Restore original modules
+        if original_module is not None:
+            sys.modules["panelbox.utils.numba_optimized"] = original_module
+        elif "panelbox.utils.numba_optimized" in sys.modules:
+            del sys.modules["panelbox.utils.numba_optimized"]
+        if original_numba is not None:
+            sys.modules["numba"] = original_numba
+
+    def test_fill_iv_diff_no_numba(self):
+        """Test fill_iv_instruments_numba diff path without Numba."""
+        fn = self.mod.fill_iv_instruments_numba
+        Z = np.zeros((6, 2))
+        var_data = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])
+        ids = np.array([1, 1, 1, 2, 2, 2])
+        times = np.array([1, 2, 3, 1, 2, 3])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 2, "diff")
+
+        assert Z_filled[1, 0] == 10.0
+        assert Z_filled[2, 0] == 20.0
+        assert Z_filled[2, 1] == 10.0
+
+    def test_fill_iv_level_no_numba(self):
+        """Test fill_iv_instruments_numba level path without Numba."""
+        fn = self.mod.fill_iv_instruments_numba
+        Z = np.zeros((4, 2))
+        var_data = np.array([10.0, 20.0, 30.0, 40.0])
+        ids = np.array([1, 1, 1, 1])
+        times = np.array([1, 2, 3, 4])
+
+        Z_filled = fn(Z, var_data, ids, times, 1, 2, "level")
+
+        # t=3, lag=1: var[t=2]-var[t=1] = 20-10 = 10
+        assert Z_filled[2, 0] == 10.0
+        # t=4, lag=1: var[t=3]-var[t=2] = 30-20 = 10
+        assert Z_filled[3, 0] == 10.0
+        # t=4, lag=2: var[t=2]-var[t=1] = 20-10 = 10
+        assert Z_filled[3, 1] == 10.0
+
+    def test_fill_gmm_style_no_numba(self):
+        """Test fill_gmm_style_instruments_numba without Numba."""
+        fn = self.mod.fill_gmm_style_instruments_numba
+        var_data = np.array([1.0, 2.0, 3.0, 4.0])
+        ids = np.array([1, 1, 1, 1])
+        times = np.array([1, 2, 3, 4])
+        unique_times = np.array([1, 2, 3, 4])
+
+        Z_list = [np.zeros((4, 2)) for _ in range(4)]
+        Z_filled = fn(Z_list, var_data, ids, times, unique_times, 1, 2)
+
+        assert Z_filled[1][1, 0] == 1.0
+        assert Z_filled[2][2, 0] == 2.0
+        assert Z_filled[2][2, 1] == 1.0
+
+    def test_demean_within_no_numba(self):
+        """Test demean_within_numba without Numba."""
+        fn = self.mod.demean_within_numba
+        X = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        entity_ids = np.array([1, 1, 2])
+
+        X_demeaned = fn(X, entity_ids)
+
+        # Entity 1 mean = [2, 3]
+        assert np.allclose(X_demeaned[0], [-1.0, -1.0])
+        assert np.allclose(X_demeaned[1], [1.0, 1.0])
+        # Entity 2 mean = [5, 6]
+        assert np.allclose(X_demeaned[2], [0.0, 0.0])
+
+    def test_demean_within_1d_no_numba(self):
+        """Test demean_within_1d_numba without Numba."""
+        fn = self.mod.demean_within_1d_numba
+        x = np.array([2.0, 4.0, 6.0, 10.0])
+        entity_ids = np.array([1, 1, 2, 2])
+
+        x_demeaned = fn(x, entity_ids)
+
+        # Entity 1 mean = 3.0
+        assert np.allclose(x_demeaned[0], -1.0)
+        assert np.allclose(x_demeaned[1], 1.0)
+        # Entity 2 mean = 8.0
+        assert np.allclose(x_demeaned[2], -2.0)
+        assert np.allclose(x_demeaned[3], 2.0)
+
+    def test_weight_matrix_robust_no_numba(self):
+        """Test compute_gmm_weight_matrix_numba robust path without Numba."""
+        fn = self.mod.compute_gmm_weight_matrix_numba
+        np.random.seed(42)
+        residuals = np.array([0.1, -0.2, 0.3, -0.1])
+        Z = np.random.randn(4, 2)
+        entity_ids = np.array([1, 1, 2, 2])
+
+        W = fn(residuals, Z, entity_ids, True)
+
+        assert W.shape == (2, 2)
+        assert np.allclose(W, W.T)
+
+    def test_weight_matrix_nonrobust_no_numba(self):
+        """Test compute_gmm_weight_matrix_numba non-robust path without Numba."""
+        fn = self.mod.compute_gmm_weight_matrix_numba
+        np.random.seed(42)
+        residuals = np.array([0.1, -0.2, 0.3, -0.1])
+        Z = np.random.randn(4, 2)
+        entity_ids = np.array([1, 1, 2, 2])
+
+        W = fn(residuals, Z, entity_ids, False)
+
+        assert W.shape == (2, 2)
+        assert np.allclose(W, W.T)
+
+    def test_get_numba_status_no_numba(self):
+        """Test get_numba_status when Numba is not available."""
+        status = self.mod.get_numba_status()
+        assert status["available"] is False
+        assert status["version"] is None

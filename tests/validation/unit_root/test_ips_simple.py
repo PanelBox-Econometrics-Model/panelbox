@@ -213,21 +213,21 @@ def test_ips_validation():
     # Test invalid variable
     try:
         IPSTest(data, "invalid", "entity", "time")
-        assert False, "Should raise error for invalid variable"
+        raise AssertionError("Should raise error for invalid variable")
     except ValueError as e:
         print(f"✓ Correctly caught invalid variable: {e}")
 
     # Test invalid entity column
     try:
         IPSTest(data, "y", "invalid", "time")
-        assert False, "Should raise error for invalid entity column"
+        raise AssertionError("Should raise error for invalid entity column")
     except ValueError as e:
         print(f"✓ Correctly caught invalid entity column: {e}")
 
     # Test invalid trend
     try:
         IPSTest(data, "y", "entity", "time", trend="invalid")
-        assert False, "Should raise error for invalid trend"
+        raise AssertionError("Should raise error for invalid trend")
     except ValueError as e:
         print(f"✓ Correctly caught invalid trend: {e}")
 

@@ -113,7 +113,7 @@ class TestMundlak:
 
         # DF should be number of time-varying regressors
         assert "df" in result.details
-        expected_df = len(results.params) - 1  # Exclude intercept
+        len(results.params) - 1  # Exclude intercept
         # Note: Actual df might differ based on which means are included
         assert result.details["df"] > 0
 
@@ -311,7 +311,7 @@ class TestMundlak:
         # Remove _model reference
         delattr(results, "_model")
 
-        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        data, formula, _entity_col, _time_col, _var_names = test._get_data_full()
         assert data is None
         assert formula is None
 
@@ -326,7 +326,7 @@ class TestMundlak:
         # Mock model without required attributes
         results._model = Mock(spec=[])
 
-        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        data, _formula, _entity_col, _time_col, _var_names = test._get_data_full()
         assert data is None
 
     def test_get_data_full_missing_formula(self, clean_panel_data):
@@ -340,7 +340,7 @@ class TestMundlak:
         if hasattr(results._model, "formula"):
             delattr(results._model, "formula")
 
-        data, formula, entity_col, time_col, var_names = test._get_data_full()
+        _data, formula, _entity_col, _time_col, _var_names = test._get_data_full()
         assert formula is None
 
     def test_get_data_full_exception_handling(self, clean_panel_data):
@@ -354,7 +354,7 @@ class TestMundlak:
 
         # Patch the copy method to raise exception
         with patch.object(results._model.data.data, "copy", side_effect=RuntimeError("Test error")):
-            data, formula, entity_col, time_col, var_names = test._get_data_full()
+            data, _formula, _entity_col, _time_col, _var_names = test._get_data_full()
             assert data is None
 
     def test_get_data_legacy_method(self, clean_panel_data):
@@ -390,3 +390,173 @@ class TestMundlak:
             assert X is None
             assert y is None
             assert entities is None
+
+
+class TestMundlakUncoveredBranches:
+    """Tests targeting specific uncovered lines in mundlak.py."""
+
+    def test_var_not_in_columns_skipped(self, clean_panel_data):
+        """Test line 130->129: variable in var_names not in data columns is skipped.
+
+        When _get_data_full returns var_names that include a variable not present
+        in the DataFrame, that variable should be skipped in the mean computation
+        loop (line 130 evaluates False, continues to line 129).
+
+        We add the nonexistent variable to var_names only (not to the formula),
+        so that the loop exercises the False branch at line 130, then the
+        augmented formula is still valid for PooledOLS.
+        """
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Patch _get_data_full to include a nonexistent variable in var_names.
+        # Keep the original formula unchanged so PooledOLS doesn't choke.
+        original_get_data_full = test._get_data_full
+
+        def patched_get_data_full():
+            data, formula, entity_col, time_col, var_names = original_get_data_full()
+            var_names_with_missing = ["nonexistent_var", *var_names]
+            return data, formula, entity_col, time_col, var_names_with_missing
+
+        test._get_data_full = patched_get_data_full
+
+        # The run() method builds augmented formula with orig_vars = " + ".join(var_names)
+        # which includes "nonexistent_var". We need to intercept the PooledOLS call
+        # so it receives a corrected formula. Patch PooledOLS to strip the bad var.
+        from panelbox.models.static.pooled_ols import PooledOLS as OrigPooledOLS
+
+        class PatchedPooledOLS(OrigPooledOLS):
+            def __init__(self, formula, data, entity_col, time_col, **kwargs):
+                # Remove the nonexistent variable from formula
+                formula = formula.replace("nonexistent_var + ", "")
+                formula = formula.replace(" + nonexistent_var", "")
+                super().__init__(formula, data, entity_col, time_col, **kwargs)
+
+        from unittest.mock import patch
+
+        with patch("panelbox.models.static.pooled_ols.PooledOLS", PatchedPooledOLS):
+            result = test.run()
+
+        assert result is not None
+        assert result.statistic >= 0
+        assert 0 <= result.pvalue <= 1
+
+    def test_generic_exception_in_augmented_model(self, clean_panel_data):
+        """Test line 184: generic exception when estimating augmented model.
+
+        Covers the 'except Exception' handler (lines 185-186) that catches
+        non-LinAlgError exceptions from model estimation.
+        """
+        from unittest.mock import patch
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # PooledOLS is imported locally inside run(), so patch it where it's imported from
+        with (
+            patch(
+                "panelbox.models.static.pooled_ols.PooledOLS",
+                side_effect=TypeError("Unexpected type error"),
+            ),
+            pytest.raises(ValueError, match="Failed to estimate augmented model"),
+        ):
+            test.run()
+
+    def test_mean_indices_mismatch(self, clean_panel_data):
+        """Test line 196: ValueError when mean coefficient count doesn't match.
+
+        When the augmented model doesn't contain the expected number of
+        mean variable coefficients, a ValueError should be raised.
+        """
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Create a mock fit result that returns params WITHOUT the mean variables
+        # The augmented model expects x1_mean and x2_mean in params but they're missing
+        fake_params = pd.Series(
+            {"Intercept": 1.0, "x1": 2.0, "x2": 3.0},
+            index=["Intercept", "x1", "x2"],
+        )
+        fake_cov = pd.DataFrame(
+            np.eye(3),
+            index=["Intercept", "x1", "x2"],
+            columns=["Intercept", "x1", "x2"],
+        )
+
+        # Patch fit() to return results missing the mean variable parameters
+        with patch("panelbox.models.static.pooled_ols.PooledOLS.fit") as mock_fit:
+            mock_fit.return_value = type(
+                "MockResult", (), {"params": fake_params, "cov_params": fake_cov}
+            )()
+            with pytest.raises(ValueError, match=r"Expected .* mean coefficients, found"):
+                test.run()
+
+    def test_get_data_full_with_rhs_terms(self, clean_panel_data):
+        """Test line 304: _get_data_full when formula_parser has rhs_terms attribute.
+
+        Covers the branch where model.formula_parser has 'rhs_terms',
+        which extracts variable names from rhs_terms instead of parsing
+        the formula string manually.
+        """
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Add rhs_terms attribute to formula_parser
+        results._model.formula_parser.rhs_terms = ["x1", "x2"]
+
+        data, formula, _entity_col, _time_col, var_names = test._get_data_full()
+
+        assert data is not None
+        assert formula is not None
+        assert var_names == ["x1", "x2"]
+
+    def test_get_data_legacy_missing_model(self, clean_panel_data):
+        """Test line 336: _get_data returns None when _model is missing.
+
+        Covers the early return when results doesn't have _model attribute.
+        """
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Remove _model attribute
+        delattr(results, "_model")
+
+        X, y, entities = test._get_data()
+        assert X is None
+        assert y is None
+        assert entities is None
+
+    def test_get_data_legacy_missing_attributes(self, clean_panel_data):
+        """Test line 341: _get_data returns None when model lacks formula_parser/data.
+
+        Covers the check at line 340 where model doesn't have both
+        formula_parser and data attributes.
+        """
+        from unittest.mock import Mock
+
+        re = RandomEffects("y ~ x1 + x2", clean_panel_data, "entity", "time")
+        results = re.fit()
+
+        test = MundlakTest(results)
+
+        # Replace _model with a mock that lacks formula_parser and data
+        results._model = Mock(spec=[])
+
+        X, y, entities = test._get_data()
+        assert X is None
+        assert y is None
+        assert entities is None

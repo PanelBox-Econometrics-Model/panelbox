@@ -194,21 +194,21 @@ def test_validation():
     # Test invalid dependent
     try:
         PedroniTest(data, "invalid", ["x"], "entity", "time")
-        assert False, "Should raise error"
+        raise AssertionError("Should raise error")
     except ValueError as e:
         print(f"✓ Caught invalid dependent: {e}")
 
     # Test invalid independent
     try:
         PedroniTest(data, "y", ["invalid"], "entity", "time")
-        assert False, "Should raise error"
+        raise AssertionError("Should raise error")
     except ValueError as e:
         print(f"✓ Caught invalid independent: {e}")
 
     # Test invalid trend
     try:
         PedroniTest(data, "y", ["x"], "entity", "time", trend="invalid")
-        assert False, "Should raise error"
+        raise AssertionError("Should raise error")
     except ValueError as e:
         print(f"✓ Caught invalid trend: {e}")
 

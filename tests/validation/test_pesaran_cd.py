@@ -131,7 +131,7 @@ class TestPesaranCD:
 
         # Should raise error (can't estimate FE with T=1)
         with pytest.raises(ValueError, match="Insufficient degrees of freedom"):
-            results = fe.fit()
+            fe.fit()
 
     def test_pvalue_bounds(self, clean_panel_data):
         """Test that p-value is between 0 and 1."""
@@ -216,5 +216,5 @@ class TestPesaranCD:
             delattr(results, "time_index")
 
         test = PesaranCDTest(results)
-        with pytest.raises(AttributeError, match="entity_index.*time_index"):
+        with pytest.raises(AttributeError, match=r"entity_index.*time_index"):
             test.run()

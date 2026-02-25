@@ -173,3 +173,23 @@ class TestModifiedWald:
         result = test.run()
         assert result is not None
         assert result.statistic >= 0
+
+    def test_sigma2_i_zero_triggers_continue(self, balanced_panel_data):
+        """Test that entity with zero residual variance is skipped (line 312)."""
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Make entity 1's residuals all identical (zero variance)
+        entity_mask = results.entity_index == 1
+        resid_copy = results.resid.copy()
+        resid_copy[entity_mask] = 0.0  # constant residual => var = 0
+        results.resid = resid_copy
+
+        test = ModifiedWaldTest(results)
+        result = test.run()
+
+        # Should still produce a valid result (entity 1 skipped via continue)
+        assert result is not None
+        assert result.statistic >= 0
+        assert 0 <= result.pvalue <= 1

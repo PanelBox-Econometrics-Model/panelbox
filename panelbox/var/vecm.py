@@ -1186,10 +1186,8 @@ class PanelVECMResult:
 
         # Compute IRFs using VAR methods
         if method == "cholesky":
-            # Compute non-orthogonalized IRFs first
-            Phi = compute_phi_non_orthogonalized(A_matrices, periods)
-            # Then orthogonalize
-            irf_matrix = compute_irf_cholesky(Phi, self.Sigma, shock_size)
+            # compute_irf_cholesky computes MA coefficients internally
+            irf_matrix = compute_irf_cholesky(A_matrices, self.Sigma, periods, shock_size)
         elif method == "generalized":
             # Compute non-orthogonalized IRFs
             Phi = compute_phi_non_orthogonalized(A_matrices, periods)
@@ -1246,16 +1244,19 @@ class PanelVECMResult:
         >>> fevd.plot(variable="y1")
         """
         from panelbox.var.fevd import FEVDResult, compute_fevd_cholesky, compute_fevd_generalized
-        from panelbox.var.irf import compute_phi_non_orthogonalized
+        from panelbox.var.irf import compute_irf_cholesky, compute_phi_non_orthogonalized
 
         # Convert VECM to VAR
         A_matrices = self.to_var()
 
         # Compute FEVD using VAR methods
         if method == "cholesky":
-            # Compute non-orthogonalized IRFs
-            Phi = compute_phi_non_orthogonalized(A_matrices, periods)
-            decomposition = compute_fevd_cholesky(Phi, self.Sigma, periods)
+            # Compute orthogonalized IRFs via Cholesky
+            Phi_orth = compute_irf_cholesky(A_matrices, self.Sigma, periods)
+            # Cholesky factor
+            Sigma_reg = self.Sigma + np.eye(self.K) * 1e-8
+            P = np.linalg.cholesky(Sigma_reg)
+            decomposition = compute_fevd_cholesky(Phi_orth, P, self.Sigma, periods)
         elif method == "generalized":
             # Compute non-orthogonalized IRFs
             Phi = compute_phi_non_orthogonalized(A_matrices, periods)

@@ -325,3 +325,131 @@ class TestPanelIVWithPanelData:
         df = iv._get_dataframe()
         assert isinstance(df, pd.DataFrame)
         assert len(df) == len(simple_iv_data)
+
+
+class TestPanelIVUncoveredBranches:
+    """Tests covering previously uncovered branches in panel_iv.py."""
+
+    def test_clustered_covariance(self, simple_iv_data):
+        """Test clustered covariance estimator."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit(cov_type="clustered")
+
+        assert results is not None
+        assert results.cov_type == "clustered"
+        assert results.params is not None
+        assert all(np.isfinite(results.std_errors))
+
+    def test_clustered_covariance_custom_cluster(self, simple_iv_data):
+        """Test clustered covariance with custom cluster variable."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        # Use time as an alternative cluster variable
+        cluster_id = simple_iv_data["time"].values
+        results = iv.fit(cov_type="clustered", cluster=cluster_id)
+
+        assert results is not None
+        assert results.cov_type == "clustered"
+
+    def test_twoway_covariance(self, simple_iv_data):
+        """Test two-way clustering covariance estimator."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit(cov_type="twoway")
+
+        assert results is not None
+        assert results.cov_type == "twoway"
+        assert all(np.isfinite(results.std_errors))
+
+    def test_driscoll_kraay_covariance(self, simple_iv_data):
+        """Test Driscoll-Kraay covariance estimator."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit(cov_type="driscoll_kraay")
+
+        assert results is not None
+        assert results.cov_type == "driscoll_kraay"
+        assert all(np.isfinite(results.std_errors))
+
+    def test_driscoll_kraay_with_maxlags(self, simple_iv_data):
+        """Test Driscoll-Kraay covariance with explicit maxlags."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit(cov_type="driscoll_kraay", maxlags=2)
+
+        assert results is not None
+        assert results.cov_type == "driscoll_kraay"
+
+    def test_xtx_inv_pinv_fallback(self, simple_iv_data):
+        """Test that pinv fallback is used when X'X is singular."""
+        import unittest.mock
+
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        original_inv = np.linalg.inv
+
+        call_count = {"n": 0}
+
+        def mock_inv(M):
+            call_count["n"] += 1
+            # Raise LinAlgError on the first call (XtX inversion in _compute_covariance)
+            if call_count["n"] == 1:
+                raise np.linalg.LinAlgError("Singular matrix")
+            return original_inv(M)
+
+        with unittest.mock.patch("numpy.linalg.inv", side_effect=mock_inv):
+            results = iv.fit(cov_type="nonrobust")
+
+        assert results is not None
+        assert results.params is not None
+
+    def test_model_info_attributes(self, simple_iv_data):
+        """Test that IV-specific model info attributes are set on results."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit()
+
+        assert results.endogenous_vars == ["x"]
+        assert results.exogenous_vars == ["w"]
+        assert "z" in results.instruments
+        assert "w" in results.instruments
+        assert results.n_instruments == 2
+        assert results.n_endogenous == 1
+        assert isinstance(results.weak_instruments, bool)
+
+    def test_first_stage_f_statistic(self, simple_iv_data):
+        """Test first stage F-statistic is computed."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit()
+
+        assert "x" in results.first_stage_results
+        fs = results.first_stage_results["x"]
+        assert "f_statistic" in fs
+        assert "rsquared" in fs
+        assert "fitted" in fs
+        assert "residuals" in fs
+        assert "gamma" in fs
+
+    def test_rsquared_adjusted(self, simple_iv_data):
+        """Test R-squared and adjusted R-squared computation."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        results = iv.fit()
+
+        assert hasattr(results, "rsquared")
+        assert np.isfinite(results.rsquared)
+
+    def test_get_dataframe_fallback_to_self_data(self, simple_iv_data):
+        """Test _get_dataframe fallback when data has no .data attribute."""
+        iv = PanelIV("y ~ w + x | w + z", simple_iv_data, entity_col="entity", time_col="time")
+
+        # Temporarily replace data with a plain DataFrame (without .data attribute)
+        original_data = iv.data
+        iv.data = simple_iv_data  # DataFrame has no .data attribute
+        df = iv._get_dataframe()
+        assert isinstance(df, pd.DataFrame)
+
+        # Restore
+        iv.data = original_data

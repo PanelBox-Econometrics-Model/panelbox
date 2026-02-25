@@ -146,14 +146,102 @@ class TestComputeFstat:
 
 
 class TestWaldTest:
-    """Test wald_test function."""
+    """Test wald_test function (lines 125-149 coverage)."""
 
     def test_wald_test_callable(self):
         """Test that wald_test function is callable."""
         assert callable(wald_test)
-        # Note: Full testing requires fixing a bug in wald_test where
-        # float() conversion fails on matrix result. Skipping detailed
-        # tests for now as this is tested in integration tests
+
+    def test_single_restriction_reject(self):
+        """Test Wald with single restriction that should reject H0.
+
+        Covers lines 125-149: params 1d reshape, q=None default, full computation.
+        """
+        # params = [5.0, 3.0], H0: beta_1 = 0
+        params = np.array([5.0, 3.0])  # 1d triggers line 125-126 reshape
+        vcov = np.array([[1.0, 0.0], [0.0, 1.0]])
+        R = np.array([[1.0, 0.0]])  # Test beta_1 = 0
+
+        statistic, pvalue, df = wald_test(R, params, vcov)
+        # q defaults to zeros (line 128-129)
+
+        assert df == 1
+        assert statistic == pytest.approx(25.0)  # (5-0)^2 / 1 = 25
+        assert pvalue < 0.001
+
+    def test_single_restriction_fail_to_reject(self):
+        """Test Wald with restriction that should not reject."""
+        params = np.array([0.1, 0.05])  # Close to zero
+        vcov = np.array([[1.0, 0.0], [0.0, 1.0]])
+        R = np.array([[1.0, 0.0]])
+
+        statistic, pvalue, df = wald_test(R, params, vcov)
+
+        assert df == 1
+        assert statistic == pytest.approx(0.01)
+        assert pvalue > 0.05
+
+    def test_multiple_restrictions(self):
+        """Test Wald with multiple simultaneous restrictions."""
+        params = np.array([5.0, 3.0, 2.0])
+        vcov = np.diag([1.0, 1.0, 1.0])
+        # H0: beta_1 = 0 AND beta_2 = 0
+        R = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+
+        statistic, pvalue, df = wald_test(R, params, vcov)
+
+        assert df == 2
+        assert statistic == pytest.approx(34.0)  # 5^2 + 3^2 = 34
+        assert pvalue < 0.001
+
+    def test_with_explicit_q_vector(self):
+        """Line 130-131: q is provided as 1d vector and reshaped."""
+        # H0: beta_1 = 5 (true value), should not reject
+        params = np.array([5.0, 3.0])
+        vcov = np.diag([1.0, 1.0])
+        R = np.array([[1.0, 0.0]])
+        q = np.array([5.0])  # 1d triggers line 130-131
+
+        statistic, pvalue, df = wald_test(R, params, vcov, q=q)
+
+        assert df == 1
+        assert statistic == pytest.approx(0.0)
+        assert pvalue == pytest.approx(1.0)
+
+    def test_with_q_2d(self):
+        """Test when q is already 2d (no reshape needed)."""
+        params = np.array([5.0, 3.0])
+        vcov = np.diag([1.0, 1.0])
+        R = np.array([[1.0, 0.0]])
+        q = np.array([[5.0]])  # Already 2d
+
+        statistic, _pvalue, df = wald_test(R, params, vcov, q=q)
+
+        assert df == 1
+        assert statistic == pytest.approx(0.0)
+
+    def test_params_already_2d(self):
+        """Test when params are already 2d (no reshape needed)."""
+        params = np.array([[5.0], [3.0]])  # Already 2d
+        vcov = np.diag([1.0, 1.0])
+        R = np.array([[1.0, 0.0]])
+
+        statistic, _pvalue, df = wald_test(R, params, vcov)
+
+        assert df == 1
+        assert statistic == pytest.approx(25.0)
+
+    def test_return_types(self):
+        """Test that return types are correct."""
+        params = np.array([2.0, 1.0])
+        vcov = np.diag([0.5, 0.5])
+        R = np.array([[1.0, 0.0]])
+
+        statistic, pvalue, df = wald_test(R, params, vcov)
+
+        assert isinstance(statistic, float)
+        assert isinstance(pvalue, float)
+        assert isinstance(df, int)
 
 
 class TestComputeChi2Pvalue:

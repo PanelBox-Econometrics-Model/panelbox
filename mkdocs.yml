@@ -34,6 +34,8 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
     - navigation.top
@@ -43,6 +45,7 @@ theme:
     - search.highlight
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
     - toc.integrate
   icon:
     repo: fontawesome/brands/github
@@ -119,16 +122,23 @@ extra:
   #   provider: google
   #   property: G-XXXXXXXXXX  # Add your Google Analytics ID here
 
+exclude_docs: |
+  # Archive directory (internal-only files)
+  /_archive/
+
 validation:
   links:
-    not_found: info
-    anchors: info
+    not_found: warn
+    anchors: warn
     absolute_links: info
     unrecognized_links: info
   nav:
-    omitted_files: info
-    not_found: info
+    omitted_files: warn
+    not_found: warn
     absolute_links: info
+
+not_in_nav: |
+  /404.md
 
 extra_css:
   - stylesheets/extra.css
@@ -140,39 +150,244 @@ extra_javascript:
 
 nav:
   - Home: index.md
+
   - Getting Started:
-    - Installation: how-to/install.md
-    - Quick Start: tutorials/01_getting_started.md
-    - Choose a Model: how-to/choose_model.md
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Core Concepts: getting-started/core-concepts.md
+    - Choosing a Model: getting-started/choosing-model.md
+
+  - User Guide:
+    - user-guide/index.md
+    - Static Models:
+      - user-guide/static-models/index.md
+      - Pooled OLS: user-guide/static-models/pooled-ols.md
+      - Fixed Effects: user-guide/static-models/fixed-effects.md
+      - Random Effects: user-guide/static-models/random-effects.md
+      - Between Estimator: user-guide/static-models/between.md
+      - First Difference: user-guide/static-models/first-difference.md
+      - FE vs RE (Hausman): user-guide/static-models/fe-vs-re.md
+    - Dynamic Models (GMM):
+      - user-guide/gmm/index.md
+      - Difference GMM: user-guide/gmm/difference-gmm.md
+      - System GMM: user-guide/gmm/system-gmm.md
+      - CUE-GMM: user-guide/gmm/cue-gmm.md
+      - Bias-Corrected GMM: user-guide/gmm/bias-corrected.md
+      - Instrument Selection: user-guide/gmm/instruments.md
+      - GMM Diagnostics: user-guide/gmm/diagnostics.md
+      - Complete Guide: user-guide/gmm/complete-guide.md
+    - Spatial Econometrics:
+      - user-guide/spatial/index.md
+      - Spatial Weights: user-guide/spatial/spatial-weights.md
+      - Spatial Lag (SAR): user-guide/spatial/spatial-lag.md
+      - Spatial Error (SEM): user-guide/spatial/spatial-error.md
+      - Spatial Durbin (SDM): user-guide/spatial/spatial-durbin.md
+      - Dynamic Spatial: user-guide/spatial/dynamic-spatial.md
+      - General Nesting (GNS): user-guide/spatial/gns.md
+      - Spatial Effects: user-guide/spatial/spatial-effects.md
+      - Spatial Diagnostics: user-guide/spatial/diagnostics.md
+      - Choosing a Model: user-guide/spatial/choosing-model.md
+    - Stochastic Frontier (SFA):
+      - user-guide/frontier/index.md
+      - Production & Cost: user-guide/frontier/production-cost.md
+      - Panel SFA: user-guide/frontier/panel-sfa.md
+      - True FE/RE Models: user-guide/frontier/true-models.md
+      - Four-Component: user-guide/frontier/four-component.md
+      - TFP Decomposition: user-guide/frontier/tfp.md
+      - SFA Diagnostics: user-guide/frontier/diagnostics.md
+      - Sign Convention: user-guide/frontier/sign-convention.md
+    - Quantile Regression:
+      - user-guide/quantile/index.md
+      - Pooled Quantile: user-guide/quantile/pooled.md
+      - FE Quantile: user-guide/quantile/fixed-effects.md
+      - Canay Two-Step: user-guide/quantile/canay.md
+      - Location-Scale: user-guide/quantile/location-scale.md
+      - Dynamic Quantile: user-guide/quantile/dynamic.md
+      - Treatment Effects: user-guide/quantile/treatment-effects.md
+      - Monotonicity: user-guide/quantile/monotonicity.md
+      - QR Diagnostics: user-guide/quantile/diagnostics.md
+    - Panel VAR:
+      - user-guide/var/index.md
+      - VAR Estimation: user-guide/var/estimation.md
+      - VECM: user-guide/var/vecm.md
+      - Impulse Response (IRF): user-guide/var/irf.md
+      - Variance Decomposition: user-guide/var/fevd.md
+      - Granger Causality: user-guide/var/granger.md
+      - Forecasting: user-guide/var/forecasting.md
+    - Discrete Choice:
+      - user-guide/discrete/index.md
+      - Binary (Logit/Probit): user-guide/discrete/binary.md
+      - Ordered Models: user-guide/discrete/ordered.md
+      - Multinomial & Conditional: user-guide/discrete/multinomial.md
+      - Dynamic Discrete: user-guide/discrete/dynamic.md
+      - Marginal Effects: user-guide/discrete/marginal-effects.md
+    - Count Data:
+      - user-guide/count/index.md
+      - Poisson Models: user-guide/count/poisson.md
+      - PPML (Gravity): user-guide/count/ppml.md
+      - Negative Binomial: user-guide/count/negative-binomial.md
+      - Zero-Inflated: user-guide/count/zero-inflated.md
+      - Marginal Effects: user-guide/count/marginal-effects.md
+    - Censored & Selection:
+      - user-guide/censored/index.md
+      - Tobit Models: user-guide/censored/tobit.md
+      - Honore Estimator: user-guide/censored/honore.md
+      - Panel Heckman: user-guide/censored/heckman.md
+      - Murphy-Topel: user-guide/censored/murphy-topel.md
+      - Marginal Effects: user-guide/censored/marginal-effects.md
+    - Instrumental Variables:
+      - user-guide/iv/index.md
+      - Panel IV/2SLS: user-guide/iv/panel-iv.md
+      - IV Diagnostics: user-guide/iv/diagnostics.md
+
+  - Inference:
+    - inference/index.md
+    - Robust (HC0-HC3): inference/robust.md
+    - Clustered: inference/clustered.md
+    - Driscoll-Kraay: inference/driscoll-kraay.md
+    - Newey-West (HAC): inference/newey-west.md
+    - PCSE: inference/pcse.md
+    - Spatial HAC: inference/spatial-hac.md
+    - MLE Variance: inference/mle-variance.md
+    - Comparing Methods: inference/comparison.md
+
+  - Diagnostics:
+    - diagnostics/index.md
+    - Specification Tests:
+      - diagnostics/specification/index.md
+      - Hausman Test: diagnostics/specification/hausman.md
+      - Mundlak Test: diagnostics/specification/mundlak.md
+      - RESET Test: diagnostics/specification/reset.md
+      - Chow Test: diagnostics/specification/chow.md
+      - J-Test: diagnostics/specification/j-test.md
+      - Cox & Encompassing: diagnostics/specification/cox-encompassing.md
+    - Serial Correlation:
+      - diagnostics/serial-correlation/index.md
+      - Wooldridge Test: diagnostics/serial-correlation/wooldridge.md
+      - Breusch-Godfrey: diagnostics/serial-correlation/breusch-godfrey.md
+      - Baltagi-Wu: diagnostics/serial-correlation/baltagi-wu.md
+    - Heteroskedasticity:
+      - diagnostics/heteroskedasticity/index.md
+      - Modified Wald: diagnostics/heteroskedasticity/modified-wald.md
+      - Breusch-Pagan: diagnostics/heteroskedasticity/breusch-pagan.md
+      - White Test: diagnostics/heteroskedasticity/white.md
+    - Cross-Sectional Dependence:
+      - diagnostics/cross-sectional/index.md
+      - Pesaran CD: diagnostics/cross-sectional/pesaran-cd.md
+      - Breusch-Pagan LM: diagnostics/cross-sectional/bp-lm.md
+    - Unit Root Tests:
+      - diagnostics/unit-root/index.md
+      - LLC: diagnostics/unit-root/llc.md
+      - IPS: diagnostics/unit-root/ips.md
+      - Fisher: diagnostics/unit-root/fisher.md
+      - Hadri: diagnostics/unit-root/hadri.md
+      - Breitung: diagnostics/unit-root/breitung.md
+    - Cointegration:
+      - diagnostics/cointegration/index.md
+      - Pedroni: diagnostics/cointegration/pedroni.md
+      - Kao: diagnostics/cointegration/kao.md
+      - Westerlund: diagnostics/cointegration/westerlund.md
+    - Robustness:
+      - diagnostics/robustness/index.md
+      - Bootstrap: diagnostics/robustness/bootstrap.md
+      - Jackknife: diagnostics/robustness/jackknife.md
+      - Cross-Validation: diagnostics/robustness/cross-validation.md
+      - Sensitivity: diagnostics/robustness/sensitivity.md
+      - Outliers: diagnostics/robustness/outliers.md
+      - Influence: diagnostics/robustness/influence.md
+
+  - Visualization:
+    - Charts:
+      - visualization/charts/index.md
+      - Model Diagnostics: visualization/charts/model-diagnostics.md
+      - Panel Structure: visualization/charts/panel-structure.md
+      - Test Plots: visualization/charts/test-plots.md
+      - Comparison Plots: visualization/charts/comparison.md
+      - Specialized: visualization/charts/specialized.md
+      - Themes: visualization/charts/themes.md
+    - Reports:
+      - visualization/reports/index.md
+      - HTML Reports: visualization/reports/html.md
+      - LaTeX Export: visualization/reports/latex.md
+      - Markdown Export: visualization/reports/markdown.md
+      - Templates: visualization/reports/templates.md
+    - Experiment Pattern:
+      - visualization/experiment/index.md
+      - Fitting Models: visualization/experiment/fitting.md
+      - Validation Reports: visualization/experiment/validation.md
+      - Model Comparison: visualization/experiment/comparison.md
+      - Residual Analysis: visualization/experiment/residuals.md
+      - Master Reports: visualization/experiment/master-reports.md
+      - Spatial Extension: visualization/experiment/spatial-extension.md
 
   - Tutorials:
-    - tutorials/01_getting_started.md
-    - tutorials/02_static_models.md
-    - tutorials/03_gmm_intro.md
-    - Standard Errors Series: tutorials/standard_errors_series.md
+    - tutorials/index.md
+    - Fundamentals: tutorials/fundamentals.md
+    - Static Models: tutorials/static-models.md
+    - GMM: tutorials/gmm.md
+    - Spatial: tutorials/spatial.md
+    - Frontier (SFA): tutorials/frontier.md
+    - Quantile Regression: tutorials/quantile.md
+    - Panel VAR: tutorials/var.md
+    - Discrete Choice: tutorials/discrete.md
+    - Count Models: tutorials/count.md
+    - Censored & Selection: tutorials/censored.md
+    - Standard Errors: tutorials/standard-errors.md
+    - Marginal Effects: tutorials/marginal-effects.md
+    - Validation: tutorials/validation.md
+    - Visualization: tutorials/visualization.md
+    - Production: tutorials/production.md
 
-  - How-To Guides:
-    - how-to/install.md
-    - how-to/load_data.md
-    - how-to/choose_model.md
-    - how-to/interpret_tests.md
-
-  - Explanation:
-    - guides/panel_data_intro.md
-    - guides/fixed_vs_random.md
-    - guides/gmm_explained.md
+  - Theory:
+    - Panel Data: theory/panel-fundamentals.md
+    - GMM Theory: theory/gmm-theory.md
+    - Spatial Econometrics: theory/spatial-theory.md
+    - Stochastic Frontier: theory/sfa-theory.md
+    - Quantile Regression: theory/quantile-theory.md
+    - Panel VAR: theory/var-theory.md
+    - Selection Models: theory/selection-theory.md
+    - References: theory/references.md
 
   - API Reference:
     - api/index.md
-    - Static Models: api/models.md
-    - GMM Models: api/gmm.md
-    - Results: api/results.md
+    - Core: api/core.md
+    - Static Models: api/static-models.md
+    - GMM: api/gmm.md
+    - Spatial: api/spatial.md
+    - Frontier (SFA): api/frontier.md
+    - Quantile: api/quantile.md
+    - Panel VAR: api/var.md
+    - Discrete Choice: api/discrete.md
+    - Count Models: api/count.md
+    - Censored & Selection: api/censored.md
+    - Instrumental Variables: api/iv.md
+    - Standard Errors: api/standard-errors.md
+    - Marginal Effects: api/marginal-effects.md
     - Validation: api/validation.md
+    - Diagnostics: api/diagnostics.md
+    - Visualization: api/visualization.md
+    - Report System: api/report.md
+    - Experiment: api/experiment.md
     - Datasets: api/datasets.md
-    - Report: api/report.md
+    - CLI: api/cli.md
 
-  # Development files are in the root directory
-  # - Development:
-  #   - Contributing: CONTRIBUTING.md
-  #   - Code of Conduct: CODE_OF_CONDUCT.md
-  #   - Changelog: CHANGELOG.md
+  - FAQ:
+    - General: faq/general.md
+    - Advanced: faq/advanced.md
+    - Spatial: faq/spatial.md
+    - Troubleshooting: faq/troubleshooting.md
+
+  - Performance:
+    - benchmarks/index.md
+    - GMM: benchmarks/gmm.md
+    - Heckman: benchmarks/heckman.md
+    - SFA: benchmarks/sfa.md
+    - Spatial: benchmarks/spatial.md
+    - R/Stata Comparison: benchmarks/comparison.md
+
+  - Contributing:
+    - How to Contribute: contributing/contributing.md
+    - Code of Conduct: contributing/code-of-conduct.md
+    - Changelog: contributing/changelog.md
+    - Roadmap: contributing/roadmap.md

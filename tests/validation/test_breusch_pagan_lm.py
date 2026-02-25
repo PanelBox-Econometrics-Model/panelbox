@@ -163,15 +163,16 @@ class TestBreuschPaganLM:
         test = BreuschPaganLMTest(results)
 
         # Mock np.corrcoef to return NaN to simulate constant residuals
-        original_corrcoef = np.corrcoef
 
         def mock_corrcoef(x, y):
             # Return NaN correlation matrix
             return np.array([[np.nan, np.nan], [np.nan, np.nan]])
 
-        with patch("numpy.corrcoef", side_effect=mock_corrcoef):
-            with pytest.raises(ValueError, match="No valid pairwise correlations"):
-                test.run()
+        with (
+            patch("numpy.corrcoef", side_effect=mock_corrcoef),
+            pytest.raises(ValueError, match="No valid pairwise correlations"),
+        ):
+            test.run()
 
     def test_missing_entity_time_index_error(self, clean_panel_data):
         """Test AttributeError when entity_index/time_index missing (line 227)."""
@@ -185,5 +186,5 @@ class TestBreuschPaganLM:
             delattr(results, "time_index")
 
         test = BreuschPaganLMTest(results)
-        with pytest.raises(AttributeError, match="entity_index.*time_index"):
+        with pytest.raises(AttributeError, match=r"entity_index.*time_index"):
             test.run()

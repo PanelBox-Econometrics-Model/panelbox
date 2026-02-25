@@ -265,5 +265,207 @@ class TestBetweenEstimator:
         np.testing.assert_allclose(entity_0_residuals, entity_0_residuals[0], rtol=1e-10)
 
 
+class TestBetweenPredictWithNewdata:
+    """Tests for _between_predict closure (lines 463-482)."""
+
+    @pytest.fixture
+    def simple_panel_data(self):
+        """Create simple balanced panel dataset for testing."""
+        np.random.seed(42)
+        n_entities = 10
+        n_periods = 5
+
+        entities = np.repeat(range(n_entities), n_periods)
+        times = np.tile(range(n_periods), n_entities)
+
+        entity_effects = np.repeat(np.arange(n_entities) * 10, n_periods)
+        x1 = entity_effects + np.random.normal(0, 1, n_entities * n_periods)
+        x2 = np.random.normal(0, 1, n_entities * n_periods)
+        y = (
+            2
+            + 0.5 * x1
+            + 1.5 * x2
+            + entity_effects
+            + np.random.normal(0, 1, n_entities * n_periods)
+        )
+
+        data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+        return data
+
+    def test_predict_without_newdata(self, simple_panel_data):
+        """Test predict() without newdata returns fitted values."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit()
+
+        pred = results.predict()
+        np.testing.assert_array_equal(pred, results.fittedvalues)
+
+    def test_predict_with_newdata(self, simple_panel_data):
+        """Test predict() with newdata triggers the _between_predict closure (lines 463-482)."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit()
+
+        # Create new data with same entity structure
+        new_data = pd.DataFrame(
+            {
+                "entity": [0, 0, 0, 1, 1, 1],
+                "time": [0, 1, 2, 0, 1, 2],
+                "x1": [10.0, 11.0, 12.0, 20.0, 21.0, 22.0],
+                "x2": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            }
+        )
+
+        pred = results.predict(newdata=new_data)
+
+        # Should return one prediction per entity (group means)
+        assert len(pred) == 2  # 2 entities
+
+
+class TestBetweenCovarianceTypes:
+    """Tests for various covariance type paths (lines 210-268)."""
+
+    @pytest.fixture
+    def simple_panel_data(self):
+        """Create simple balanced panel dataset for testing."""
+        np.random.seed(42)
+        n_entities = 10
+        n_periods = 5
+
+        entities = np.repeat(range(n_entities), n_periods)
+        times = np.tile(range(n_periods), n_entities)
+
+        entity_effects = np.repeat(np.arange(n_entities) * 10, n_periods)
+        x1 = entity_effects + np.random.normal(0, 1, n_entities * n_periods)
+        x2 = np.random.normal(0, 1, n_entities * n_periods)
+        y = (
+            2
+            + 0.5 * x1
+            + 1.5 * x2
+            + entity_effects
+            + np.random.normal(0, 1, n_entities * n_periods)
+        )
+
+        data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+        return data
+
+    def test_driscoll_kraay_cov(self, simple_panel_data):
+        """Test Driscoll-Kraay covariance (lines 216-221)."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="driscoll_kraay", max_lags=2)
+
+        assert results is not None
+        assert results.cov_type == "driscoll_kraay"
+        assert (results.std_errors > 0).all()
+
+    def test_newey_west_cov(self, simple_panel_data):
+        """Test Newey-West covariance (lines 223-226)."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="newey_west", max_lags=2)
+
+        assert results is not None
+        assert results.cov_type == "newey_west"
+        assert (results.std_errors > 0).all()
+
+    def test_pcse_cov(self, simple_panel_data):
+        """Test PCSE covariance (lines 228-229)."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="pcse")
+
+        assert results is not None
+        assert results.cov_type == "pcse"
+
+    def test_clustered_with_cluster_col(self, simple_panel_data):
+        """Test clustered covariance with a custom cluster_col (lines 240-246)."""
+        data = simple_panel_data.copy()
+        # Create a region column that is constant within entity (required for between)
+        data["region"] = data["entity"] % 3
+
+        # Include region in the formula so it appears in entity_means
+        model = BetweenEstimator("y ~ x1 + x2 + region", data, "entity", "time")
+        results = model.fit(cov_type="clustered", cluster_col="region")
+
+        assert results is not None
+        assert results.cov_type == "clustered"
+        assert (results.std_errors > 0).all()
+
+    def test_clustered_without_cluster_col(self, simple_panel_data):
+        """Test clustered covariance without cluster_col falls back to robust (line 242)."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+        results = model.fit(cov_type="clustered")
+
+        assert results is not None
+        assert results.cov_type == "clustered"
+        assert (results.std_errors > 0).all()
+
+    def test_twoway_cov(self, simple_panel_data):
+        """Test two-way clustered covariance (lines 248-268)."""
+        data = simple_panel_data.copy()
+        data["region"] = data["entity"] % 3
+
+        # Include region in formula so it's in entity_means
+        model = BetweenEstimator("y ~ x1 + x2 + region", data, "entity", "time")
+        results = model.fit(cov_type="twoway", cluster_col2="region")
+
+        assert results is not None
+        assert results.cov_type == "twoway"
+        assert (results.std_errors > 0).all()
+
+    def test_twoway_cov_without_cluster_col2_raises(self, simple_panel_data):
+        """Test that twoway without cluster_col2 raises ValueError."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+
+        with pytest.raises(ValueError, match="twoway clustering requires cluster_col2"):
+            model.fit(cov_type="twoway")
+
+
+class TestBetweenEstimateCoefficientsDirectly:
+    """Tests for _estimate_coefficients() method (lines 492-522)."""
+
+    @pytest.fixture
+    def simple_panel_data(self):
+        """Create simple balanced panel dataset for testing."""
+        np.random.seed(42)
+        n_entities = 10
+        n_periods = 5
+
+        entities = np.repeat(range(n_entities), n_periods)
+        times = np.tile(range(n_periods), n_entities)
+
+        entity_effects = np.repeat(np.arange(n_entities) * 10, n_periods)
+        x1 = entity_effects + np.random.normal(0, 1, n_entities * n_periods)
+        x2 = np.random.normal(0, 1, n_entities * n_periods)
+        y = (
+            2
+            + 0.5 * x1
+            + 1.5 * x2
+            + entity_effects
+            + np.random.normal(0, 1, n_entities * n_periods)
+        )
+
+        data = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+        return data
+
+    def test_estimate_coefficients_directly(self, simple_panel_data):
+        """Test calling _estimate_coefficients() directly."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+
+        beta = model._estimate_coefficients()
+
+        assert beta is not None
+        # Should have 3 coefficients: Intercept, x1, x2
+        assert len(beta.ravel()) == 3
+
+    def test_estimate_coefficients_matches_fit(self, simple_panel_data):
+        """Test that _estimate_coefficients() gives same betas as fit()."""
+        model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
+
+        beta_direct = model._estimate_coefficients().ravel()
+
+        results = model.fit()
+        beta_fit = results.params.values
+
+        np.testing.assert_array_almost_equal(beta_direct, beta_fit)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

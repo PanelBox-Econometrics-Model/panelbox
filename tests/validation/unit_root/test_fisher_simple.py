@@ -8,15 +8,9 @@ sys.path.insert(0, "/home/guhaase/projetos/panelbox")
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import panelbox as pb
-
-try:
-    import pytest
-
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
 
 
 def test_fisher_import():
@@ -241,25 +235,16 @@ def test_fisher_invalid_inputs():
     data = pb.load_grunfeld()
 
     # Invalid test_type
-    try:
-        fisher = pb.FisherTest(data, "invest", "firm", "year", test_type="invalid")
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "test_type must be" in str(e)
+    with pytest.raises(ValueError, match="test_type must be"):
+        pb.FisherTest(data, "invest", "firm", "year", test_type="invalid")
 
     # Invalid trend
-    try:
-        fisher = pb.FisherTest(data, "invest", "firm", "year", trend="invalid")
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "trend must be" in str(e)
+    with pytest.raises(ValueError, match="trend must be"):
+        pb.FisherTest(data, "invest", "firm", "year", trend="invalid")
 
     # Missing variable
-    try:
-        fisher = pb.FisherTest(data, "nonexistent", "firm", "year")
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "not found" in str(e)
+    with pytest.raises(ValueError, match="not found"):
+        pb.FisherTest(data, "nonexistent", "firm", "year")
 
 
 if __name__ == "__main__":

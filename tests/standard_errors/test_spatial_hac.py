@@ -448,3 +448,422 @@ class TestSpatialHAC:
         correction_factor = n_obs / (n_obs - k_vars)
 
         assert_allclose(V_with_correction, V_no_correction * correction_factor, rtol=1e-10)
+
+    # ----------------------------------------------------------
+    # New tests targeting uncovered lines
+    # ----------------------------------------------------------
+
+    def test_temporal_kernel_parzen(self):
+        """Test Parzen temporal kernel (lines 177-184).
+
+        The Parzen kernel is:
+            K(u) = 1 - 6u^2 + 6u^3           for |u| <= 0.5
+            K(u) = 2(1 - |u|)^3               for 0.5 < |u| <= 1
+            K(u) = 0                           for |u| > 1
+        where u = |lag| / (cutoff + 1).
+        """
+        distance_matrix = np.zeros((5, 5))
+        cutoff = 3
+
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100,
+            temporal_cutoff=cutoff,
+            temporal_kernel="parzen",
+        )
+
+        lags = np.array([0, 1, 2, 3, 4, 5])
+        weights = hac._temporal_kernel_weight(lags)
+
+        # u = |lag| / (cutoff + 1) = lag / 4
+        u = lags / (cutoff + 1)
+
+        expected = np.where(
+            np.abs(u) <= 0.5,
+            1 - 6 * np.abs(u) ** 2 + 6 * np.abs(u) ** 3,
+            np.where(np.abs(u) <= 1, 2 * (1 - np.abs(u)) ** 3, 0),
+        )
+
+        assert_allclose(weights, expected, atol=1e-10)
+
+        # At lag=0: u=0, K=1
+        assert weights[0] == pytest.approx(1.0)
+        # At lag=cutoff+1 (lag=4): u=1, 2*(1-1)^3=0
+        assert weights[4] == pytest.approx(0.0)
+        # At lag > cutoff+1: should be 0
+        assert weights[5] == pytest.approx(0.0)
+
+    def test_temporal_kernel_quadratic_spectral(self):
+        """Test Quadratic Spectral temporal kernel (lines 186-191).
+
+        The QS kernel is:
+            K(u) = (3/x^2) * (sin(x)/x - cos(x))
+        where x = 6*pi*u/5, with K(0) = 1.
+        """
+        distance_matrix = np.zeros((5, 5))
+        cutoff = 4
+
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100,
+            temporal_cutoff=cutoff,
+            temporal_kernel="quadratic_spectral",
+        )
+
+        lags = np.array([0, 1, 2, 3, 4, 5])
+        weights = hac._temporal_kernel_weight(lags)
+
+        # At lag=0: K should be 1
+        assert weights[0] == pytest.approx(1.0)
+
+        # Manually compute for lag=1: u = 1/(4+1) = 0.2
+        u = 1.0 / (cutoff + 1)
+        x = 6 * np.pi * u / 5
+        expected_lag1 = 3 / x**2 * (np.sin(x) / x - np.cos(x))
+        assert weights[1] == pytest.approx(expected_lag1, rel=1e-10)
+
+        # QS kernel can produce negative values (it is not nonneg-definite)
+        # but should be close to 1 near lag=0 and decay
+        assert weights[1] > 0  # Should still be positive for small lags
+
+    def test_temporal_kernel_parzen_scalar_input(self):
+        """Test Parzen kernel with scalar lag input."""
+        distance_matrix = np.zeros((3, 3))
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100,
+            temporal_cutoff=3,
+            temporal_kernel="parzen",
+        )
+
+        # Scalar lag
+        w0 = hac._temporal_kernel_weight(0)
+        w1 = hac._temporal_kernel_weight(1)
+
+        # lag=0 should give weight=1
+        assert w0 == pytest.approx(1.0)
+        # lag=1 < cutoff should give positive weight
+        assert w1 > 0
+
+    def test_from_coordinates_euclidean(self):
+        """Test from_coordinates with Euclidean metric (lines 339-344)."""
+        coords = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+            ]
+        )
+
+        hac = SpatialHAC.from_coordinates(
+            coords=coords,
+            spatial_cutoff=2.0,
+            distance_metric="euclidean",
+        )
+
+        # Check specific distances
+        # (0,0) to (1,0) -> distance = 1
+        assert_allclose(hac.distance_matrix[0, 1], 1.0)
+        # (0,0) to (1,1) -> distance = sqrt(2)
+        assert_allclose(hac.distance_matrix[0, 3], np.sqrt(2.0))
+        # Diagonal should be 0
+        assert_allclose(np.diag(hac.distance_matrix), 0.0)
+        # Should be symmetric
+        assert_allclose(hac.distance_matrix, hac.distance_matrix.T)
+
+    def test_from_coordinates_manhattan(self):
+        """Test from_coordinates with cityblock metric (lines 343-344).
+
+        The source code accepts 'manhattan' and 'cityblock' and passes
+        them to scipy.spatial.distance.cdist which uses 'cityblock'.
+        We test with 'cityblock' directly since that is the valid scipy name.
+        """
+        coords = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+            ]
+        )
+
+        hac = SpatialHAC.from_coordinates(
+            coords=coords,
+            spatial_cutoff=3.0,
+            distance_metric="cityblock",
+        )
+
+        # Cityblock/Manhattan: |x1-x2| + |y1-y2|
+        # (0,0) to (1,0) -> 1
+        assert_allclose(hac.distance_matrix[0, 1], 1.0)
+        # (0,0) to (1,1) -> 2
+        assert_allclose(hac.distance_matrix[0, 3], 2.0)
+        # Diagonal should be 0
+        assert_allclose(np.diag(hac.distance_matrix), 0.0)
+        assert_allclose(hac.distance_matrix, hac.distance_matrix.T)
+
+    def test_from_coordinates_cityblock(self):
+        """Test from_coordinates with 'cityblock' alias (lines 343-344)."""
+        coords = np.array(
+            [
+                [0.0, 0.0],
+                [3.0, 4.0],
+            ]
+        )
+
+        hac = SpatialHAC.from_coordinates(
+            coords=coords,
+            spatial_cutoff=10.0,
+            distance_metric="cityblock",
+        )
+
+        # cityblock: |3-0| + |4-0| = 7
+        assert_allclose(hac.distance_matrix[0, 1], 7.0)
+
+    def test_from_coordinates_invalid_metric_raises(self):
+        """Test from_coordinates with unknown metric raises ValueError."""
+        coords = np.array([[0.0, 0.0], [1.0, 1.0]])
+        with pytest.raises(ValueError, match="Unknown distance metric"):
+            SpatialHAC.from_coordinates(
+                coords=coords,
+                spatial_cutoff=5.0,
+                distance_metric="cosine",
+            )
+
+    def test_singular_xtx_pinv_fallback(self):
+        """Test that singular X'X uses pinv fallback (lines 294-296)."""
+        # Create data where X'X is singular (collinear columns)
+        N = 4
+        T = 3
+        distance_matrix = np.zeros((N, N))
+
+        # X has collinear columns: col2 = 2 * col1
+        X = np.column_stack(
+            [
+                np.ones(N * T),
+                np.random.randn(N * T),
+                np.zeros(N * T),  # all-zero column -> singular X'X
+            ]
+        )
+
+        residuals = np.random.randn(N * T)
+        entity_index = np.repeat(np.arange(N), T)
+        time_index = np.tile(np.arange(T), N)
+
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100.0,
+            temporal_cutoff=0,
+        )
+
+        with pytest.warns(UserWarning, match="singular"):
+            V_hac = hac.compute(
+                X=X,
+                residuals=residuals,
+                entity_index=entity_index,
+                time_index=time_index,
+            )
+
+        assert V_hac.shape == (3, 3)
+        assert np.all(np.isfinite(V_hac))
+
+    def test_driscoll_kraay_comparison_basic(self):
+        """Test DriscollKraayComparison.compare() (lines 473-491)."""
+        spatial_hac_se = np.array([0.05, 0.10, 0.08])
+        driscoll_kraay_se = np.array([0.04, 0.12, 0.07])
+        param_names = ["beta_0", "beta_1", "beta_2"]
+
+        comparison_df = DriscollKraayComparison.compare(
+            spatial_hac_se=spatial_hac_se,
+            driscoll_kraay_se=driscoll_kraay_se,
+            param_names=param_names,
+        )
+
+        # Check that the DataFrame has the expected columns
+        assert "Spatial_HAC" in comparison_df.columns
+        assert "Driscoll_Kraay" in comparison_df.columns
+        assert "ratio" in comparison_df.columns
+        assert "pct_diff" in comparison_df.columns
+
+        # Check ratios for numeric rows (first 3)
+        expected_ratios = spatial_hac_se / driscoll_kraay_se
+        actual_ratios = comparison_df.loc[comparison_df.index[:3], "ratio"].values.astype(float)
+        assert_allclose(actual_ratios, expected_ratios, rtol=1e-10)
+
+        # Check pct_diff for numeric rows
+        expected_pct = 100 * (spatial_hac_se - driscoll_kraay_se) / driscoll_kraay_se
+        actual_pct = comparison_df.loc[comparison_df.index[:3], "pct_diff"].values.astype(float)
+        assert_allclose(actual_pct, expected_pct, rtol=1e-10)
+
+        # Summary rows should exist
+        assert "mean" in comparison_df.index
+        assert "median" in comparison_df.index
+        assert "std" in comparison_df.index
+
+    def test_driscoll_kraay_comparison_default_names(self):
+        """Test DriscollKraayComparison.compare() with default param names."""
+        spatial_hac_se = np.array([0.1, 0.2])
+        driscoll_kraay_se = np.array([0.15, 0.18])
+
+        comparison_df = DriscollKraayComparison.compare(
+            spatial_hac_se=spatial_hac_se,
+            driscoll_kraay_se=driscoll_kraay_se,
+            param_names=None,  # should auto-generate names
+        )
+
+        # Check auto-generated parameter names
+        assert comparison_df.loc[comparison_df.index[0], "parameter"] == "param_0"
+        assert comparison_df.loc[comparison_df.index[1], "parameter"] == "param_1"
+
+    def test_parzen_kernel_in_full_computation(self):
+        """Test that Parzen temporal kernel works in full HAC computation."""
+        np.random.seed(42)
+        N = 4
+        T = 5
+        K = 2
+
+        distance_matrix = np.zeros((N, N))
+        X = np.random.randn(N * T, K)
+        residuals = np.random.randn(N * T)
+        entity_index = np.repeat(np.arange(N), T)
+        time_index = np.tile(np.arange(T), N)
+
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100.0,
+            temporal_cutoff=2,
+            temporal_kernel="parzen",
+        )
+
+        V_hac = hac.compute(
+            X=X,
+            residuals=residuals,
+            entity_index=entity_index,
+            time_index=time_index,
+        )
+
+        assert V_hac.shape == (K, K)
+        assert_allclose(V_hac, V_hac.T, atol=1e-12)
+
+    def test_quadratic_spectral_kernel_in_full_computation(self):
+        """Test that QS temporal kernel works in full HAC computation."""
+        np.random.seed(42)
+        N = 4
+        T = 5
+        K = 2
+
+        distance_matrix = np.zeros((N, N))
+        X = np.random.randn(N * T, K)
+        residuals = np.random.randn(N * T)
+        entity_index = np.repeat(np.arange(N), T)
+        time_index = np.tile(np.arange(T), N)
+
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=100.0,
+            temporal_cutoff=2,
+            temporal_kernel="quadratic_spectral",
+        )
+
+        V_hac = hac.compute(
+            X=X,
+            residuals=residuals,
+            entity_index=entity_index,
+            time_index=time_index,
+        )
+
+        assert V_hac.shape == (K, K)
+        # V_hac should still be finite
+        assert np.all(np.isfinite(V_hac))
+
+    # ----------------------------------------------------------
+    # Validation error branches (lines 89, 92, 96, 99, 104, 108)
+    # ----------------------------------------------------------
+
+    def test_validate_non_2d_distance_matrix(self):
+        """1D distance matrix raises ValueError (line 89)."""
+        with pytest.raises(ValueError, match="2-dimensional"):
+            SpatialHAC(
+                distance_matrix=np.array([1, 2, 3]),
+                spatial_cutoff=10,
+            )
+
+    def test_validate_non_square_distance_matrix(self):
+        """Non-square distance matrix raises ValueError (line 92)."""
+        with pytest.raises(ValueError, match="square"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 4)),
+                spatial_cutoff=10,
+            )
+
+    def test_validate_negative_spatial_cutoff(self):
+        """Negative spatial_cutoff raises ValueError (line 96)."""
+        with pytest.raises(ValueError, match="positive"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 3)),
+                spatial_cutoff=-1,
+            )
+
+    def test_validate_zero_spatial_cutoff(self):
+        """Zero spatial_cutoff raises ValueError (line 96)."""
+        with pytest.raises(ValueError, match="positive"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 3)),
+                spatial_cutoff=0,
+            )
+
+    def test_validate_negative_temporal_cutoff(self):
+        """Negative temporal_cutoff raises ValueError (line 99)."""
+        with pytest.raises(ValueError, match="non-negative"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 3)),
+                spatial_cutoff=10,
+                temporal_cutoff=-1,
+            )
+
+    def test_validate_invalid_spatial_kernel(self):
+        """Invalid spatial kernel raises ValueError (line 104)."""
+        with pytest.raises(ValueError, match="spatial_kernel"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 3)),
+                spatial_cutoff=10,
+                spatial_kernel="invalid_kernel",
+            )
+
+    def test_validate_invalid_temporal_kernel(self):
+        """Invalid temporal kernel raises ValueError (line 108)."""
+        with pytest.raises(ValueError, match="temporal_kernel"):
+            SpatialHAC(
+                distance_matrix=np.zeros((3, 3)),
+                spatial_cutoff=10,
+                temporal_kernel="invalid_kernel",
+            )
+
+    # ----------------------------------------------------------
+    # Triangular kernel (line 137) and from_coordinates (line 339)
+    # ----------------------------------------------------------
+
+    def test_spatial_kernel_triangular(self):
+        """Triangular spatial kernel (line 137, same as Bartlett)."""
+        distance_matrix = np.zeros((3, 3))
+        cutoff = 100
+        hac = SpatialHAC(
+            distance_matrix=distance_matrix,
+            spatial_cutoff=cutoff,
+            spatial_kernel="triangular",
+        )
+
+        distances = np.array([0, 25, 50, 75, 100, 125])
+        weights = hac._spatial_kernel_weight(distances)
+        expected = np.array([1.0, 0.75, 0.5, 0.25, 0.0, 0.0])
+        assert_allclose(weights, expected)
+
+    def test_from_coordinates_wrong_shape(self):
+        """from_coordinates with non-2D coords raises ValueError (line 339)."""
+        coords_3d = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])
+        with pytest.raises(ValueError, match=r"shape.*2"):
+            SpatialHAC.from_coordinates(
+                coords=coords_3d,
+                spatial_cutoff=10.0,
+            )

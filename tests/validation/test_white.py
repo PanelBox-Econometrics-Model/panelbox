@@ -250,7 +250,6 @@ class TestWhite:
         test = WhiteTest(results)
 
         # Mock np.linalg.solve to raise LinAlgError
-        original_solve = np.linalg.solve
 
         def mock_solve(a, b):
             # Raise LinAlgError to trigger lstsq fallback

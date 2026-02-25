@@ -1,6 +1,7 @@
 """
 Pytest fixtures for R validation tests.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -24,7 +25,7 @@ def run_r_script(script_name: str) -> bool:
             cwd=str(R_BENCHMARKS_DIR),
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -90,11 +91,7 @@ def heckman_r_results(r_available):
     if results_2step is None or data is None:
         pytest.skip("R results not available")
 
-    return {
-        "results_2step": results_2step,
-        "results_mle": results_mle,
-        "data": data
-    }
+    return {"results_2step": results_2step, "results_mle": results_mle, "data": data}
 
 
 @pytest.fixture(scope="module")

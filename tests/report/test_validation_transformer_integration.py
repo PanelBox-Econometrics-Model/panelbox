@@ -401,9 +401,7 @@ class TestPrepareVisualizationDataMethod:
     def test_prepare_visualization_data_is_used_by_new_mode(self, mock_validation_report):
         """Test that new mode actually uses prepare_visualization_data."""
         with (
-            patch(
-                "panelbox.report.validation_transformer.create_validation_charts"
-            ) as mock_create,
+            patch("panelbox.report.validation_transformer.create_validation_charts") as mock_create,
             patch.object(ValidationTransformer, "prepare_visualization_data") as mock_prepare,
         ):
             mock_prepare.return_value = {"tests": [], "model_info": {}, "charts": {}}

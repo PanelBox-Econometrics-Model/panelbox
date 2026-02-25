@@ -528,3 +528,206 @@ class TestOrderedMarginalEffects:
             # This might not always be true depending on random data,
             # but generally we expect some variables to have mixed effects
             pass  # Don't fail test as this depends on random data
+
+
+class TestOrderedCoverageGaps:
+    """Tests targeting uncovered branches in ordered.py."""
+
+    @pytest.fixture
+    def fitted_logit(self):
+        """Return a fitted OrderedLogit model."""
+        np.random.seed(42)
+        N = 200
+        K = 2
+        beta_true = np.array([0.5, -0.3])
+        cutpoints_true = np.array([-0.5, 0.5])
+
+        X = np.random.randn(N, K)
+        linear_pred = X @ beta_true
+        y = np.zeros(N, dtype=int)
+        for i in range(N):
+            y_star = linear_pred[i] + np.random.logistic(0, 1)
+            if y_star <= cutpoints_true[0]:
+                y[i] = 0
+            elif y_star <= cutpoints_true[1]:
+                y[i] = 1
+            else:
+                y[i] = 2
+
+        groups = np.arange(N)
+        model = OrderedLogit(endog=y, exog=X, groups=groups)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model.fit(maxiter=100)
+        return model
+
+    def test_predict_type_prob(self, fitted_logit):
+        """Test predict() with type='prob' returns probabilities."""
+        probs = fitted_logit.predict(type="prob")
+        assert probs.shape == (fitted_logit.n_obs, fitted_logit.n_categories)
+        assert np.allclose(probs.sum(axis=1), 1.0)
+        assert np.all(probs >= 0)
+
+    def test_predict_type_invalid(self, fitted_logit):
+        """Test predict() with invalid type raises ValueError."""
+        with pytest.raises(ValueError, match="Unknown prediction type"):
+            fitted_logit.predict(type="invalid_type")
+
+    def test_summary_before_fit(self):
+        """Test summary() on unfitted model returns informative string."""
+        np.random.seed(42)
+        model = OrderedLogit(
+            endog=np.array([0, 1, 2, 0, 1, 2]),
+            exog=np.random.randn(6, 2),
+            groups=np.arange(6),
+        )
+        summary = model.summary()
+        assert summary == "Model has not been fitted yet"
+
+    def test_predict_proba_1d_exog(self, fitted_logit):
+        """Test predict_proba() with a single observation (1D exog)."""
+        single_obs = fitted_logit.exog[0]
+        probs = fitted_logit.predict_proba(single_obs)
+        assert probs.shape == (1, fitted_logit.n_categories)
+        assert np.allclose(probs.sum(axis=1), 1.0)
+
+    def test_predict_before_fit(self):
+        """Test predict_proba() before fitting raises ValueError."""
+        model = OrderedLogit(
+            endog=np.array([0, 1, 2]),
+            exog=np.array([[1.0], [2.0], [3.0]]),
+            groups=np.array([0, 1, 2]),
+        )
+        with pytest.raises(ValueError, match="Model must be fitted"):
+            model.predict_proba()
+
+    def test_cutpoint_init_boundary_proportions(self):
+        """Test cutpoint initialization when a category proportion is 0 or 1."""
+        np.random.seed(99)
+        N = 200
+        # Create data where all observations are in category 0 or 2
+        # so that P(y <= 0) = 1.0 or P(y <= j) = 0.0 for some j
+        y = np.array([0] * 100 + [2] * 100)
+        X = np.random.randn(N, 2)
+        groups = np.arange(N)
+
+        model = OrderedLogit(endog=y, exog=X, groups=groups, n_categories=3)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # This exercises the branch where prop_j is 0 or 1
+            model.fit(maxiter=50)
+
+        assert hasattr(model, "params")
+        assert hasattr(model, "cutpoints")
+
+    def test_probit_fit_and_summary(self):
+        """Test OrderedProbit fit() and summary()."""
+        np.random.seed(42)
+        N = 200
+        K = 2
+        beta_true = np.array([0.5, -0.3])
+        cutpoints_true = np.array([-0.5, 0.5])
+
+        X = np.random.randn(N, K)
+        linear_pred = X @ beta_true
+        y = np.zeros(N, dtype=int)
+        for i in range(N):
+            y_star = linear_pred[i] + np.random.normal(0, 1)
+            if y_star <= cutpoints_true[0]:
+                y[i] = 0
+            elif y_star <= cutpoints_true[1]:
+                y[i] = 1
+            else:
+                y[i] = 2
+
+        groups = np.arange(N)
+        model = OrderedProbit(endog=y, exog=X, groups=groups)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model.fit(maxiter=100)
+
+        # Exercise summary on probit
+        summary = model.summary()
+        assert "OrderedProbit Results" in summary
+        assert "Cutpoints (ordered):" in summary
+
+        # Exercise predict with type='prob'
+        probs = model.predict(type="prob")
+        assert probs.shape == (N, 3)
+        assert np.allclose(probs.sum(axis=1), 1.0)
+
+        # Exercise predict with type='category'
+        cats = model.predict(type="category")
+        assert len(cats) == N
+        assert np.all(cats >= 0)
+        assert np.all(cats < 3)
+
+    def test_probit_cutpoint_initialization(self):
+        """Test that OrderedProbit uses norm.ppf for initial cutpoints."""
+        np.random.seed(42)
+        N = 300
+        X = np.random.randn(N, 1)
+        y = np.zeros(N, dtype=int)
+        for i in range(N):
+            y_star = 0.5 * X[i, 0] + np.random.normal(0, 1)
+            if y_star <= -0.5:
+                y[i] = 0
+            elif y_star <= 0.5:
+                y[i] = 1
+            else:
+                y[i] = 2
+
+        groups = np.arange(N)
+        model = OrderedProbit(endog=y, exog=X, groups=groups)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model.fit(maxiter=100)
+
+        assert hasattr(model, "beta")
+        assert len(model.cutpoints) == 2
+        assert model.cutpoints[0] < model.cutpoints[1]
+
+    def test_singular_hessian_standard_errors(self):
+        """Test standard error computation with singular Hessian."""
+        np.random.seed(42)
+        # Create a degenerate case: perfectly collinear features
+        N = 50
+        x1 = np.random.randn(N)
+        X = np.column_stack([x1, x1])  # Perfectly collinear
+        y = np.random.randint(0, 3, N)
+        groups = np.arange(N)
+
+        model = OrderedLogit(endog=y, exog=X, groups=groups)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model.fit(maxiter=50)
+
+        # Even if SE computation fails, model should have bse attribute
+        assert hasattr(model, "bse")
+
+    def test_predict_new_exog(self, fitted_logit):
+        """Test predictions with new exogenous data."""
+        new_X = np.random.randn(10, fitted_logit.n_features)
+        probs = fitted_logit.predict_proba(new_X)
+        assert probs.shape == (10, fitted_logit.n_categories)
+        assert np.allclose(probs.sum(axis=1), 1.0)
+
+        cats = fitted_logit.predict(exog=new_X, type="category")
+        assert len(cats) == 10
+
+    def test_optimization_failure_warning(self):
+        """Test that optimization failure produces a warning."""
+        np.random.seed(42)
+        N = 20
+        X = np.random.randn(N, 2)
+        y = np.random.randint(0, 3, N)
+        groups = np.arange(N)
+
+        model = OrderedLogit(endog=y, exog=X, groups=groups)
+        # Use very few iterations to force non-convergence
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            model.fit(maxiter=1, method="BFGS")
+
+        # Model should still have results even if not converged
+        assert hasattr(model, "params")

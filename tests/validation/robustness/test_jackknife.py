@@ -386,7 +386,7 @@ def test_jackknife_integration_full_workflow(mock_results):
     assert len(ci_percentile) == len(mock_results.params)
 
     # Get influential entities
-    influential = jk.influential_entities()
+    jk.influential_entities()
 
     # Generate summary
     summary = jk.summary()
@@ -460,9 +460,11 @@ def test_jackknife_with_failures(simple_panel_data, caplog):
             raise RuntimeError("Simulated failure")
         return original_fit(self, **kwargs)
 
-    with caplog.at_level(logging.WARNING, logger="panelbox"):
-        with patch.object(type(fe), "fit", mock_fit_with_failures):
-            jk_results = jk.run()
+    with (
+        caplog.at_level(logging.WARNING, logger="panelbox"),
+        patch.object(type(fe), "fit", mock_fit_with_failures),
+    ):
+        jk_results = jk.run()
 
     # Should have warning about failed samples in log
     assert (
@@ -486,10 +488,12 @@ def test_jackknife_all_samples_fail(simple_panel_data):
     def mock_fit_always_fail(self, **kwargs):
         raise RuntimeError("Always fail")
 
-    with patch.object(type(fe), "fit", mock_fit_always_fail):
+    with (
+        patch.object(type(fe), "fit", mock_fit_always_fail),
         # Should raise RuntimeError with message "All jackknife samples failed"
-        with pytest.raises(RuntimeError, match="All jackknife samples failed"):
-            jk.run()
+        pytest.raises(RuntimeError, match="All jackknife samples failed"),
+    ):
+        jk.run()
 
 
 def test_no_influential_entities(simple_panel_data):
@@ -519,12 +523,44 @@ def test_no_influential_entities(simple_panel_data):
     jk.run()
 
     # Get influential entities with very high threshold - should find none
-    influential = jk.influential_entities(threshold=999.0)  # High threshold ensures none detected
+    jk.influential_entities(threshold=999.0)  # High threshold ensures none detected
 
     # Get summary
     summary = jk.summary()
     # Either no influential entities are detected, or the summary is generated
     assert isinstance(summary, str) and len(summary) > 0
+
+
+def test_jackknife_results_summary_no_influential_entities():
+    """Test JackknifeResults.summary() when influence DataFrame is empty (line 99)."""
+    # Create a JackknifeResults with an empty influence DataFrame
+    # so that top_influential has length 0 and the "No influential entities
+    # detected" branch is hit.
+    params = ["x1", "x2"]
+    original = pd.Series([1.0, 2.0], index=params)
+    jk_mean = pd.Series([1.01, 1.99], index=params)
+    jk_bias = pd.Series([0.01, -0.01], index=params)
+    jk_se = pd.Series([0.1, 0.15], index=params)
+
+    # Empty influence DataFrame (0 rows)
+    influence = pd.DataFrame(columns=params, dtype=float)
+
+    jk_estimates = pd.DataFrame(columns=params, dtype=float)
+
+    result = JackknifeResults(
+        jackknife_estimates=jk_estimates,
+        original_estimates=original,
+        jackknife_mean=jk_mean,
+        jackknife_bias=jk_bias,
+        jackknife_se=jk_se,
+        influence=influence,
+        n_jackknife=0,
+    )
+
+    summary = result.summary()
+
+    assert "No influential entities detected" in summary
+    assert isinstance(summary, str)
 
 
 if __name__ == "__main__":
