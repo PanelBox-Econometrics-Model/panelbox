@@ -209,6 +209,9 @@ publish.sh
 # Academic papers working directory
 papers/
 
+# Conference submodule (separate repo)
+conference/
+
 # =============================================================================
 # PanelBox Output and Script Directories
 # =============================================================================
