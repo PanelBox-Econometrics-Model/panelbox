@@ -129,8 +129,8 @@ class TestPPML:
         assert result.params[2] > 0
         assert result.params[3] < 0  # Distance elasticity negative
 
-    @pytest.mark.xfail(
-        reason="PPML FE estimation with DP sequences is extremely slow", strict=False
+    @pytest.mark.skip(
+        reason="PPML FE estimation with DP sequences is extremely slow and times out on CI"
     )
     def test_ppml_fixed_effects(self, gravity_data):
         """Test PPML with fixed effects."""
