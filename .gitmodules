@@ -1,3 +1,6 @@
 [submodule "papers"]
 	path = papers
 	url = https://github.com/PanelBox-Econometrics-Model/papers.git
+[submodule "conference"]
+	path = conference
+	url = https://github.com/PanelBox-Econometrics-Model/conference.git
