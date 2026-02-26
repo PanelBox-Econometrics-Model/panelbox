@@ -1,0 +1,49 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>PanelBox QR Validation Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .pass { color: green; font-weight: bold; }
+                .fail { color: red; font-weight: bold; }
+                table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                th { background-color: #4CAF50; color: white; }
+                tr:nth-child(even) { background-color: #f2f2f2; }
+                h1 { color: #333; }
+                h2 { color: #666; }
+                .summary { background-color: #e7f3fe; padding: 15px; border-left: 6px solid #2196F3; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <h1>Quantile Regression Validation Report</h1>
+            <h2>Python (PanelBox) vs R (quantreg)</h2>
+            <p>Generated: 2026-02-15 12:20:02</p>
+
+            <div class="summary">
+                <h3>Summary Statistics</h3>
+                <p><strong>Total Tests:</strong> 1</p>
+                <p><strong>Passed:</strong> <span class="pass">1</span></p>
+                <p><strong>Failed:</strong> <span class="fail">0</span></p>
+                <p><strong>Pass Rate:</strong> 100.0%</p>
+            </div>
+
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Status</th>
+                    <th>Max Difference</th>
+                    <th>Tolerance</th>
+                </tr>
+
+                <tr>
+                    <td>Pooled QR - τ=0.5 coefficients</td>
+                    <td class="pass">✓ PASS</td>
+                    <td>0.00e+00</td>
+                    <td>1.00e-05</td>
+                </tr>
+
+            </table>
+        </body>
+        </html>

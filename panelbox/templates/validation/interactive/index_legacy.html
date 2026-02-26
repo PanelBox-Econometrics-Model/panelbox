@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include 'common/meta.html' %}
+
+    <!-- Embedded CSS -->
+    <style>
+        {{ css_inline|safe }}
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        {% include 'common/header.html' %}
+
+        <!-- Validation Summary Dashboard -->
+        <section class="report-section">
+            <h2 class="section-title">Validation Summary</h2>
+
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Tests</div>
+                    <div class="metric-value">{{ summary.total_tests }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Tests Passed</div>
+                    <div class="metric-value text-success">{{ summary.total_passed }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Tests Failed</div>
+                    <div class="metric-value text-danger">{{ summary.total_failed }}</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Pass Rate</div>
+                    <div class="metric-value">{{ summary.pass_rate_formatted }}</div>
+                    <div class="metric-progress">
+                        <div class="metric-progress-bar"
+                             style="width: {{ summary.pass_rate }}%;
+                                    background-color: {% if summary.pass_rate >= 80 %}var(--success){% elif summary.pass_rate >= 60 %}var(--warning){% else %}var(--danger){% endif %};">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Status Alert -->
+            {% if summary.has_issues %}
+            <div class="alert alert-{{ summary.overall_status }} mt-4">
+                <strong>{{ summary.status_message }}</strong>
+                <p class="mt-2">Review the test results and recommendations below to address detected issues.</p>
+            </div>
+            {% else %}
+            <div class="alert alert-success mt-4">
+                <strong>{{ summary.status_message }}</strong>
+                <p class="mt-2">Your panel data model has passed all validation tests.</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tab-container" id="validation-tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="overview-tab">
+                    Overview
+                </button>
+                <button class="tab-button" data-tab="results-tab">
+                    Test Results
+                </button>
+                <button class="tab-button" data-tab="charts-tab">
+                    Visualizations
+                </button>
+                {% if recommendations %}
+                <button class="tab-button" data-tab="recommendations-tab">
+                    Recommendations
+                    <span class="badge badge-warning">{{ recommendations|length }}</span>
+                </button>
+                {% endif %}
+                <button class="tab-button" data-tab="methodology-tab">
+                    Methodology
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-contents">
+
+                <!-- Overview Tab -->
+                <div id="overview-tab" class="tab-content active">
+                    {% include 'validation/interactive/partials/overview.html' %}
+                </div>
+
+                <!-- Test Results Tab -->
+                <div id="results-tab" class="tab-content">
+                    {% include 'validation/interactive/partials/test_results.html' %}
+                </div>
+
+                <!-- Charts Tab -->
+                <div id="charts-tab" class="tab-content">
+                    {% include 'validation/interactive/partials/charts.html' %}
+                </div>
+
+                <!-- Recommendations Tab -->
+                {% if recommendations %}
+                <div id="recommendations-tab" class="tab-content">
+                    {% include 'validation/interactive/partials/recommendations.html' %}
+                </div>
+                {% endif %}
+
+                <!-- Methodology Tab -->
+                <div id="methodology-tab" class="tab-content">
+                    {% include 'validation/interactive/partials/methodology.html' %}
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        {% include 'common/footer.html' %}
+    </div>
+
+    <!-- Plotly.js -->
+    {{ plotly_js|safe }}
+
+    <!-- Embedded JavaScript -->
+    <script>
+        {{ js_inline|safe }}
+    </script>
+
+    <!-- Chart Rendering Script -->
+    <script>
+        // Initialize tabs
+        document.addEventListener('DOMContentLoaded', function() {
+            PanelBoxTabs.init('validation-tabs');
+
+            // Render charts
+            renderCharts();
+        });
+
+        function renderCharts() {
+            {% if charts %}
+            // Test Overview Bar Chart
+            if (document.getElementById('chart-test-overview')) {
+                const testOverviewData = [
+                    {
+                        x: {{ charts.test_overview.categories|tojson }},
+                        y: {{ charts.test_overview.passed|tojson }},
+                        name: 'Passed',
+                        type: 'bar',
+                        marker: { color: '#10b981' }
+                    },
+                    {
+                        x: {{ charts.test_overview.categories|tojson }},
+                        y: {{ charts.test_overview.failed|tojson }},
+                        name: 'Failed',
+                        type: 'bar',
+                        marker: { color: '#ef4444' }
+                    }
+                ];
+
+                const testOverviewLayout = {
+                    title: 'Test Results by Category',
+                    barmode: 'stack',
+                    xaxis: { title: 'Test Category' },
+                    yaxis: { title: 'Number of Tests' },
+                    hovermode: 'closest',
+                    font: { family: 'var(--font-sans)' }
+                };
+
+                Plotly.newPlot('chart-test-overview', testOverviewData, testOverviewLayout, {responsive: true});
+            }
+
+            // P-value Distribution
+            if (document.getElementById('chart-pvalue-dist')) {
+                const pvalueData = [{
+                    x: {{ charts.pvalue_distribution.test_names|tojson }},
+                    y: {{ charts.pvalue_distribution.pvalues|tojson }},
+                    type: 'bar',
+                    marker: {
+                        color: {{ charts.pvalue_distribution.pvalues|tojson }},
+                        colorscale: [
+                            [0, '#ef4444'],
+                            [0.05, '#f59e0b'],
+                            [0.1, '#eab308'],
+                            [1, '#10b981']
+                        ],
+                        cmin: 0,
+                        cmax: 0.2
+                    },
+                    text: {{ charts.pvalue_distribution.pvalues|tojson }},
+                    texttemplate: '%{text:.4f}',
+                    textposition: 'outside'
+                }];
+
+                const pvalueLayout = {
+                    title: 'P-values by Test',
+                    xaxis: {
+                        title: 'Test Name',
+                        tickangle: -45
+                    },
+                    yaxis: {
+                        title: 'P-value',
+                        type: 'log'
+                    },
+                    shapes: [
+                        // Significance level lines
+                        {
+                            type: 'line',
+                            x0: -0.5,
+                            x1: {{ charts.pvalue_distribution.test_names|length }} - 0.5,
+                            y0: 0.05,
+                            y1: 0.05,
+                            line: { color: 'red', width: 2, dash: 'dash' }
+                        },
+                        {
+                            type: 'line',
+                            x0: -0.5,
+                            x1: {{ charts.pvalue_distribution.test_names|length }} - 0.5,
+                            y0: 0.01,
+                            y1: 0.01,
+                            line: { color: 'darkred', width: 1, dash: 'dot' }
+                        }
+                    ],
+                    annotations: [
+                        {
+                            x: 0,
+                            y: 0.05,
+                            text: 'α = 0.05',
+                            showarrow: false,
+                            xanchor: 'left',
+                            yanchor: 'bottom'
+                        }
+                    ],
+                    hovermode: 'closest',
+                    font: { family: 'var(--font-sans)' }
+                };
+
+                Plotly.newPlot('chart-pvalue-dist', pvalueData, pvalueLayout, {responsive: true});
+            }
+
+            // Test Statistics
+            if (document.getElementById('chart-test-stats')) {
+                const statsData = [{
+                    x: {{ charts.test_statistics.test_names|tojson }},
+                    y: {{ charts.test_statistics.statistics|tojson }},
+                    type: 'scatter',
+                    mode: 'markers',
+                    marker: {
+                        size: 12,
+                        color: '#2563eb',
+                        line: { width: 1, color: '#1e40af' }
+                    }
+                }];
+
+                const statsLayout = {
+                    title: 'Test Statistics',
+                    xaxis: {
+                        title: 'Test Name',
+                        tickangle: -45
+                    },
+                    yaxis: { title: 'Test Statistic' },
+                    hovermode: 'closest',
+                    font: { family: 'var(--font-sans)' }
+                };
+
+                Plotly.newPlot('chart-test-stats', statsData, statsLayout, {responsive: true});
+            }
+            {% endif %}
+        }
+    </script>
+</body>
+</html>

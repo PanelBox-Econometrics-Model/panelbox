@@ -3,13 +3,10 @@ Dataset Loading Functions.
 
 ==========================
 
-Functions for loading example panel datasets.
+Functions for loading example panel datasets bundled with PanelBox.
 
-Each dataset includes:
-- Description of the data source
-- Variable definitions
-- Example usage
-- Citation information
+Datasets are organized in categories (count, gmm, spatial, etc.)
+and can be loaded by name using ``load_dataset()``.
 """
 
 from __future__ import annotations
@@ -25,10 +22,53 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
 
 def _get_data_path() -> str:
     """Get the path to the data directory."""
-    return os.path.join(os.path.dirname(__file__), "data")
+    return _DATA_DIR
+
+
+def _find_dataset(name: str, category: str | None = None) -> str | None:
+    """Find a dataset CSV file by name, optionally within a category.
+
+    Parameters
+    ----------
+    name : str
+        Dataset name (without .csv extension).
+    category : str or None
+        Subdirectory to search in (e.g. "count", "gmm").
+        If None, searches all subdirectories.
+
+    Returns
+    -------
+    str or None
+        Full path to the CSV file, or None if not found.
+    """
+    filename = f"{name}.csv"
+
+    # 1. Check root data directory
+    root_path = os.path.join(_DATA_DIR, filename)
+    if category is None and os.path.isfile(root_path):
+        return root_path
+
+    # 2. Check specific category
+    if category is not None:
+        cat_path = os.path.join(_DATA_DIR, category, filename)
+        if os.path.isfile(cat_path):
+            return cat_path
+        return None
+
+    # 3. Search all subdirectories
+    for entry in sorted(os.listdir(_DATA_DIR)):
+        subdir = os.path.join(_DATA_DIR, entry)
+        if os.path.isdir(subdir):
+            candidate = os.path.join(subdir, filename)
+            if os.path.isfile(candidate):
+                return candidate
+
+    return None
 
 
 def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame | PanelData:
@@ -36,79 +76,25 @@ def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame | PanelData:
     Load Grunfeld investment data.
 
     Classic panel dataset on investment behavior of large US corporations.
+    10 firms, 20 years (1935-1954), 200 observations (balanced).
 
     Parameters
     ----------
     return_panel_data : bool, default=False
-        If True, returns a PanelData object instead of DataFrame
+        If True, returns a PanelData object instead of DataFrame.
 
     Returns
     -------
     pd.DataFrame or PanelData
-        Panel dataset with firm-year observations
-
-    Notes
-    -----
-    **Dataset Description:**
-
-    The Grunfeld data contains observations on 10 large US manufacturing firms
-    over the period 1935-1954 (20 years). It has been widely used to illustrate
-    panel data econometric methods.
-
-    **Variables:**
-    - `firm` : Firm identifier (1-10)
-    - `year` : Year (1935-1954)
-    - `invest` : Gross investment (millions of dollars)
-    - `value` : Market value of the firm (millions of dollars)
-    - `capital` : Stock of plant and equipment (millions of dollars)
-
-    **Sample Size:**
-    - Entities (N): 10 firms
-    - Time periods (T): 20 years
-    - Total observations: 200
-
-    **Panel Structure:**
-    - Balanced panel (all firms observed in all years)
-
-    **Common Uses:**
-    - Fixed effects estimation
-    - Between vs. within variation
-    - Dynamic panel models
-
-    **Citation:**
-    Grunfeld, Y. (1958). The determinants of corporate investment.
-    Unpublished Ph.D. dissertation, University of Chicago.
-
-    **Source:**
-    Standard dataset in econometrics, available in Stata (`webuse grunfeld`)
-    and R (`plm` package).
 
     Examples
     --------
-    >>> import panelbox as pb
-    >>>
-    >>> # Load data
-    >>> data = pb.load_grunfeld()
-    >>> print(data.head())
-    >>>
-    >>> # Panel structure
-    >>> print(f"Firms: {data['firm'].nunique()}")
-    >>> print(f"Years: {data['year'].nunique()}")
-    >>> print(f"Total obs: {len(data)}")
-    >>>
-    >>> # Estimate fixed effects
-    >>> fe = pb.FixedEffects("invest ~ value + capital", data, "firm", "year")
-    >>> results = fe.fit()
-    >>> print(results.summary())
-
-    See Also
-    --------
-    FixedEffects : Fixed Effects estimator
-    RandomEffects : Random Effects estimator
-    DifferenceGMM : Difference GMM estimator
-    SystemGMM : System GMM estimator
+    >>> from panelbox.datasets import load_grunfeld
+    >>> data = load_grunfeld()
+    >>> print(data.shape)
+    (200, 5)
     """
-    data_path = os.path.join(_get_data_path(), "grunfeld.csv")
+    data_path = os.path.join(_DATA_DIR, "grunfeld.csv")
     df = pd.read_csv(data_path)
 
     if return_panel_data:
@@ -123,66 +109,24 @@ def load_abdata(return_panel_data: bool = False) -> pd.DataFrame | PanelData | N
     """
     Load Arellano-Bond employment data.
 
-    Panel dataset on UK company employment used in Arellano & Bond (1991).
+    UK company employment data used in Arellano & Bond (1991).
+    ~140 firms, 7-9 years (1976-1984), ~1000 observations (unbalanced).
 
     Parameters
     ----------
     return_panel_data : bool, default=False
-        If True, returns a PanelData object instead of DataFrame
+        If True, returns a PanelData object instead of DataFrame.
 
     Returns
     -------
     pd.DataFrame or PanelData or None
-        Panel dataset with firm-year observations, or None if not found
-
-    Notes
-    -----
-    **Dataset Description:**
-
-    This is the employment dataset used in the seminal Arellano-Bond (1991)
-    paper on dynamic panel GMM estimation. It contains data on UK companies.
-
-    **Variables (typical):**
-    - `id` : Company identifier
-    - `year` : Year
-    - `n` or `emp` : Employment (number of employees)
-    - `w` or `wage` : Real wage
-    - `k` or `capital` : Gross capital stock
-    - `ys` or `output` : Industry output
-
-    **Sample Size:**
-    - Entities (N): ~140 firms
-    - Time periods (T): 7-9 years (1976-1984)
-    - Total observations: ~1,000 (unbalanced)
-
-    **Panel Structure:**
-    - Unbalanced panel (not all firms observed in all years)
-
-    **Common Uses:**
-    - Dynamic panel GMM estimation
-    - Arellano-Bond Difference GMM
-    - Blundell-Bond System GMM
-    - Testing for serial correlation in errors
-
-    **Citation:**
-    Arellano, M., & Bond, S. (1991). Some tests of specification for panel data:
-    Monte Carlo evidence and an application to employment equations.
-    Review of Economic Studies, 58(2), 277-297.
 
     Examples
     --------
-    >>> import panelbox as pb
-    >>>
-    >>> # Load data
-    >>> data = pb.load_abdata()
-    >>> if data is not None:
-    ...     # Estimate Difference GMM
-    ...     gmm = pb.DifferenceGMM(
-    ...         data=data, dep_var="n", lags=1, exog_vars=["w", "k"], id_var="id", time_var="year"
-    ...     )
-    ...     results = gmm.fit()
+    >>> from panelbox.datasets import load_abdata
+    >>> data = load_abdata()
     """
-    data_path = os.path.join(_get_data_path(), "abdata.csv")
+    data_path = os.path.join(_DATA_DIR, "abdata.csv")
 
     if not os.path.exists(data_path):
         return None
@@ -192,7 +136,6 @@ def load_abdata(return_panel_data: bool = False) -> pd.DataFrame | PanelData | N
     if return_panel_data:
         from panelbox.core.panel_data import PanelData
 
-        # Try to infer entity and time columns
         entity_col = "id" if "id" in df.columns else df.columns[0]
         time_col = "year" if "year" in df.columns else df.columns[1]
         return PanelData(df, entity_col=entity_col, time_col=time_col)
@@ -200,33 +143,77 @@ def load_abdata(return_panel_data: bool = False) -> pd.DataFrame | PanelData | N
     return df
 
 
-def list_datasets() -> list[str]:
+def list_datasets(category: str | None = None) -> list[str]:
     """
     List all available datasets.
+
+    Parameters
+    ----------
+    category : str or None
+        If provided, list only datasets in that category.
+        If None, list all datasets across all categories.
 
     Returns
     -------
     list of str
-        Names of available datasets
+        Dataset names. For categorized datasets, returns "category/name".
 
     Examples
     --------
-    >>> import panelbox as pb
-    >>> datasets = pb.list_datasets()
-    >>> print("Available datasets:")
-    >>> for ds in datasets:
-    ...     print(f"  - {ds}")
+    >>> from panelbox.datasets import list_datasets
+    >>> all_ds = list_datasets()
+    >>> count_ds = list_datasets("count")
     """
-    datasets = []
-    data_path = _get_data_path()
+    datasets: list[str] = []
 
-    if os.path.exists(data_path):
-        for filename in os.listdir(data_path):
-            if filename.endswith(".csv"):
-                dataset_name = filename[:-4]  # Remove .csv extension
-                datasets.append(dataset_name)
+    if not os.path.exists(_DATA_DIR):
+        return datasets
+
+    if category is not None:
+        cat_dir = os.path.join(_DATA_DIR, category)
+        if os.path.isdir(cat_dir):
+            for f in os.listdir(cat_dir):
+                if f.endswith(".csv"):
+                    datasets.append(f[:-4])
+        return sorted(datasets)
+
+    # Root-level datasets
+    for f in os.listdir(_DATA_DIR):
+        if f.endswith(".csv"):
+            datasets.append(f[:-4])
+
+    # Categorized datasets
+    for entry in sorted(os.listdir(_DATA_DIR)):
+        subdir = os.path.join(_DATA_DIR, entry)
+        if os.path.isdir(subdir):
+            for f in os.listdir(subdir):
+                if f.endswith(".csv"):
+                    datasets.append(f"{entry}/{f[:-4]}")
 
     return sorted(datasets)
+
+
+def list_categories() -> list[str]:
+    """
+    List available dataset categories.
+
+    Returns
+    -------
+    list of str
+        Category names (subdirectories in the data folder).
+
+    Examples
+    --------
+    >>> from panelbox.datasets import list_categories
+    >>> print(list_categories())
+    ['censored', 'count', 'diagnostics', ...]
+    """
+    categories: list[str] = []
+    if os.path.exists(_DATA_DIR):
+        for entry in sorted(os.listdir(_DATA_DIR)):
+            if os.path.isdir(os.path.join(_DATA_DIR, entry)):
+                categories.append(entry)
+    return categories
 
 
 def get_dataset_info(dataset_name: str) -> dict[str, Any]:
@@ -236,35 +223,18 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
     Parameters
     ----------
     dataset_name : str
-        Name of the dataset (e.g., 'grunfeld', 'abdata')
+        Name of the dataset (e.g., 'grunfeld', 'healthcare_visits').
 
     Returns
     -------
     dict
-        Dictionary containing dataset information:
-        - name: Dataset name
-        - description: Brief description
-        - n_entities: Number of entities (if loaded)
-        - n_periods: Number of time periods (if loaded)
-        - n_obs: Total observations (if loaded)
-        - variables: List of variables (if loaded)
-        - balanced: Whether panel is balanced (if loaded)
-        - source: Data source/citation
-
-    Examples
-    --------
-    >>> import panelbox as pb
-    >>> info = pb.get_dataset_info("grunfeld")
-    >>> print(f"Dataset: {info['name']}")
-    >>> print(f"Description: {info['description']}")
-    >>> print(f"Variables: {', '.join(info['variables'])}")
+        Dictionary with dataset metadata and statistics.
     """
-    dataset_info = {
+    known_info: dict[str, dict[str, str]] = {
         "grunfeld": {
             "name": "Grunfeld Investment Data",
             "description": "Investment data for 10 US manufacturing firms (1935-1954)",
             "source": "Grunfeld (1958)",
-            "citation": "Grunfeld, Y. (1958). The determinants of corporate investment.",
             "entity_col": "firm",
             "time_col": "year",
         },
@@ -272,83 +242,71 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
             "name": "Arellano-Bond Employment Data",
             "description": "UK company employment data (1976-1984)",
             "source": "Arellano & Bond (1991)",
-            "citation": "Arellano, M., & Bond, S. (1991). Review of Economic Studies, 58(2), 277-297.",
             "entity_col": "id",
             "time_col": "year",
         },
     }
 
     base_info: dict[str, Any] = dict(
-        dataset_info.get(
+        known_info.get(
             dataset_name,
-            {
-                "name": dataset_name,
-                "description": "Unknown dataset",
-                "source": "Unknown",
-            },
+            {"name": dataset_name, "description": "", "source": ""},
         )
     )
 
-    # Try to load dataset and add statistics
-    df: pd.DataFrame | None = None
+    # Try to load and add statistics
     try:
-        if dataset_name == "grunfeld":
-            df = load_grunfeld()
-        elif dataset_name == "abdata":
-            df = load_abdata()
-        else:
-            data_path = os.path.join(_get_data_path(), f"{dataset_name}.csv")
-            if os.path.exists(data_path):
-                df = pd.read_csv(data_path)
-            else:
-                return base_info
-
+        df = load_dataset(dataset_name)
         if df is not None:
-            entity_col = base_info.get("entity_col", df.columns[0])
-            time_col = base_info.get("time_col", df.columns[1])
-
-            base_info["n_entities"] = df[entity_col].nunique()
-            base_info["n_periods"] = df[time_col].nunique()
             base_info["n_obs"] = len(df)
             base_info["variables"] = list(df.columns)
-
-            # Check if balanced
-            obs_per_entity = df.groupby(entity_col).size()
-            base_info["balanced"] = (obs_per_entity == obs_per_entity.iloc[0]).all()
-
     except Exception as e:
         base_info["error"] = str(e)
 
     return base_info
 
 
-# Convenience function for backwards compatibility
-def load_dataset(name: str, **kwargs) -> pd.DataFrame | None:
+def load_dataset(name: str, category: str | None = None) -> pd.DataFrame | None:
     """
     Load a dataset by name.
+
+    Searches all bundled datasets. Use ``list_datasets()`` to see available
+    names.
 
     Parameters
     ----------
     name : str
-        Name of the dataset
-    **kwargs
-        Additional arguments passed to the specific load function
+        Dataset name (without .csv). Examples: "grunfeld", "healthcare_visits",
+        "bilateral_trade", "firm_investment".
+    category : str or None
+        Optional category to disambiguate duplicates.
+        Examples: "count", "gmm", "spatial".
 
     Returns
     -------
     pd.DataFrame or None
-        The requested dataset, or None if not found
+        The dataset as a DataFrame, or None if not found.
+
+    Examples
+    --------
+    >>> from panelbox.datasets import load_dataset
+    >>> data = load_dataset("healthcare_visits")
+    >>> data = load_dataset("macro_panel", category="var")
     """
-    if name == "grunfeld":
-        return load_grunfeld(**kwargs)
-    elif name == "abdata":
-        return load_abdata(**kwargs)
-    else:
-        # Try to load from file
-        data_path = os.path.join(_get_data_path(), f"{name}.csv")
-        if os.path.exists(data_path):
-            return pd.read_csv(data_path)
-        else:
-            logger.warning(f"Dataset '{name}' not found.")
-            logger.warning(f"Available datasets: {', '.join(list_datasets())}")
-            return None
+    # Shortcut for named loaders
+    if name == "grunfeld" and category is None:
+        return load_grunfeld()
+    if name == "abdata" and category is None:
+        return load_abdata()
+
+    # Handle "category/name" format
+    if "/" in name and category is None:
+        category, name = name.split("/", 1)
+
+    path = _find_dataset(name, category)
+    if path is not None:
+        return pd.read_csv(path)
+
+    logger.warning("Dataset '%s' not found.", name)
+    logger.warning("Available datasets: %s", ", ".join(list_datasets()))
+    return None

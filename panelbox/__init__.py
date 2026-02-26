@@ -45,7 +45,14 @@ from panelbox.core.results import PanelResults
 from panelbox.core.serialization import SerializableMixin, load_model
 
 # Datasets
-from panelbox.datasets import get_dataset_info, list_datasets, load_abdata, load_grunfeld
+from panelbox.datasets import (
+    get_dataset_info,
+    list_categories,
+    list_datasets,
+    load_abdata,
+    load_dataset,
+    load_grunfeld,
+)
 from panelbox.diagnostics.cointegration import (
     KaoResult,
     PedroniResult,
@@ -362,9 +369,11 @@ __all__ = [
     "j_test",
     "kao_test",
     "likelihood_ratio_test",
+    "list_categories",
     "list_datasets",
     "load_abdata",
     # Datasets
+    "load_dataset",
     "load_grunfeld",
     "load_model",
     "panel_unit_root_test",

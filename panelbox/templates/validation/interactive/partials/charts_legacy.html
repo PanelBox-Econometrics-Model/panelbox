@@ -1,0 +1,58 @@
+<section class="report-section">
+    <h3 class="section-subtitle">Interactive Visualizations</h3>
+
+    <p class="text-muted mb-6">
+        Explore validation test results through interactive charts. Hover over data points for detailed information,
+        zoom in/out, and pan to focus on specific areas of interest.
+    </p>
+
+    <!-- Test Overview Chart -->
+    <div class="chart-section mb-8">
+        <h4 class="chart-title">Test Results by Category</h4>
+        <p class="chart-description">
+            Stacked bar chart showing the number of passed and failed tests in each category.
+        </p>
+        <div class="chart-container">
+            <div id="chart-test-overview" class="chart-plot"></div>
+        </div>
+    </div>
+
+    <!-- P-value Distribution Chart -->
+    <div class="chart-section mb-8">
+        <h4 class="chart-title">P-value Distribution</h4>
+        <p class="chart-description">
+            Distribution of p-values across all tests (log scale). Tests with p-values below the significance
+            threshold (α = 0.05) indicate potential issues.
+        </p>
+        <div class="chart-container">
+            <div id="chart-pvalue-dist" class="chart-plot"></div>
+        </div>
+        <div class="chart-note mt-2">
+            <strong>Note:</strong> The red dashed line represents the 5% significance level (α = 0.05).
+            Tests below this line reject the null hypothesis.
+        </div>
+    </div>
+
+    <!-- Test Statistics Chart -->
+    <div class="chart-section mb-8">
+        <h4 class="chart-title">Test Statistics</h4>
+        <p class="chart-description">
+            Scatter plot of test statistics for all validation tests. Each point represents a test result.
+        </p>
+        <div class="chart-container">
+            <div id="chart-test-stats" class="chart-plot"></div>
+        </div>
+    </div>
+
+    <!-- Chart Instructions -->
+    <div class="info-box mt-6">
+        <h4 class="info-box-title">Chart Interactions</h4>
+        <ul class="info-box-list">
+            <li><strong>Hover:</strong> Move your mouse over data points to see detailed information</li>
+            <li><strong>Zoom:</strong> Click and drag to zoom into a region, or use the zoom buttons</li>
+            <li><strong>Pan:</strong> After zooming, click and drag to pan around</li>
+            <li><strong>Reset:</strong> Click the "Reset axes" button to restore the original view</li>
+            <li><strong>Export:</strong> Use the camera icon to download the chart as a PNG image</li>
+        </ul>
+    </div>
+</section>

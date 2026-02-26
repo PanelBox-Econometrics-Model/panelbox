@@ -402,6 +402,28 @@ class TestModelSpatialWeightsNormalization:
         W.standardize("row")
         assert W._eigenvalues is None
 
+    def test_spectral_standardize_with_cached_eigenvalues(self):
+        """Test spectral normalization when eigenvalues are already cached (line 229->231)."""
+        matrix = np.array([[0, 2, 0], [2, 0, 2], [0, 2, 0]], dtype=float)
+        W = ModelSpatialWeights(matrix)
+
+        # Pre-compute and cache eigenvalues
+        _ = W.eigenvalues
+        assert W._eigenvalues is not None
+        W._eigenvalues.copy()
+
+        # Spectral standardize with cached eigenvalues (should skip line 230)
+        W.standardize("spectral")
+
+        assert W.normalized
+        # After spectral normalization, max |eigenvalue| should be ~1
+        eigenvalues = np.linalg.eigvals(W.matrix)
+        max_abs_eig = np.max(np.abs(eigenvalues.real))
+        assert max_abs_eig == pytest.approx(1.0, abs=1e-10)
+
+        # Cache should be cleared after standardize
+        assert W._eigenvalues is None
+
 
 class TestModelSpatialWeightsProperties:
     """Test eigenvalue, s0, s1, s2 properties for models.spatial SpatialWeights."""
@@ -674,3 +696,190 @@ class TestModelSpatialWeightsDisplay:
 
         with pytest.raises(ValueError, match="Unknown backend"):
             W.plot(backend="invalid_backend")
+
+
+# ===========================================================================
+# Additional tests for uncovered lines
+# ===========================================================================
+
+
+class TestModelSpatialWeightsContiguitySuccess:
+    """Test successful contiguity weight creation with libpysal."""
+
+    @pytest.fixture
+    def sample_gdf(self):
+        """Create a mock GeoDataFrame for testing."""
+        pytest.importorskip("geopandas")
+        pytest.importorskip("shapely")
+        import geopandas as gpd
+        from shapely.geometry import Polygon
+
+        # Create a simple 2x2 grid of polygons
+        polygons = [
+            Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),  # Bottom-left
+            Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),  # Bottom-right
+            Polygon([(0, 1), (1, 1), (1, 2), (0, 2)]),  # Top-left
+            Polygon([(1, 1), (2, 1), (2, 2), (1, 2)]),  # Top-right
+        ]
+        gdf = gpd.GeoDataFrame({"geometry": polygons})
+        return gdf
+
+    @pytest.mark.xfail(
+        reason="libpysal/scipy sparse compatibility issue in some test orderings",
+        raises=ValueError,
+        strict=False,
+    )
+    def test_from_contiguity_queen(self, sample_gdf):
+        """Test from_contiguity with queen criterion (line 114, 121-122)."""
+        pytest.importorskip("libpysal")
+
+        W = ModelSpatialWeights.from_contiguity(sample_gdf, criterion="queen")
+
+        # Queen contiguity: all 4 squares are neighbors via edges or vertices
+        assert W.n == 4
+        assert isinstance(W.matrix, np.ndarray)
+        # Center connections should exist (e.g., 0-1, 0-2, etc.)
+        assert W.matrix[0, 1] > 0  # Bottom-left to bottom-right
+        assert W.matrix[0, 2] > 0  # Bottom-left to top-left
+
+    @pytest.mark.xfail(
+        reason="libpysal/scipy sparse compatibility issue in some test orderings",
+        raises=ValueError,
+        strict=False,
+    )
+    def test_from_contiguity_rook(self, sample_gdf):
+        """Test from_contiguity with rook criterion (line 116, 121-122)."""
+        pytest.importorskip("libpysal")
+
+        W = ModelSpatialWeights.from_contiguity(sample_gdf, criterion="rook")
+
+        # Rook contiguity: only edge neighbors
+        assert W.n == 4
+        assert isinstance(W.matrix, np.ndarray)
+        # Edge connections should exist
+        assert W.matrix[0, 1] > 0  # Bottom-left to bottom-right
+
+
+class TestModelSpatialWeightsDistanceSuccess:
+    """Test successful distance weight creation with libpysal."""
+
+    @pytest.mark.xfail(
+        reason="libpysal/scipy sparse compatibility issue in some test orderings",
+        raises=ValueError,
+        strict=False,
+    )
+    def test_from_distance_with_libpysal(self):
+        """Test from_distance with libpysal installed (lines 152-154)."""
+        pytest.importorskip("libpysal")
+
+        # Simple coordinates that will form a connected graph
+        coords = np.array([[0, 0], [1, 0], [2, 0]])
+        W = ModelSpatialWeights.from_distance(coords, threshold=1.5, binary=True)
+
+        # Should create weight matrix
+        assert W.n == 3
+        assert isinstance(W.matrix, np.ndarray)
+        # Direct neighbors should be connected
+        assert W.matrix[0, 1] > 0  # Horizontal neighbor
+        assert W.matrix[1, 2] > 0  # Horizontal neighbor
+
+
+class TestModelSpatialWeightsKNNSuccess:
+    """Test successful k-NN weight creation with libpysal."""
+
+    @pytest.mark.xfail(
+        reason="libpysal/scipy sparse compatibility issue in some test orderings",
+        raises=ValueError,
+        strict=False,
+    )
+    def test_from_knn_with_libpysal(self):
+        """Test from_knn with libpysal installed (lines 178-180)."""
+        pytest.importorskip("libpysal")
+
+        # Simple triangle coordinates - each should connect to 2 neighbors
+        coords = np.array([[0, 0], [1, 0], [0.5, 0.866]])
+        W = ModelSpatialWeights.from_knn(coords, k=2)
+
+        # Should create weight matrix with k=2 neighbors
+        assert W.n == 3
+        assert isinstance(W.matrix, np.ndarray)
+        # Each point should connect to the other 2
+        row_sums = (W.matrix > 0).sum(axis=1)
+        assert np.all(row_sums == 2)
+
+
+class TestModelSpatialWeightsEigenvalueWarning:
+    """Test eigenvalue computation warning for large sparse matrices."""
+
+    def test_large_sparse_eigenvalue_warning(self):
+        """Test that computing eigenvalues on large sparse matrix triggers warning (line 251)."""
+        # Create a sparse matrix with n > 1000
+        n = 1500
+        # Simple pattern: each row has a few connections
+        data = []
+        row = []
+        col = []
+        for i in range(n):
+            # Connect to next neighbor (circular)
+            j = (i + 1) % n
+            data.append(1.0)
+            row.append(i)
+            col.append(j)
+
+        sparse = csr_matrix((data, (row, col)), shape=(n, n))
+        W = ModelSpatialWeights(sparse)
+
+        # Accessing eigenvalues should trigger the warning
+        with pytest.warns(UserWarning, match="Computing eigenvalues for large sparse matrix"):
+            _ = W.eigenvalues
+
+
+class TestModelSpatialWeightsPlotWithGDF:
+    """Test plot method with GeoDataFrame argument."""
+
+    @pytest.fixture
+    def sample_gdf_for_plot(self):
+        """Create a mock GeoDataFrame for plotting."""
+        pytest.importorskip("geopandas")
+        pytest.importorskip("shapely")
+        import geopandas as gpd
+        from shapely.geometry import Polygon
+
+        # Create 3 adjacent polygons
+        polygons = [
+            Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+            Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+            Polygon([(0, 1), (1, 1), (1, 2), (0, 2)]),
+        ]
+        gdf = gpd.GeoDataFrame({"geometry": polygons})
+        return gdf
+
+    def test_plot_with_gdf(self, sample_gdf_for_plot):
+        """Test plot with gdf argument (lines 368-379)."""
+        import matplotlib.pyplot as plt
+
+        # Create a simple weight matrix
+        matrix = np.array([[0, 1, 1], [1, 0, 0], [1, 0, 0]], dtype=float)
+        W = ModelSpatialWeights(matrix)
+
+        # Plot with gdf -- should execute lines 368-379
+        # This tests the geodataframe plotting branch
+        W.plot(gdf=sample_gdf_for_plot, backend="matplotlib")
+
+        # Clean up
+        plt.close("all")
+
+    def test_plot_with_gdf_sparse(self, sample_gdf_for_plot):
+        """Test plot with gdf argument using sparse matrix (line 376 sparse branch)."""
+        import matplotlib.pyplot as plt
+
+        # Create a sparse weight matrix
+        dense = np.array([[0, 1, 1], [1, 0, 0], [1, 0, 0]], dtype=float)
+        sparse = csr_matrix(dense)
+        W = ModelSpatialWeights(sparse)
+
+        # Plot with gdf
+        W.plot(gdf=sample_gdf_for_plot, backend="matplotlib")
+
+        # Clean up
+        plt.close("all")

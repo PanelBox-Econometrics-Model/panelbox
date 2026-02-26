@@ -331,6 +331,7 @@ exclude = ["desenvolvimento*", "tests*", "examples*"]
 panelbox = [
     "py.typed",
     "datasets/data/*.csv",
+    "datasets/data/**/*.csv",
     "datasets/data/*.dta",
     "templates/**/*.html",
     "templates/**/*.css",
