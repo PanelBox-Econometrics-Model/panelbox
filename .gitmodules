@@ -1,3 +1,6 @@
 [submodule "papers"]
 	path = papers
 	url = https://github.com/PanelBox-Econometrics-Model/papers.git
+[submodule "graphrag"]
+	path = graphrag
+	url = https://github.com/PanelBox-Econometrics-Model/graphrag.git
