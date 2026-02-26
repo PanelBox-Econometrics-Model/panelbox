@@ -221,10 +221,10 @@ output/
 reports/
 
 # Scripts directory (internal build/release scripts)
-scripts/
+/scripts/
 
 # Validation directory (internal validation scripts)
-validation/
+/validation/
 
 # Claude AI working directory
 .claude/

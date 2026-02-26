@@ -2,30 +2,28 @@
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "0.6.0"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
 
 # Version history
-# 1.0.0 (2026-02-15): Advanced Econometric Methods (PRODUCTION RELEASE)
-#                     - CUE-GMM (Continuous Updated GMM) following Hansen et al. (1996)
-#                     - Bias-Corrected GMM following Hahn-Kuersteiner (2002)
-#                     - Panel Heckman selection model (two-step & MLE) following Wooldridge (1995)
-#                     - Westerlund (2007) cointegration tests with bootstrap
-#                     - Pedroni and Kao cointegration tests
-#                     - Hadri and Breitung panel unit root tests
-#                     - Davidson-MacKinnon J-test for model specification
-#                     - Multinomial Logit for panels with fixed effects
-#                     - PPML (Poisson Pseudo-ML) following Silva-Tenreyro (2006)
-#                     - Comprehensive validation against R (50+ tests)
-#                     - 7 new tutorials and complete API documentation
-#                     - FAQ with 40+ questions
-#                     - Theory guides for all methods
-#                     - 200+ unit tests, 92% coverage
-#                     - Professional HTML templates for all models
-#                     - Production-ready release
-# 0.8.0 (2026-02-08): Test Runners & Master Report (Sprint 8)
+# 0.6.0 (2026-02-25): Complete Econometric Toolkit
+#                     - 70+ econometric models across 13 families
+#                     - 50+ diagnostic tests with validation against R/Stata
+#                     - CUE-GMM, Bias-Corrected GMM, Panel Heckman
+#                     - Cointegration tests (Westerlund, Pedroni, Kao)
+#                     - Unit root tests (Hadri, Breitung, LLC, IPS, Fisher)
+#                     - PPML, Multinomial Logit, Ordered Logit/Probit
+#                     - Panel VAR, VECM, IRF, FEVD, Granger Causality
+#                     - Stochastic Frontier Analysis (4-component, TFP)
+#                     - Spatial models (SAR, SEM, SDM, GNS, Dynamic)
+#                     - Quantile regression (FE, Canay, Location-Scale, Dynamic)
+#                     - 35+ Plotly charts, HTML/LaTeX/Markdown reports
+#                     - Master Report system with experiment overview
+#                     - Complete documentation overhaul (200+ pages)
+#                     - Google Colab tutorials for all model families
+#                     - 3986 tests passing, 85-92% coverage
 #                     - ValidationTest: Configurable test runner (quick, basic, full) for model validation
 #                     - ComparisonTest: Test runner for multi-model comparison
 #                     - Master Report: Comprehensive HTML report with experiment overview and sub-report navigation

@@ -343,7 +343,7 @@ If you use PanelBox in your research, please cite:
   author = {Haase, Gustavo and Dourado, Paulo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
-  version = {0.7.0},
+  version = {0.6.0},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
 }
 ```
@@ -383,34 +383,15 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for complete version history.
 
-### Latest Release: v0.8.0 (2026-02-08)
+### Latest Release: v0.6.0 (2026-02-25)
 
-**🎯 Test Runners & Master Report**
+**🎯 Complete Econometric Toolkit**
 
-**Test Runners (NEW in v0.8.0):**
-- ✨ **ValidationTest** - Configurable test runner with 3 presets (quick, basic, full)
-- ✨ **ComparisonTest** - Multi-model comparison with automatic metrics extraction
-- ✨ Clean one-liner APIs for running tests on any fitted model
-- ✨ Integrates seamlessly with PanelExperiment workflow
-
-**Master Report System (NEW in v0.8.0):**
-- ✨ **Master HTML Report** - Comprehensive overview of entire experiment
-- ✨ **Experiment Overview** - Formula, observations, entities, time periods
-- ✨ **Models Summary** - Grid with key metrics (R², AIC, BIC) for all fitted models
-- ✨ **Reports Navigation** - Click through to validation, comparison, and residuals reports
-- ✨ **Quick Start Guide** - Embedded code examples in the report
-- ✨ **Responsive Design** - Professional layouts for all screen sizes
-
-### Previous Release: v0.7.0 (2026-02-08)
-
-**🎯 Advanced Features & Production Polish**
-
-**Experiment Pattern & Result Containers:**
-- ✨ **PanelExperiment** - Factory-based model management with automatic storage
-- ✨ **ValidationResult** - Container for validation test results with HTML/JSON export
-- ✨ **ComparisonResult** - Container for model comparison with best model selection
-- ✨ **ResidualResult** (NEW!) - Container for residual diagnostics with 4 tests
-- ✨ One-liner workflows: `validate_model()`, `compare_models()`, `analyze_residuals()`
+- 70+ econometric models across 13 families
+- 50+ diagnostic tests with comprehensive validation against R/Stata
+- Interactive HTML reports with 35+ Plotly charts
+- Complete documentation overhaul with 200+ pages
+- Google Colab tutorials for all model families
 
 **Comprehensive Visualization System:**
 - ✨ 35+ interactive Plotly charts for panel data analysis
