@@ -11,7 +11,7 @@ from numpy.testing import assert_allclose
 from scipy import stats
 
 from panelbox.core.spatial_weights import SpatialWeights
-from panelbox.models.spatial.spatial_lag import SpatialLag
+from panelbox.models.spatial.spatial_lag import SpatialLag, SpatialPanelResults
 
 
 class TestSARDataGeneration:
@@ -73,7 +73,7 @@ class TestSARDataGeneration:
         """
         Generate panel data from SAR model.
 
-        Model: y = ρWy + Xβ + α + ε
+        Model: y = rhoWy + Xbeta + alpha + epsilon
 
         Parameters
         ----------
@@ -120,9 +120,9 @@ class TestSARDataGeneration:
         # Expand fixed effects
         np.repeat(alpha, t)
 
-        # Generate y solving: y = ρWy + Xβ + α + ε
-        # => (I - ρW)y = Xβ + α + ε
-        # => y = (I - ρW)^{-1}(Xβ + α + ε)
+        # Generate y solving: y = rhoWy + Xbeta + alpha + epsilon
+        # => (I - rhoW)y = Xbeta + alpha + epsilon
+        # => y = (I - rhoW)^{-1}(Xbeta + alpha + epsilon)
 
         # For each time period
         y = np.zeros(n * t)
@@ -333,6 +333,239 @@ class TestSAREstimation:
             y_reconstructed.flatten(), model._within_transformation(model.endog).flatten()
         )[0, 1]
         assert correlation > 0.95
+
+    @pytest.mark.timeout(120)
+    def test_sar_fe_lbfgsb_optimizer(self):
+        """Test SAR-FE estimation using L-BFGS-B optimizer."""
+        # Generate data
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        # Create spatial weights object
+        W_obj = SpatialWeights(W)
+
+        # Estimate model with L-BFGS-B optimizer
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="qml", optimizer="l-bfgs-b")
+
+        # Check that estimation completed
+        assert result is not None
+        assert "rho" in result.params.index
+        assert "x1" in result.params.index
+        assert "x2" in result.params.index
+
+        # Check parameter recovery
+        assert abs(result.params["rho"] - rho_true) < 0.2
+        assert abs(result.params["x1"] - beta_true[0]) < 0.3
+        assert abs(result.params["x2"] - beta_true[1]) < 0.3
+
+        # Check standard errors are positive
+        assert all(result.bse > 0)
+
+    @pytest.mark.timeout(120)
+    def test_sar_ml_random_effects(self):
+        """Test SAR with ML random effects estimation."""
+        # Generate data with moderate spatial autocorrelation
+        n, t = 25, 8
+        rho_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(
+            n, t, rho_true, beta_true, W, sigma2=1.0, alpha_std=0.5, seed=42
+        )
+
+        # Create spatial weights object
+        W_obj = SpatialWeights(W)
+
+        # Estimate model with ML random effects
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="random", method="ml")
+
+        # Check that estimation completed
+        assert result is not None
+        assert isinstance(result, SpatialPanelResults)
+        assert "rho" in result.params.index
+
+        # Check variance components are present
+        assert "sigma_alpha2" in result.params.index
+        assert "sigma_epsilon2" in result.params.index
+
+        # Variance components should be positive
+        assert result.params["sigma_alpha2"] > 0
+        assert result.params["sigma_epsilon2"] > 0
+
+        # Check that method and effects are correct
+        assert result.method == "Maximum Likelihood (Random Effects)"
+        assert result.effects == "random"
+
+        # Check that rho is in a reasonable range
+        assert -0.99 < result.params["rho"] < 0.99
+
+        # Check standard errors exist and are positive
+        assert result.bse is not None
+        assert len(result.bse) == len(result.params)
+
+    def test_sar_results_summary(self):
+        """Test that result.summary() prints without error."""
+        # Generate data
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        # Create spatial weights object
+        W_obj = SpatialWeights(W)
+
+        # Estimate model
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="qml")
+
+        # summary() should run without raising an exception
+        # It prints to stdout; we just verify it does not crash
+        result.summary()
+
+    def test_sar_results_predict_new_data(self):
+        """Test SpatialPanelResults.predict with new_data DataFrame."""
+        # Generate data
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        # Create spatial weights object
+        W_obj = SpatialWeights(W)
+
+        # Estimate model
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="qml")
+
+        # Create new data for prediction (n rows to match W dimension)
+        np.random.seed(99)
+        new_data = pd.DataFrame(
+            {
+                "x1": np.random.normal(0, 1, n),
+                "x2": np.random.normal(0, 1, n),
+            }
+        )
+
+        # Predict on new data (uses stored W from the result)
+        predictions = result.predict(new_data=new_data)
+
+        # Check output shape and no NaN
+        assert predictions is not None
+        assert len(predictions) == n
+        assert not np.any(np.isnan(predictions))
+
+    def test_sar_results_predict_sem_type(self):
+        """Test SpatialPanelResults.predict with model_type SEM branch."""
+        # We need to create a SpatialPanelResults whose _model.model_type == "SEM"
+        # to exercise the SEM prediction branch in predict().
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="qml")
+
+        # Temporarily override model_type to test SEM branch
+        original_model_type = model.model_type
+        model.model_type = "SEM"
+
+        # Rename rho to lambda in params for SEM predict path
+        new_params = result.params.copy()
+        new_params.index = new_params.index.map(lambda x: "lambda" if x == "rho" else x)
+        result.params = new_params
+
+        np.random.seed(99)
+        new_data = pd.DataFrame(
+            {
+                "x1": np.random.normal(0, 1, n),
+                "x2": np.random.normal(0, 1, n),
+            }
+        )
+
+        # Predict using SEM branch (no spatial multiplier)
+        predictions = result.predict(new_data=new_data)
+
+        assert predictions is not None
+        assert len(predictions) == n
+        assert not np.any(np.isnan(predictions))
+
+        # Restore original model_type
+        model.model_type = original_model_type
+
+    def test_sar_unsupported_effects_method(self):
+        """Test that unsupported effects/method combo raises NotImplementedError."""
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            model.fit(effects="random", method="gmm")
+
+    def test_sar_rho_property(self):
+        """Test the SpatialPanelResults.rho property."""
+        n, t = 25, 10
+        rho_true = 0.4
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSARDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSARDataGeneration.generate_sar_panel_data(n, t, rho_true, beta_true, W, seed=42)
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialLag(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="qml")
+
+        # The rho property should return the spatial parameter
+        rho_value = result.rho
+        assert rho_value is not None
+        assert isinstance(rho_value, float)
+        assert rho_value == float(result.params["rho"])
+
+        # Verify it's a reasonable estimate
+        assert abs(rho_value - rho_true) < 0.2
 
 
 class TestSARLogDeterminant:

@@ -247,38 +247,97 @@ def test_fisher_invalid_inputs():
         pb.FisherTest(data, "nonexistent", "firm", "year")
 
 
+class TestFisherPPBranches:
+    """Test PP test branches for different trend specifications."""
+
+    def _generate_data(self, n_entities=5, n_time=50, seed=42):
+        np.random.seed(seed)
+        data_list = []
+        for i in range(n_entities):
+            y = np.zeros(n_time)
+            y[0] = np.random.randn()
+            for t in range(1, n_time):
+                y[t] = 0.5 * y[t - 1] + np.random.randn()
+            data_list.append(pd.DataFrame({"entity": i, "time": range(n_time), "y": y}))
+        return pd.concat(data_list, ignore_index=True)
+
+    def test_pp_trend_n(self):
+        """Test PP test with no trend."""
+        data = self._generate_data()
+        fisher = pb.FisherTest(data, "y", "entity", "time", test_type="pp", trend="n")
+        result = fisher.run()
+        assert isinstance(result, pb.FisherTestResult)
+        assert result.test_type == "pp"
+        assert result.trend == "n"
+        assert result.statistic > 0
+        assert 0 <= result.pvalue <= 1
+
+    def test_pp_trend_ct(self):
+        """Test PP test with constant and trend."""
+        data = self._generate_data()
+        fisher = pb.FisherTest(data, "y", "entity", "time", test_type="pp", trend="ct")
+        result = fisher.run()
+        assert isinstance(result, pb.FisherTestResult)
+        assert result.test_type == "pp"
+        assert result.trend == "ct"
+        assert result.statistic > 0
+
+    def test_pp_short_series(self):
+        """Test PP test with very short series (T < 4)."""
+        np.random.seed(42)
+        data = pd.DataFrame(
+            {
+                "entity": [0, 0, 0, 1, 1, 1],
+                "time": [0, 1, 2, 0, 1, 2],
+                "y": np.random.randn(6),
+            }
+        )
+        fisher = pb.FisherTest(data, "y", "entity", "time", test_type="pp", trend="c")
+        result = fisher.run()
+        # Short series should return conservative p-values (1.0)
+        assert isinstance(result, pb.FisherTestResult)
+
+    def test_adf_with_fixed_lags(self):
+        """Test ADF test with fixed number of lags."""
+        data = self._generate_data()
+        fisher = pb.FisherTest(data, "y", "entity", "time", test_type="adf", lags=2, trend="c")
+        result = fisher.run()
+        assert isinstance(result, pb.FisherTestResult)
+        assert result.test_type == "adf"
+
+
 if __name__ == "__main__":
     print("=" * 70)
     print("Running Fisher-type Panel Unit Root Tests")
     print("=" * 70)
 
     test_fisher_import()
-    print("\n✅ Import test passed")
+    print("\n[PASS] Import test passed")
 
     test_fisher_basic_stationary()
-    print("\n✅ Basic stationary test passed")
+    print("\n[PASS] Basic stationary test passed")
 
     test_fisher_basic_unit_root()
-    print("\n✅ Basic unit root test passed")
+    print("\n[PASS] Basic unit root test passed")
 
     test_fisher_pp_test()
-    print("\n✅ PP test passed")
+    print("\n[PASS] PP test passed")
 
     test_fisher_trend_specifications()
-    print("\n✅ Trend specifications test passed")
+    print("\n[PASS] Trend specifications test passed")
 
     test_fisher_grunfeld()
-    print("\n✅ Grunfeld test passed")
+    print("\n[PASS] Grunfeld test passed")
 
     test_fisher_unbalanced_panel()
-    print("\n✅ Unbalanced panel test passed")
+    print("\n[PASS] Unbalanced panel test passed")
 
     test_fisher_result_string()
-    print("\n✅ Result string test passed")
+    print("\n[PASS] Result string test passed")
 
     test_fisher_invalid_inputs()
-    print("\n✅ Invalid inputs test passed")
+    print("\n[PASS] Invalid inputs test passed")
 
     print("\n" + "=" * 70)
-    print("✅ All Fisher tests passed!")
+    print("[PASS] All Fisher tests passed!")
     print("=" * 70)

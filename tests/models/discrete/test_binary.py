@@ -16,7 +16,12 @@ from numpy.testing import assert_allclose
 from scipy import stats
 from scipy.special import expit
 
-from panelbox.models.discrete import FixedEffectsLogit, PooledLogit, PooledProbit
+from panelbox.models.discrete import (
+    FixedEffectsLogit,
+    PooledLogit,
+    PooledProbit,
+    RandomEffectsProbit,
+)
 
 
 class TestPooledLogit:
@@ -601,6 +606,544 @@ class TestConvergence:
 
         # Parameters should be very close
         assert_allclose(results_bfgs.params, results_newton.params, rtol=0.01)
+
+
+class TestBinaryDiagnostics:
+    """Test diagnostic methods for binary models."""
+
+    @pytest.fixture
+    def binary_panel_data(self):
+        """Generate panel data for diagnostic tests."""
+        np.random.seed(42)
+        n_entities, n_periods = 50, 10
+        n_obs = n_entities * n_periods
+        entities = np.repeat(range(1, n_entities + 1), n_periods)
+        times = np.tile(range(2020, 2020 + n_periods), n_entities)
+        x1 = np.random.randn(n_obs)
+        x2 = np.random.randn(n_obs)
+        eta = 0.5 + 1.0 * x1 - 0.5 * x2
+        probs = expit(eta)
+        y = (np.random.rand(n_obs) < probs).astype(int)
+        return pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+
+    def test_logit_information_matrix_test(self, binary_panel_data):
+        """Test Information Matrix Test on PooledLogit results."""
+        model = PooledLogit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        imt = results.information_matrix_test()
+        assert "statistic" in imt
+        assert "p_value" in imt
+        assert "df" in imt
+        assert imt["df"] > 0
+        assert np.isfinite(imt["statistic"])
+        assert 0 <= imt["p_value"] <= 1
+
+    def test_logit_link_test(self, binary_panel_data):
+        """Test Link Test on PooledLogit results."""
+        model = PooledLogit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        lt = results.link_test()
+        assert "squared_term_coef" in lt
+        assert "t_statistic" in lt
+        assert "p_value" in lt
+        assert np.isfinite(lt["squared_term_coef"])
+        assert np.isfinite(lt["t_statistic"])
+
+    def test_probit_information_matrix_test(self, binary_panel_data):
+        """Test Information Matrix Test on PooledProbit results."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        imt = results.information_matrix_test()
+        assert "statistic" in imt
+        assert "p_value" in imt
+        assert "df" in imt
+        assert imt["df"] > 0
+        assert np.isfinite(imt["statistic"])
+
+    def test_probit_link_test(self, binary_panel_data):
+        """Test Link Test on PooledProbit results."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        lt = results.link_test()
+        assert "squared_term_coef" in lt
+        assert "p_value" in lt
+        assert np.isfinite(lt["squared_term_coef"])
+
+    def test_probit_classification_metrics(self, binary_panel_data):
+        """Test classification metrics on PooledProbit results."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        metrics = results.classification_metrics()
+        assert "accuracy" in metrics
+        assert "precision" in metrics
+        assert "recall" in metrics
+        assert "f1" in metrics
+        assert "auc_roc" in metrics
+        assert "confusion_matrix" in metrics
+        assert 0 <= metrics["accuracy"] <= 1
+        assert 0 <= metrics["precision"] <= 1
+        assert 0 <= metrics["recall"] <= 1
+        assert 0 <= metrics["f1"] <= 1
+        assert 0 <= metrics["auc_roc"] <= 1
+
+    def test_probit_hosmer_lemeshow(self, binary_panel_data):
+        """Test Hosmer-Lemeshow test on PooledProbit results."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit(cov_type="cluster")
+        hl = results.hosmer_lemeshow_test()
+        assert "statistic" in hl
+        assert "p_value" in hl
+        assert "df" in hl
+        assert "n_groups" in hl
+        assert hl["df"] == 8  # n_groups(10) - 2
+        assert np.isfinite(hl["statistic"])
+        assert 0 <= hl["p_value"] <= 1
+
+    def test_logit_predict_class(self, binary_panel_data):
+        """Test class predictions from PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        pred = results.predict(type="class")
+        assert set(np.unique(pred)).issubset({0, 1})
+        assert len(pred) == len(binary_panel_data)
+
+    def test_probit_predict_class(self, binary_panel_data):
+        """Test class predictions from PooledProbit."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        pred = results.predict(type="class")
+        assert set(np.unique(pred)).issubset({0, 1})
+        assert len(pred) == len(binary_panel_data)
+
+    def test_logit_predict_linear(self, binary_panel_data):
+        """Test linear predictions from PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        pred = results.predict(type="linear")
+        assert len(pred) == len(binary_panel_data)
+        assert np.all(np.isfinite(pred))
+
+    def test_probit_predict_linear(self, binary_panel_data):
+        """Test linear predictions from PooledProbit."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        pred = results.predict(type="linear")
+        assert len(pred) == len(binary_panel_data)
+        assert np.all(np.isfinite(pred))
+
+    def test_logit_pseudo_r2_types(self, binary_panel_data):
+        """Test all pseudo R-squared types for PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        r2_mf = results.pseudo_r2("mcfadden")
+        r2_cs = results.pseudo_r2("cox_snell")
+        r2_nk = results.pseudo_r2("nagelkerke")
+        assert 0 <= r2_mf <= 1
+        assert isinstance(r2_cs, float) and np.isfinite(r2_cs)
+        assert isinstance(r2_nk, float) and np.isfinite(r2_nk)
+
+    def test_probit_pseudo_r2_types(self, binary_panel_data):
+        """Test all pseudo R-squared types for PooledProbit."""
+        model = PooledProbit("y ~ x1 + x2", binary_panel_data, "entity", "time")
+        results = model.fit()
+        r2_mf = results.pseudo_r2("mcfadden")
+        r2_cs = results.pseudo_r2("cox_snell")
+        r2_nk = results.pseudo_r2("nagelkerke")
+        assert 0 <= r2_mf <= 1
+        assert isinstance(r2_cs, float) and np.isfinite(r2_cs)
+        assert isinstance(r2_nk, float) and np.isfinite(r2_nk)
+
+
+class TestWeightedLogLikelihood:
+    """Test weighted log-likelihood computation for Logit and Probit."""
+
+    @pytest.fixture
+    def weighted_data(self):
+        """Generate data with observation weights."""
+        np.random.seed(99)
+        n = 200
+        entities = np.arange(n)
+        times = np.zeros(n, dtype=int)
+        x1 = np.random.randn(n)
+        eta = 0.5 + 0.8 * x1
+        probs = expit(eta)
+        y = (np.random.rand(n) < probs).astype(int)
+        weights = np.random.uniform(0.5, 2.0, n)
+        df = pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1})
+        return df, weights
+
+    def test_logit_weighted_log_likelihood(self, weighted_data):
+        """Test that PooledLogit _log_likelihood uses weights when provided."""
+        df, weights = weighted_data
+        model_w = PooledLogit("y ~ x1", df, "entity", "time", weights=weights)
+        model_nw = PooledLogit("y ~ x1", df, "entity", "time")
+
+        # Use some test parameters
+        params = np.array([0.5, 0.8])
+        ll_w = model_w._log_likelihood(params)
+        ll_nw = model_nw._log_likelihood(params)
+
+        # Weighted and unweighted should differ
+        assert ll_w != ll_nw
+        assert np.isfinite(ll_w)
+        assert np.isfinite(ll_nw)
+
+    def test_probit_weighted_log_likelihood(self, weighted_data):
+        """Test that PooledProbit _log_likelihood uses weights when provided."""
+        df, weights = weighted_data
+        model_w = PooledProbit("y ~ x1", df, "entity", "time", weights=weights)
+        model_nw = PooledProbit("y ~ x1", df, "entity", "time")
+
+        params = np.array([0.3, 0.5])
+        ll_w = model_w._log_likelihood(params)
+        ll_nw = model_nw._log_likelihood(params)
+
+        assert ll_w != ll_nw
+        assert np.isfinite(ll_w)
+        assert np.isfinite(ll_nw)
+
+
+class TestMarginalEffects:
+    """Test marginal effects computation for Logit and Probit."""
+
+    @pytest.fixture
+    def me_panel_data(self):
+        """Generate panel data for marginal effects tests."""
+        np.random.seed(42)
+        n_entities, n_periods = 50, 10
+        n_obs = n_entities * n_periods
+        entities = np.repeat(range(1, n_entities + 1), n_periods)
+        times = np.tile(range(2020, 2020 + n_periods), n_entities)
+        x1 = np.random.randn(n_obs)
+        x2 = np.random.randn(n_obs)
+        eta = 0.5 + 1.0 * x1 - 0.5 * x2
+        probs = expit(eta)
+        y = (np.random.rand(n_obs) < probs).astype(int)
+        return pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+
+    def test_logit_marginal_effects_ame(self, me_panel_data):
+        """Test average marginal effects (AME) for PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", me_panel_data, "entity", "time")
+        model.fit(cov_type="nonrobust")
+        me = model.marginal_effects(at="overall")
+        assert me is not None
+        assert hasattr(me, "summary")
+
+    def test_logit_marginal_effects_mem(self, me_panel_data):
+        """Test marginal effects at means (MEM) for PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", me_panel_data, "entity", "time")
+        model.fit(cov_type="nonrobust")
+        me = model.marginal_effects(at="mean")
+        assert me is not None
+
+    def test_logit_marginal_effects_mer(self, me_panel_data):
+        """Test marginal effects at representative values (MER) for PooledLogit."""
+        model = PooledLogit("y ~ x1 + x2", me_panel_data, "entity", "time")
+        model.fit(cov_type="nonrobust")
+        me = model.marginal_effects(representative={"x1": 0.5, "x2": -0.3})
+        assert me is not None
+
+    def test_logit_marginal_effects_invalid_method(self, me_panel_data):
+        """Test that invalid method raises ValueError."""
+        model = PooledLogit("y ~ x1 + x2", me_panel_data, "entity", "time")
+        model.fit(cov_type="nonrobust")
+        with pytest.raises(ValueError, match="Only 'dydx'"):
+            model.marginal_effects(method="eyex")
+
+    def test_logit_marginal_effects_invalid_at(self, me_panel_data):
+        """Test that invalid 'at' raises ValueError."""
+        model = PooledLogit("y ~ x1 + x2", me_panel_data, "entity", "time")
+        model.fit(cov_type="nonrobust")
+        with pytest.raises(ValueError, match="Unknown 'at' value"):
+            model.marginal_effects(at="invalid")
+
+
+class TestRandomEffectsProbit:
+    """Tests for RandomEffectsProbit model."""
+
+    @pytest.fixture
+    def re_probit_data(self):
+        """Generate panel data with random effects structure."""
+        np.random.seed(42)
+        n_entities, n_periods = 30, 5
+        n_obs = n_entities * n_periods
+        entities = np.repeat(range(1, n_entities + 1), n_periods)
+        times = np.tile(range(2020, 2020 + n_periods), n_entities)
+
+        # Generate data with RE structure
+        alpha_i = np.repeat(np.random.randn(n_entities) * 0.5, n_periods)
+        x1 = np.random.randn(n_obs)
+        x2 = np.random.randn(n_obs)
+        eta = 0.3 + 0.8 * x1 - 0.4 * x2 + alpha_i
+        probs = expit(eta)
+        y = (np.random.rand(n_obs) < probs).astype(int)
+
+        return pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1, "x2": x2})
+
+    def test_re_probit_fit_bfgs(self, re_probit_data):
+        """Test RandomEffectsProbit fitting with BFGS optimizer."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        results = model.fit(method="bfgs", maxiter=100)
+        assert results is not None
+        assert hasattr(results, "params")
+        assert hasattr(results, "converged")
+        assert len(results.params) == 4  # intercept, x1, x2, log_sigma_alpha
+
+    def test_re_probit_fit_lbfgsb(self, re_probit_data):
+        """Test RandomEffectsProbit fitting with L-BFGS-B optimizer."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        results = model.fit(method="l-bfgs-b", maxiter=100)
+        assert results is not None
+        assert hasattr(results, "params")
+
+    def test_re_probit_invalid_method(self, re_probit_data):
+        """Test that invalid optimization method raises ValueError."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        with pytest.raises(ValueError, match="Unknown optimization method"):
+            model.fit(method="invalid_method")
+
+    def test_re_probit_rho_and_sigma(self, re_probit_data):
+        """Test rho and sigma_alpha properties after fitting."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        results = model.fit(method="bfgs", maxiter=100)
+        rho = model.rho
+        sigma = model.sigma_alpha
+        assert 0 <= rho < 1
+        assert sigma > 0
+        assert results.rho == rho
+        assert results.sigma_alpha == sigma
+
+    def test_re_probit_predict(self, re_probit_data):
+        """Test predictions from RandomEffectsProbit."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        results = model.fit(method="bfgs", maxiter=100)
+        pred_prob = results.predict(type="prob")
+        pred_linear = results.predict(type="linear")
+        assert len(pred_prob) == len(re_probit_data)
+        assert np.all(pred_prob >= 0) and np.all(pred_prob <= 1)
+        assert len(pred_linear) == len(re_probit_data)
+        assert np.all(np.isfinite(pred_linear))
+
+    def test_re_probit_unfitted_error(self, re_probit_data):
+        """Test that accessing rho before fitting raises ValueError."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        with pytest.raises(ValueError, match="fitted"):
+            _ = model.rho
+
+    def test_re_probit_unfitted_sigma_error(self, re_probit_data):
+        """Test that accessing sigma_alpha before fitting raises ValueError."""
+        model = RandomEffectsProbit(
+            "y ~ x1 + x2", re_probit_data, "entity", "time", quadrature_points=8
+        )
+        with pytest.raises(ValueError, match="fitted"):
+            _ = model.sigma_alpha
+
+
+class TestDiscreteBase:
+    """Tests for NonlinearPanelModel base class (discrete/base.py).
+
+    Since PooledLogit/PooledProbit override fit(), we create a minimal
+    concrete subclass that uses the base class fit() method directly.
+    """
+
+    @pytest.fixture
+    def base_data(self):
+        """Generate simple panel data for base class tests."""
+        np.random.seed(42)
+        n_entities, n_periods = 30, 5
+        n_obs = n_entities * n_periods
+        entities = np.repeat(range(1, n_entities + 1), n_periods)
+        times = np.tile(range(2020, 2020 + n_periods), n_entities)
+        x1 = np.random.randn(n_obs)
+        eta = 0.5 + 0.8 * x1
+        probs = expit(eta)
+        y = (np.random.rand(n_obs) < probs).astype(int)
+        return pd.DataFrame({"entity": entities, "time": times, "y": y, "x1": x1})
+
+    @pytest.fixture
+    def concrete_model(self, base_data):
+        """Create a concrete NonlinearPanelModel that uses base fit()."""
+        from panelbox.models.discrete.base import NonlinearPanelModel
+
+        class ConcreteLogit(NonlinearPanelModel):
+            """Minimal concrete subclass for testing base class methods."""
+
+            def _log_likelihood(self, params):
+                y, X = self.formula_parser.build_design_matrices(
+                    self.data.data, return_type="array"
+                )
+                eta = X @ params
+                p = expit(eta)
+                p = np.clip(p, 1e-10, 1 - 1e-10)
+                return float(np.sum(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+            def _create_results(self, params, var_names, y, X):
+                from unittest.mock import MagicMock
+
+                result = MagicMock()
+                result.params = params
+                return result
+
+        return ConcreteLogit("y ~ x1", base_data, "entity", "time")
+
+    def test_score_numerical(self, base_data):
+        """Test _score returns finite gradient via numerical differentiation."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        params = np.array([0.5, 0.8])
+        score = model._score(params)
+        assert len(score) == 2
+        assert np.all(np.isfinite(score))
+
+    def test_hessian_numerical(self, base_data):
+        """Test _hessian returns finite negative-definite matrix."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        params = np.array([0.5, 0.8])
+        H = model._hessian(params)
+        assert H.shape == (2, 2)
+        assert np.all(np.isfinite(H))
+        eigvals = np.linalg.eigvalsh(H)
+        assert np.all(eigvals < 0)
+
+    def test_get_starting_values_zeros(self, base_data):
+        """Test _get_starting_values with zeros method."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        sv = model._get_starting_values(3, method="zeros")
+        assert_allclose(sv, np.zeros(3))
+
+    def test_get_starting_values_random(self, base_data):
+        """Test _get_starting_values with random method."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        sv = model._get_starting_values(3, method="random")
+        assert len(sv) == 3
+        assert np.all(np.abs(sv) < 2.0)
+
+    def test_get_starting_values_unknown(self, base_data):
+        """Test _get_starting_values with unknown method defaults to zeros."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        sv = model._get_starting_values(3, method="ols")
+        assert_allclose(sv, np.zeros(3))
+
+    def test_base_fit_bfgs(self, concrete_model):
+        """Test base class fit() with default BFGS method."""
+        result = concrete_model.fit(method="bfgs")
+        assert result is not None
+        assert hasattr(result, "params")
+
+    def test_base_fit_newton(self, concrete_model):
+        """Test base class fit() with Newton-CG method."""
+        result = concrete_model.fit(method="newton")
+        assert result is not None
+        assert hasattr(result, "params")
+
+    def test_base_fit_trust_constr(self, concrete_model):
+        """Test base class fit() with trust-constr method."""
+        result = concrete_model.fit(method="trust-constr")
+        assert result is not None
+        assert hasattr(result, "params")
+
+    def test_base_fit_invalid_method(self, concrete_model):
+        """Test base class fit() with invalid method raises ValueError."""
+        with pytest.raises(ValueError, match="method must be"):
+            concrete_model.fit(method="invalid")
+
+    def test_base_fit_multiple_starts(self, concrete_model):
+        """Test base class fit() with multiple starting values."""
+        result = concrete_model.fit(n_starts=3)
+        assert result is not None
+        assert hasattr(result, "params")
+
+    def test_base_fit_custom_start_params(self, concrete_model):
+        """Test base class fit() with custom starting params."""
+        result = concrete_model.fit(start_params=np.array([0.1, 0.1]))
+        assert result is not None
+
+    def test_check_convergence_not_converged(self, base_data):
+        """Test _check_convergence warns when optimization did not converge."""
+        from unittest.mock import MagicMock
+
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        fake_result = MagicMock()
+        fake_result.success = False
+        fake_result.message = "Maximum iterations reached"
+
+        from panelbox.models.discrete.base import ConvergenceWarning
+
+        with pytest.warns(ConvergenceWarning, match="may not have converged"):
+            model._check_convergence(fake_result, np.array([0.5, 0.8]))
+
+    def test_check_convergence_large_gradient(self, base_data):
+        """Test _check_convergence warns on large gradient norm."""
+        from unittest.mock import MagicMock, patch
+
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        fake_result = MagicMock()
+        fake_result.success = True
+
+        from panelbox.models.discrete.base import ConvergenceWarning
+
+        with (
+            patch.object(model, "_score", return_value=np.array([10.0, 5.0])),
+            pytest.warns(ConvergenceWarning, match="Large gradient norm"),
+        ):
+            model._check_convergence(fake_result, np.array([0.5, 0.8]))
+
+    def test_check_convergence_positive_eigenvalues(self, base_data):
+        """Test _check_convergence warns when Hessian has positive eigenvalues."""
+        from unittest.mock import MagicMock, patch
+
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        fake_result = MagicMock()
+        fake_result.success = True
+
+        from panelbox.models.discrete.base import ConvergenceWarning
+
+        with (
+            patch.object(model, "_score", return_value=np.array([0.0, 0.0])),
+            patch.object(model, "_hessian", return_value=np.eye(2)),
+            pytest.warns(ConvergenceWarning, match="not negative definite"),
+        ):
+            model._check_convergence(fake_result, np.array([0.5, 0.8]))
+
+    def test_check_convergence_verbose(self, base_data):
+        """Test _check_convergence in verbose mode (covers debug logging)."""
+        from unittest.mock import MagicMock
+
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        fake_result = MagicMock()
+        fake_result.success = True
+        model._check_convergence(fake_result, np.array([0.5, 0.8]), verbose=True)
+
+    def test_estimate_coefficients_with_opt_result(self, base_data):
+        """Test _estimate_coefficients returns params when _optimization_result is set."""
+        from unittest.mock import MagicMock
+
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        model._fitted = True
+        fake_opt = MagicMock()
+        fake_opt.x = np.array([0.5, 0.8])
+        model._optimization_result = fake_opt
+        coeffs = model._estimate_coefficients()
+        assert_allclose(coeffs, np.array([0.5, 0.8]))
+
+    def test_estimate_coefficients_no_opt_result(self, base_data):
+        """Test _estimate_coefficients returns empty when no opt result."""
+        model = PooledLogit("y ~ x1", base_data, "entity", "time")
+        model._fitted = True
+        model._optimization_result = None
+        coeffs = model._estimate_coefficients()
+        assert len(coeffs) == 0
 
 
 if __name__ == "__main__":

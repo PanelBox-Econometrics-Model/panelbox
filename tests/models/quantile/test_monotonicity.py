@@ -329,3 +329,148 @@ class TestCrossingReport:
         # DataFrame should be empty
         df = report.to_dataframe()
         assert df.empty
+
+
+class TestMonotonicityUncoveredLines:
+    """Tests targeting uncovered lines in monotonicity.py (395-515, 589-678)."""
+
+    @pytest.fixture
+    def simple_data(self):
+        """Simple data for testing."""
+        np.random.seed(42)
+        n = 200
+        X = np.column_stack([np.ones(n), np.random.randn(n), np.random.randn(n)])
+        y = 1 + 2 * X[:, 1] - X[:, 2] + np.random.randn(n) * (1 + 0.3 * np.abs(X[:, 1]))
+        return X, y
+
+    def test_project_to_monotone_averaging(self):
+        """Test project_to_monotone with averaging method (lines 403-433)."""
+        predictions = np.array(
+            [
+                [1.0, 0.8, 1.2, 1.1, 1.5],
+                [2.0, 2.5, 2.3, 3.0, 3.2],
+                [1.0, 1.5, 1.3, 1.8, 2.0],
+            ]
+        )
+        projected = QuantileMonotonicity.project_to_monotone(predictions, method="averaging")
+        for i in range(len(predictions)):
+            diffs = np.diff(projected[i])
+            assert np.all(diffs >= -1e-10)
+
+    def test_project_to_monotone_isotonic(self):
+        """Test project_to_monotone with isotonic method (lines 434-438)."""
+        predictions = np.array(
+            [
+                [1.0, 0.8, 1.2, 1.1, 1.5],
+                [2.0, 2.5, 2.3, 3.0, 3.2],
+            ]
+        )
+        projected = QuantileMonotonicity.project_to_monotone(predictions, method="isotonic")
+        for i in range(len(predictions)):
+            diffs = np.diff(projected[i])
+            assert np.all(diffs >= -1e-10)
+
+    def test_crossing_report_summary_with_crossings(self, capsys):
+        """Test CrossingReport.summary() with crossings (lines 454-477)."""
+        crossings = [
+            {
+                "tau_pair": (0.25, 0.5),
+                "n_inversions": 15,
+                "pct_inversions": 30.0,
+                "max_violation": 0.8,
+                "mean_violation": 0.4,
+            },
+            {
+                "tau_pair": (0.5, 0.75),
+                "n_inversions": 5,
+                "pct_inversions": 10.0,
+                "max_violation": 0.3,
+                "mean_violation": 0.1,
+            },
+        ]
+        report = CrossingReport(
+            has_crossing=True, crossings=crossings, total_inversions=20, pct_affected=40.0
+        )
+        result = report.summary()
+        # summary() returns self
+        assert result is report
+        captured = capsys.readouterr()
+        assert "CROSSING DETECTED" in captured.out
+        assert "Total inversions: 20" in captured.out
+
+    def test_crossing_report_plot_violations(self, simple_data):
+        """Test CrossingReport.plot_violations (lines 479-515)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        X, y = simple_data
+        tau_list = [0.25, 0.5, 0.75]
+
+        from panelbox.optimization.quantile.interior_point import frisch_newton_qr
+
+        results = {}
+        for tau in tau_list:
+            beta, _ = frisch_newton_qr(X, y, tau)
+
+            class MockResult:
+                def __init__(self, params, X):
+                    self.params = params
+                    self.model = type("Model", (), {"X": X, "nobs": len(X)})()
+
+            results[tau] = MockResult(beta, X)
+
+        report = QuantileMonotonicity.detect_crossing(results, X[:50])
+        fig = report.plot_violations(X[:50], results)
+        assert fig is not None
+        plt.close(fig)
+
+    @pytest.mark.xfail(
+        reason="Source bug: PooledQuantile.params is 2D (n_vars, 1) but isotonic_regression expects 2D (n_tau, n_coef)",
+        strict=True,
+    )
+    def test_monotonicity_comparison_isotonic(self, simple_data):
+        """Test MonotonicityComparison.compare_methods with isotonic (lines 589-610)."""
+        X, y = simple_data
+        tau_list = np.array([0.3, 0.5, 0.7])
+
+        comp = MonotonicityComparison(X, y, tau_list)
+        df_results = comp.compare_methods(
+            methods=["isotonic"],
+            verbose=False,
+        )
+        assert len(df_results) == 1
+
+    def test_monotonicity_comparison_full(self, simple_data):
+        """Test MonotonicityComparison.compare_methods (lines 561-640)."""
+        X, y = simple_data
+        tau_list = np.array([0.3, 0.5, 0.7])
+
+        comp = MonotonicityComparison(X, y, tau_list)
+        df_results = comp.compare_methods(
+            methods=["unconstrained", "rearrangement"],
+            verbose=False,
+        )
+        assert len(df_results) == 2
+        assert "method" in df_results.columns
+        assert "total_loss" in df_results.columns
+
+    def test_monotonicity_comparison_plot(self, simple_data):
+        """Test MonotonicityComparison.plot_comparison (lines 652-678)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        X, y = simple_data
+        tau_list = np.array([0.3, 0.5, 0.7])
+
+        comp = MonotonicityComparison(X, y, tau_list)
+        comp.compare_methods(
+            methods=["unconstrained", "rearrangement"],
+            verbose=False,
+        )
+        fig = comp.plot_comparison(var_idx=0)
+        assert fig is not None
+        plt.close(fig)

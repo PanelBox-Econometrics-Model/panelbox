@@ -3,6 +3,7 @@ Tests for Poisson models for panel count data.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
@@ -517,6 +518,365 @@ class TestPoissonIntegration:
         # RE should be between pooled and FE
         # (This is a general pattern but not always true)
         assert len(result_re.params_exog) == len(result_pooled.params)
+
+
+class TestPoissonAdditional:
+    """Additional tests targeting uncovered lines in poisson.py."""
+
+    @pytest.fixture
+    def count_data(self):
+        """Generate panel count data for testing."""
+        np.random.seed(42)
+        n_entities, n_periods = 20, 5
+        n = n_entities * n_periods
+        entity_id = np.repeat(np.arange(n_entities), n_periods)
+        time_id = np.tile(np.arange(n_periods), n_entities)
+        X = np.column_stack([np.ones(n), np.random.randn(n), np.random.randn(n)])
+        beta = np.array([1.0, 0.3, -0.2])
+        lam = np.exp(X @ beta)
+        y = np.random.poisson(lam)
+        return y, X, entity_id, time_id
+
+    def test_check_overdispersion(self, count_data):
+        """Test PooledPoisson.check_overdispersion returns dict with expected keys."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(se_type="cluster")
+        od = model.check_overdispersion()
+        assert "overdispersion_index" in od
+        assert "test_statistic" in od
+        assert "p_value" in od
+        assert "significant" in od
+        assert "conclusion" in od
+
+    def test_fe_predict_include_fe(self, count_data):
+        """Test PoissonFixedEffects.predict with include_fe=True warns user."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit()
+        with pytest.warns(UserWarning, match="not directly available"):
+            pred = model.predict(include_fe=True)
+        assert len(pred) == len(y)
+        assert np.all(pred > 0)
+
+    def test_fe_predict_linear(self, count_data):
+        """Test PoissonFixedEffects.predict with type='linear'."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit()
+        linear_pred = model.predict(type="linear")
+        response_pred = model.predict(type="response")
+        assert_allclose(np.exp(linear_pred), response_pred)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: PoissonQML.fit() tries to set result.model_info "
+            "but PanelModelResults has no model_info attribute"
+        ),
+    )
+    def test_qml_fit(self, count_data):
+        """Test PoissonQML fit produces a result with params."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonQML(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(se_type="robust")
+        assert result is not None
+        assert hasattr(result, "params")
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: PoissonQML.fit() tries to set result.model_info "
+            "but PanelModelResults has no model_info attribute"
+        ),
+    )
+    def test_qml_forces_robust(self, count_data):
+        """Test that PoissonQML warns and switches to robust when nonrobust requested."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonQML(y, X, entity_id=entity_id, time_id=time_id)
+        with pytest.warns(UserWarning, match="robust"):
+            model.fit(se_type="nonrobust")
+
+    def test_re_poisson_normal(self, count_data):
+        """Test RandomEffectsPoisson with normal distribution fits successfully."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(distribution="normal")
+        assert result is not None
+        assert np.all(np.isfinite(model.params_exog))
+
+    def test_re_poisson_predict(self, count_data):
+        """Test RandomEffectsPoisson predict returns positive values."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(distribution="gamma")
+        pred = model.predict(type="response")
+        assert len(pred) == len(y)
+        assert np.all(pred > 0)
+
+    def test_re_poisson_predict_linear(self, count_data):
+        """Test RandomEffectsPoisson predict with type='linear'."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(distribution="gamma")
+        linear_pred = model.predict(type="linear")
+        response_pred = model.predict(type="response")
+        assert_allclose(np.exp(linear_pred), response_pred)
+
+    def test_re_poisson_overdispersion(self, count_data):
+        """Test RandomEffectsPoisson overdispersion property."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(distribution="gamma")
+        od = model.overdispersion
+        assert od >= 1  # Should be 1 + theta >= 1
+
+    def test_re_poisson_invalid_distribution(self, count_data):
+        """Test that RandomEffectsPoisson raises for invalid distribution."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        with pytest.raises(ValueError, match=r"gamma.*normal"):
+            model.fit(distribution="beta")
+
+    def test_pooled_predict_invalid_type(self, count_data):
+        """Test that PooledPoisson.predict raises for invalid prediction type."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(se_type="cluster")
+        with pytest.raises(ValueError, match="Invalid prediction type"):
+            model.predict(type="invalid")
+
+    def test_re_poisson_predict_invalid_type(self, count_data):
+        """Test that RandomEffectsPoisson.predict raises for invalid prediction type."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(distribution="gamma")
+        with pytest.raises(ValueError, match="Invalid prediction type"):
+            model.predict(type="invalid")
+
+    def test_pooled_predict_dataframe(self, count_data):
+        """Test PooledPoisson.predict with DataFrame input."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        model.fit(se_type="cluster")
+        df = pd.DataFrame(X[:10], columns=["const", "x1", "x2"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+        assert np.all(pred > 0)
+
+    def test_pooled_predict_dataframe_missing_col(self, count_data):
+        """Test PooledPoisson.predict with DataFrame missing columns raises."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        model.fit(se_type="cluster")
+        df = pd.DataFrame(X[:10, :2], columns=["const", "x1"])
+        with pytest.raises(ValueError, match="Missing columns"):
+            model.predict(X=df, type="response")
+
+    def test_fe_predict_dataframe(self, count_data):
+        """Test PoissonFixedEffects.predict with DataFrame input."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        model.fit()
+        df = pd.DataFrame(X[:10], columns=["const", "x1", "x2"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_fe_predict_invalid_type(self, count_data):
+        """Test PoissonFixedEffects.predict raises for invalid type."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit()
+        with pytest.raises(ValueError, match="Invalid prediction type"):
+            model.predict(type="invalid")
+
+    def test_re_predict_dataframe(self, count_data):
+        """Test RandomEffectsPoisson.predict with DataFrame input."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        model.fit(distribution="gamma")
+        df = pd.DataFrame(X[:10], columns=["const", "x1", "x2"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_fe_result_predict(self, count_data):
+        """Test PoissonFixedEffectsResults.predict method."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        pred = result.predict(type="response")
+        assert len(pred) == len(y)
+        assert np.all(pred > 0)
+
+    def test_fe_result_predict_dataframe(self, count_data):
+        """Test PoissonFixedEffectsResults.predict with DataFrame input."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        result = model.fit()
+        df = pd.DataFrame(X[:10], columns=["const", "x1", "x2"])
+        pred = result.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_fe_result_predict_linear(self, count_data):
+        """Test PoissonFixedEffectsResults.predict with type='linear'."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        linear = result.predict(type="linear")
+        response = result.predict(type="response")
+        assert_allclose(np.exp(linear), response)
+
+    def test_pooled_marginal_effects(self, count_data):
+        """Test PooledPoisson.marginal_effects AME."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(se_type="cluster")
+        me = model.marginal_effects(result, at="overall")
+        assert me is not None
+        assert hasattr(me, "marginal_effects")
+
+    def test_pooled_marginal_effects_mem(self, count_data):
+        """Test PooledPoisson.marginal_effects MEM."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(se_type="cluster")
+        me = model.marginal_effects(result, at="means")
+        assert me is not None
+
+    def test_pooled_marginal_effects_invalid(self, count_data):
+        """Test PooledPoisson.marginal_effects raises for invalid at."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(se_type="cluster")
+        with pytest.raises(ValueError, match="Unknown"):
+            model.marginal_effects(result, at="invalid")
+
+    def test_fe_marginal_effects(self, count_data):
+        """Test PoissonFixedEffects.marginal_effects."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        me = model.marginal_effects(result, at="overall")
+        assert me is not None
+        assert hasattr(me, "marginal_effects")
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: RandomEffectsPoisson stores params including theta, "
+            "but compute_poisson_ame tries X @ params which fails due to dimension "
+            "mismatch (X has k columns but params has k+1 elements)"
+        ),
+    )
+    def test_re_marginal_effects(self, count_data):
+        """Test RandomEffectsPoisson.marginal_effects."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(distribution="gamma")
+        me = model.marginal_effects(result, at="overall")
+        assert me is not None
+
+    def test_pooled_overdispersion_not_fitted(self):
+        """Test overdispersion raises when model not fitted."""
+        np.random.seed(42)
+        y = np.random.poisson(3, 100)
+        X = np.column_stack([np.ones(100), np.random.randn(100)])
+        model = PooledPoisson(y, X)
+        with pytest.raises(RuntimeError, match="fitted"):
+            _ = model.overdispersion
+
+    def test_pooled_predict_not_fitted(self):
+        """Test predict raises when model not fitted."""
+        np.random.seed(42)
+        y = np.random.poisson(3, 100)
+        X = np.column_stack([np.ones(100), np.random.randn(100)])
+        model = PooledPoisson(y, X)
+        with pytest.raises(RuntimeError, match="fitted"):
+            model.predict()
+
+    def test_pooled_predict_dataframe_no_names(self, count_data):
+        """Test PooledPoisson.predict with DataFrame when no exog_names set."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(se_type="cluster")
+        # Ensure no exog_names
+        if hasattr(model, "exog_names"):
+            model.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b", "c"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_fe_predict_dataframe_no_names(self, count_data):
+        """Test PoissonFixedEffects.predict with DataFrame when no exog_names set."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit()
+        if hasattr(model, "exog_names"):
+            model.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b", "c"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_re_predict_dataframe_no_names(self, count_data):
+        """Test RandomEffectsPoisson.predict with DataFrame when no exog_names set."""
+        y, X, entity_id, time_id = count_data
+        model = RandomEffectsPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(distribution="gamma")
+        if hasattr(model, "exog_names"):
+            model.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b", "c"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_pooled_marginal_effects_from_stored(self, count_data):
+        """Test PooledPoisson.marginal_effects using stored _results (no result arg)."""
+        y, X, entity_id, time_id = count_data
+        model = PooledPoisson(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit(se_type="cluster")
+        # Call marginal_effects without passing result - should use _results
+        me = model.marginal_effects(at="overall")
+        assert me is not None
+
+    def test_fe_marginal_effects_mem(self, count_data):
+        """Test PoissonFixedEffects.marginal_effects with at='means'."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        me = model.marginal_effects(result, at="means")
+        assert me is not None
+
+    def test_fe_marginal_effects_invalid(self, count_data):
+        """Test PoissonFixedEffects.marginal_effects raises for invalid at."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        with pytest.raises(ValueError, match="Unknown"):
+            model.marginal_effects(result, at="invalid")
+
+    def test_fe_result_predict_dataframe_no_names(self, count_data):
+        """Test PoissonFixedEffectsResults.predict with DataFrame and no exog_names."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        result.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b", "c"])
+        pred = result.predict(X=df, type="response")
+        assert len(pred) == 10
+
+    def test_fe_result_predict_missing_col(self, count_data):
+        """Test PoissonFixedEffectsResults.predict with missing DataFrame columns."""
+        y, X, entity_id, time_id = count_data
+        model = PoissonFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1", "x2"]
+        result = model.fit()
+        df = pd.DataFrame(X[:10, :2], columns=["const", "x1"])
+        with pytest.raises(ValueError, match="Missing columns"):
+            result.predict(X=df, type="response")
 
 
 if __name__ == "__main__":

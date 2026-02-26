@@ -755,5 +755,516 @@ class TestFEVDCustomOrdering:
         ), "Different orderings should produce different Cholesky FEVDs"
 
 
+class TestFEVDCoverage:
+    """
+    Additional tests to improve coverage for panelbox/var/fevd.py.
+
+    Targets uncovered lines:
+    - 102-137 (FEVDResult._validate_fevd warning and __getitem__)
+    - 455-526 (_bootstrap_fevd_iteration)
+    - 582-608 (bootstrap_fevd)
+    - summary with custom horizons
+    - compute_fevd_generalized
+    - to_dataframe with filters
+    """
+
+    # ---------------------------------------------------------------
+    # FEVDResult.__getitem__() with valid and invalid keys
+    # ---------------------------------------------------------------
+    def test_getitem_valid_key_returns_correct_slice(self):
+        """Test __getitem__ with a valid variable name returns correct array."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 5
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.8, 0.2]
+            decomposition[h, 1, :] = [0.3, 0.7]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        y1_fevd = result["y1"]
+        assert y1_fevd.shape == (periods + 1, K)
+        assert np.allclose(y1_fevd, decomposition[:, 0, :])
+
+        y2_fevd = result["y2"]
+        assert y2_fevd.shape == (periods + 1, K)
+        assert np.allclose(y2_fevd, decomposition[:, 1, :])
+
+    def test_getitem_invalid_key_raises_keyerror(self):
+        """Test __getitem__ with nonexistent variable raises KeyError."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 3
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.6, 0.4]
+            decomposition[h, 1, :] = [0.5, 0.5]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        with pytest.raises(KeyError, match="Variable 'nonexistent' not found"):
+            result["nonexistent"]
+
+    # ---------------------------------------------------------------
+    # FEVDResult._validate_fevd() warning when rows don't sum to 1
+    # ---------------------------------------------------------------
+    def test_validate_fevd_warns_bad_sum(self):
+        """Test that _validate_fevd warns when FEVD rows don't sum to 1."""
+        import warnings as _warnings
+
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 2
+        bad_decomposition = np.zeros((periods + 1, K, K))
+        # Make first row sum to 0.7 instead of 1.0
+        bad_decomposition[0, 0, :] = [0.5, 0.2]  # sums to 0.7
+        bad_decomposition[0, 1, :] = [0.4, 0.6]  # sums to 1.0
+        for h in range(1, periods + 1):
+            bad_decomposition[h, 0, :] = [0.6, 0.4]
+            bad_decomposition[h, 1, :] = [0.3, 0.7]
+
+        with _warnings.catch_warnings(record=True) as w:
+            _warnings.simplefilter("always")
+            FEVDResult(
+                decomposition=bad_decomposition,
+                var_names=["y1", "y2"],
+                periods=periods,
+                method="cholesky",
+            )
+            fevd_warnings = [x for x in w if "sums to" in str(x.message)]
+            assert len(fevd_warnings) >= 1, "Should warn when FEVD row doesn't sum to 1"
+
+    def test_validate_fevd_no_warning_when_correct(self):
+        """Test that _validate_fevd does NOT warn when rows sum to 1."""
+        import warnings as _warnings
+
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 3
+        good_decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            good_decomposition[h, 0, :] = [0.7, 0.3]
+            good_decomposition[h, 1, :] = [0.4, 0.6]
+
+        with _warnings.catch_warnings(record=True) as w:
+            _warnings.simplefilter("always")
+            FEVDResult(
+                decomposition=good_decomposition,
+                var_names=["y1", "y2"],
+                periods=periods,
+                method="cholesky",
+            )
+            fevd_warnings = [x for x in w if "sums to" in str(x.message)]
+            assert len(fevd_warnings) == 0, "Should not warn when FEVD rows sum to 1"
+
+    # ---------------------------------------------------------------
+    # _bootstrap_fevd_iteration() directly with simple VAR matrices
+    # ---------------------------------------------------------------
+    def test_bootstrap_fevd_iteration_cholesky_shape_and_values(self):
+        """Test _bootstrap_fevd_iteration with Cholesky returns valid FEVD."""
+        from panelbox.var.fevd import _bootstrap_fevd_iteration
+
+        np.random.seed(42)
+        A_matrices = [np.array([[0.5, 0.1], [0.2, 0.4]])]
+        Sigma = np.array([[1.0, 0.3], [0.3, 1.0]])
+        residuals = np.random.multivariate_normal(np.zeros(2), Sigma, size=80)
+
+        result = _bootstrap_fevd_iteration(
+            A_matrices, Sigma, residuals, periods=4, method="cholesky", seed=100
+        )
+
+        assert result.shape == (5, 2, 2)
+        # Each row should sum to approximately 1
+        for h in range(5):
+            for i in range(2):
+                assert np.isclose(result[h, i, :].sum(), 1.0, atol=1e-3)
+        # Values should be non-negative
+        assert np.all(result >= -1e-10)
+
+    def test_bootstrap_fevd_iteration_generalized_shape(self):
+        """Test _bootstrap_fevd_iteration with generalized method."""
+        from panelbox.var.fevd import _bootstrap_fevd_iteration
+
+        np.random.seed(42)
+        A_matrices = [np.array([[0.4, 0.1], [0.15, 0.5]])]
+        Sigma = np.array([[1.0, 0.2], [0.2, 0.8]])
+        residuals = np.random.multivariate_normal(np.zeros(2), Sigma, size=80)
+
+        result = _bootstrap_fevd_iteration(
+            A_matrices, Sigma, residuals, periods=4, method="generalized", seed=200
+        )
+
+        assert result.shape == (5, 2, 2)
+        for h in range(5):
+            for i in range(2):
+                assert np.isclose(result[h, i, :].sum(), 1.0, atol=1e-3)
+
+    def test_bootstrap_fevd_iteration_var2(self):
+        """Test _bootstrap_fevd_iteration with VAR(2) -- two lag matrices."""
+        from panelbox.var.fevd import _bootstrap_fevd_iteration
+
+        np.random.seed(42)
+        A1 = np.array([[0.3, 0.1], [0.1, 0.3]])
+        A2 = np.array([[0.1, 0.0], [0.0, 0.1]])
+        A_matrices = [A1, A2]
+        Sigma = np.eye(2)
+        residuals = np.random.randn(100, 2)
+
+        result = _bootstrap_fevd_iteration(
+            A_matrices, Sigma, residuals, periods=3, method="cholesky", seed=300
+        )
+
+        assert result.shape == (4, 2, 2)
+        assert np.all(np.isfinite(result))
+
+    # ---------------------------------------------------------------
+    # bootstrap_fevd() with small n_bootstrap
+    # ---------------------------------------------------------------
+    def test_bootstrap_fevd_small_n(self):
+        """Test bootstrap_fevd with n_bootstrap=20 returns correct shapes."""
+        from panelbox.var.fevd import bootstrap_fevd
+
+        np.random.seed(42)
+        A_matrices = [np.array([[0.5, 0.1], [0.2, 0.4]])]
+        Sigma = np.array([[1.0, 0.3], [0.3, 1.0]])
+        residuals = np.random.multivariate_normal(np.zeros(2), Sigma, size=80)
+
+        ci_lower, ci_upper, boot_dist = bootstrap_fevd(
+            A_matrices,
+            Sigma,
+            residuals,
+            periods=4,
+            method="cholesky",
+            n_bootstrap=20,
+            ci_level=0.90,
+            n_jobs=1,
+            seed=42,
+            verbose=False,
+        )
+
+        assert ci_lower.shape == (5, 2, 2)
+        assert ci_upper.shape == (5, 2, 2)
+        assert boot_dist.shape == (20, 5, 2, 2)
+        assert np.all(ci_lower <= ci_upper + 1e-10)
+
+    def test_bootstrap_fevd_generalized_method(self):
+        """Test bootstrap_fevd with generalized method."""
+        from panelbox.var.fevd import bootstrap_fevd
+
+        np.random.seed(42)
+        A_matrices = [np.array([[0.4, 0.1], [0.15, 0.5]])]
+        Sigma = np.array([[1.0, 0.2], [0.2, 0.8]])
+        residuals = np.random.multivariate_normal(np.zeros(2), Sigma, size=80)
+
+        ci_lower, ci_upper, boot_dist = bootstrap_fevd(
+            A_matrices,
+            Sigma,
+            residuals,
+            periods=3,
+            method="generalized",
+            n_bootstrap=15,
+            ci_level=0.95,
+            n_jobs=1,
+            seed=123,
+            verbose=False,
+        )
+
+        assert ci_lower.shape == (4, 2, 2)
+        assert ci_upper.shape == (4, 2, 2)
+        assert boot_dist.shape == (15, 4, 2, 2)
+
+    def test_bootstrap_fevd_no_seed(self):
+        """Test bootstrap_fevd without explicit seed (seed=None)."""
+        from panelbox.var.fevd import bootstrap_fevd
+
+        np.random.seed(42)
+        A_matrices = [np.array([[0.5, 0.1], [0.2, 0.4]])]
+        Sigma = np.array([[1.0, 0.3], [0.3, 1.0]])
+        residuals = np.random.multivariate_normal(np.zeros(2), Sigma, size=80)
+
+        ci_lower, _ci_upper, boot_dist = bootstrap_fevd(
+            A_matrices,
+            Sigma,
+            residuals,
+            periods=3,
+            method="cholesky",
+            n_bootstrap=10,
+            n_jobs=1,
+            seed=None,
+            verbose=False,
+        )
+
+        assert ci_lower.shape == (4, 2, 2)
+        assert boot_dist.shape == (10, 4, 2, 2)
+
+    # ---------------------------------------------------------------
+    # FEVDResult.summary() with custom horizons
+    # ---------------------------------------------------------------
+    def test_summary_with_custom_horizons(self):
+        """Test summary() with user-specified horizons."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 10
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.7, 0.3]
+            decomposition[h, 1, :] = [0.4, 0.6]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        summary = result.summary(horizons=[0, 2, 5])
+        assert isinstance(summary, str)
+        assert "h=0" in summary
+        assert "h=2" in summary
+        assert "h=5" in summary
+        assert "Forecast Error Variance Decomposition" in summary
+
+    def test_summary_default_horizons(self):
+        """Test summary() with default horizons (None)."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 20
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.75, 0.25]
+            decomposition[h, 1, :] = [0.35, 0.65]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="generalized",
+        )
+
+        summary = result.summary()
+        assert isinstance(summary, str)
+        # Default horizons: [1, 5, 10, periods]
+        assert "h=1" in summary
+        assert "h=5" in summary
+        assert "h=10" in summary
+        assert "h=20" in summary
+
+    def test_summary_with_ordering(self):
+        """Test summary() includes ordering for Cholesky method."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 5
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.8, 0.2]
+            decomposition[h, 1, :] = [0.3, 0.7]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+            ordering=["y1", "y2"],
+        )
+
+        summary = result.summary(horizons=[1, 3])
+        assert "Ordering:" in summary
+        assert "y1, y2" in summary
+
+    # ---------------------------------------------------------------
+    # compute_fevd_generalized() function
+    # ---------------------------------------------------------------
+    def test_compute_fevd_generalized_basic(self):
+        """Test compute_fevd_generalized produces valid output."""
+        from panelbox.var.fevd import compute_fevd_generalized
+        from panelbox.var.irf import compute_phi_non_orthogonalized
+
+        A_matrices = [np.array([[0.5, 0.1], [0.2, 0.4]])]
+        Sigma = np.array([[1.0, 0.3], [0.3, 1.0]])
+        periods = 8
+
+        Phi = compute_phi_non_orthogonalized(A_matrices, periods=periods)
+        fevd = compute_fevd_generalized(Phi, Sigma, periods=periods)
+
+        assert fevd.shape == (periods + 1, 2, 2)
+        # Each row should sum to 1 (normalized)
+        for h in range(periods + 1):
+            for i in range(2):
+                assert np.isclose(fevd[h, i, :].sum(), 1.0, atol=1e-6)
+        # Values should be non-negative
+        assert np.all(fevd >= -1e-10)
+
+    def test_compute_fevd_generalized_three_var(self):
+        """Test compute_fevd_generalized with K=3 variables."""
+        from panelbox.var.fevd import compute_fevd_generalized
+        from panelbox.var.irf import compute_phi_non_orthogonalized
+
+        A_matrices = [
+            np.array(
+                [
+                    [0.3, 0.1, 0.05],
+                    [0.1, 0.4, 0.1],
+                    [0.05, 0.1, 0.3],
+                ]
+            )
+        ]
+        Sigma = np.array(
+            [
+                [1.0, 0.2, 0.1],
+                [0.2, 1.0, 0.15],
+                [0.1, 0.15, 1.0],
+            ]
+        )
+        periods = 5
+
+        Phi = compute_phi_non_orthogonalized(A_matrices, periods=periods)
+        fevd = compute_fevd_generalized(Phi, Sigma, periods=periods)
+
+        assert fevd.shape == (periods + 1, 3, 3)
+        for h in range(periods + 1):
+            for i in range(3):
+                assert np.isclose(fevd[h, i, :].sum(), 1.0, atol=1e-6)
+
+    # ---------------------------------------------------------------
+    # FEVDResult.to_dataframe() with variable filter and horizon filter
+    # ---------------------------------------------------------------
+    def test_to_dataframe_variable_filter(self):
+        """Test to_dataframe with a single variable filter."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 5
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.8, 0.2]
+            decomposition[h, 1, :] = [0.3, 0.7]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        df = result.to_dataframe(variable="y1")
+        assert df.shape == (periods + 1, 3)  # horizon + 2 shocks
+        assert "horizon" in df.columns
+        assert "y1" in df.columns
+        assert "y2" in df.columns
+
+    def test_to_dataframe_horizon_filter(self):
+        """Test to_dataframe with horizon filter only."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 10
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.7, 0.3]
+            decomposition[h, 1, :] = [0.4, 0.6]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        df = result.to_dataframe(horizons=[0, 5, 10])
+        # All variables long format: 2 vars x 3 horizons = 6 rows
+        assert df.shape[0] == 6
+        assert "horizon" in df.columns
+        assert "variable" in df.columns
+
+    def test_to_dataframe_variable_and_horizon_filter(self):
+        """Test to_dataframe with both variable and horizon filters."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 10
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.7, 0.3]
+            decomposition[h, 1, :] = [0.4, 0.6]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        df = result.to_dataframe(variable="y2", horizons=[0, 3, 7])
+        assert df.shape == (3, 3)  # 3 horizons, horizon + 2 shock columns
+        assert list(df["horizon"]) == [0, 3, 7]
+
+    def test_to_dataframe_no_filter(self):
+        """Test to_dataframe with no filter returns all data."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 4
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.6, 0.4]
+            decomposition[h, 1, :] = [0.5, 0.5]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        df = result.to_dataframe()
+        # 2 vars x 5 horizons = 10 rows
+        assert df.shape[0] == 10
+
+    # ---------------------------------------------------------------
+    # FEVDResult repr
+    # ---------------------------------------------------------------
+    def test_repr(self):
+        """Test __repr__ method."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        periods = 5
+        decomposition = np.zeros((periods + 1, K, K))
+        for h in range(periods + 1):
+            decomposition[h, 0, :] = [0.8, 0.2]
+            decomposition[h, 1, :] = [0.3, 0.7]
+
+        result = FEVDResult(
+            decomposition=decomposition,
+            var_names=["y1", "y2"],
+            periods=periods,
+            method="cholesky",
+        )
+
+        repr_str = repr(result)
+        assert "FEVDResult" in repr_str
+        assert "K=2" in repr_str
+        assert "periods=5" in repr_str
+        assert "cholesky" in repr_str
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

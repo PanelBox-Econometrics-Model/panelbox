@@ -1024,3 +1024,241 @@ class TestPanelVARDataCoverageExtras:
         _y, X = pvar_data.equation_data(0, include_constant=False)
         # Only lag columns: K*p = 2*1 = 2
         assert X.shape[1] == 2
+
+
+class TestDataCoverage:
+    """Tests targeting specific uncovered lines in panelbox/var/data.py."""
+
+    # ------------------------------------------------------------------ #
+    # Helper to create simple panel data
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _make_simple_data(n_entities=3, n_periods=8, vars_list=None):
+        """Create simple balanced panel DataFrame."""
+        if vars_list is None:
+            vars_list = ["y1", "y2"]
+        np.random.seed(42)
+        rows = []
+        for i in range(n_entities):
+            for t in range(n_periods):
+                row = {"entity": i, "time": t}
+                for v in vars_list:
+                    row[v] = np.random.randn()
+                rows.append(row)
+        return pd.DataFrame(rows)
+
+    # ------------------------------------------------------------------ #
+    # Line 166: raise TypeError for non-DataFrame input
+    # ------------------------------------------------------------------ #
+    def test_non_dataframe_dict_raises_type_error(self):
+        """Line 166: passing a dict raises TypeError."""
+        with pytest.raises(TypeError, match="data must be a DataFrame"):
+            PanelVARData(
+                data={"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]},
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_non_dataframe_list_raises_type_error(self):
+        """Line 166: passing a list raises TypeError."""
+        with pytest.raises(TypeError, match="data must be a DataFrame"):
+            PanelVARData(
+                data=[[1, 2], [3, 4]],
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_non_dataframe_none_raises_type_error(self):
+        """Line 166: passing None raises TypeError."""
+        with pytest.raises(TypeError, match="data must be a DataFrame"):
+            PanelVARData(
+                data=None,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 173: entity_col missing from data
+    # ------------------------------------------------------------------ #
+    def test_missing_entity_col_raises_value_error(self):
+        """Line 170-171: entity_col not in data columns."""
+        df = pd.DataFrame({"time": [1, 2, 3], "y1": [1.0, 2.0, 3.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",  # not in df
+                time_col="time",
+            )
+
+    def test_missing_time_col_raises_value_error(self):
+        """Line 172-173: time_col not in data columns."""
+        df = pd.DataFrame({"entity": [1, 1, 1], "y1": [1.0, 2.0, 3.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",  # not in df
+            )
+
+    def test_both_entity_and_time_missing(self):
+        """Lines 170-173: both entity_col and time_col missing."""
+        df = pd.DataFrame({"y1": [1.0, 2.0, 3.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 181: missing exog_var in data
+    # ------------------------------------------------------------------ #
+    def test_missing_exog_var_raises_value_error(self):
+        """Line 179-181: exog_vars column not found in data."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                exog_vars=["missing_var"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    def test_multiple_missing_exog_vars(self):
+        """Line 179-181: multiple exog vars missing."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="Missing columns"):
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                exog_vars=["x1", "x2"],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 188: empty endog_vars list
+    # ------------------------------------------------------------------ #
+    def test_empty_endog_vars_raises_value_error(self):
+        """Line 187-188: len(endog_vars) < 1 raises ValueError."""
+        df = pd.DataFrame({"entity": [1, 1], "time": [1, 2], "y1": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="at least 1 endogenous variable"):
+            PanelVARData(
+                df,
+                endog_vars=[],
+                entity_col="entity",
+                time_col="time",
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 316: cross-contamination detection
+    # ------------------------------------------------------------------ #
+    def test_cross_contamination_detection_via_corruption(self):
+        """Line 316: corrupted lag data triggers cross-contamination ValueError."""
+        np.random.seed(42)
+        rows = []
+        for entity in ["A", "B"]:
+            for t in range(10):
+                rows.append(
+                    {
+                        "entity": entity,
+                        "time": t,
+                        "y": float(t) + (0.0 if entity == "A" else 1000.0),
+                    }
+                )
+        df = pd.DataFrame(rows)
+
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+
+        # Corrupt a lag value to simulate cross-contamination
+        corrupted = pvar_data.data_with_lags.copy()
+        mask_a = corrupted["entity"] == "A"
+        a_idx = corrupted[mask_a].index
+        # Set a lagged value to something obviously wrong
+        corrupted.loc[a_idx[2], "L1.y"] = -999999.0
+
+        pvar_data.data_with_lags = corrupted
+        with pytest.raises(ValueError, match="Cross-contamination detected"):
+            pvar_data._verify_no_cross_contamination()
+
+    # ------------------------------------------------------------------ #
+    # Line 427: equation_data with invalid k
+    # ------------------------------------------------------------------ #
+    def test_equation_index_negative(self):
+        """Line 426-427: k < 0 raises ValueError."""
+        df = self._make_simple_data()
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(-1)
+
+    def test_equation_index_too_large(self):
+        """Line 426-427: k >= K raises ValueError."""
+        df = self._make_simple_data()
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(5)
+
+    def test_equation_index_exactly_K(self):
+        """Line 426-427: k == K (boundary) raises ValueError."""
+        df = self._make_simple_data()
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+        )
+        # K=2, so k=2 should be out of bounds
+        with pytest.raises(ValueError, match="Equation index"):
+            pvar_data.equation_data(2)
+
+    # ------------------------------------------------------------------ #
+    # Line 469: empty X matrix when no regressors
+    # This line is unreachable through normal usage (lags >= 1 enforced),
+    # so we monkey-patch _lags to 0 after construction to reach it.
+    # ------------------------------------------------------------------ #
+    def test_empty_x_matrix_when_no_regressors(self):
+        """Line 469: X = np.empty((len(df), 0)) when X_list is empty."""
+        df = self._make_simple_data()
+        pvar_data = PanelVARData(
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="none",
+        )
+
+        # Monkey-patch _lags to 0 so no lag columns are generated
+        pvar_data._lags = 0
+
+        # With _lags=0, no exog, trend='none', include_constant=False
+        # -> X_list is empty -> line 469 is reached
+        y, X = pvar_data.equation_data(0, include_constant=False)
+        assert X.shape == (pvar_data.n_obs, 0)
+        assert y.shape == (pvar_data.n_obs,)

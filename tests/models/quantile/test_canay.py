@@ -465,3 +465,103 @@ class TestCanayRobustness:
             assert result.results[tau].converged
             # Should recover coefficient around 3
             assert np.abs(result.results[tau].params[1] - 3.0) < 0.5
+
+
+class TestCanayUncoveredLines:
+    """Tests targeting uncovered lines in canay.py (90-95, 150-163, 332-335, 616-732)."""
+
+    @pytest.fixture
+    def panel_data(self):
+        """Create panel data for canay tests."""
+        np.random.seed(42)
+        n_entities = 30
+        n_time = 15
+        n = n_entities * n_time
+
+        entity_ids = np.repeat(np.arange(n_entities), n_time)
+        time_ids = np.tile(np.arange(n_time), n_entities)
+        X1 = np.random.randn(n)
+        X2 = np.random.randn(n)
+        fe = np.random.randn(n_entities) * 2
+        y = 1 + 2 * X1 - 1 * X2 + np.repeat(fe, n_time) + np.random.randn(n)
+
+        df = pd.DataFrame({"entity": entity_ids, "time": time_ids, "y": y, "X1": X1, "X2": X2})
+        return PanelData(df, entity_col="entity", time_col="time")
+
+    def test_objective_untransformed(self, panel_data):
+        """Test _objective with y_transformed_ = None (lines 90-95)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        # Before fitting, y_transformed_ is None, so _objective uses original y
+        params = np.zeros(model.X.shape[1])
+        loss = model._objective(params, 0.5)
+        assert np.isfinite(loss)
+        assert loss > 0
+
+    def test_objective_transformed(self, panel_data):
+        """Test _objective with y_transformed_ set (lines 90-95)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        model._estimate_fixed_effects()
+        # Now y_transformed_ is set
+        params = np.zeros(model.X.shape[1])
+        loss = model._objective(params, 0.5)
+        assert np.isfinite(loss)
+        assert loss > 0
+
+    def test_verbose_fit(self, panel_data):
+        """Test fit with verbose=True (lines 150-163)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = model.fit(verbose=True)
+        assert result is not None
+
+    def test_twostep_covariance_adjustment(self, panel_data):
+        """Test two-step covariance adjustment including KDE fallback (lines 332-335)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        result = model.fit(se_adjustment="two-step", verbose=False)
+        res = result.results[0.5]
+        assert res.cov_matrix is not None
+        assert np.all(np.isfinite(res.cov_matrix))
+        assert np.all(res.bse > 0)
+
+    def test_plot_fixed_effects_distribution(self, panel_data):
+        """Test plot_fixed_effects_distribution (lines 616-662)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        result = model.fit(verbose=False)
+        fig = result.plot_fixed_effects_distribution()
+        assert fig is not None
+        plt.close(fig)
+
+    def test_location_shift_test_summary(self, panel_data):
+        """Test LocationShiftTestResult.summary() (lines 684-703)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75])
+        model.fit(verbose=False)
+        test_result = model.test_location_shift(tau_grid=[0.25, 0.5, 0.75])
+        test_result.summary()
+
+    def test_location_shift_plot_coefficient_variation(self, panel_data):
+        """Test LocationShiftTestResult.plot_coefficient_variation (lines 704-732)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75])
+        model.fit(verbose=False)
+        test_result = model.test_location_shift(tau_grid=[0.25, 0.5, 0.75])
+        fig = test_result.plot_coefficient_variation()
+        assert fig is not None
+        plt.close(fig)
+
+    def test_bootstrap_se(self, panel_data):
+        """Test bootstrap SE adjustment path (lines 300-302)."""
+        model = CanayTwoStep(panel_data, formula="y ~ X1 + X2", tau=0.5)
+        # bootstrap se_adjustment just passes through (line 300-302)
+        result = model.fit(se_adjustment="bootstrap", verbose=False)
+        res = result.results[0.5]
+        assert res.cov_matrix is not None

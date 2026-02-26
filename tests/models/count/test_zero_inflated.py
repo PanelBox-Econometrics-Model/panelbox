@@ -441,5 +441,201 @@ class TestVuongTest:
         assert np.abs(result.vuong_stat) < 2  # Not significant
 
 
+class TestZeroInflatedPredictions:
+    """Test ZIP result predict method with different prediction types and DataFrame input."""
+
+    @pytest.fixture
+    def zip_fitted(self):
+        """Fit a ZIP model on simulated data."""
+        np.random.seed(42)
+        n = 300
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        beta = np.array([0.5, 0.3])
+        gamma = np.array([-1.0, 0.5])
+        from scipy.special import expit
+
+        pi = expit(X @ gamma)
+        lam = np.exp(X @ beta)
+        inflate = np.random.rand(n) < pi
+        counts = np.random.poisson(lam)
+        y = np.where(inflate, 0, counts)
+        model = ZeroInflatedPoisson(y, X)
+        result = model.fit()
+        return model, result, X
+
+    def test_zip_predict_all_types(self, zip_fitted):
+        """Test ZIP result.predict for every valid 'which' type."""
+        model, result, _X = zip_fitted
+        for which in [
+            "mean",
+            "prob-zero",
+            "prob-zero-structural",
+            "prob-zero-sampling",
+            "count-mean",
+        ]:
+            pred = result.predict(which=which)
+            assert len(pred) == len(model.endog)
+            assert np.all(np.isfinite(pred))
+
+    def test_zip_predict_invalid(self, zip_fitted):
+        """Test that result.predict raises ValueError for unknown prediction type."""
+        _model, result, _X = zip_fitted
+        with pytest.raises(ValueError):
+            result.predict(which="invalid")
+
+    def test_zip_predict_dataframe(self, zip_fitted):
+        """Test ZIP result.predict with a DataFrame as exog_count input."""
+        model, result, X = zip_fitted
+        df_count = pd.DataFrame(X[:10], columns=model.exog_count_names)
+        df_inflate = pd.DataFrame(X[:10], columns=model.exog_inflate_names)
+        pred = result.predict(exog_count=df_count, exog_inflate=df_inflate, which="mean")
+        assert len(pred) == 10
+
+    def test_zip_predict_dataframe_inflate(self, zip_fitted):
+        """Test ZIP result.predict with DataFrame for both count and inflate regressors."""
+        model, result, X = zip_fitted
+        df_count = pd.DataFrame(X[:10], columns=model.exog_count_names)
+        df_inflate = pd.DataFrame(X[:10], columns=model.exog_inflate_names)
+        pred = result.predict(exog_count=df_count, exog_inflate=df_inflate, which="mean")
+        assert len(pred) == 10
+        assert np.all(np.isfinite(pred))
+
+    def test_zip_predict_dataframe_missing_column(self, zip_fitted):
+        """Test that predict raises ValueError when DataFrame is missing a required column."""
+        model, result, X = zip_fitted
+        df = pd.DataFrame(X[:10, :1], columns=[model.exog_count_names[0]])
+        with pytest.raises(ValueError, match="Missing columns"):
+            result.predict(exog_count=df, which="mean")
+
+    def test_zip_summary(self, zip_fitted):
+        """Test that ZIP summary returns a formatted string with key info."""
+        _, result, _ = zip_fitted
+        s = result.summary()
+        assert isinstance(s, str)
+        assert "Zero-Inflated Poisson" in s
+        assert "Count Model" in s
+        assert "Zero-Inflation Model" in s
+        assert "AIC" in s
+        assert "BIC" in s
+        assert "Log-likelihood" in s
+
+    def test_zip_fit_statistics(self, zip_fitted):
+        """Test that fit statistics are computed on the result."""
+        _, result, _ = zip_fitted
+        assert hasattr(result, "aic")
+        assert hasattr(result, "bic")
+        assert hasattr(result, "actual_zeros")
+        assert hasattr(result, "predicted_zeros")
+        assert np.isfinite(result.aic)
+        assert np.isfinite(result.bic)
+        assert 0 <= result.actual_zeros <= 1
+        assert 0 <= result.predicted_zeros <= 1
+
+
+class TestZINBPredictions:
+    """Test ZINB result predict method with different prediction types and DataFrame input."""
+
+    @pytest.fixture
+    def zinb_fitted(self):
+        """Fit a ZINB model on simulated overdispersed data."""
+        np.random.seed(42)
+        n = 300
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        beta = np.array([1.0, 0.3])
+        gamma = np.array([-1.5, 0.2])
+        alpha = 0.5
+        from scipy.special import expit
+        from scipy.stats import nbinom
+
+        pi = expit(X @ gamma)
+        mu = np.exp(X @ beta)
+        inflate = np.random.rand(n) < pi
+        size = 1 / alpha
+        prob = size / (size + mu)
+        counts = nbinom.rvs(size, prob)
+        y = np.where(inflate, 0, counts)
+        model = ZeroInflatedNegativeBinomial(y, X)
+        result = model.fit()
+        return model, result, X
+
+    def test_zinb_predict_all_types(self, zinb_fitted):
+        """Test ZINB result.predict for every valid 'which' type."""
+        model, result, _X = zinb_fitted
+        for which in [
+            "mean",
+            "prob-zero",
+            "prob-zero-structural",
+            "prob-zero-sampling",
+            "count-mean",
+        ]:
+            pred = result.predict(which=which)
+            assert len(pred) == len(model.endog)
+
+    def test_zinb_predict_invalid(self, zinb_fitted):
+        """Test that result.predict raises ValueError for unknown prediction type."""
+        _model, result, _X = zinb_fitted
+        with pytest.raises(ValueError):
+            result.predict(which="invalid")
+
+    def test_zinb_predict_dataframe(self, zinb_fitted):
+        """Test ZINB result.predict with a DataFrame as exog_count input."""
+        model, result, X = zinb_fitted
+        df_count = pd.DataFrame(X[:10], columns=model.exog_count_names)
+        df_inflate = pd.DataFrame(X[:10], columns=model.exog_inflate_names)
+        pred = result.predict(exog_count=df_count, exog_inflate=df_inflate, which="mean")
+        assert len(pred) == 10
+
+    def test_zinb_predict_dataframe_inflate(self, zinb_fitted):
+        """Test ZINB result.predict with DataFrame for both count and inflate regressors."""
+        model, result, X = zinb_fitted
+        df_count = pd.DataFrame(X[:10], columns=model.exog_count_names)
+        df_inflate = pd.DataFrame(X[:10], columns=model.exog_inflate_names)
+        pred = result.predict(exog_count=df_count, exog_inflate=df_inflate, which="mean")
+        assert len(pred) == 10
+
+    def test_zinb_predict_dataframe_missing_column(self, zinb_fitted):
+        """Test that predict raises ValueError when DataFrame is missing a required column."""
+        model, result, X = zinb_fitted
+        df = pd.DataFrame(X[:10, :1], columns=[model.exog_count_names[0]])
+        with pytest.raises(ValueError, match="Missing columns"):
+            result.predict(exog_count=df, which="mean")
+
+    def test_zinb_summary(self, zinb_fitted):
+        """Test ZINB summary returns a formatted string with key info."""
+        _, result, _ = zinb_fitted
+        s = result.summary()
+        assert isinstance(s, str)
+        assert "Negative Binomial" in s
+        assert "Alpha" in s.lower() or "alpha" in s.lower()
+        assert "Count Model" in s
+        assert "Zero-Inflation Model" in s
+
+    def test_zinb_alpha(self, zinb_fitted):
+        """Test that ZINB result has positive alpha and log_alpha attributes."""
+        _, result, _ = zinb_fitted
+        assert result.alpha > 0
+        assert hasattr(result, "log_alpha")
+
+    def test_zinb_fit_statistics(self, zinb_fitted):
+        """Test that ZINB result has AIC, BIC, and zero proportions."""
+        _, result, _ = zinb_fitted
+        assert hasattr(result, "aic")
+        assert hasattr(result, "bic")
+        assert np.isfinite(result.aic)
+        assert np.isfinite(result.bic)
+        assert hasattr(result, "actual_zeros")
+        assert hasattr(result, "predicted_zeros")
+
+    def test_zinb_standard_errors(self, zinb_fitted):
+        """Test that ZINB result has split standard errors."""
+        _, result, _ = zinb_fitted
+        assert hasattr(result, "bse")
+        assert hasattr(result, "bse_count")
+        assert hasattr(result, "bse_inflate")
+        assert hasattr(result, "bse_alpha")
+        assert len(result.bse_count) == result.model.n_count_params
+        assert len(result.bse_inflate) == result.model.n_inflate_params
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

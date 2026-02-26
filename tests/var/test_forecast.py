@@ -1132,5 +1132,199 @@ class TestReprAdditionalCoverage:
         assert "horizon=3" in r
 
 
+# ===================================================================
+# Tests targeting remaining uncovered lines/branches in forecast.py
+# Lines: 198->200 branch, 255, 263, 350, 405
+# ===================================================================
+
+
+class TestForecastCoverage:
+    """Tests targeting specific uncovered lines and branches in forecast.py."""
+
+    # -----------------------------------------------------------------
+    # Branch 198->200: long format with single entity but multiple vars
+    # This branch is reached when entity_indices has length 1 and
+    # var_indices has length > 1 in the long-format path.
+    # We need to avoid the wide-format shortcut at line 156 by passing
+    # a non-None variable that still results in len(var_indices) > 1.
+    # However, the API only accepts a single variable string.
+    #
+    # The actual reachable scenario: entity is explicitly an int (not
+    # None) AND variable is not None -> single entity, single var,
+    # which means NEITHER len(entity_indices) > 1 NOR len(var_indices) > 1
+    # => skips the if block entirely (already tested).
+    #
+    # Instead, test via entity=None with N=1 and variable=not-None,
+    # which gives entity_indices=[0] (len 1), var_indices=[k] (len 1).
+    # That skips the if too. The 198->200 branch requires a code path
+    # where entity_indices=1, var_indices>1 in long format, which is
+    # unreachable with the current public API. We skip this branch.
+    # -----------------------------------------------------------------
+
+    # -----------------------------------------------------------------
+    # Line 350: fig.show() in _plot_plotly when show=True
+    # -----------------------------------------------------------------
+    def test_plotly_show_true_calls_fig_show(self):
+        """plot(show=True, backend='plotly') calls fig.show()."""
+        pytest.importorskip("plotly")
+        from unittest.mock import patch
+
+        import plotly.graph_objects as go
+
+        fr = _make_forecast_result(horizon=3, with_ci=False)
+        with patch.object(go.Figure, "show") as mock_show:
+            fig = fr.plot(entity=0, variable="y1", backend="plotly", show=True)
+            mock_show.assert_called_once()
+        assert isinstance(fig, go.Figure)
+
+    # -----------------------------------------------------------------
+    # Line 405: plt.show() in _plot_matplotlib when show=True
+    # -----------------------------------------------------------------
+    def test_matplotlib_show_true_calls_plt_show(self):
+        """plot(show=True, backend='matplotlib') calls plt.show()."""
+        from unittest.mock import patch
+
+        fr = _make_forecast_result(horizon=3, with_ci=False)
+        with patch("panelbox.var.forecast.plt") as mock_plt:
+            # We need the real subplots to produce a real figure
+            mock_plt.subplots = plt.subplots
+            fig = fr.plot(entity=0, variable="y1", backend="matplotlib", show=True)
+            mock_plt.show.assert_called_once()
+        plt.close(fig)
+
+    # -----------------------------------------------------------------
+    # Line 255: ImportError when plotly is not installed
+    # -----------------------------------------------------------------
+    def test_plotly_import_error_when_not_available(self):
+        """plot(backend='plotly') raises ImportError when plotly unavailable."""
+        from unittest.mock import patch
+
+        fr = _make_forecast_result(horizon=3)
+        with (
+            patch("panelbox.var.forecast.HAS_PLOTLY", False),
+            pytest.raises(ImportError, match="plotly is required"),
+        ):
+            fr.plot(entity=0, variable="y1", backend="plotly", show=False)
+
+    # -----------------------------------------------------------------
+    # Line 263: ImportError when matplotlib is not installed
+    # -----------------------------------------------------------------
+    def test_matplotlib_import_error_when_not_available(self):
+        """plot(backend='matplotlib') raises ImportError when matplotlib unavailable."""
+        from unittest.mock import patch
+
+        fr = _make_forecast_result(horizon=3)
+        with (
+            patch("panelbox.var.forecast.HAS_MATPLOTLIB", False),
+            pytest.raises(ImportError, match="matplotlib is required"),
+        ):
+            fr.plot(entity=0, variable="y1", backend="matplotlib", show=False)
+
+    # -----------------------------------------------------------------
+    # Additional edge cases for to_dataframe long format
+    # -----------------------------------------------------------------
+    def test_to_dataframe_long_format_single_entity_single_var_no_index(self):
+        """Single entity + single variable in long format has no MultiIndex."""
+        fr = _make_forecast_result(horizon=4, n_entities=2, n_vars=2)
+        df = fr.to_dataframe(entity=1, variable="y2")
+        # 4 rows (one per horizon), flat columns
+        assert len(df) == 4
+        assert "forecast" in df.columns
+        # Should NOT have MultiIndex since both entity and variable have len 1
+        assert not isinstance(df.index, pd.MultiIndex)
+
+    def test_to_dataframe_long_format_multi_entity_multi_var_index(self):
+        """Multiple entities + multiple variables creates MultiIndex with entity+variable+horizon."""
+        fr = _make_forecast_result(horizon=2, n_entities=2, n_vars=2)
+        df = fr.to_dataframe(entity=None, variable=None)
+        # 2 * 2 * 2 = 8 rows
+        assert len(df) == 8
+        assert isinstance(df.index, pd.MultiIndex)
+        assert "entity" in df.index.names
+        assert "variable" in df.index.names
+        assert "horizon" in df.index.names
+
+    def test_to_dataframe_long_format_multi_entity_single_var(self):
+        """Multiple entities + single variable creates MultiIndex with entity+horizon."""
+        fr = _make_forecast_result(horizon=3, n_entities=2, n_vars=2)
+        df = fr.to_dataframe(entity=None, variable="y1")
+        # 3 * 2 = 6 rows (3 horizons * 2 entities * 1 variable)
+        assert len(df) == 6
+        flat = df.reset_index()
+        assert "entity" in flat.columns
+        assert "horizon" in flat.columns
+
+    # -----------------------------------------------------------------
+    # Evaluate with actual matching exactly (verify 0 error)
+    # -----------------------------------------------------------------
+    def test_evaluate_perfect_forecast_zero_errors(self):
+        """Evaluate with actual == forecast gives RMSE and MAE of 0."""
+        fr = _make_forecast_result(horizon=5, n_entities=2, n_vars=2)
+        actual = fr.forecasts.copy()
+        metrics = fr.evaluate(actual)
+        assert metrics["RMSE"] == pytest.approx(0.0, abs=1e-12)
+        assert metrics["MAE"] == pytest.approx(0.0, abs=1e-12)
+
+    def test_evaluate_known_rmse(self):
+        """Evaluate with known constant error gives predictable RMSE."""
+        rng = np.random.default_rng(123)
+        fc = rng.standard_normal((4, 1, 1))
+        fr = ForecastResult(forecasts=fc, endog_names=["y1"])
+        # Add constant error of 1.0
+        actual = fc + 1.0
+        result = fr.evaluate(actual)
+        # For a single entity, returns DataFrame
+        assert isinstance(result, pd.DataFrame)
+        # RMSE of constant error = abs(error) = 1.0
+        assert result["RMSE"].iloc[0] == pytest.approx(1.0, abs=1e-12)
+        assert result["MAE"].iloc[0] == pytest.approx(1.0, abs=1e-12)
+
+    def test_evaluate_known_mape(self):
+        """Evaluate MAPE with known values."""
+        # Forecast = [2, 4], Actual = [1, 2]
+        # Errors = [1, 2], |errors|/|actual| = [1/1, 2/2] = [1, 1]
+        # MAPE = mean([1, 1]) * 100 = 100%
+        fc = np.array([[[2.0], [4.0]]])  # shape (1, 2, 1) - 1 step, 2 entities, 1 var
+        actual = np.array([[[1.0], [2.0]]])
+        fr = ForecastResult(
+            forecasts=fc,
+            endog_names=["y1"],
+            entity_names=["E0", "E1"],
+        )
+        metrics = fr.evaluate(actual)
+        assert metrics["MAPE"] == pytest.approx(100.0, abs=1e-6)
+
+    # -----------------------------------------------------------------
+    # Summary output format
+    # -----------------------------------------------------------------
+    def test_summary_complete_output(self):
+        """summary() produces a complete, well-formatted output string."""
+        fr = _make_forecast_result(
+            horizon=10,
+            n_entities=3,
+            n_vars=2,
+            endog_names=["gdp", "cpi"],
+            entity_names=["US", "UK", "JP"],
+            with_ci=True,
+        )
+        s = fr.summary()
+        assert "Panel VAR Forecast Results" in s
+        assert "Number of entities: 3" in s
+        assert "Number of variables: 2" in s
+        assert "Forecast horizon: 10" in s
+        assert "Forecast method: iterative" in s
+        assert "Confidence level: 95.0%" in s
+        assert "CI method: bootstrap" in s
+        assert "gdp" in s
+        assert "cpi" in s
+        assert "US" in s
+        assert "UK" in s
+        assert "JP" in s
+        # Check structure
+        lines = s.split("\n")
+        assert lines[0] == "=" * 70
+        assert lines[-1] == "=" * 70
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

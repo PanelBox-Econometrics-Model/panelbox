@@ -324,3 +324,187 @@ class TestDensityEstimation:
         # Different bandwidths should give different results
         assert density1 != density2
         assert density1 > 0 and density2 > 0
+
+
+class TestTreatmentEffectsUncoveredLines:
+    """Tests targeting uncovered lines in treatment_effects.py (332-334, 419-423, 555-583)."""
+
+    def test_did_no_bootstrap(self):
+        """Test DiD QTE without bootstrap (lines 332-334)."""
+        np.random.seed(42)
+        n_entities = 40
+        data_list = []
+        for entity in range(n_entities):
+            treated = entity < n_entities // 2
+            for time in range(2):
+                post = time == 1
+                y = 2 + np.random.randn() + treated * 0.5 + post * 0.3 + treated * post * 1.0
+                data_list.append(
+                    {"y": y, "treatment": int(treated), "entity": entity, "time": time}
+                )
+        df = pd.DataFrame(data_list)
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
+
+        qte = QuantileTreatmentEffects(
+            panel_data,
+            outcome="y",
+            treatment="treatment",
+            entity_col="entity",
+            time_col="time",
+        )
+        # No bootstrap → se/ci should be None
+        result = qte.estimate_qte(
+            tau=[0.25, 0.5, 0.75],
+            method="did",
+            pre_post_cutoff=0.5,
+            bootstrap=False,
+        )
+        assert result.method == "did"
+        for tau in [0.25, 0.5, 0.75]:
+            assert result.qte_results[tau]["se"] is None
+            assert result.qte_results[tau]["ci_lower"] is None
+            assert result.qte_results[tau]["ci_upper"] is None
+
+    def test_did_auto_cutoff(self):
+        """Test DiD QTE with auto pre/post cutoff (lines 296-297)."""
+        np.random.seed(42)
+        n_entities = 30
+        data_list = []
+        for entity in range(n_entities):
+            treated = entity < n_entities // 2
+            for time in range(4):
+                post = time >= 2
+                y = 2 + np.random.randn() + treated * post * 1.0
+                data_list.append(
+                    {"y": y, "treatment": int(treated), "entity": entity, "time": time}
+                )
+        df = pd.DataFrame(data_list)
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
+
+        qte = QuantileTreatmentEffects(
+            panel_data,
+            outcome="y",
+            treatment="treatment",
+            entity_col="entity",
+            time_col="time",
+        )
+        # pre_post_cutoff=None → auto median cutoff
+        result = qte.estimate_qte(tau=0.5, method="did", bootstrap=False)
+        assert result is not None
+
+    def test_qte_result_to_dataframe_did(self):
+        """Test QTEResult.to_dataframe() with DiD-specific columns (lines 585-607)."""
+        qte_results = {}
+        for tau in [0.25, 0.5, 0.75]:
+            qte_results[tau] = {
+                "qte": 1.0 + tau,
+                "se": None,
+                "ci_lower": None,
+                "ci_upper": None,
+                "treated_change": 0.5,
+                "control_change": 0.2,
+            }
+        result = QTEResult(qte_results, method="did")
+        df = result.to_dataframe()
+        assert "treated_change" in df.columns
+        assert "control_change" in df.columns
+        assert len(df) == 3
+
+    def test_qte_result_to_dataframe_unconditional(self):
+        """Test QTEResult.to_dataframe() with unconditional columns."""
+        qte_results = {}
+        for tau in [0.25, 0.5, 0.75]:
+            qte_results[tau] = {
+                "qte": 1.0,
+                "se": None,
+                "ci_lower": None,
+                "ci_upper": None,
+                "unconditional_quantile": tau * 5,
+            }
+        result = QTEResult(qte_results, method="unconditional")
+        df = result.to_dataframe()
+        assert "unconditional_quantile" in df.columns
+
+    def test_qte_result_test_constant_no_se(self):
+        """Test test_constant_effects without SE (lines 639-641)."""
+        qte_results = {}
+        for tau in [0.25, 0.5, 0.75]:
+            qte_results[tau] = {
+                "qte": 1.0 + tau,
+                "se": None,
+                "ci_lower": None,
+                "ci_upper": None,
+            }
+        result = QTEResult(qte_results, method="standard")
+        test = result.test_constant_effects()
+        assert np.isnan(test["test_statistic"])
+        assert np.isnan(test["p_value"])
+
+    def test_qte_result_test_constant_single(self):
+        """Test test_constant_effects with single quantile (lines 622-623)."""
+        qte_results = {0.5: {"qte": 1.0, "se": 0.1, "ci_lower": 0.8, "ci_upper": 1.2}}
+        result = QTEResult(qte_results, method="standard")
+        test = result.test_constant_effects()
+        assert np.isnan(test["test_statistic"])
+
+    def test_qte_summary_did_method(self, capsys):
+        """Test QTEResult.summary() with DiD method (lines 577-583)."""
+        qte_results = {}
+        for tau in [0.25, 0.5, 0.75]:
+            qte_results[tau] = {
+                "qte": 1.0 + tau,
+                "se": None,
+                "ci_lower": None,
+                "ci_upper": None,
+                "treated_change": 0.5 + tau,
+                "control_change": 0.2,
+            }
+        result = QTEResult(qte_results, method="did")
+        result.summary()
+        captured = capsys.readouterr()
+        assert "Difference-in-Differences Components" in captured.out
+        assert "Treated change" in captured.out
+        assert "Control change" in captured.out
+
+    def test_qte_summary_no_se(self, capsys):
+        """Test QTEResult.summary() without SE (lines 554-561)."""
+        qte_results = {}
+        for tau in [0.25, 0.5, 0.75]:
+            qte_results[tau] = {
+                "qte": 1.0 + tau,
+                "se": None,
+                "ci_lower": None,
+                "ci_upper": None,
+            }
+        result = QTEResult(qte_results, method="standard")
+        result.summary()
+        captured = capsys.readouterr()
+        assert "Quantile Treatment Effects" in captured.out
+
+    def test_plot_qte_with_ci(self):
+        """Test plot_qte with CI bands (lines 493-504)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        np.random.seed(42)
+        n = 200
+        df = pd.DataFrame(
+            {
+                "y": np.random.randn(n),
+                "treatment": np.random.binomial(1, 0.5, n),
+                "X1": np.random.randn(n),
+            }
+        )
+
+        qte = QuantileTreatmentEffects(df, outcome="y", treatment="treatment", covariates=["X1"])
+        result = qte.estimate_qte(
+            tau=np.arange(0.2, 0.9, 0.1),
+            method="standard",
+            bootstrap=True,
+            n_boot=30,
+        )
+        fig = qte.plot_qte(result, show_ate=True)
+        assert fig is not None
+        plt.close(fig)

@@ -1209,3 +1209,398 @@ class TestRankTestSignificanceCoverage:
             # These lines should not have significance markers
             assert "***" not in line
             assert "**" not in line
+
+
+# ---------------------------------------------------------------------------
+# TestVECMCoverage: additional tests targeting remaining uncovered lines
+# ---------------------------------------------------------------------------
+
+
+class TestVECMCoverage:
+    """
+    Extra coverage tests targeting the following uncovered lines in vecm.py:
+
+    - 904: to_var() with no Gamma (empty list) → A1 = Pi + I only
+    - 909-910: to_var() with multiple Gamma matrices (lags >= 3)
+    - 937: test_weak_exogeneity with invalid variable name
+    - 950-952: test_weak_exogeneity when alpha_se is provided
+    - 986: test_strong_exogeneity with invalid variable name
+    - 1062: summary with positive beta coefficient (coef >= 0 branch)
+    - 1108, 1112: summary with non-rejecting exogeneity tests (✓ markers)
+    - 1423-1424: _fit_ml with lags=1 so lag_vars is empty
+    - 1527-1528: _fit_ml with rank>0 and no lag_vars (fitted = ECT @ alpha.T)
+    - 1532: _fit_ml with rank=0 and no lag_vars (fitted = zeros)
+    - 1515->1523: _fit_ml with lag_vars and rank=0
+    """
+
+    # ------------------------------------------------------------------
+    # to_var() with empty Gamma → line 904
+    # ------------------------------------------------------------------
+    def test_to_var_no_gamma(self):
+        """to_var() with empty Gamma list returns A1 = Pi + I only."""
+        K = 2
+        alpha = np.array([[-0.3], [0.2]])
+        beta = np.array([[1.0], [-0.8]])
+        Sigma = np.eye(K) * 0.1
+
+        result = PanelVECMResult(
+            alpha=alpha,
+            beta=beta,
+            Gamma=[],  # no short-run dynamics
+            Sigma=Sigma,
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        A_matrices = result.to_var()
+        assert len(A_matrices) == 1  # only A1
+        expected_A1 = result.Pi + np.eye(K)
+        np.testing.assert_allclose(A_matrices[0], expected_A1, atol=1e-10)
+
+    # ------------------------------------------------------------------
+    # to_var() with multiple Gamma → lines 909-910 (A_l loop) and 913-915
+    # ------------------------------------------------------------------
+    def test_to_var_multiple_gamma(self):
+        """to_var() with 2 Gamma matrices produces A1, A2, A3."""
+        K = 2
+        alpha = np.array([[-0.2], [0.1]])
+        beta = np.array([[1.0], [-1.0]])
+        G1 = np.array([[0.3, 0.1], [0.05, 0.4]])
+        G2 = np.array([[0.1, 0.02], [0.03, 0.2]])
+        Sigma = np.eye(K) * 0.1
+
+        result = PanelVECMResult(
+            alpha=alpha,
+            beta=beta,
+            Gamma=[G1, G2],
+            Sigma=Sigma,
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        A_matrices = result.to_var()
+        assert len(A_matrices) == 3  # A1, A2, A3
+
+        # A1 = Pi + G1 + I
+        np.testing.assert_allclose(A_matrices[0], result.Pi + G1 + np.eye(K), atol=1e-10)
+        # A2 = G2 - G1
+        np.testing.assert_allclose(A_matrices[1], G2 - G1, atol=1e-10)
+        # A3 = -G2
+        np.testing.assert_allclose(A_matrices[2], -G2, atol=1e-10)
+
+        # Pi identity: sum(A) - I == Pi
+        Pi_reconstructed = sum(A_matrices) - np.eye(K)
+        np.testing.assert_allclose(Pi_reconstructed, result.Pi, atol=1e-10)
+
+    # ------------------------------------------------------------------
+    # test_weak_exogeneity with invalid variable → line 937
+    # ------------------------------------------------------------------
+    def test_weak_exogeneity_invalid_variable(self):
+        """test_weak_exogeneity raises ValueError for unknown variable."""
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[np.eye(K) * 0.1],
+            Sigma=np.eye(K),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        with pytest.raises(ValueError, match="not found"):
+            result.test_weak_exogeneity("nonexistent")
+
+    # ------------------------------------------------------------------
+    # test_strong_exogeneity with invalid variable → line 986
+    # ------------------------------------------------------------------
+    def test_strong_exogeneity_invalid_variable(self):
+        """test_strong_exogeneity raises ValueError for unknown variable."""
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[np.eye(K) * 0.1],
+            Sigma=np.eye(K),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        with pytest.raises(ValueError, match="not found"):
+            result.test_strong_exogeneity("nonexistent")
+
+    # ------------------------------------------------------------------
+    # test_weak_exogeneity with alpha_se → lines 950-952
+    # ------------------------------------------------------------------
+    def test_weak_exogeneity_with_alpha_se(self):
+        """test_weak_exogeneity uses t-test when alpha_se is provided."""
+        K = 2
+        alpha = np.array([[-0.3], [0.2]])
+        alpha_se = np.array([[0.05], [0.04]])
+
+        result = PanelVECMResult(
+            alpha=alpha,
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[np.eye(K) * 0.1],
+            Sigma=np.eye(K),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+            alpha_se=alpha_se,
+        )
+
+        test_result = result.test_weak_exogeneity("y1")
+        assert "statistic" in test_result
+        assert "p_value" in test_result
+        assert 0 <= test_result["p_value"] <= 1
+
+        # The t-stat for y1 should be alpha[0,0]/alpha_se[0,0] = -0.3/0.05 = -6
+        # W = sum(t^2) = 36.0
+        expected_W = (-0.3 / 0.05) ** 2
+        assert abs(test_result["statistic"] - expected_W) < 1e-10
+
+    # ------------------------------------------------------------------
+    # summary with positive beta → line 1062
+    # ------------------------------------------------------------------
+    def test_summary_positive_beta_coefficient(self):
+        """summary() formats positive beta coefficients with '+'."""
+        K = 2
+        # beta such that beta_normalized[1] > 0 → triggers "+" branch
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [0.5]]),  # second coef positive
+            Gamma=[np.eye(K) * 0.1],
+            Sigma=np.eye(K),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        summary = result.summary()
+        assert "+" in summary  # positive coefficient formatted with +
+        assert "Panel VECM Estimation Results" in summary
+
+    # ------------------------------------------------------------------
+    # summary with non-rejecting exogeneity tests → lines 1108, 1112
+    # ------------------------------------------------------------------
+    def test_summary_exogeneity_checkmarks(self):
+        """summary() includes check marks when exogeneity tests do not reject."""
+        K = 2
+        # Very small alpha → weak exogeneity will not reject (large p-value)
+        result = PanelVECMResult(
+            alpha=np.array([[0.001], [0.001]]),
+            beta=np.array([[1.0], [-0.5]]),
+            Gamma=[np.eye(K) * 0.001],
+            Sigma=np.eye(K),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=2,
+            T_avg=5.0,
+        )
+
+        summary = result.summary()
+        # With very small alpha and small N*T, the test should not reject
+        # and we should see the checkmark character
+        assert "\u2713" in summary  # ✓ character
+
+    # ------------------------------------------------------------------
+    # _fit_ml with lags=1 → lines 1423-1424 (R0=Y, R1=Y1)
+    # AND lines 1527-1528 (rank>0, no lag_vars)
+    # ------------------------------------------------------------------
+    def test_fit_ml_lags_one_rank_one(self):
+        """_fit_ml with lags=1 uses empty lag_vars path (lines 1423-1424, 1527-1528)."""
+        np.random.seed(42)
+        N, T = 20, 50
+        data_rows = []
+        for i in range(N):
+            x = np.cumsum(np.random.randn(T))
+            y = x + np.random.randn(T) * 0.5
+            for t in range(T):
+                data_rows.append({"entity": i, "time": t, "y1": x[t], "y2": y[t]})
+        df = pd.DataFrame(data_rows)
+
+        var_data = PanelVARData(
+            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+        )
+        vecm = PanelVECM(var_data, rank=1)
+        result = vecm.fit(method="ml")
+
+        assert isinstance(result, PanelVECMResult)
+        assert result.alpha.shape == (2, 1)
+        assert result.beta.shape == (2, 1)
+        # With lags=1, p-1=0 Gamma matrices
+        assert len(result.Gamma) == 0
+
+    # ------------------------------------------------------------------
+    # _fit_ml with lags=1 and rank=0 → line 1532 (fitted = zeros)
+    # ------------------------------------------------------------------
+    def test_fit_ml_lags_one_rank_zero(self):
+        """_fit_ml with lags=1 and rank=0 hits fitted=zeros branch (line 1532)."""
+        np.random.seed(99)
+        N, T = 15, 40
+        data_rows = []
+        for i in range(N):
+            y1 = np.cumsum(np.random.randn(T))
+            y2 = np.cumsum(np.random.randn(T))
+            for t in range(T):
+                data_rows.append({"entity": i, "time": t, "y1": y1[t], "y2": y2[t]})
+        df = pd.DataFrame(data_rows)
+
+        var_data = PanelVARData(
+            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+        )
+        vecm = PanelVECM(var_data, rank=0)
+        result = vecm.fit(method="ml")
+
+        assert isinstance(result, PanelVECMResult)
+        assert result.alpha.shape == (2, 0)
+        assert result.beta.shape == (2, 0)
+        np.testing.assert_allclose(result.Pi, np.zeros((2, 2)))
+        assert len(result.Gamma) == 0
+
+    # ------------------------------------------------------------------
+    # _fit_ml with lags=2 and rank=0 → line 1515->1523
+    # ------------------------------------------------------------------
+    def test_fit_ml_lags_two_rank_zero(self):
+        """_fit_ml with lags=2 and rank=0 hits lag_vars-but-no-rank branch (line 1515)."""
+        np.random.seed(77)
+        N, T = 15, 40
+        data_rows = []
+        for i in range(N):
+            y1 = np.cumsum(np.random.randn(T))
+            y2 = np.cumsum(np.random.randn(T))
+            for t in range(T):
+                data_rows.append({"entity": i, "time": t, "y1": y1[t], "y2": y2[t]})
+        df = pd.DataFrame(data_rows)
+
+        var_data = PanelVARData(
+            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+        )
+        vecm = PanelVECM(var_data, rank=0)
+        result = vecm.fit(method="ml")
+
+        assert isinstance(result, PanelVECMResult)
+        assert result.alpha.shape == (2, 0)
+        assert result.beta.shape == (2, 0)
+        # With lags=2 and rank=0, we should have 1 Gamma matrix
+        assert len(result.Gamma) == 1
+        assert result.Gamma[0].shape == (2, 2)
+
+    # ------------------------------------------------------------------
+    # IRF and FEVD from a directly constructed result with empty Gamma
+    # ------------------------------------------------------------------
+    def test_irf_from_constructed_result_no_gamma(self):
+        """IRF computed from manually constructed result with no Gamma."""
+        from panelbox.var.irf import IRFResult
+
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[],
+            Sigma=np.array([[1.0, 0.3], [0.3, 0.8]]),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        irf = result.irf(periods=10, method="cholesky")
+        assert isinstance(irf, IRFResult)
+        assert irf.irf_matrix.shape == (11, 2, 2)
+
+    def test_fevd_from_constructed_result_no_gamma(self):
+        """FEVD computed from manually constructed result with no Gamma."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[],
+            Sigma=np.array([[1.0, 0.3], [0.3, 0.8]]),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        fevd = result.fevd(periods=10, method="cholesky")
+        assert isinstance(fevd, FEVDResult)
+        assert fevd.decomposition.shape == (11, 2, 2)
+
+    # ------------------------------------------------------------------
+    # IRF and FEVD with generalized method from constructed result
+    # ------------------------------------------------------------------
+    def test_irf_generalized_from_constructed_result(self):
+        """IRF with generalized method from manually constructed result."""
+        from panelbox.var.irf import IRFResult
+
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[np.array([[0.1, 0.05], [0.02, 0.15]])],
+            Sigma=np.array([[1.0, 0.3], [0.3, 0.8]]),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        irf = result.irf(periods=10, method="generalized")
+        assert isinstance(irf, IRFResult)
+        assert irf.irf_matrix.shape == (11, 2, 2)
+        assert irf.method == "generalized"
+
+    def test_fevd_generalized_from_constructed_result(self):
+        """FEVD with generalized method from manually constructed result."""
+        from panelbox.var.fevd import FEVDResult
+
+        K = 2
+        result = PanelVECMResult(
+            alpha=np.array([[-0.3], [0.2]]),
+            beta=np.array([[1.0], [-0.8]]),
+            Gamma=[np.array([[0.1, 0.05], [0.02, 0.15]])],
+            Sigma=np.array([[1.0, 0.3], [0.3, 0.8]]),
+            residuals=np.random.randn(100, K),
+            var_names=["y1", "y2"],
+            rank=1,
+            method="ml",
+            N=10,
+            T_avg=12.0,
+        )
+
+        fevd = result.fevd(periods=10, method="generalized")
+        assert isinstance(fevd, FEVDResult)
+        assert fevd.decomposition.shape == (11, 2, 2)
+        assert fevd.method == "generalized"

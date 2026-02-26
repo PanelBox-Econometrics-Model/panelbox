@@ -557,3 +557,163 @@ class TestPanelBootstrapEdgeCases:
         # May have some failures due to resampling same entity multiple times
         bootstrap.run()
         assert bootstrap._fitted is True
+
+
+class TestPanelBootstrapBackwardCompatibility:
+    """Tests for backward compatibility aliases."""
+
+    def test_model_alias(self, balanced_panel_data):
+        """Test that 'model' parameter works as alias for 'results'."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(model=results, n_bootstrap=100, random_state=42)
+        assert bootstrap.results == results
+
+    def test_seed_alias(self, balanced_panel_data):
+        """Test that 'seed' parameter works as alias for 'random_state'."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(results, n_bootstrap=100, seed=42)
+        assert bootstrap.random_state == 42
+
+    def test_both_results_and_model_raises(self, balanced_panel_data):
+        """Test that specifying both results and model raises error."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            PanelBootstrap(results=results, model=results, n_bootstrap=100)
+
+    def test_both_random_state_and_seed_raises(self, balanced_panel_data):
+        """Test that specifying both random_state and seed raises error."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            PanelBootstrap(results, n_bootstrap=100, random_state=42, seed=42)
+
+    def test_no_results_raises(self):
+        """Test that no results raises TypeError."""
+        with pytest.raises(TypeError, match="Missing required argument"):
+            PanelBootstrap(n_bootstrap=100)
+
+
+class TestPanelBootstrapConfIntAdvanced:
+    """Tests for advanced CI methods (bca, studentized)."""
+
+    def test_conf_int_bca_warns(self, balanced_panel_data):
+        """Test that BCa method warns and falls back to percentile."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(
+            results, n_bootstrap=50, random_state=42, show_progress=False
+        ).run()
+
+        with pytest.warns(UserWarning, match="BCa confidence intervals not yet fully implemented"):
+            ci = bootstrap.conf_int(alpha=0.05, method="bca")
+
+        assert ci.shape == (len(results.params), 2)
+        assert np.all(ci["lower"] < ci["upper"])
+
+    def test_conf_int_studentized_warns(self, balanced_panel_data):
+        """Test that studentized method warns and falls back to percentile."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(
+            results, n_bootstrap=50, random_state=42, show_progress=False
+        ).run()
+
+        with pytest.warns(
+            UserWarning, match="Studentized confidence intervals not yet fully implemented"
+        ):
+            ci = bootstrap.conf_int(alpha=0.05, method="studentized")
+
+        assert ci.shape == (len(results.params), 2)
+
+
+class TestPanelBootstrapPlotDistribution:
+    """Tests for plot_distribution method."""
+
+    def test_plot_distribution_single_param(self, balanced_panel_data):
+        """Test plotting distribution for a single parameter."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(
+            results, n_bootstrap=50, random_state=42, show_progress=False
+        ).run()
+
+        # Should not raise
+        bootstrap.plot_distribution(param="x1")
+        plt.close("all")
+
+    def test_plot_distribution_all_params(self, balanced_panel_data):
+        """Test plotting distribution for all parameters."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(
+            results, n_bootstrap=50, random_state=42, show_progress=False
+        ).run()
+
+        bootstrap.plot_distribution()
+        plt.close("all")
+
+    def test_plot_distribution_invalid_param(self, balanced_panel_data):
+        """Test plotting with invalid parameter name."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(
+            results, n_bootstrap=50, random_state=42, show_progress=False
+        ).run()
+
+        with pytest.raises(ValueError, match="not found"):
+            bootstrap.plot_distribution(param="nonexistent")
+
+    def test_plot_distribution_before_run(self, balanced_panel_data):
+        """Test that plotting before run raises error."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        bootstrap = PanelBootstrap(results, n_bootstrap=50)
+
+        with pytest.raises(RuntimeError, match="Must call run"):
+            bootstrap.plot_distribution()
+
+
+class TestPanelBootstrapBlockSize:
+    """Tests for block bootstrap block size edge cases."""
+
+    def test_block_size_larger_than_periods_warning(self, balanced_panel_data):
+        """Test warning when block_size > n_periods."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        with pytest.warns(UserWarning, match="block_size=.*is larger than n_periods"):
+            bootstrap = PanelBootstrap(
+                results,
+                n_bootstrap=20,
+                method="block",
+                block_size=100,  # Much larger than n_periods (5)
+                random_state=42,
+                show_progress=False,
+            )
+
+        bootstrap.run()
+
+        assert bootstrap._fitted is True

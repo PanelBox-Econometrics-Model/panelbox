@@ -622,3 +622,445 @@ class TestIntegration:
         assert abs(mean_x1_entities - original_x1) / abs(original_x1) < 0.30
         assert abs(mean_x1_periods - original_x1) / abs(original_x1) < 0.30
         assert abs(mean_x1_subset - original_x1) / abs(original_x1) < 0.30
+
+
+class TestSensitivityAnalysisBackwardCompatibility:
+    """Test backward compatibility with model objects."""
+
+    def test_init_with_model_object(self, balanced_panel_data):
+        """Test initialization with a fitted model object instead of results."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        results = fe.fit()
+
+        # Pass the model object directly (backward compatibility)
+        sensitivity = SensitivityAnalysis(fe, show_progress=False)
+
+        assert sensitivity.model is fe
+        assert sensitivity.results is results
+
+    def test_init_with_unfitted_model_raises(self, balanced_panel_data):
+        """Test that unfitted model raises ValueError."""
+        fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
+        # Don't fit the model
+
+        with pytest.raises((ValueError, AttributeError)):
+            SensitivityAnalysis(fe, show_progress=False)
+
+    def test_init_with_invalid_type_raises(self):
+        """Test that invalid type raises TypeError."""
+        with pytest.raises(TypeError, match="Expected PanelResults"):
+            SensitivityAnalysis("not_a_model")
+
+
+class TestSensitivityDfbetas:
+    """Test dfbetas function."""
+
+    def test_dfbetas_not_implemented(self, fitted_model):
+        """Test that dfbetas raises NotImplementedError."""
+        from panelbox.validation.robustness.sensitivity import dfbetas
+
+        with pytest.raises(NotImplementedError):
+            dfbetas(fitted_model)
+
+
+# ============================================================================
+# Tests for Missing Coverage Lines
+# ============================================================================
+
+
+class TestResultsModelNone:
+    """Test line 130: results._model is None raises ValueError."""
+
+    def test_init_with_results_model_none(self, fitted_model):
+        """Test that SensitivityAnalysis raises ValueError when results._model is None."""
+        # Temporarily set _model to None
+        original_model = fitted_model._model
+        fitted_model._model = None
+        try:
+            with pytest.raises(
+                ValueError, match="Results object must contain a reference to the original model"
+            ):
+                SensitivityAnalysis(fitted_model)
+        finally:
+            fitted_model._model = original_model
+
+
+class TestShowProgressBranches:
+    """Test show_progress=True branches (lines 200-206, 299-305, 421-427)."""
+
+    def test_loo_entities_show_progress_tqdm_unavailable(self, fitted_model):
+        """Test LOO entities with show_progress=True when tqdm is not available."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        # Mock tqdm import to raise ImportError
+        import builtins
+
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "tqdm":
+                raise ImportError("No module named 'tqdm'")
+            return original_import(name, *args, **kwargs)
+
+        with (
+            patch("builtins.__import__", side_effect=mock_import),
+            pytest.warns(UserWarning, match="Install tqdm"),
+        ):
+            results = sensitivity.leave_one_out_entities()
+
+        assert isinstance(results, SensitivityResults)
+        assert results.method == "leave_one_out_entities"
+        assert len(results.estimates) == 20
+
+    def test_loo_periods_show_progress_tqdm_unavailable(self, fitted_model):
+        """Test LOO periods with show_progress=True when tqdm is not available."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        import builtins
+
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "tqdm":
+                raise ImportError("No module named 'tqdm'")
+            return original_import(name, *args, **kwargs)
+
+        with (
+            patch("builtins.__import__", side_effect=mock_import),
+            pytest.warns(UserWarning, match="Install tqdm"),
+        ):
+            results = sensitivity.leave_one_out_periods()
+
+        assert isinstance(results, SensitivityResults)
+        assert results.method == "leave_one_out_periods"
+        assert len(results.estimates) == 8
+
+    def test_subset_sensitivity_show_progress_tqdm_unavailable(self, fitted_model):
+        """Test subset sensitivity with show_progress=True when tqdm is not available."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        import builtins
+
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "tqdm":
+                raise ImportError("No module named 'tqdm'")
+            return original_import(name, *args, **kwargs)
+
+        with (
+            patch("builtins.__import__", side_effect=mock_import),
+            pytest.warns(UserWarning, match="Install tqdm"),
+        ):
+            results = sensitivity.subset_sensitivity(
+                n_subsamples=5, subsample_size=0.8, random_state=42
+            )
+
+        assert isinstance(results, SensitivityResults)
+        assert results.method == "subset_sensitivity"
+        assert len(results.estimates) == 5
+
+
+class TestEstimationFailureHandling:
+    """Test exception handling when model fit fails (lines 230-240, 329-339, 461-476)."""
+
+    def test_loo_entities_estimation_failure(self, fitted_model):
+        """Test LOO entities handles estimation failures gracefully."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=False)
+
+        # Make _create_model return a model that always fails on fit()
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                # First two calls raise an exception
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated estimation failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with patch.object(sensitivity, "_create_model", side_effect=failing_create_model):
+            results = sensitivity.leave_one_out_entities()
+
+        # First two should have NaN values
+        assert np.isnan(results.estimates.iloc[0].values).all()
+        assert np.isnan(results.estimates.iloc[1].values).all()
+        # Rest should have valid values
+        assert not np.isnan(results.estimates.iloc[2].values).any()
+
+        # Subsample info should show converged=False for first two
+        assert results.subsample_info.iloc[0]["converged"] == False  # noqa: E712
+        assert results.subsample_info.iloc[1]["converged"] == False  # noqa: E712
+        assert results.subsample_info.iloc[2]["converged"] == True  # noqa: E712
+
+    def test_loo_entities_estimation_failure_with_progress(self, fitted_model):
+        """Test LOO entities shows warning on failure when show_progress=True."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with (
+            patch.object(sensitivity, "_create_model", side_effect=failing_create_model),
+            pytest.warns(UserWarning, match="Failed to estimate without entity"),
+        ):
+            results = sensitivity.leave_one_out_entities()
+
+        assert np.isnan(results.estimates.iloc[0].values).all()
+
+    def test_loo_periods_estimation_failure(self, fitted_model):
+        """Test LOO periods handles estimation failures gracefully."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=False)
+
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated estimation failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with patch.object(sensitivity, "_create_model", side_effect=failing_create_model):
+            results = sensitivity.leave_one_out_periods()
+
+        # First two should have NaN values
+        assert np.isnan(results.estimates.iloc[0].values).all()
+        assert np.isnan(results.estimates.iloc[1].values).all()
+        assert not np.isnan(results.estimates.iloc[2].values).any()
+
+        # Subsample info should reflect failure
+        assert results.subsample_info.iloc[0]["converged"] == False  # noqa: E712
+        assert results.subsample_info.iloc[1]["converged"] == False  # noqa: E712
+
+    def test_loo_periods_estimation_failure_with_progress(self, fitted_model):
+        """Test LOO periods shows warning on failure when show_progress=True."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with (
+            patch.object(sensitivity, "_create_model", side_effect=failing_create_model),
+            pytest.warns(UserWarning, match="Failed to estimate without period"),
+        ):
+            results = sensitivity.leave_one_out_periods()
+
+        assert np.isnan(results.estimates.iloc[0].values).all()
+
+    def test_subset_sensitivity_estimation_failure(self, fitted_model):
+        """Test subset sensitivity handles estimation failures gracefully."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=False)
+
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated estimation failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with patch.object(sensitivity, "_create_model", side_effect=failing_create_model):
+            results = sensitivity.subset_sensitivity(
+                n_subsamples=5, subsample_size=0.8, random_state=42
+            )
+
+        # First should have NaN values
+        assert np.isnan(results.estimates.iloc[0].values).all()
+        assert np.isnan(results.std_errors.iloc[0].values).all()
+        # Rest should be valid
+        assert not np.isnan(results.estimates.iloc[1].values).any()
+
+        # Subsample info should show converged=False for first
+        assert results.subsample_info.iloc[0]["converged"] == False  # noqa: E712
+
+    def test_subset_sensitivity_estimation_failure_with_progress(self, fitted_model):
+        """Test subset sensitivity shows warning on failure when show_progress=True."""
+        from unittest.mock import patch
+
+        sensitivity = SensitivityAnalysis(fitted_model, show_progress=True)
+
+        original_create_model = sensitivity._create_model
+
+        call_count = [0]
+
+        def failing_create_model(data):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                model = original_create_model(data)
+
+                def fail_fit(*args, **kwargs):
+                    raise RuntimeError("Simulated failure")
+
+                model.fit = fail_fit
+                return model
+            return original_create_model(data)
+
+        with (
+            patch.object(sensitivity, "_create_model", side_effect=failing_create_model),
+            pytest.warns(UserWarning, match="Failed to estimate subsample"),
+        ):
+            results = sensitivity.subset_sensitivity(
+                n_subsamples=5, subsample_size=0.8, random_state=42
+            )
+
+        assert np.isnan(results.estimates.iloc[0].values).all()
+
+
+class TestPlotWithoutMatplotlib:
+    """Test line 548: plot_sensitivity raises ImportError when matplotlib not available."""
+
+    def test_plot_sensitivity_without_matplotlib(self, sensitivity_analyzer):
+        """Test that plot_sensitivity raises ImportError when matplotlib is not available."""
+        from unittest.mock import patch
+
+        results = sensitivity_analyzer.leave_one_out_entities()
+
+        with (
+            patch("panelbox.validation.robustness.sensitivity.HAS_MATPLOTLIB", False),
+            pytest.raises(ImportError, match="Matplotlib is required"),
+        ):
+            sensitivity_analyzer.plot_sensitivity(results)
+
+
+class TestNanInInfluentialUnits:
+    """Test line 725: NaN handling in _identify_influential_units."""
+
+    def test_identify_influential_units_with_nan(self, sensitivity_analyzer):
+        """Test that _identify_influential_units handles NaN estimates correctly."""
+        # Create a DataFrame with some NaN values
+        estimates_df = pd.DataFrame(
+            {
+                "x1": [2.0, np.nan, 2.0, 2.0],
+                "x2": [-1.5, -1.5, np.nan, -1.5],
+            },
+            index=["excl_1", "excl_2", "excl_3", "excl_4"],
+        )
+
+        # Call _identify_influential_units with a very low threshold so nothing is influential
+        # (unless NaN handling is broken)
+        result = sensitivity_analyzer._identify_influential_units(estimates_df, threshold=100.0)
+
+        # With such a high threshold, nothing should be influential
+        assert isinstance(result, list)
+
+    def test_identify_influential_units_all_nan_row(self, sensitivity_analyzer):
+        """Test _identify_influential_units when a row is entirely NaN."""
+        estimates_df = pd.DataFrame(
+            {
+                "x1": [np.nan, 2.0, 2.0],
+                "x2": [np.nan, -1.5, -1.5],
+            },
+            index=["excl_1", "excl_2", "excl_3"],
+        )
+
+        # With a high threshold, NaN rows should be skipped (not flagged as influential)
+        result = sensitivity_analyzer._identify_influential_units(estimates_df, threshold=100.0)
+        assert "excl_1" not in result
+
+
+class TestMatplotlibImportBranch:
+    """Test lines 30-32: matplotlib ImportError branch."""
+
+    def test_has_matplotlib_false_when_import_fails(self):
+        """Test that HAS_MATPLOTLIB is False when matplotlib import fails."""
+        import builtins
+        import importlib
+        import sys
+        from unittest.mock import patch
+
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name in ("matplotlib.pyplot", "matplotlib.figure", "matplotlib"):
+                raise ImportError("No module named 'matplotlib'")
+            return original_import(name, *args, **kwargs)
+
+        import panelbox.validation.robustness.sensitivity as sens_module
+
+        # Temporarily remove the cached matplotlib modules
+        saved_modules = {}
+        for key in list(sys.modules.keys()):
+            if "matplotlib" in key:
+                saved_modules[key] = sys.modules.pop(key)
+
+        try:
+            with patch("builtins.__import__", side_effect=mock_import):
+                importlib.reload(sens_module)
+                assert sens_module.HAS_MATPLOTLIB is False
+                assert sens_module.Figure is None
+        finally:
+            # Restore matplotlib modules and reload to reset state
+            # This happens OUTSIDE the patch context, so the real import works
+            sys.modules.update(saved_modules)
+            importlib.reload(sens_module)
+            # CRITICAL: Update the global references in this test module
+            # so that other tests using SensitivityResults/SensitivityAnalysis
+            # from the top-level import still work after the reload.
+            global SensitivityAnalysis, SensitivityResults
+            SensitivityAnalysis = sens_module.SensitivityAnalysis
+            SensitivityResults = sens_module.SensitivityResults

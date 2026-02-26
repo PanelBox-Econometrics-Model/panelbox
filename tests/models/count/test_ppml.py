@@ -430,3 +430,121 @@ class TestPPMLResult:
         # Should raise error
         with pytest.raises(AttributeError, match="exog_names"):
             result.compare_with_ols(ols_result)
+
+
+class TestPPMLAdditional:
+    """Additional tests targeting uncovered lines in ppml.py."""
+
+    @pytest.fixture
+    def simple_ppml(self):
+        """Create a simple PPML model with exog_names and entity_id."""
+        np.random.seed(42)
+        n = 200
+        entity_id = np.repeat(np.arange(40), 5)
+        X = np.column_stack([np.ones(n), np.random.randn(n), np.random.randn(n)])
+        y = np.random.poisson(np.exp(1 + 0.5 * X[:, 1] - 0.3 * X[:, 2]))
+        model = PPML(
+            endog=y,
+            exog=X,
+            entity_id=entity_id,
+            fixed_effects=False,
+            exog_names=["const", "log_x1", "x2"],
+        )
+        result = model.fit()
+        return model, result
+
+    def test_ppml_elasticity_log_var(self, simple_ppml):
+        """Test PPMLResult.elasticity for a log-transformed variable."""
+        _model, result = simple_ppml
+        elast = result.elasticity("log_x1")
+        assert "coefficient" in elast
+        assert "elasticity" in elast
+        assert "is_log_transformed" in elast
+        assert elast["is_log_transformed"] is True
+        # For log variable, elasticity equals coefficient
+        assert_allclose(elast["elasticity"], elast["coefficient"], rtol=1e-10)
+
+    def test_ppml_elasticity_level_var(self, simple_ppml):
+        """Test PPMLResult.elasticity for a level (non-log) variable."""
+        model, result = simple_ppml
+        elast = result.elasticity("x2")
+        assert elast["is_log_transformed"] is False
+        # For level variable, elasticity = coefficient * mean(x)
+        x2_mean = np.mean(model.model.exog[:, 2])
+        assert_allclose(elast["elasticity"], elast["coefficient"] * x2_mean, rtol=1e-10)
+
+    def test_ppml_elasticities_table(self, simple_ppml):
+        """Test PPMLResult.elasticities returns a DataFrame with all variables."""
+        _model, result = simple_ppml
+        elast_table = result.elasticities()
+        assert isinstance(elast_table, pd.DataFrame)
+        assert "variable" in elast_table.columns
+        assert "elasticity" in elast_table.columns
+        assert "coefficient" in elast_table.columns
+        assert len(elast_table) == 3  # const, log_x1, x2
+
+    def test_ppml_summary_with_zeros(self, simple_ppml):
+        """Test PPMLResult.summary includes zero information when zeros present."""
+        model, result = simple_ppml
+        summary = result.summary()
+        assert isinstance(summary, str)
+        assert "PPML" in summary
+        # If any zeros in data, summary should mention them
+        n_zeros = np.sum(model.model.endog == 0)
+        if n_zeros > 0:
+            assert "zeros" in summary.lower()
+
+    def test_ppml_summary_contains_notes(self, simple_ppml):
+        """Test PPMLResult.summary contains PPML-specific notes."""
+        _, result = simple_ppml
+        summary = result.summary()
+        assert "cluster-robust" in summary.lower()
+        assert "elasticities" in summary.lower() or "elasticity" in summary.lower()
+
+    def test_ppml_predict_with_dataframe(self, simple_ppml):
+        """Test PPML.predict with a DataFrame input."""
+        model, _result = simple_ppml
+        X_new = np.column_stack([np.ones(10), np.random.randn(10), np.random.randn(10)])
+        df = pd.DataFrame(X_new, columns=["const", "log_x1", "x2"])
+        pred = model.predict(X=df, type="response")
+        assert len(pred) == 10
+        assert np.all(pred >= 0)
+
+    def test_ppml_predict_dataframe_missing_col(self, simple_ppml):
+        """Test that PPML.predict with DataFrame raises for missing columns."""
+        model, _result = simple_ppml
+        df = pd.DataFrame({"const": np.ones(5), "log_x1": np.random.randn(5)})
+        with pytest.raises(ValueError, match="Missing columns"):
+            model.predict(X=df, type="response")
+
+    def test_ppml_elasticity_invalid(self, simple_ppml):
+        """Test PPMLResult.elasticity raises for nonexistent variable."""
+        _, result = simple_ppml
+        with pytest.raises(ValueError, match="not found"):
+            result.elasticity("nonexistent_var")
+
+    def test_ppml_fixed_effects_attr(self, simple_ppml):
+        """Test PPMLResult has fixed_effects attribute."""
+        _, result = simple_ppml
+        assert result.fixed_effects is False
+
+    def test_ppml_with_many_zeros(self):
+        """Test PPML with data containing many zeros; summary mentions zeros."""
+        np.random.seed(123)
+        n = 200
+        entity_id = np.repeat(np.arange(40), 5)
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        # Generate data with 50% zeros
+        y = np.random.poisson(np.exp(-0.5 + 0.5 * X[:, 1]))
+        y[np.random.rand(n) < 0.5] = 0
+
+        model = PPML(
+            endog=y,
+            exog=X,
+            entity_id=entity_id,
+            fixed_effects=False,
+            exog_names=["const", "log_x1"],
+        )
+        result = model.fit()
+        summary = result.summary()
+        assert "zeros" in summary.lower()

@@ -326,3 +326,128 @@ class TestPooledQuantileEdgeCases:
 
         # Should recover true parameters
         assert_allclose(results.params.ravel(), [1.0, 2.0], atol=1e-6)
+
+
+class TestPooledQuantileUncoveredLines:
+    """Tests targeting uncovered lines in pooled.py (141, 161-165, 440-495)."""
+
+    def test_dataframe_exog_param_names(self):
+        """Test that param_names extracted from DataFrame columns (line 141)."""
+        import pandas as pd
+
+        np.random.seed(42)
+        n = 100
+        df_exog = pd.DataFrame(
+            {"const": np.ones(n), "x1": np.random.randn(n), "x2": np.random.randn(n)}
+        )
+        y = np.random.randn(n)
+
+        model = PooledQuantile(y, df_exog, quantiles=0.5)
+        assert model.param_names == ["const", "x1", "x2"]
+
+    def test_objective_without_weights(self):
+        """Test _objective with no weights (line 165)."""
+        np.random.seed(42)
+        n = 100
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        loss = model._objective(np.zeros(2), 0.5)
+        assert np.isfinite(loss)
+        assert loss > 0
+
+    def test_objective_with_weights(self):
+        """Test _objective with weights (lines 163-164)."""
+        np.random.seed(42)
+        n = 100
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = np.random.randn(n)
+        w = np.random.uniform(0.5, 1.5, n)
+
+        model = PooledQuantile(y, X, quantiles=0.5, weights=w)
+        loss = model._objective(np.zeros(2), 0.5)
+        assert np.isfinite(loss)
+        assert loss > 0
+
+    def test_estimate_sparsity(self):
+        """Test _estimate_sparsity method (lines 440-457)."""
+        np.random.seed(42)
+        n = 200
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = X @ np.array([1.0, 2.0]) + np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        results = model.fit()
+        residuals = y - X @ results.params.ravel()
+
+        sparsity = model._estimate_sparsity(residuals, 0.5)
+        assert np.isfinite(sparsity)
+        assert sparsity > 0
+
+    def test_estimate_sparsity_zero_density_fallback(self):
+        """Test _estimate_sparsity fallback when no residuals within bandwidth (lines 453-455)."""
+        np.random.seed(42)
+        n = 50
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        # Use a very tiny bandwidth to trigger fallback
+        residuals = np.random.randn(n) * 100  # Large residuals
+        sparsity = model._estimate_sparsity(residuals, 0.5, h=1e-15)
+        assert np.isfinite(sparsity)
+        assert sparsity > 0
+
+    def test_predict_method(self):
+        """Test PooledQuantile.predict method (lines 459-495)."""
+        np.random.seed(42)
+        n = 100
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = X @ np.array([1.0, 2.0]) + np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        results = model.fit()
+
+        # Predict with params
+        pred = model.predict(params=results.params.ravel())
+        assert len(pred) == n
+        assert np.all(np.isfinite(pred))
+
+    def test_predict_new_exog(self):
+        """Test predict with new exog (lines 490-493)."""
+        np.random.seed(42)
+        n = 100
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        results = model.fit()
+
+        X_new = np.column_stack([np.ones(5), np.random.randn(5)])
+        pred = model.predict(params=results.params.ravel(), exog=X_new)
+        assert len(pred) == 5
+
+    def test_predict_no_params_raises(self):
+        """Test predict without params raises ValueError (line 488)."""
+        np.random.seed(42)
+        X = np.column_stack([np.ones(50), np.random.randn(50)])
+        y = np.random.randn(50)
+
+        model = PooledQuantile(y, X, quantiles=0.5)
+        with pytest.raises(ValueError, match="Model must be fitted first"):
+            model.predict(params=None)
+
+    def test_predict_multi_quantile(self):
+        """Test predict with 2D params and quantile_idx (line 493)."""
+        np.random.seed(42)
+        n = 100
+        X = np.column_stack([np.ones(n), np.random.randn(n)])
+        y = np.random.randn(n)
+
+        model = PooledQuantile(y, X, quantiles=[0.25, 0.5, 0.75])
+        results = model.fit()
+
+        # params is 2D (n_vars, n_quantiles)
+        pred = model.predict(params=results.params, exog=X, quantile_idx=1)
+        assert len(pred) == n

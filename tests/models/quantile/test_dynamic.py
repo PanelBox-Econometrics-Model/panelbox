@@ -313,3 +313,122 @@ class TestDynamicQuantilePanelResult:
         # Should create plot without error
         fig = mock_results.plot_impulse_responses(tau_list=[0.25, 0.5, 0.75], horizon=10)
         assert fig is not None
+
+
+class TestDynamicUncoveredLines:
+    """Tests targeting uncovered lines in dynamic.py (111-118, 302-303, 366-461, 505-545)."""
+
+    @pytest.fixture
+    def dynamic_panel(self):
+        """Create panel data with AR(1) structure."""
+        np.random.seed(123)
+        n_entities = 30
+        n_time = 15
+        data_list = []
+        for entity in range(n_entities):
+            y = np.zeros(n_time)
+            X1 = np.random.randn(n_time)
+            X2 = np.random.randn(n_time)
+            y[0] = np.random.randn()
+            for t in range(1, n_time):
+                y[t] = 0.6 * y[t - 1] + 0.5 * X1[t] - 0.3 * X2[t] + np.random.randn()
+            entity_df = pd.DataFrame(
+                {"y": y, "X1": X1, "X2": X2, "entity": entity, "time": range(n_time)}
+            )
+            data_list.append(entity_df)
+        df = pd.concat(data_list, ignore_index=True)
+        return PanelData(df, entity_col="entity", time_col="time")
+
+    def test_setup_data_without_formula(self):
+        """Test _setup_data without formula (lines 111-118)."""
+        np.random.seed(42)
+        n_entities = 15
+        n_time = 10
+        data_list = []
+        for entity in range(n_entities):
+            y = np.zeros(n_time)
+            X1 = np.random.randn(n_time)
+            y[0] = np.random.randn()
+            for t in range(1, n_time):
+                y[t] = 0.5 * y[t - 1] + X1[t] + np.random.randn()
+            entity_df = pd.DataFrame({"y": y, "X1": X1, "entity": entity, "time": range(n_time)})
+            data_list.append(entity_df)
+        df = pd.concat(data_list, ignore_index=True)
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
+
+        # Without formula, should auto-detect columns
+        model = DynamicQuantile(panel_data, formula=None, tau=0.5, lags=1, method="iv")
+        assert model.y is not None
+        assert model.X is not None
+
+    def test_instruments_no_deeper_lags(self):
+        """Test instrument construction when no deeper lags available (lines 302-303)."""
+        np.random.seed(42)
+        n_entities = 10
+        n_time = 4  # Very short T
+        data_list = []
+        for entity in range(n_entities):
+            y = np.random.randn(n_time)
+            X1 = np.random.randn(n_time)
+            entity_df = pd.DataFrame({"y": y, "X1": X1, "entity": entity, "time": range(n_time)})
+            data_list.append(entity_df)
+        df = pd.concat(data_list, ignore_index=True)
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
+
+        model = DynamicQuantile(panel_data, formula="y ~ X1", tau=0.5, lags=2, method="iv")
+        # With lags=2 and T=4, deeper lags may have few valid obs
+        # The instrument construction should still work
+        instruments = model._construct_instruments(iv_lags=1)
+        assert instruments is not None
+
+    def test_long_run_effects_stationary(self, dynamic_panel):
+        """Test compute_long_run_effects with stationary process (lines 523-560)."""
+        model = DynamicQuantile(
+            dynamic_panel,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            lags=1,
+            method="iv",
+        )
+        result = model.fit(verbose=False)
+        lr_effects = model.compute_long_run_effects(result)
+
+        for tau in [0.25, 0.5, 0.75]:
+            assert tau in lr_effects
+            if lr_effects[tau] is not None:
+                assert lr_effects[tau]["multiplier"] > 0
+                assert lr_effects[tau]["persistence"] < 1
+
+    def test_long_run_effects_unit_root(self):
+        """Test compute_long_run_effects warns on unit root (lines 543-544)."""
+        params = np.array([1.0, 0.5, -0.3])  # persistence=1.0 → unit root
+        persistence = np.array([1.0])
+        results = {
+            0.5: DynamicQuantileResult(
+                params=params,
+                cov_matrix=np.eye(3) * 0.01,
+                tau=0.5,
+                persistence=persistence,
+                converged=True,
+                method="iv",
+                n_obs=100,
+                n_entities=10,
+            )
+        }
+
+        class MockModel:
+            lags = 1
+
+        panel_result = DynamicQuantilePanelResult(MockModel(), results)
+
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            model = MockModel()
+            model.lags = 1
+            # Manually call the long run effects logic
+            from panelbox.models.quantile.dynamic import DynamicQuantile
+
+            dq = DynamicQuantile.__new__(DynamicQuantile)
+            dq.lags = 1
+            lr = dq.compute_long_run_effects(panel_result)
+            assert lr[0.5] is None  # Unit root → None

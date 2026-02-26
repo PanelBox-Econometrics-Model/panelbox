@@ -5,6 +5,7 @@ Tests NegativeBinomial and NegativeBinomialFixedEffects for overdispersed count 
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
@@ -578,6 +579,229 @@ class TestNBIntegration:
         model2.fit()
         lr_test2 = model2.lr_test_poisson()
         assert lr_test2["p_value"] < 0.05
+
+
+class TestNegBinAdditional:
+    """Additional tests targeting uncovered lines in negbin.py."""
+
+    @pytest.fixture
+    def nb_data_with_entity(self):
+        """Generate NB data with proper entity_id for clustering."""
+        np.random.seed(42)
+        n_entities = 30
+        n_periods = 10
+        n_obs = n_entities * n_periods
+        entity_id = np.repeat(np.arange(n_entities), n_periods)
+        time_id = np.tile(np.arange(n_periods), n_entities)
+
+        X = np.random.randn(n_obs, 2)
+        X[:, 0] = 1
+        beta = np.array([0.5, -0.3])
+        alpha = 0.5
+
+        mu = np.exp(X @ beta)
+        r = 1 / alpha
+        p = r / (r + mu)
+        y = np.random.negative_binomial(r, p)
+
+        return y, X, entity_id, time_id, beta, alpha
+
+    def test_nb_predict_with_params(self, nb_data_with_entity):
+        """Test NegativeBinomial.predict with explicit params and which='mean'."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        pred = model.predict(params=result.params, which="mean")
+        assert pred.shape == y.shape
+        assert np.all(pred >= 0)
+
+    def test_nb_predict_linear(self, nb_data_with_entity):
+        """Test NegativeBinomial.predict with which='linear'."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        eta = model.predict(params=result.params, which="linear")
+        mu = model.predict(params=result.params, which="mean")
+        assert_allclose(np.exp(eta), mu)
+
+    def test_nb_predict_dataframe(self, nb_data_with_entity):
+        """Test NegativeBinomial.predict with DataFrame input for exog."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+
+        # Create a DataFrame with proper column names
+        model.exog_names = ["const", "x1"]
+        df = pd.DataFrame(X[:10], columns=["const", "x1"])
+        pred = model.predict(params=result.params, exog=df, which="mean")
+        assert len(pred) == 10
+
+    def test_nb_result_predict(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.predict method."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        pred = result.predict(which="mean")
+        assert len(pred) == len(y)
+        assert np.all(pred >= 0)
+
+    def test_nb_result_predict_dataframe(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.predict with DataFrame input."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        model.exog_names = ["const", "x1"]
+        result = model.fit()
+        df = pd.DataFrame(X[:10], columns=["const", "x1"])
+        pred = result.predict(exog=df, which="mean")
+        assert len(pred) == 10
+
+    def test_nb_lr_test_poisson(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.lr_test_poisson returns expected keys."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        lr_test = result.lr_test_poisson()
+        # The lr_test_poisson uses likelihood_ratio_test which returns these keys:
+        assert "statistic" in lr_test
+        assert "pvalue" in lr_test
+        assert "conclusion" in lr_test
+        # With overdispersed data, should reject Poisson
+        assert lr_test["pvalue"] < 0.05
+
+    def test_nb_summary(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.summary method."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        summary = result.summary()
+        assert isinstance(summary, str)
+        assert "Negative Binomial" in summary
+        assert "alpha" in summary.lower()
+        assert "Log-Likelihood" in summary
+
+    def test_nb_params_exog_property(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.params_exog property."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        # params_exog should exclude the alpha parameter
+        assert len(result.params_exog) == X.shape[1]
+        assert len(result.params) == X.shape[1] + 1  # +1 for log_alpha
+
+    def test_nb_predict_no_params_raises(self, nb_data_with_entity):
+        """Test that predict raises when params is None."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        with pytest.raises(ValueError, match="Parameters required"):
+            model.predict(params=None)
+
+    def test_nb_gradient(self, nb_data_with_entity):
+        """Test NegativeBinomial._gradient is finite."""
+        y, X, entity_id, time_id, beta, alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        params = np.append(beta, np.log(alpha))
+        grad = model._gradient(params)
+        assert np.all(np.isfinite(grad))
+        assert len(grad) == len(params)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: FixedEffectsNegativeBinomial.fit() tries to set "
+            "'result.params_exog' but params_exog is a read-only @property on "
+            "NegativeBinomialResults with no setter"
+        ),
+    )
+    def test_fe_nb_fit(self, nb_data_with_entity):
+        """Test FixedEffectsNegativeBinomial fit method."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomialFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit(maxiter=100)
+        assert hasattr(result, "params")
+        assert result.alpha > 0
+
+    def test_nb_marginal_effects_ame(self, nb_data_with_entity):
+        """Test NegativeBinomial.marginal_effects for AME."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        me = model.marginal_effects(result, at="overall")
+        assert me is not None
+        assert hasattr(me, "marginal_effects")
+
+    def test_nb_marginal_effects_mem(self, nb_data_with_entity):
+        """Test NegativeBinomial.marginal_effects for MEM."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        me = model.marginal_effects(result, at="means")
+        assert me is not None
+
+    def test_nb_marginal_effects_from_stored(self, nb_data_with_entity):
+        """Test marginal_effects using stored _results (no result arg)."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        model.fit()
+        me = model.marginal_effects(at="overall")
+        assert me is not None
+
+    def test_nb_marginal_effects_invalid(self, nb_data_with_entity):
+        """Test marginal_effects raises for invalid at value."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        with pytest.raises(ValueError, match="Unknown"):
+            model.marginal_effects(result, at="invalid")
+
+    def test_nb_predict_dataframe_no_names(self, nb_data_with_entity):
+        """Test NegativeBinomial.predict with DataFrame when exog_names not set."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        # Ensure no exog_names
+        if hasattr(model, "exog_names"):
+            model.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b"])
+        pred = model.predict(params=result.params, exog=df, which="mean")
+        assert len(pred) == 10
+
+    def test_nb_result_predict_dataframe_no_names(self, nb_data_with_entity):
+        """Test NegativeBinomialResults.predict with DataFrame when exog_names not set."""
+        y, X, entity_id, time_id, _beta, _alpha = nb_data_with_entity
+        model = NegativeBinomial(y, X, entity_id=entity_id, time_id=time_id)
+        result = model.fit()
+        result.exog_names = None
+        df = pd.DataFrame(X[:10], columns=["a", "b"])
+        pred = result.predict(exog=df, which="mean")
+        assert len(pred) == 10
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Source code bug: FixedEffectsNegativeBinomial.fit() tries to set "
+            "'result.params_exog' but params_exog is a read-only @property on "
+            "NegativeBinomialResults with no setter"
+        ),
+    )
+    def test_fe_nb_warning_many_entities(self):
+        """Test FixedEffectsNegativeBinomial warns for many entities."""
+        np.random.seed(42)
+        n_entities = 120
+        n_periods = 3
+        n_obs = n_entities * n_periods
+        entity_id = np.repeat(np.arange(n_entities), n_periods)
+        time_id = np.tile(np.arange(n_periods), n_entities)
+        X = np.random.randn(n_obs, 2)
+        X[:, 0] = 1
+        y = np.random.negative_binomial(5, 0.5, n_obs)
+
+        model = NegativeBinomialFixedEffects(y, X, entity_id=entity_id, time_id=time_id)
+        import warnings as w
+
+        with w.catch_warnings(record=True) as warns:
+            w.simplefilter("always")
+            model.fit(maxiter=50)
+            assert any("slow" in str(warn.message).lower() for warn in warns)
 
 
 if __name__ == "__main__":

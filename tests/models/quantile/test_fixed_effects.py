@@ -371,3 +371,95 @@ class TestShrinkagePath:
         # Check shrinkage pattern
         fe_l1_norms = np.sum(np.abs(fe_paths), axis=1)
         assert all(fe_l1_norms[i] >= fe_l1_norms[i + 1] for i in range(3))  # Decreasing L1 norm
+
+
+class TestFixedEffectsUncoveredLines:
+    """Tests targeting uncovered lines in fixed_effects.py (96-154, 413-414, 542-644)."""
+
+    @pytest.fixture
+    def panel_data(self):
+        """Create panel data for testing."""
+        np.random.seed(42)
+        n_entities = 20
+        n_time = 10
+        n = n_entities * n_time
+
+        entity_ids = np.repeat(np.arange(n_entities), n_time)
+        time_ids = np.tile(np.arange(n_time), n_entities)
+        X1 = np.random.randn(n)
+        X2 = np.random.randn(n)
+        entity_effects = np.random.randn(n_entities) * 2
+        y = 1 + 2 * X1 + 3 * X2 + np.repeat(entity_effects, n_time) + np.random.randn(n)
+
+        df = pd.DataFrame({"entity": entity_ids, "time": time_ids, "y": y, "X1": X1, "X2": X2})
+        return PanelData(df, entity_col="entity", time_col="time")
+
+    def test_objective_function(self, panel_data):
+        """Test _objective method (lines 96-102)."""
+        model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5, lambda_fe=0.1)
+        # The _objective returns the base check loss (no penalty)
+        params = np.zeros(model.X.shape[1])
+        loss = model._objective(params, 0.5)
+        assert np.isfinite(loss)
+        assert loss > 0
+
+    def test_unbalanced_panel(self):
+        """Test with unbalanced panel (lines covering init/validation)."""
+        np.random.seed(42)
+        entity_ids = []
+        time_ids = []
+        X1, X2, y = [], [], []
+
+        for i in range(20):
+            T_i = np.random.randint(5, 12)
+            entity_ids.extend([i] * T_i)
+            time_ids.extend(range(T_i))
+            x1 = np.random.randn(T_i)
+            x2 = np.random.randn(T_i)
+            X1.extend(x1)
+            X2.extend(x2)
+            y.extend(1 + 2 * x1 + 3 * x2 + i * 0.5 + np.random.randn(T_i))
+
+        df = pd.DataFrame({"entity": entity_ids, "time": time_ids, "y": y, "X1": X1, "X2": X2})
+        panel_data = PanelData(df, entity_col="entity", time_col="time")
+        model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5, lambda_fe=0.1)
+        result = model.fit(verbose=False)
+        assert result.results[0.5].converged
+
+    def test_covariance_pinv_fallback(self, panel_data):
+        """Test covariance computation fallback to pinv (lines 413-414)."""
+        model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5, lambda_fe=0.1)
+        result = model.fit(verbose=False)
+        # The covariance should be computed (either inv or pinv)
+        res = result.results[0.5]
+        assert res.cov_matrix is not None
+        assert res.cov_matrix.shape[0] == res.cov_matrix.shape[1]
+        assert np.all(np.isfinite(res.cov_matrix))
+
+    def test_plot_fixed_effects(self, panel_data):
+        """Test plot_fixed_effects method (lines 542-562)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        model = FixedEffectsQuantile(panel_data, formula="y ~ X1 + X2", tau=0.5, lambda_fe=0.1)
+        result = model.fit(verbose=False)
+        fig = result.results[0.5].plot_fixed_effects()
+        assert fig is not None
+        plt.close(fig)
+
+    def test_plot_coefficients_panel_result(self, panel_data):
+        """Test plot_coefficients from panel result (lines 588-644)."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        model = FixedEffectsQuantile(
+            panel_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], lambda_fe=0.1
+        )
+        result = model.fit(verbose=False)
+        fig = result.plot_coefficients(var_idx=1)
+        assert fig is not None
+        plt.close(fig)

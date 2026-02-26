@@ -85,7 +85,7 @@ class TestSEMDataGeneration:
         """
         Generate panel data from SEM model.
 
-        Model: y = Xβ + α + u, where u = λWu + ε
+        Model: y = Xbeta + alpha + u, where u = lambda*Wu + epsilon
 
         Parameters
         ----------
@@ -133,7 +133,7 @@ class TestSEMDataGeneration:
         np.repeat(alpha, t)
 
         # Generate spatially correlated errors
-        # u = λWu + ε => u = (I - λW)^{-1}ε
+        # u = lambda*Wu + epsilon => u = (I - lambda*W)^{-1}epsilon
         y = np.zeros(n * t)
         for period in range(t):
             idx_t = times == period
@@ -380,6 +380,225 @@ class TestSEMEstimation:
         assert result is not None
         assert 0 < result.params["lambda"] < 1
 
+    @pytest.mark.timeout(120)
+    def test_sem_ml_fe_estimation(self):
+        """Test SEM ML estimation with fixed effects."""
+        # Use a larger panel for stability
+        n, t = 36, 15  # 6x6 grid, 15 time periods
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="queen")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, seed=111
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="fixed", method="ml")
+
+        # Check estimation completed
+        assert result is not None
+        assert "lambda" in result.params.index
+        assert "x1" in result.params.index
+        assert "x2" in result.params.index
+
+        # ML FE should return reasonable parameter estimates
+        assert result.method == "Maximum Likelihood"
+        assert result.effects == "fixed"
+
+        # Check that lambda is in a reasonable range
+        assert -0.99 < result.params["lambda"] < 0.99
+
+        # Standard errors should be positive
+        assert result.bse is not None
+        assert all(result.bse > 0)
+
+    @pytest.mark.timeout(120)
+    def test_sem_ml_random_effects(self):
+        """Test SEM ML estimation with random effects."""
+        n, t = 25, 10
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, sigma2=1.0, alpha_std=0.5, seed=222
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="random", method="ml")
+
+        # Check estimation completed
+        assert result is not None
+        assert "lambda" in result.params.index
+        assert result.method == "Maximum Likelihood"
+        assert result.effects == "random"
+
+        # Lambda should be in a reasonable range
+        assert -0.99 < result.params["lambda"] < 0.99
+
+        # Check standard errors
+        assert result.bse is not None
+        assert len(result.bse) == len(result.params)
+
+    @pytest.mark.timeout(120)
+    def test_sem_predict_after_ml(self):
+        """Test SpatialError.predict() after ML fitting."""
+        n, t = 25, 10
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, seed=333
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        model.fit(effects="fixed", method="ml")
+
+        # Predict using training data (no args)
+        predictions = model.predict()
+
+        assert predictions is not None
+        assert len(predictions) == n * t
+        assert not np.any(np.isnan(predictions))
+
+    @pytest.mark.timeout(120)
+    def test_sem_predict_with_params(self):
+        """Test SpatialError.predict() with custom params."""
+        n, t = 25, 10
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, seed=444
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        model.fit(effects="fixed", method="ml")
+
+        # Use custom params for prediction
+        custom_params = pd.Series(
+            [0.3, 1.0, -0.5, 0.5],
+            index=["lambda", "Intercept", "x1", "x2"],
+        )
+        predictions = model.predict(params=custom_params)
+
+        assert predictions is not None
+        assert len(predictions) == n * t
+        assert not np.any(np.isnan(predictions))
+
+    def test_sem_predict_before_fit_raises(self):
+        """Test that predict without fitting raises an error."""
+        n, t = 25, 10
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, seed=555
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        # Model is not fitted, so predict without params should raise.
+        # It may raise AttributeError (no 'fitted' attr) or ValueError
+        # depending on whether the base class sets a default.
+        with pytest.raises((ValueError, AttributeError)):
+            model.predict()
+
+    def test_sem_unsupported_method(self):
+        """Test that unsupported effects/method combo raises NotImplementedError."""
+        n, t = 25, 10
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="rook")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, seed=666
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        with pytest.raises(NotImplementedError, match="not yet implemented"):
+            model.fit(effects="random", method="gmm")
+
+    @pytest.mark.timeout(120)
+    def test_sem_gmm_pooled_estimation_extended(self):
+        """Extended test of pooled GMM with covariance checks."""
+        n, t = 36, 10  # 6x6 grid
+        lambda_true = 0.3
+        beta_true = np.array([1.0, -0.5])
+
+        W = TestSEMDataGeneration.generate_spatial_weights(n, type="queen")
+        data = TestSEMDataGeneration.generate_sem_panel_data(
+            n, t, lambda_true, beta_true, W, sigma2=0.5, seed=777
+        )
+
+        W_obj = SpatialWeights(W)
+
+        model = SpatialError(
+            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+        )
+
+        result = model.fit(effects="pooled", method="gmm")
+
+        # Check estimation completed
+        assert result is not None
+        assert "lambda" in result.params.index
+
+        # Check covariance matrix properties
+        cov = result.cov_params
+        assert cov is not None
+        assert cov.shape[0] == cov.shape[1]
+        assert cov.shape[0] == len(result.params)
+
+        # Covariance diagonal should be positive (variances)
+        diag_values = np.diag(cov.values)
+        assert all(diag_values > 0), "Covariance diagonal should be positive"
+
+        # Covariance should be approximately symmetric
+        assert_allclose(cov.values, cov.values.T, atol=1e-10)
+
+        # Standard errors should match sqrt of diagonal
+        expected_bse = np.sqrt(diag_values)
+        assert_allclose(result.bse.values, expected_bse, rtol=1e-10)
+
+        # Check sigma2 is positive
+        assert result.sigma2 > 0
+
+        # Check effects type
+        assert result.effects == "pooled"
+
 
 @pytest.mark.skip(reason="SpatialError missing _compute_spatial_gmm_weight_matrix")
 class TestSEMGMMInstruments:
@@ -421,7 +640,7 @@ class TestSEMGMMInstruments:
         Z = np.hstack(Z)
 
         # Check dimensions
-        # Should have X, WX, W²X columns
+        # Should have X, WX, W^2X columns
         k = X_within.shape[1]  # actual number of exog columns (may include intercept)
         expected_cols = k * (n_lags + 1)
         assert Z.shape[1] == expected_cols
