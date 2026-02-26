@@ -1,13 +1,17 @@
 """Test starting values calculation."""
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 from panelbox.frontier.starting_values import ols_starting_values
 
+HERE = Path(__file__).parent
+
 # Load data
-data = pd.read_csv("/home/guhaase/projetos/panelbox/tests/validation/sfa/sfa_test_data.csv")
-ref = pd.read_csv("/home/guhaase/projetos/panelbox/tests/validation/sfa/sfa_reference_hn.csv")
+data = pd.read_csv(HERE / "sfa_test_data.csv")
+ref = pd.read_csv(HERE / "sfa_reference_hn.csv")
 ref_dict = ref.set_index("parameter")["value"].to_dict()
 
 # Prepare data

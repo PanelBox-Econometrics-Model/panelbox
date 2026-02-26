@@ -19,9 +19,6 @@ Note: GMM estimators can have slightly larger differences due to:
 
 import sys
 
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
-
 import pytest
 
 import panelbox as pb

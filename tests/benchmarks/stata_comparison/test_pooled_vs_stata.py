@@ -14,9 +14,6 @@ Expected tolerance:
 
 import sys
 
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
-
 import pytest
 
 import panelbox as pb

@@ -9,10 +9,6 @@ Usage:
 Models: pooled, fe, re, diff_gmm, sys_gmm
 """
 
-import sys
-
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
 import cProfile
 import io
 import pstats

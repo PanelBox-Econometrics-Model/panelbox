@@ -10,7 +10,7 @@ This script benchmarks all advanced methods implemented in Phases 1-5:
 - Multinomial FE
 - PPML FE
 
-Results are saved to /home/guhaase/projetos/panelbox/docs/benchmarks/
+Results are saved to docs/benchmarks/ relative to the project root.
 """
 
 import time
@@ -597,8 +597,9 @@ class PerformanceBenchmarker:
     def save_results(self):
         """Save results to CSV."""
         import os
+        from pathlib import Path
 
-        output_dir = "/home/guhaase/projetos/panelbox/docs/benchmarks"
+        output_dir = str(Path(__file__).resolve().parents[2] / "docs" / "benchmarks")
         os.makedirs(output_dir, exist_ok=True)
 
         # Convert to DataFrame

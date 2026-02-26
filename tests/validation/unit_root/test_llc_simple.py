@@ -7,9 +7,6 @@ import sys
 import numpy as np
 import pandas as pd
 
-# Add parent to path
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
 from panelbox.validation.unit_root import LLCTest
 
 

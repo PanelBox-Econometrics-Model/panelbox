@@ -2,10 +2,6 @@
 Simple tests for Fisher-type panel unit root test.
 """
 
-import sys
-
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
 import numpy as np
 import pandas as pd
 import pytest

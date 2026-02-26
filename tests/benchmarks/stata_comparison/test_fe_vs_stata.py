@@ -14,8 +14,6 @@ Expected tolerance:
 
 import sys
 
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
 import numpy as np
 import pytest
 

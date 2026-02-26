@@ -10,11 +10,8 @@ Usage:
     python3 test_performance.py
 """
 
-import sys
-
-sys.path.insert(0, "/home/guhaase/projetos/panelbox")
-
 import json
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
