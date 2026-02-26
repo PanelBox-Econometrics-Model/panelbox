@@ -82,24 +82,23 @@ jobs:
 
     - name: Check validation tolerances
       run: |
-        python -c "
-import json
-import os
-import sys
+        python << 'PYEOF'
+        import json
+        import os
+        import sys
 
-# Check if validation report exists
-report_path = 'tests/validation/discrete/VALIDATION_REPORT.md'
-if os.path.exists(report_path):
-    with open(report_path, 'r') as f:
-        content = f.read()
-        if 'FAILED' in content or 'ERROR' in content:
-            print('⚠️  Validation issues found. Check the validation report.')
-            sys.exit(1)
+        report_path = 'tests/validation/discrete/VALIDATION_REPORT.md'
+        if os.path.exists(report_path):
+            with open(report_path, 'r') as f:
+                content = f.read()
+                if 'FAILED' in content or 'ERROR' in content:
+                    print('Validation issues found. Check the validation report.')
+                    sys.exit(1)
+                else:
+                    print('All validation tests passed within tolerance!')
         else:
-            print('✅ All validation tests passed within tolerance!')
-else:
-    print('⚠️  Validation report not found')
-"
+            print('Validation report not found')
+        PYEOF
 
   coverage-check:
     runs-on: ubuntu-latest
