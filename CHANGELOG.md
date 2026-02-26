@@ -5,6 +5,16 @@ All notable changes to PanelBox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-02-25
+
+### Added
+
+- **Dataset Bundling**: 103 CSV datasets bundled into `panelbox/datasets/data/` across 13 categories (censored, count, diagnostics, discrete, frontier, gmm, marginal_effects, production, quantile, spatial, standard_errors, validation, var)
+- **`load_dataset()` API**: Unified dataset loading with `load_dataset(name, category=None)`, `list_datasets()`, `list_categories()`
+- **Google Colab Compatibility**: 80+ notebooks migrated from relative path `pd.read_csv()` to `load_dataset()` — now work with `pip install panelbox`
+- **Spatial Validation Tests**: LM tests, Moran's I, local Moran, spatial Hausman
+- **Frontier Tests**: Efficiency, estimation, four-component, likelihoods
+
 ## [0.6.0] - 2026-02-25
 
 ### Added

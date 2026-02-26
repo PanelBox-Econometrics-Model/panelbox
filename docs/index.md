@@ -280,7 +280,7 @@ If you use PanelBox in academic research, please cite:
   author = {PanelBox Development Team},
   year = {2026},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox},
-  version = {0.6.0}
+  version = {0.6.1}
 }
 ```
 

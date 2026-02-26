@@ -343,7 +343,7 @@ If you use PanelBox in your research, please cite:
   author = {Haase, Gustavo and Dourado, Paulo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
-  version = {0.6.0},
+  version = {0.6.1},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
 }
 ```
@@ -383,7 +383,15 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for complete version history.
 
-### Latest Release: v0.6.0 (2026-02-25)
+### Latest Release: v0.6.1 (2026-02-25)
+
+**📦 Dataset Bundling for Colab Compatibility**
+
+- 103 CSV datasets bundled in the library (13 categories)
+- New `load_dataset()` API — notebooks work in Google Colab
+- 80+ notebooks migrated from relative paths to library imports
+
+### v0.6.0 (2026-02-25)
 
 **🎯 Complete Econometric Toolkit**
 

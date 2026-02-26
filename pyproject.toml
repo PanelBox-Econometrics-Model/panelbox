@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panelbox"
-version = "0.6.0"
+version = "0.6.1"
 description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Experiment Pattern with Result Containers (Validation, Comparison, Residual), Test Runners & Master Reports, Interactive Visualizations (35 Charts), Professional HTML Reports, Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Comprehensive Diagnostics"
 authors = [
     {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},
@@ -339,9 +339,9 @@ panelbox = [
 ]
 
 [tool.mutmut]
-paths_to_mutate = ["panelbox/standard_errors/"]
-tests_dir = ["tests/standard_errors/"]
-pytest_add_cli_args = ["-x", "--timeout=60", "-q", "--no-header", "-p", "no:randomly", "--ignore=tests/standard_errors/test_mle.py", "--ignore=tests/standard_errors/test_pcse.py", "--ignore=tests/standard_errors/test_spatial_hac.py"]
+paths_to_mutate = ["panelbox/core/"]
+tests_dir = ["tests/core/"]
+pytest_add_cli_args = ["-x", "--timeout=60", "-q", "--no-header", "-p", "no:randomly"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.3.0,<9.0"

@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
 
 # Version history
+# 0.6.1 (2026-02-25): Dataset Bundling for Colab Compatibility
+#                     - Bundle 103 CSV datasets in the library package
+#                     - New load_dataset() API with category-based organization
+#                     - 80+ notebooks migrated from relative paths to load_dataset()
+#                     - Notebooks now work in Google Colab with pip install panelbox
+#                     - Add spatial validation tests and frontier tests
 # 0.6.0 (2026-02-25): Complete Econometric Toolkit
 #                     - 70+ econometric models across 13 families
 #                     - 50+ diagnostic tests with validation against R/Stata
