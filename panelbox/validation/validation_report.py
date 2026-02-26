@@ -1,11 +1,9 @@
-"""
-Validation report container.
-"""
+"""Validation report container."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from panelbox.validation.base import ValidationTestResult
 
@@ -32,11 +30,11 @@ class ValidationReport:
 
     def __init__(
         self,
-        model_info: Dict[str, Any],
-        specification_tests: Optional[Dict[str, ValidationTestResult]] = None,
-        serial_tests: Optional[Dict[str, ValidationTestResult]] = None,
-        het_tests: Optional[Dict[str, ValidationTestResult]] = None,
-        cd_tests: Optional[Dict[str, ValidationTestResult]] = None,
+        model_info: dict[str, Any],
+        specification_tests: dict[str, ValidationTestResult] | None = None,
+        serial_tests: dict[str, ValidationTestResult] | None = None,
+        het_tests: dict[str, ValidationTestResult] | None = None,
+        cd_tests: dict[str, ValidationTestResult] | None = None,
     ):
         self.model_info = model_info
         self.specification_tests = specification_tests or {}
@@ -211,7 +209,7 @@ class ValidationReport:
 
         return "\n".join(lines)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """
         Export validation report to dictionary.
 
@@ -254,7 +252,7 @@ class ValidationReport:
 
         return result
 
-    def get_failed_tests(self) -> List[str]:
+    def get_failed_tests(self) -> list[str]:
         """
         Get list of tests that rejected the null hypothesis.
 

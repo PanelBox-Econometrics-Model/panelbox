@@ -1,12 +1,9 @@
-"""
-Validation suite for panel models.
-"""
+"""Validation suite for panel models."""
 
 from __future__ import annotations
 
 import logging
 import warnings
-from typing import Dict, List, Union
 
 from panelbox.core.results import PanelResults
 from panelbox.validation.base import ValidationTestResult
@@ -65,7 +62,7 @@ class ValidationSuite:
         self.model_type = results.model_type
 
     def run(
-        self, tests: Union[str, List[str]] = "default", alpha: float = 0.05, verbose: bool = False
+        self, tests: str | list[str] = "default", alpha: float = 0.05, verbose: bool = False
     ) -> ValidationReport:
         """
         Run validation tests.
@@ -136,7 +133,7 @@ class ValidationSuite:
 
     def run_specification_tests(
         self, alpha: float = 0.05, verbose: bool = False
-    ) -> Dict[str, ValidationTestResult]:
+    ) -> dict[str, ValidationTestResult]:
         """
         Run specification tests.
 
@@ -168,7 +165,7 @@ class ValidationSuite:
             except Exception as e:
                 if verbose:
                     logger.warning(f"Mundlak test failed: {e}")
-                warnings.warn(f"Mundlak test failed: {e}")
+                warnings.warn(f"Mundlak test failed: {e}", stacklevel=2)
 
         # RESET test (for all models)
         try:
@@ -179,7 +176,7 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"RESET test failed: {e}")
-            warnings.warn(f"RESET test failed: {e}")
+            warnings.warn(f"RESET test failed: {e}", stacklevel=2)
 
         # Chow test (for all models)
         # Note: Requires break_point parameter, skip by default
@@ -189,7 +186,7 @@ class ValidationSuite:
 
     def run_serial_correlation_tests(
         self, alpha: float = 0.05, verbose: bool = False
-    ) -> Dict[str, ValidationTestResult]:
+    ) -> dict[str, ValidationTestResult]:
         """
         Run serial correlation tests.
 
@@ -217,7 +214,7 @@ class ValidationSuite:
             except Exception as e:
                 if verbose:
                     logger.warning(f"Wooldridge test failed: {e}")
-                warnings.warn(f"Wooldridge test failed: {e}")
+                warnings.warn(f"Wooldridge test failed: {e}", stacklevel=2)
 
         # Breusch-Godfrey test (for all models)
         try:
@@ -228,7 +225,7 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Breusch-Godfrey test failed: {e}")
-            warnings.warn(f"Breusch-Godfrey test failed: {e}")
+            warnings.warn(f"Breusch-Godfrey test failed: {e}", stacklevel=2)
 
         # Baltagi-Wu LBI test (for all models, especially unbalanced panels)
         try:
@@ -239,13 +236,13 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Baltagi-Wu test failed: {e}")
-            warnings.warn(f"Baltagi-Wu test failed: {e}")
+            warnings.warn(f"Baltagi-Wu test failed: {e}", stacklevel=2)
 
         return results
 
     def run_heteroskedasticity_tests(
         self, alpha: float = 0.05, verbose: bool = False
-    ) -> Dict[str, ValidationTestResult]:
+    ) -> dict[str, ValidationTestResult]:
         """
         Run heteroskedasticity tests.
 
@@ -273,7 +270,7 @@ class ValidationSuite:
             except Exception as e:
                 if verbose:
                     logger.warning(f"Modified Wald test failed: {e}")
-                warnings.warn(f"Modified Wald test failed: {e}")
+                warnings.warn(f"Modified Wald test failed: {e}", stacklevel=2)
 
         # Breusch-Pagan LM test (for all models)
         try:
@@ -284,7 +281,7 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Breusch-Pagan test failed: {e}")
-            warnings.warn(f"Breusch-Pagan test failed: {e}")
+            warnings.warn(f"Breusch-Pagan test failed: {e}", stacklevel=2)
 
         # White test (for all models)
         try:
@@ -297,13 +294,13 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"White test failed: {e}")
-            warnings.warn(f"White test failed: {e}")
+            warnings.warn(f"White test failed: {e}", stacklevel=2)
 
         return results
 
     def run_cross_sectional_tests(
         self, alpha: float = 0.05, verbose: bool = False
-    ) -> Dict[str, ValidationTestResult]:
+    ) -> dict[str, ValidationTestResult]:
         """
         Run cross-sectional dependence tests.
 
@@ -330,7 +327,7 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Pesaran CD test failed: {e}")
-            warnings.warn(f"Pesaran CD test failed: {e}")
+            warnings.warn(f"Pesaran CD test failed: {e}", stacklevel=2)
 
         # Breusch-Pagan LM test (for all models, small to moderate N)
         try:
@@ -341,7 +338,7 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Breusch-Pagan LM test failed: {e}")
-            warnings.warn(f"Breusch-Pagan LM test failed: {e}")
+            warnings.warn(f"Breusch-Pagan LM test failed: {e}", stacklevel=2)
 
         # Frees test (non-parametric, robust to non-normality)
         try:
@@ -352,11 +349,11 @@ class ValidationSuite:
         except Exception as e:
             if verbose:
                 logger.warning(f"Frees test failed: {e}")
-            warnings.warn(f"Frees test failed: {e}")
+            warnings.warn(f"Frees test failed: {e}", stacklevel=2)
 
         return results
 
-    def _determine_tests(self, tests: Union[str, List[str]]) -> List[str]:
+    def _determine_tests(self, tests: str | list[str]) -> list[str]:
         """
         Determine which test categories to run.
 
