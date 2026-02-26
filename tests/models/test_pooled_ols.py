@@ -30,6 +30,7 @@ class TestPooledOLSInitialization:
 
         assert model.weights is not None
         assert len(model.weights) == n_obs
+        assert np.all(model.weights > 0)
 
     def test_init_with_unbalanced_data(self, unbalanced_panel_data):
         """Test initialization with unbalanced panel data."""
@@ -49,7 +50,6 @@ class TestPooledOLSFitting:
 
         # Check that model was fitted
         assert model._fitted is True
-        assert results is not None
 
         # Check coefficient structure
         assert len(results.params) == 3  # Intercept, x1, x2
@@ -71,16 +71,16 @@ class TestPooledOLSFitting:
         results = model.fit()
 
         assert model._fitted is True
-        assert results is not None
         assert len(results.params) == 3
+        assert np.all(np.isfinite(results.params.values))
 
     def test_estimate_coefficients_method(self, balanced_panel_data):
         """Test the _estimate_coefficients method."""
         model = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         beta = model._estimate_coefficients()
 
-        assert beta is not None
         assert len(beta) == 3  # Intercept, x1, x2
+        assert np.all(np.isfinite(beta))
 
 
 class TestRSquaredMeasures:
@@ -281,16 +281,16 @@ class TestDataInfo:
         model = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.entity_index is not None
         assert len(results.entity_index) == 50
+        assert len(set(results.entity_index)) == 10  # 10 unique entities
 
     def test_time_index_stored(self, balanced_panel_data):
         """Test that time index is stored."""
         model = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.time_index is not None
         assert len(results.time_index) == 50
+        assert len(set(results.time_index)) == 5  # 5 unique time periods
 
 
 class TestResultsAttributes:
@@ -327,16 +327,16 @@ class TestResultsAttributes:
         model = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.resid is not None
         assert len(results.resid) == 50
+        assert np.all(np.isfinite(results.resid))
 
     def test_fitted_values(self, balanced_panel_data):
         """Test fitted values are computed."""
         model = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results.fittedvalues is not None
         assert len(results.fittedvalues) == 50
+        assert np.all(np.isfinite(results.fittedvalues))
 
     def test_residuals_sum_to_zero(self, balanced_panel_data):
         """Test that residuals sum to approximately zero."""
@@ -356,8 +356,10 @@ class TestSummaryMethods:
         results = model.fit()
 
         summary = results.summary()
-        assert summary is not None
-        assert "Pooled OLS" in str(summary)
+        assert isinstance(summary, str)
+        assert "Pooled OLS" in summary
+        assert "x1" in summary
+        assert "x2" in summary
 
     def test_summary_with_different_cov_types(self, balanced_panel_data):
         """Test summary with different covariance types."""
@@ -366,7 +368,8 @@ class TestSummaryMethods:
         for cov_type in ["nonrobust", "robust", "clustered"]:
             results = model.fit(cov_type=cov_type)
             summary = results.summary()
-            assert summary is not None
+            assert isinstance(summary, str)
+            assert len(summary) > 0
 
 
 class TestPrivateMethods:
@@ -385,9 +388,9 @@ class TestPrivateMethods:
         # Test method
         vcov = model._compute_vcov_robust(X, resid)
 
-        assert vcov is not None
         assert vcov.shape == (3, 3)
         assert np.allclose(vcov, vcov.T)  # Should be symmetric
+        assert np.all(np.diag(vcov) > 0)  # Positive variances
 
     def test_compute_vcov_clustered(self, balanced_panel_data):
         """Test _compute_vcov_clustered method."""
@@ -402,9 +405,9 @@ class TestPrivateMethods:
         # Test method
         vcov = model._compute_vcov_clustered(X, resid)
 
-        assert vcov is not None
         assert vcov.shape == (3, 3)
         assert np.allclose(vcov, vcov.T)  # Should be symmetric
+        assert np.all(np.diag(vcov) > 0)  # Positive variances
 
 
 class TestEdgeCases:
@@ -449,8 +452,9 @@ class TestEdgeCases:
         model = PooledOLS("y ~ x1 + x2", data, "entity", "time")
         results = model.fit()
 
-        assert results is not None
         assert results.n_entities == 1
+        assert len(results.params) == 3
+        assert np.all(np.isfinite(results.params.values))
 
     def test_single_time_period(self):
         """Test with single time period (cross-sectional data)."""
@@ -468,8 +472,9 @@ class TestEdgeCases:
         model = PooledOLS("y ~ x1 + x2", data, "entity", "time")
         results = model.fit()
 
-        assert results is not None
         assert results.n_periods == 1
+        assert len(results.params) == 3
+        assert np.all(np.isfinite(results.params.values))
 
     def test_many_regressors(self, balanced_panel_data):
         """Test with multiple regressors."""

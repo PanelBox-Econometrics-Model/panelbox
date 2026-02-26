@@ -464,8 +464,10 @@ class TestForwardHessian:
     def test_forward_hessian_quadratic(self):
         """Forward Hessian of quadratic function."""
         A = np.array([[2.0, 1.0], [1.0, 3.0]])
+
         def f(x):
             return x @ A @ x
+
         x = np.array([1.0, 2.0])
 
         H = approx_hessian(f, x, method="forward")
@@ -475,8 +477,10 @@ class TestForwardHessian:
 
     def test_forward_hessian_symmetric(self):
         """Forward Hessian should be symmetrized."""
+
         def f(x):
             return x[0] ** 3 * x[1] + x[0] * x[1] ** 3
+
         x = np.array([1.0, 1.0])
 
         H = approx_hessian(f, x, method="forward")
@@ -484,8 +488,10 @@ class TestForwardHessian:
 
     def test_forward_hessian_manual_epsilon(self):
         """Forward Hessian with manual epsilon."""
+
         def f(x):
             return np.sum(x**2)
+
         x = np.array([1.0, 2.0])
 
         H = approx_hessian(f, x, method="forward", epsilon=1e-4)
@@ -495,8 +501,10 @@ class TestForwardHessian:
 
     def test_hessian_invalid_method_raises(self):
         """Invalid method in approx_hessian should raise ValueError."""
+
         def f(x):
             return np.sum(x**2)
+
         x = np.array([1.0])
 
         with pytest.raises(ValueError, match="method must be"):
@@ -504,8 +512,10 @@ class TestForwardHessian:
 
     def test_gradient_invalid_method_raises(self):
         """Invalid method in approx_gradient should raise ValueError."""
+
         def f(x):
             return np.sum(x**2)
+
         x = np.array([1.0])
 
         with pytest.raises(ValueError, match="method must be"):

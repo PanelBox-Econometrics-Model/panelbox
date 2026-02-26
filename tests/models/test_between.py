@@ -72,7 +72,6 @@ class TestBetweenEstimator:
         assert "x2" in results.params.index
 
         # Check that entity means were computed
-        assert model.entity_means is not None
         assert len(model.entity_means) == 10  # 10 entities
         assert "entity" in model.entity_means.columns
         assert "y" in model.entity_means.columns
@@ -353,7 +352,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit(cov_type="driscoll_kraay", max_lags=2)
 
-        assert results is not None
         assert results.cov_type == "driscoll_kraay"
         assert (results.std_errors > 0).all()
 
@@ -362,7 +360,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit(cov_type="newey_west", max_lags=2)
 
-        assert results is not None
         assert results.cov_type == "newey_west"
         assert (results.std_errors > 0).all()
 
@@ -371,7 +368,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit(cov_type="pcse")
 
-        assert results is not None
         assert results.cov_type == "pcse"
 
     def test_clustered_with_cluster_col(self, simple_panel_data):
@@ -384,7 +380,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2 + region", data, "entity", "time")
         results = model.fit(cov_type="clustered", cluster_col="region")
 
-        assert results is not None
         assert results.cov_type == "clustered"
         assert (results.std_errors > 0).all()
 
@@ -393,7 +388,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2", simple_panel_data, "entity", "time")
         results = model.fit(cov_type="clustered")
 
-        assert results is not None
         assert results.cov_type == "clustered"
         assert (results.std_errors > 0).all()
 
@@ -406,7 +400,6 @@ class TestBetweenCovarianceTypes:
         model = BetweenEstimator("y ~ x1 + x2 + region", data, "entity", "time")
         results = model.fit(cov_type="twoway", cluster_col2="region")
 
-        assert results is not None
         assert results.cov_type == "twoway"
         assert (results.std_errors > 0).all()
 
@@ -451,9 +444,9 @@ class TestBetweenEstimateCoefficientsDirectly:
 
         beta = model._estimate_coefficients()
 
-        assert beta is not None
         # Should have 3 coefficients: Intercept, x1, x2
         assert len(beta.ravel()) == 3
+        assert np.all(np.isfinite(beta))
 
     def test_estimate_coefficients_matches_fit(self, simple_panel_data):
         """Test that _estimate_coefficients() gives same betas as fit()."""

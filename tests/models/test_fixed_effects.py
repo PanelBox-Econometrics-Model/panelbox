@@ -54,7 +54,6 @@ class TestFixedEffectsFitting:
 
         # Check that model was fitted
         assert model._fitted is True
-        assert results is not None
 
         # Check coefficient structure
         assert len(results.params) == 2  # x1 and x2 (no intercept in FE)
@@ -63,8 +62,8 @@ class TestFixedEffectsFitting:
         assert "Intercept" not in results.params.index  # Absorbed by FE
 
         # Check that fixed effects were computed
-        assert model.entity_fe is not None
         assert len(model.entity_fe) == 10  # 10 entities
+        assert np.all(np.isfinite(model.entity_fe.values))
 
     def test_fit_time_effects(self, balanced_panel_data):
         """Test fitting with time fixed effects."""
@@ -79,8 +78,8 @@ class TestFixedEffectsFitting:
         model.fit()
 
         assert model._fitted is True
-        assert model.time_fe is not None
         assert len(model.time_fe) == 5  # 5 time periods
+        assert np.all(np.isfinite(model.time_fe.values))
 
     def test_fit_twoway_effects(self, balanced_panel_data):
         """Test fitting with two-way fixed effects."""
@@ -95,8 +94,8 @@ class TestFixedEffectsFitting:
         results = model.fit()
 
         assert model._fitted is True
-        assert model.entity_fe is not None
-        assert model.time_fe is not None
+        assert len(model.entity_fe) == 10
+        assert len(model.time_fe) == 5
         assert results.model_type == "Fixed Effects (Two-Way)"
 
     def test_within_transformation(self, balanced_panel_data):
@@ -114,8 +113,8 @@ class TestFixedEffectsFitting:
 
         # Within transformation should remove entity effects
         # Coefficients should be similar to original (without entity effects)
-        assert results is not None
         assert len(results.params) == 2
+        assert np.all(np.isfinite(results.params.values))
 
 
 class TestRSquaredMeasures:
@@ -193,7 +192,6 @@ class TestFixedEffectsExtraction:
         model.fit()
 
         # Check entity FE
-        assert model.entity_fe is not None
         assert isinstance(model.entity_fe, pd.Series)
         assert len(model.entity_fe) == 10
         assert model.entity_fe.name == "entity_fe"
@@ -210,7 +208,6 @@ class TestFixedEffectsExtraction:
         )
         model.fit()
 
-        assert model.time_fe is not None
         assert isinstance(model.time_fe, pd.Series)
         assert len(model.time_fe) == 5
         assert model.time_fe.name == "time_fe"
@@ -227,10 +224,10 @@ class TestFixedEffectsExtraction:
         )
         model.fit()
 
-        assert model.entity_fe is not None
-        assert model.time_fe is not None
         assert len(model.entity_fe) == 10
         assert len(model.time_fe) == 5
+        assert np.all(np.isfinite(model.entity_fe.values))
+        assert np.all(np.isfinite(model.time_fe.values))
 
     def test_entity_fe_sum_zero(self, balanced_panel_data):
         """Test that entity fixed effects are identified (sum to zero constraint)."""
@@ -333,9 +330,9 @@ class TestEdgeCases:
         model = FixedEffects("y ~ x1 + x2", unbalanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results is not None
         # Entity FE should have 3 entities
         assert len(model.entity_fe) == 3
+        assert np.all(np.isfinite(results.params.values))
 
 
 class TestModelComparison:
@@ -401,8 +398,8 @@ class TestCovarianceTypesAdvanced:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="twoway")
 
-        assert results is not None
         assert len(results.params) == 2
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
     def test_fit_with_pcse(self, balanced_panel_data):
@@ -411,7 +408,6 @@ class TestCovarianceTypesAdvanced:
         results = model.fit(cov_type="pcse")
 
         # PCSE may produce warnings or NaN with T < N, but should not crash
-        assert results is not None
         assert len(results.params) == 2
 
     def test_invalid_cov_type_raises(self, balanced_panel_data):
@@ -443,7 +439,7 @@ class TestInternalMethods:
         results = model.fit()
 
         assert len(results.params) == 2
-        assert results.params is not None
+        assert np.all(np.isfinite(results.params.values))
 
     @pytest.mark.parametrize("cov_type", ["robust", "clustered"])
     def test_vcov_computation(self, balanced_panel_data, cov_type):
@@ -481,7 +477,6 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="driscoll_kraay", max_lags=2)
 
-        assert results is not None
         assert results.cov_type == "driscoll_kraay"
         assert len(results.params) == 2
         assert (results.std_errors > 0).all()
@@ -491,7 +486,7 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="driscoll_kraay")
 
-        assert results is not None
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
     def test_driscoll_kraay_with_kernel(self, balanced_panel_data):
@@ -499,7 +494,7 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="driscoll_kraay", max_lags=1, kernel="bartlett")
 
-        assert results is not None
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
     def test_newey_west_cov_type(self, balanced_panel_data):
@@ -507,7 +502,6 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="newey_west", max_lags=2)
 
-        assert results is not None
         assert results.cov_type == "newey_west"
         assert len(results.params) == 2
         assert (results.std_errors > 0).all()
@@ -517,7 +511,7 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="newey_west")
 
-        assert results is not None
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
     def test_newey_west_with_kernel(self, balanced_panel_data):
@@ -525,7 +519,7 @@ class TestDriscollKraayAndNeweyWestCov:
         model = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type="newey_west", max_lags=1, kernel="bartlett")
 
-        assert results is not None
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
 
@@ -611,8 +605,8 @@ class TestEstimateCoefficientsDirectly:
         beta = model._estimate_coefficients()
 
         # Should return coefficient array
-        assert beta is not None
         assert len(beta.ravel()) == 2  # x1 and x2
+        assert np.all(np.isfinite(beta))
 
     def test_estimate_coefficients_matches_fit(self, balanced_panel_data):
         """Test that _estimate_coefficients() returns same betas as fit()."""

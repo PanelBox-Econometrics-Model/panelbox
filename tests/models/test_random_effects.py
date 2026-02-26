@@ -45,19 +45,15 @@ class TestRandomEffectsFitting:
         results = model.fit()
 
         assert model._fitted is True
-        assert results is not None
         assert len(results.params) == 3  # Intercept, x1, x2
+        assert np.all(np.isfinite(results.params.values))
 
     def test_variance_components_computed(self, balanced_panel_data):
         """Test that variance components are computed."""
         model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         model.fit()
 
-        assert model.sigma2_u is not None
-        assert model.sigma2_e is not None
-        assert model.theta is not None
-
-        # Variances should be positive
+        # Variances should be computed and positive
         assert model.sigma2_u >= 0
         assert model.sigma2_e > 0
 
@@ -132,8 +128,8 @@ class TestVarianceEstimators:
         )
         model.fit()
 
-        assert model.sigma2_u is not None
-        assert model.sigma2_e is not None
+        assert model.sigma2_u >= 0
+        assert model.sigma2_e > 0
 
 
 class TestResultsSummary:
@@ -168,8 +164,9 @@ class TestEdgeCases:
         model = RandomEffects("y ~ x1 + x2", unbalanced_panel_data, "entity", "time")
         results = model.fit()
 
-        assert results is not None
         # Should handle unbalanced panel
+        assert len(results.params) == 3
+        assert np.all(np.isfinite(results.params.values))
         assert model.sigma2_u >= 0
 
 
@@ -208,10 +205,11 @@ class TestComparisonWithOtherModels:
         model_pooled = PooledOLS("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results_pooled = model_pooled.fit()
 
-        # Coefficients should differ (unless theta=0)
-        # Just check both are fitted
-        assert results_re is not None
-        assert results_pooled is not None
+        # Both should produce valid results
+        assert len(results_re.params) == 3
+        assert len(results_pooled.params) == 3
+        assert np.all(np.isfinite(results_re.params.values))
+        assert np.all(np.isfinite(results_pooled.params.values))
 
     def test_re_includes_time_invariant(self, balanced_panel_data):
         """Test that RE can include time-invariant variables (unlike FE)."""
@@ -235,8 +233,8 @@ class TestCovarianceTypesAdvanced:
         model = RandomEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = model.fit(cov_type=cov_type)
 
-        assert results is not None
         assert len(results.params) == 3
+        assert np.all(np.isfinite(results.params.values))
         assert (results.std_errors > 0).all()
 
     def test_invalid_cov_type_raises(self, balanced_panel_data):
@@ -257,7 +255,7 @@ class TestInternalMethods:
 
         # Check that GLS estimation worked
         assert len(results.params) == 3
-        assert results.params is not None
+        assert np.all(np.isfinite(results.params.values))
 
     @pytest.mark.parametrize("cov_type", ["robust", "clustered"])
     def test_vcov_computation(self, balanced_panel_data, cov_type):
@@ -296,9 +294,9 @@ class TestEstimateCoefficientsDirectly:
 
         beta = model._estimate_coefficients()
 
-        assert beta is not None
         # Should have 3 coefficients: Intercept, x1, x2
         assert len(beta.ravel()) == 3
+        assert np.all(np.isfinite(beta))
 
     def test_estimate_coefficients_matches_fit(self, balanced_panel_data):
         """Test that _estimate_coefficients() gives same betas as fit()."""
@@ -323,9 +321,9 @@ class TestEstimateCoefficientsDirectly:
         model._estimate_coefficients()
 
         # After calling, variance components should be populated
-        assert model.sigma2_u is not None
-        assert model.sigma2_e is not None
-        assert model.theta is not None
+        assert model.sigma2_u >= 0
+        assert model.sigma2_e > 0
+        assert 0 <= model.theta <= 1
 
 
 class TestComputeVcovRobustDirectly:

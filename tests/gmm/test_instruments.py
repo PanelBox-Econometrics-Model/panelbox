@@ -257,6 +257,8 @@ class TestDatetimeTimeVariable:
         assert builder.n_periods == 4
         assert builder._time_mapping is not None
         assert len(builder._time_mapping) == 4
+        # Mapping should map original datetime keys to sequential integers
+        assert all(isinstance(v, (int, np.integer)) for v in builder._time_mapping.values())
 
         # Should work for instrument generation
         Z = builder.create_gmm_style_instruments(
@@ -286,6 +288,7 @@ class TestDatetimeTimeVariable:
         assert builder.n_groups == 5
         assert builder.n_periods == 4
         assert builder._time_mapping is not None
+        assert len(builder._time_mapping) == 4
 
         # Instruments should work fine after conversion
         Z = builder.create_iv_style_instruments(var="x", min_lag=1, max_lag=2, equation="diff")
@@ -603,6 +606,9 @@ class TestLagAvailabilityAndCoverage:
         # Lags that would reference t<=2 (NaN values) should have reduced coverage
         # The method should still return lags with sufficient non-NaN coverage
         assert isinstance(valid_lags, list)
+        # Each valid lag should be in range [1, 4]
+        for lag in valid_lags:
+            assert 1 <= lag <= 4
 
     def test_poor_coverage_warning(self):
         """Test warning when no lags meet the coverage threshold (lines 452-462).

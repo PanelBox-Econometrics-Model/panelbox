@@ -387,10 +387,10 @@ class TestDifferenceGMMEstimation:
         results = model.fit()
 
         assert isinstance(results, GMMResults)
-        assert results.params is not None
         assert len(results.params) == 2  # y_lag1 + x
-        assert results.nobs > 0
-        assert results.n_instruments > 0
+        assert np.all(np.isfinite(results.params.values))
+        assert results.nobs >= 50  # 50 units, multiple periods each
+        assert results.n_instruments >= 2  # At least as many as params
 
     def test_fit_two_step(self, balanced_panel_data):
         """Test two-step GMM estimation."""
@@ -410,8 +410,9 @@ class TestDifferenceGMMEstimation:
         results = model.fit()
 
         assert isinstance(results, GMMResults)
-        assert results.params is not None
-        assert results.nobs > 0
+        assert len(results.params) == 2
+        assert np.all(np.isfinite(results.params.values))
+        assert results.nobs >= 50
 
     def test_fit_with_multiple_lags(self, balanced_panel_data):
         """Test estimation with multiple lags of dependent variable."""
@@ -449,8 +450,10 @@ class TestDifferenceGMMEstimation:
 
         # Should complete successfully with collapse
         assert isinstance(results, GMMResults)
-        assert results.n_instruments > 0
-        assert results.nobs > 0
+        assert results.n_instruments >= 2
+        assert results.nobs >= 50
+        # Collapsed should have fewer instruments than non-collapsed
+        assert np.all(np.isfinite(results.params.values))
 
     def test_fit_coefficient_sign(self, balanced_panel_data):
         """Test that estimated coefficients have expected signs."""
@@ -469,11 +472,12 @@ class TestDifferenceGMMEstimation:
         results = model.fit()
 
         # Both coefficients should be positive (true values: 0.5, 0.3)
-        # Access params by index since we don't know exact names
         assert len(results.params) == 2
-        # Most estimates should be positive given the true model
-        positive_count = sum(results.params > 0)
-        assert positive_count >= 1  # At least one should be positive
+        assert np.all(np.isfinite(results.params.values))
+        # The lagged dependent variable coefficient should be positive
+        assert results.params.iloc[0] > 0, "Lag coefficient should be positive (true=0.5)"
+        # Exogenous variable coefficient should also be positive
+        assert results.params.iloc[1] > 0, "Exog coefficient should be positive (true=0.3)"
 
     def test_fit_with_time_dummies(self, balanced_panel_data):
         """Test estimation with time dummies."""
@@ -609,7 +613,8 @@ class TestEdgeCases:
 
         # Should complete without error, even if results may not be reliable
         results = model.fit()
-        assert results is not None
+        assert isinstance(results, GMMResults)
+        assert np.all(np.isfinite(results.params.values))
 
     def test_no_exog_vars(self, balanced_panel_data):
         """Test with only lagged dependent variable (no exogenous vars)."""
@@ -690,8 +695,10 @@ class TestTwoStepFalseReconciliation:
 
         results = model.fit()
         assert isinstance(results, GMMResults)
-        assert results.params is not None
         assert len(results.params) == 2
+        assert np.all(np.isfinite(results.params.values))
+        assert results.nobs > 0
+        assert results.n_instruments >= 2
 
 
 # ============================================================================
@@ -741,13 +748,15 @@ class TestDatetimeTimeVariable:
             time_dummies=False,
         )
 
-        # After conversion, the time mapping should exist
+        # After conversion, the time mapping should exist and be non-empty
         assert model._time_mapping is not None
+        assert len(model._time_mapping) > 0
 
         # Fit should work correctly
         results = model.fit()
         assert isinstance(results, GMMResults)
         assert results.nobs > 0
+        assert np.all(np.isfinite(results.params.values))
 
     def test_period_time_variable(self):
         """Test with PeriodIndex time column."""
@@ -787,9 +796,11 @@ class TestDatetimeTimeVariable:
         )
 
         assert model._time_mapping is not None
+        assert len(model._time_mapping) > 0
         results = model.fit()
         assert isinstance(results, GMMResults)
         assert results.nobs > 0
+        assert np.all(np.isfinite(results.params.values))
 
 
 # ============================================================================
@@ -901,10 +912,10 @@ class TestIterativeGMM:
         results = model.fit()
 
         assert isinstance(results, GMMResults)
-        assert results.params is not None
         assert len(results.params) == 2  # y_lag1 + x
+        assert np.all(np.isfinite(results.params.values))
         assert results.nobs > 0
-        assert results.n_instruments > 0
+        assert results.n_instruments >= 2
 
     def test_iterative_gmm_convergence(self, balanced_panel_data):
         """Test that iterative GMM convergence is reported."""

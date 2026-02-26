@@ -149,11 +149,16 @@ class TestOneStepGMM:
 
         beta, _W, _residuals = estimator.one_step(y, X, Z)
 
+        # Coefficients should be finite
+        assert np.all(np.isfinite(beta))
+
         # True coefficients are 0.5 and 0.3, both positive
-        # At least one should be positive (allow for estimation error)
-        if not np.any(np.isnan(beta)):
-            positive_count = sum(beta.flatten() > 0)
-            assert positive_count >= 1
+        assert beta[0, 0] > 0, "First coefficient should be positive (true=0.5)"
+        assert beta[1, 0] > 0, "Second coefficient should be positive (true=0.3)"
+
+        # Should be within a reasonable range of true values (allow estimation error)
+        assert beta[0, 0] < 2.0, "First coefficient should not be too large"
+        assert beta[1, 0] < 2.0, "Second coefficient should not be too large"
 
     def test_one_step_coefficient_magnitude(self, simple_gmm_data):
         """Test that coefficients are in reasonable range."""
@@ -242,10 +247,16 @@ class TestTwoStepGMM:
         assert vcov.shape == (2, 2)
         assert residuals.shape == y.shape
 
-        # Two-step may produce NaN with poorly conditioned data
-        # Just check that method completes without exception
-        assert beta is not None
-        assert vcov is not None
+        # Coefficients should be finite
+        assert np.all(np.isfinite(beta))
+        assert np.all(np.isfinite(vcov))
+
+        # True coefficients are 0.5 and 0.3; check direction
+        assert beta[0, 0] > 0, "First coefficient should be positive"
+        assert beta[1, 0] > 0, "Second coefficient should be positive"
+
+        # Residuals should be computed as y - X @ beta
+        np.testing.assert_array_almost_equal(residuals, y - X @ beta)
 
     def test_two_step_coefficient_signs(self, overidentified_data):
         """Test that estimated coefficients have expected signs."""
@@ -254,12 +265,15 @@ class TestTwoStepGMM:
 
         beta, _vcov, _W, _residuals = estimator.two_step(y, X, Z, robust=True)
 
-        # If estimation succeeded (no NaN), check properties
-        if not np.any(np.isnan(beta)):
-            # True coefficients are positive
-            # At least one should be positive
-            positive_count = sum(beta.flatten() > 0)
-            assert positive_count >= 1
+        # Coefficients should be finite
+        assert np.all(np.isfinite(beta))
+
+        # True coefficients are 0.5 and 0.3, both positive
+        assert beta[0, 0] > 0, "First coefficient should be positive (true=0.5)"
+        assert beta[1, 0] > 0, "Second coefficient should be positive (true=0.3)"
+
+        # Reasonable magnitude bound
+        assert np.all(np.abs(beta) < 5.0), "Coefficients should be bounded"
 
     def test_two_step_vcov_properties(self, overidentified_data):
         """Test properties of variance-covariance matrix."""
@@ -284,9 +298,17 @@ class TestTwoStepGMM:
         beta_one, _, _ = estimator.one_step(y, X, Z)
         beta_two, _, _, _ = estimator.two_step(y, X, Z, robust=True)
 
-        # Method should complete without exception
-        assert beta_one is not None
-        assert beta_two is not None
+        # Both should produce finite coefficients
+        assert np.all(np.isfinite(beta_one))
+        assert np.all(np.isfinite(beta_two))
+
+        # Both should have correct shape
+        assert beta_one.shape == (2, 1)
+        assert beta_two.shape == (2, 1)
+
+        # Coefficients should be in reasonable range for both
+        assert np.all(np.abs(beta_one) < 5.0)
+        assert np.all(np.abs(beta_two) < 5.0)
 
     def test_two_step_overidentified(self, overidentified_data):
         """Test two-step GMM with overidentified model."""
@@ -305,20 +327,30 @@ class TestTwoStepGMM:
         y, X, Z = overidentified_data
         estimator = GMMEstimator()
 
-        _beta_robust, vcov_robust, _W, _residuals = estimator.two_step(y, X, Z, robust=True)
+        beta_robust, vcov_robust, _W, residuals = estimator.two_step(y, X, Z, robust=True)
 
-        # Should complete without exception
-        assert vcov_robust is not None
+        # Vcov should be symmetric and have positive diagonal
+        np.testing.assert_array_almost_equal(vcov_robust, vcov_robust.T)
+        assert np.all(np.diag(vcov_robust) > 0), "Variances must be positive"
+        # Standard errors should be finite
+        se = np.sqrt(np.diag(vcov_robust))
+        assert np.all(np.isfinite(se))
+        # Residuals must equal y - X @ beta
+        np.testing.assert_array_almost_equal(residuals, y - X @ beta_robust)
 
     def test_two_step_without_windmeijer(self, overidentified_data):
         """Test two-step GMM without Windmeijer correction."""
         y, X, Z = overidentified_data
         estimator = GMMEstimator()
 
-        _beta_no_robust, vcov_no_robust, _W, _residuals = estimator.two_step(y, X, Z, robust=False)
+        beta_naive, vcov_no_robust, _W, residuals = estimator.two_step(y, X, Z, robust=False)
 
-        # Should complete without exception
-        assert vcov_no_robust is not None
+        # Vcov should be symmetric
+        np.testing.assert_array_almost_equal(vcov_no_robust, vcov_no_robust.T)
+        # Coefficients should be finite
+        assert np.all(np.isfinite(beta_naive))
+        # Residuals must equal y - X @ beta
+        np.testing.assert_array_almost_equal(residuals, y - X @ beta_naive)
 
 
 # ============================================================================
@@ -340,11 +372,12 @@ class TestIterativeGMM:
         assert beta.shape == (2, 1)
         assert vcov.shape == (2, 2)
 
-        # Check convergence
-        assert isinstance(converged, bool)
+        # Check convergence — should converge with well-behaved data
+        assert converged is True
 
-        # Check that beta is not NaN
-        assert not np.any(np.isnan(beta))
+        # Check that beta is finite and in reasonable range
+        assert np.all(np.isfinite(beta))
+        assert np.all(np.abs(beta) < 10.0)
 
     def test_iterative_convergence(self, simple_gmm_data):
         """Test that iterative GMM converges."""
@@ -504,12 +537,22 @@ class TestEdgeCases:
 
         estimator = GMMEstimator()
 
-        # Should handle collinearity gracefully
-        beta, _W, _residuals = estimator.one_step(y, X, Z)
+        # Should handle collinearity gracefully via pinv
+        beta, W_inv, residuals = estimator.one_step(y, X, Z)
 
-        # Should still return result
+        # Shape and finiteness
         assert beta.shape == (1, 1)
-        assert beta is not None
+        assert np.all(np.isfinite(beta))
+
+        # Coefficient should be positive and close to 0.5
+        assert beta[0, 0] > 0, "Coefficient should be positive (true=0.5)"
+        assert beta[0, 0] < 2.0, "Coefficient should be bounded"
+
+        # Weight inverse should be symmetric
+        np.testing.assert_array_almost_equal(W_inv, W_inv.T)
+
+        # Residuals should match y - X @ beta
+        np.testing.assert_array_almost_equal(residuals, y - X @ beta)
 
 
 # ============================================================================
@@ -748,8 +791,14 @@ class TestOneStepWithIds:
 
         estimator.one_step(y, X, Z, ids=ids)
 
-        assert estimator._step1_M_XZ_W is not None
-        assert estimator._step1_M_XZ_W.shape == (X.shape[1], Z.shape[1])
+        K = X.shape[1]
+        L = Z.shape[1]
+
+        # Should store projection matrix with correct shape
+        assert estimator._step1_M_XZ_W.shape == (K, L)
+
+        # Should be finite
+        assert np.all(np.isfinite(estimator._step1_M_XZ_W))
 
 
 # ============================================================================
@@ -799,11 +848,25 @@ class TestOneStepRobustVcov:
         _beta, _, residuals = estimator.one_step(y, X, Z, ids=ids)
         estimator.compute_one_step_robust_vcov(Z, residuals, ids)
 
-        assert estimator.N is not None
-        assert len(np.unique(ids)) == estimator.N
-        assert estimator.W2 is not None
-        assert estimator.W2_inv is not None
-        assert estimator.zs is not None
+        L = Z.shape[1]
+        N_expected = len(np.unique(ids))
+
+        # N should match number of unique individuals
+        assert N_expected == estimator.N
+
+        # W2 should be (L x L), symmetric, positive semi-definite
+        assert estimator.W2.shape == (L, L)
+        np.testing.assert_array_almost_equal(estimator.W2, estimator.W2.T)
+        eigenvalues = np.linalg.eigvalsh(estimator.W2)
+        assert np.all(eigenvalues >= -1e-10)
+
+        # W2_inv should be (L x L) and finite
+        assert estimator.W2_inv.shape == (L, L)
+        assert np.all(np.isfinite(estimator.W2_inv))
+
+        # zs should be (L x 1)
+        assert estimator.zs.shape == (L, 1)
+        assert np.all(np.isfinite(estimator.zs))
 
     def test_robust_vcov_raises_without_one_step(self, panel_gmm_data):
         """Test error when calling robust vcov before one_step."""
@@ -871,11 +934,23 @@ class TestTwoStepWithIds:
 
         estimator.two_step(y, X, Z, ids=ids, robust=True)
 
-        assert len(np.unique(ids)) == estimator.N
-        assert estimator.W2 is not None
-        assert estimator.W2_inv is not None
-        assert estimator.zs is not None
-        assert estimator.zs.shape == (Z.shape[1], 1)
+        L = Z.shape[1]
+        N_expected = len(np.unique(ids))
+
+        # N should match unique individuals
+        assert N_expected == estimator.N
+
+        # W2 should be (L x L), symmetric
+        assert estimator.W2.shape == (L, L)
+        np.testing.assert_array_almost_equal(estimator.W2, estimator.W2.T)
+
+        # W2_inv should be (L x L) and finite
+        assert estimator.W2_inv.shape == (L, L)
+        assert np.all(np.isfinite(estimator.W2_inv))
+
+        # zs should be (L x 1) — step-2 per-individual moments
+        assert estimator.zs.shape == (L, 1)
+        assert np.all(np.isfinite(estimator.zs))
 
     def test_two_step_beta_differs_from_one_step(self, panel_gmm_data):
         """Test that two-step beta differs from one-step (uses optimal weight)."""
@@ -905,8 +980,11 @@ class TestIterativeWithIds:
         beta, _vcov, _W_inv, converged = estimator.iterative(y, X, Z, ids=ids)
 
         assert beta.shape == (X.shape[1], 1)
-        assert not np.any(np.isnan(beta))
+        assert np.all(np.isfinite(beta))
+        assert np.all(np.abs(beta) < 10.0)
         assert isinstance(converged, bool)
+        # With enough iterations, should converge
+        assert converged is True
 
     def test_iterative_with_ids_convergence(self, panel_gmm_data):
         """Test iterative converges with per-individual weights."""
@@ -924,10 +1002,25 @@ class TestIterativeWithIds:
 
         estimator.iterative(y, X, Z, ids=ids)
 
-        assert estimator.N is not None
-        assert estimator.W2 is not None
-        assert estimator.W2_inv is not None
-        assert estimator.zs is not None
+        L = Z.shape[1]
+        N_expected = len(np.unique(ids))
+
+        # N should match unique individuals
+        assert N_expected == estimator.N
+
+        # W2 should be (L x L), symmetric, positive semi-definite
+        assert estimator.W2.shape == (L, L)
+        np.testing.assert_array_almost_equal(estimator.W2, estimator.W2.T)
+        eigenvalues = np.linalg.eigvalsh(estimator.W2)
+        assert np.all(eigenvalues >= -1e-10)
+
+        # W2_inv should be (L x L) and finite
+        assert estimator.W2_inv.shape == (L, L)
+        assert np.all(np.isfinite(estimator.W2_inv))
+
+        # zs should be (L x 1) and finite
+        assert estimator.zs.shape == (L, 1)
+        assert np.all(np.isfinite(estimator.zs))
 
 
 # ============================================================================

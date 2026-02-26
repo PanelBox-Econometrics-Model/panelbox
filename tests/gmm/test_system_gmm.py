@@ -113,7 +113,7 @@ class TestSystemGMMInitialization:
             level_instruments={"max_lags": 1},
         )
 
-        assert model.level_instruments is not None
+        assert isinstance(model.level_instruments, dict)
         assert model.level_instruments["max_lags"] == 1
 
     def test_init_with_collapse(self, balanced_panel_data):
@@ -214,7 +214,8 @@ class TestSystemGMMEstimation:
 
         results = try_fit_system_gmm(model)
         assert isinstance(results, GMMResults)
-        assert results.params is not None
+        assert len(results.params) >= 2
+        assert np.all(np.isfinite(results.params.values))
 
     def test_fit_one_step(self, balanced_panel_data):
         """Test one-step System GMM."""
@@ -426,14 +427,18 @@ class TestSystemGMMResults:
 
         results = try_fit_system_gmm(model)
 
-        # Hansen J test
-        assert results.hansen_j is not None
+        # Hansen J test — statistic should be non-negative with finite p-value
         assert hasattr(results.hansen_j, "statistic")
         assert hasattr(results.hansen_j, "pvalue")
+        assert np.isfinite(results.hansen_j.statistic)
+        assert results.hansen_j.statistic >= 0
+        assert 0 <= results.hansen_j.pvalue <= 1
 
-        # AR tests
-        assert results.ar1_test is not None
-        assert results.ar2_test is not None
+        # AR tests — both should have finite statistics
+        assert hasattr(results.ar1_test, "statistic")
+        assert hasattr(results.ar2_test, "statistic")
+        assert np.isfinite(results.ar1_test.statistic)
+        assert np.isfinite(results.ar2_test.statistic)
 
     def test_instrument_ratio(self, balanced_panel_data):
         """Test instrument ratio with collapsed instruments."""
@@ -561,9 +566,10 @@ class TestEdgeCases:
             time_dummies=False,
         )
 
-        # Should complete without error
+        # Should complete without error and produce valid estimates
         results = try_fit_system_gmm(model)
-        assert results is not None
+        assert isinstance(results, GMMResults)
+        assert np.all(np.isfinite(results.params.values))
 
     def test_no_exog_vars(self, balanced_panel_data):
         """Test with only lagged dependent variable."""
@@ -624,8 +630,9 @@ class TestLevelInstruments:
             time_dummies=False,
         )
 
-        # Should have default level_instruments
-        assert model.level_instruments is not None
+        # Should have default level_instruments as a dict
+        assert isinstance(model.level_instruments, dict)
+        assert "max_lags" in model.level_instruments
 
     def test_custom_level_instruments(self, balanced_panel_data):
         """Test custom level instruments configuration."""
@@ -671,8 +678,8 @@ class TestSystemGMMIterative:
 
         results = try_fit_system_gmm(model)
         assert isinstance(results, GMMResults)
-        assert results.params is not None
-        assert len(results.params) > 0
+        assert len(results.params) >= 2  # At least lag + constant
+        assert np.all(np.isfinite(results.params.values))
 
     def test_iterative_gmm_converged(self, balanced_panel_data):
         """Test that iterative GMM reports convergence status."""
@@ -771,7 +778,8 @@ class TestSystemGMMLowRetention:
         try:
             with pytest.warns(UserWarning, match="Low observation retention"):
                 results = model.fit()
-            assert results is not None
+            assert isinstance(results, GMMResults)
+            assert results.nobs > 0
         except (ValueError, np.linalg.LinAlgError):
             pytest.skip("Model failed numerically (acceptable for sparse synthetic data)")
         except Exception:
@@ -1266,8 +1274,15 @@ class TestComputeDiffHansen:
                 n_params=n_params,
                 valid_diff=None,
             )
-            # If it succeeds, result should be a test result or None
-            assert result is not None or result is None  # Accept either outcome
+            # If it succeeds, result should be a valid TestResult
+            if result is not None:
+                assert hasattr(result, "statistic")
+                assert hasattr(result, "pvalue")
+                assert hasattr(result, "df")
+                # df may be negative (invalid) yielding nan statistic
+                if result.df > 0:
+                    assert np.isfinite(result.statistic)
+                    assert 0 <= result.pvalue <= 1
         except (ValueError, np.linalg.LinAlgError, IndexError):
             # These exceptions are caught in the fit() method (line 998)
             # and are acceptable here
@@ -1290,7 +1305,10 @@ class TestComputeDiffHansen:
 
         # diff_hansen may be None (if computation failed) or a TestResult
         # Both are valid outcomes - the important thing is it doesn't crash
-        assert results.diff_hansen is None or hasattr(results.diff_hansen, "statistic")
+        if results.diff_hansen is not None:
+            assert hasattr(results.diff_hansen, "statistic")
+            assert np.isfinite(results.diff_hansen.statistic)
+            assert 0 <= results.diff_hansen.pvalue <= 1
 
 
 # ============================================================================
@@ -1421,7 +1439,8 @@ class TestTHalfZeroBranch:
         # May fail with minimal data but should not crash on the H_blocks branch
         try:
             results = model.fit()
-            assert results is not None
+            assert isinstance(results, GMMResults)
+            assert np.all(np.isfinite(results.params.values))
         except (ValueError, np.linalg.LinAlgError):
             pytest.skip("Model failed numerically with minimal data (acceptable)")
 
