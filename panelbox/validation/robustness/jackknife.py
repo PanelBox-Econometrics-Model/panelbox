@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -158,7 +157,8 @@ class PanelJackknife:
 
         # Extract model information
         self.model = results._model
-        assert self.model is not None, "Results must have a model reference for jackknife"
+        if self.model is None:
+            raise RuntimeError("Results must have a model reference for jackknife")
         self.formula = results.formula
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
@@ -171,7 +171,7 @@ class PanelJackknife:
         self.n_entities = len(self.entities)
 
         # Results storage
-        self.jackknife_results_: Optional[JackknifeResults] = None
+        self.jackknife_results_: JackknifeResults | None = None
 
     def run(self) -> JackknifeResults:
         """
@@ -231,7 +231,7 @@ class PanelJackknife:
                 )
 
             except Exception as e:
-                warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {e!s}")
+                warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {e!s}", stacklevel=2)
                 failed_samples.append(entity)
                 continue
 

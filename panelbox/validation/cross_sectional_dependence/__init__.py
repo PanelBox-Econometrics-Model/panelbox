@@ -1,6 +1,4 @@
-"""
-Cross-sectional dependence tests for panel models.
-"""
+"""Cross-sectional dependence tests for panel models."""
 
 from __future__ import annotations
 

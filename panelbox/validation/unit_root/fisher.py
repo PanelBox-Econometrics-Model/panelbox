@@ -1,5 +1,5 @@
 """
-Fisher-type Panel Unit Root Tests
+Fisher-type Panel Unit Root Tests.
 
 This module implements Fisher-type panel unit root tests that combine
 p-values from individual unit root tests. The Fisher tests are based on
@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -310,7 +310,7 @@ class FisherTest:
         entity_col: str,
         time_col: str,
         test_type: Literal["adf", "pp"] = "adf",
-        lags: Optional[int] = None,
+        lags: int | None = None,
         trend: Literal["n", "c", "ct"] = "c",
     ):
         self.data = data.copy()
@@ -352,7 +352,7 @@ class FisherTest:
         if bool(self.data[self.variable].isna().any()):
             raise ValueError(f"Variable '{self.variable}' contains missing values")
 
-    def _adf_test_entity(self, entity_data: pd.DataFrame, lags: Optional[int]) -> float:
+    def _adf_test_entity(self, entity_data: pd.DataFrame, lags: int | None) -> float:
         """
         Run ADF test for a single entity.
 

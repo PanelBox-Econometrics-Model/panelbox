@@ -261,7 +261,8 @@ class ModifiedWaldTest(ValidationTest):
 
             warnings.warn(
                 "Modified Wald test is designed for Fixed Effects models. "
-                f"Current model: {self.model_type}"
+                f"Current model: {self.model_type}",
+                stacklevel=2,
             )
 
     def run(self, alpha: float = 0.05, **kwargs) -> ValidationTestResult:

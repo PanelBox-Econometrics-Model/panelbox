@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -62,7 +62,7 @@ class IPSTestResult:
     lags: Any  # int or list
     n_obs: int
     n_entities: int
-    individual_stats: Dict[Any, float]
+    individual_stats: dict[Any, float]
     test_type: str
     deterministics: str
     null_hypothesis: str = "All panels contain unit roots"
@@ -166,7 +166,7 @@ class IPSTest:
         variable: str,
         entity_col: str,
         time_col: str,
-        lags: Optional[Any] = None,
+        lags: Any | None = None,
         trend: str = "c",
     ):
         self.data = data.copy()
@@ -193,7 +193,7 @@ class IPSTest:
         self.entities = self.data[entity_col].unique()
         self.n_entities = len(self.entities)
 
-        self.result: Optional[IPSTestResult] = None
+        self.result: IPSTestResult | None = None
 
     def _select_lags_for_entity(self, entity_data: np.ndarray, max_lags: int = 12) -> int:
         """
@@ -227,6 +227,7 @@ class IPSTest:
                     best_aic = aic
                     best_lag = p
             except Exception:
+                logger.debug("AIC computation failed for lag %d", p)
                 continue
 
         return best_lag
@@ -269,7 +270,7 @@ class IPSTest:
         except Exception:
             return np.inf
 
-    def _adf_test_entity(self, entity_data: np.ndarray, lags: int) -> Tuple[float, int]:
+    def _adf_test_entity(self, entity_data: np.ndarray, lags: int) -> tuple[float, int]:
         """
         Run ADF test for a single entity.
 
@@ -348,7 +349,7 @@ class IPSTest:
             except Exception:
                 return np.nan, 0
 
-    def _get_critical_values(self, T: int) -> Dict[str, float]:
+    def _get_critical_values(self, T: int) -> dict[str, float]:
         """
         Get simulated mean and variance for standardization.
 
@@ -477,7 +478,7 @@ class IPSTest:
 
         # Determine lags for output
         lags_list = [lags_dict[entity] for entity in self.entities if entity in t_stats_dict]
-        lags_output: Union[int, list[int]]
+        lags_output: int | list[int]
         if len(set(lags_list)) == 1:
             lags_output = lags_list[0]
         else:

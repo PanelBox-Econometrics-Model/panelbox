@@ -1,6 +1,4 @@
-"""
-Serial correlation tests for panel models.
-"""
+"""Serial correlation tests for panel models."""
 
 from __future__ import annotations
 

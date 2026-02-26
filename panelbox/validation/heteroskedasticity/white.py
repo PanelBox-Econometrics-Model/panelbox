@@ -10,7 +10,7 @@ and a direct test for heteroskedasticity. Econometrica, 48(4), 817-838.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
@@ -69,11 +69,8 @@ class WhiteTest(ValidationTest):
             Results from panel model estimation
         """
         super().__init__(results)
-        self._X: Optional[np.ndarray] = None
+        self._X: np.ndarray | None = None
         if hasattr(results, "_model") and results._model is not None:
-            assert results._model is not None, (
-                "Model reference should be non-None after hasattr check"
-            )
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 
@@ -118,15 +115,13 @@ class WhiteTest(ValidationTest):
         # Remove constant column if present (first column all 1s)
         if np.allclose(X[:, 0], 1.0):
             X_vars = X[:, 1:]  # Exclude constant
-            has_constant = True
         else:
             X_vars = X
-            has_constant = False
 
         k_vars = X_vars.shape[1]
 
         # Create list of columns for auxiliary regression
-        aux_cols = [np.ones(n)] if has_constant or not has_constant else [np.ones(n)]
+        aux_cols = [np.ones(n)] if True else [np.ones(n)]
 
         # Add original variables
         for j in range(k_vars):
@@ -207,7 +202,6 @@ class WhiteTest(ValidationTest):
 
         if hasattr(self.results, "_model") and self.results._model is not None:
             model = self.results._model
-            assert model is not None, "Model should be non-None after hasattr check"
 
             if hasattr(model, "formula_parser") and hasattr(model, "data"):
                 try:
@@ -216,6 +210,6 @@ class WhiteTest(ValidationTest):
                     )
                     return np.asarray(X)
                 except Exception:
-                    pass
+                    logger.debug("Failed to rebuild design matrices from model")
 
         return None

@@ -8,7 +8,6 @@ specifications, samples, and estimators.
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
 
 import pandas as pd
 
@@ -39,14 +38,15 @@ class RobustnessChecker:
         self.results = results
         self.verbose = verbose
         self.model = results._model
-        assert self.model is not None, "Results must have a model reference for robustness checks"
+        if self.model is None:
+            raise RuntimeError("Results must have a model reference for robustness checks")
         self.data = self.model.data.data
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
 
     def check_alternative_specs(
-        self, formulas: List[str], model_type: Optional[str] = None
-    ) -> List[PanelResults]:
+        self, formulas: list[str], model_type: str | None = None
+    ) -> list[PanelResults]:
         """
         Test alternative specifications.
 
@@ -89,7 +89,7 @@ class RobustnessChecker:
         return results_list
 
     def generate_robustness_table(
-        self, results_list: List[PanelResults], parameters: Optional[List[str]] = None
+        self, results_list: list[PanelResults], parameters: list[str] | None = None
     ) -> pd.DataFrame:
         """
         Generate robustness table comparing specifications.

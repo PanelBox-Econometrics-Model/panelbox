@@ -180,10 +180,10 @@ class MundlakTest(ValidationTest):
                         f"Cannot estimate Mundlak test with time-invariant regressors: {time_invariant_vars}. "
                         "Time-invariant variables are perfectly collinear with the intercept in pooled estimation. "
                         "Consider removing time-invariant variables or using a different specification test."
-                    )
-            raise ValueError(f"Failed to estimate augmented model: {e}")
+                    ) from e
+            raise ValueError(f"Failed to estimate augmented model: {e}") from e
         except Exception as e:
-            raise ValueError(f"Failed to estimate augmented model: {e}")
+            raise ValueError(f"Failed to estimate augmented model: {e}") from e
 
         # Extract coefficients on group means (delta)
         k_vars = len(mean_vars)
@@ -281,7 +281,8 @@ class MundlakTest(ValidationTest):
             return None, None, None, None, None
 
         # Type narrowing: model is not None and has required attributes
-        assert model is not None
+        if model is None:
+            return None, None, None, None, None
 
         try:
             # Get original data
@@ -341,7 +342,8 @@ class MundlakTest(ValidationTest):
             return None, None, None
 
         # Type narrowing: model is not None and has required attributes
-        assert model is not None
+        if model is None:
+            return None, None, None
 
         try:
             y, X = model.formula_parser.build_design_matrices(model.data.data, return_type="array")

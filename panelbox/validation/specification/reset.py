@@ -151,7 +151,7 @@ class RESETTest(ValidationTest):
             results_aug = model_aug.fit(cov_type="clustered", cov_kwds={"groups": entity_col})
 
         except Exception as e:
-            raise ValueError(f"Failed to estimate augmented model: {e}")
+            raise ValueError(f"Failed to estimate augmented model: {e}") from e
 
         # Extract coefficients on power terms
         gamma = results_aug.params[power_vars].values
@@ -234,7 +234,8 @@ class RESETTest(ValidationTest):
             return None, None, None, None, None
 
         # Type narrowing: model is not None and has required attributes
-        assert model is not None
+        if model is None:
+            return None, None, None, None, None
 
         try:
             # Get original data

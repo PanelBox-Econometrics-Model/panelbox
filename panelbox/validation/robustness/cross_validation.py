@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -50,11 +50,11 @@ class CVResults:
     """
 
     predictions: pd.DataFrame
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     fold_metrics: pd.DataFrame
     method: str
     n_folds: int
-    window_size: Optional[int] = None
+    window_size: int | None = None
 
     def summary(self) -> str:
         """Generate summary of CV results."""
@@ -152,7 +152,7 @@ class TimeSeriesCV:
         self,
         results: PanelResults,
         method: Literal["expanding", "rolling"] = "expanding",
-        window_size: Optional[int] = None,
+        window_size: int | None = None,
         min_train_periods: int = 3,
         verbose: bool = True,
     ):
@@ -167,7 +167,8 @@ class TimeSeriesCV:
 
         # Extract model information
         self.model = results._model
-        assert self.model is not None, "Results must have a model reference for cross-validation"
+        if self.model is None:
+            raise RuntimeError("Results must have a model reference for cross-validation")
         self.formula = results.formula
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
@@ -180,9 +181,9 @@ class TimeSeriesCV:
         self.n_periods = len(self.time_periods)
 
         # Results storage
-        self.cv_results_: Optional[CVResults] = None
-        self.predictions_: Optional[pd.DataFrame] = None
-        self.metrics_: Optional[Dict[str, float]] = None
+        self.cv_results_: CVResults | None = None
+        self.predictions_: pd.DataFrame | None = None
+        self.metrics_: dict[str, float] | None = None
 
     def _validate_inputs(self):
         """Validate input parameters."""
@@ -280,7 +281,7 @@ class TimeSeriesCV:
                     )
 
             except Exception as e:
-                warnings.warn(f"Fold {fold_idx} failed: {e!s}")
+                warnings.warn(f"Fold {fold_idx} failed: {e!s}", stacklevel=2)
                 continue
 
         # Combine all predictions
@@ -315,7 +316,7 @@ class TimeSeriesCV:
 
         return self.cv_results_
 
-    def _get_cv_folds(self) -> List[Tuple[List, Any]]:
+    def _get_cv_folds(self) -> list[tuple[list, Any]]:
         """
         Generate CV folds based on method.
 
@@ -401,7 +402,7 @@ class TimeSeriesCV:
 
         return predictions_df
 
-    def _compute_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    def _compute_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
         """
         Compute evaluation metrics.
 
@@ -434,9 +435,7 @@ class TimeSeriesCV:
 
         return {"mse": mse, "rmse": rmse, "mae": mae, "r2_oos": r2_oos}
 
-    def plot_predictions(
-        self, entity: Optional[Union[int, str]] = None, save_path: Optional[str] = None
-    ):
+    def plot_predictions(self, entity: int | str | None = None, save_path: str | None = None):
         """
         Plot actual vs predicted values.
 
@@ -462,7 +461,7 @@ class TimeSeriesCV:
         except ImportError:
             raise ImportError(
                 "matplotlib is required for plotting. Install with: pip install matplotlib"
-            )
+            ) from None
 
         predictions = self.cv_results_.predictions
 
@@ -473,7 +472,7 @@ class TimeSeriesCV:
                 raise ValueError(f"No predictions found for entity {entity}")
 
         # Create plot
-        fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+        _fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 
         # Plot 1: Actual vs Predicted
         ax1 = axes[0]

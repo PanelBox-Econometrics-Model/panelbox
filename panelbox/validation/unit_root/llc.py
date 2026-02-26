@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -154,7 +153,7 @@ class LLCTest:
         variable: str,
         entity_col: str,
         time_col: str,
-        lags: Optional[int] = None,
+        lags: int | None = None,
         trend: str = "c",
     ):
         self.data = data.copy()
@@ -192,9 +191,10 @@ class LLCTest:
                 "Panel is unbalanced. LLC test requires balanced panel. "
                 "Consider using IPS test for unbalanced panels.",
                 UserWarning,
+                stacklevel=2,
             )
 
-        self.result: Optional[LLCTestResult] = None
+        self.result: LLCTestResult | None = None
 
     def _select_lags(self) -> int:
         """
@@ -224,6 +224,7 @@ class LLCTest:
                     best_aic = aic
                     best_lag = p
             except Exception:
+                logger.debug("AIC computation failed for lag %d", p)
                 continue
 
         return best_lag
@@ -267,6 +268,7 @@ class LLCTest:
                 resid = y - X @ params
                 residuals.extend(resid)
             except Exception:
+                logger.debug("Regression failed for entity in AIC computation")
                 continue
 
         if len(residuals) == 0:
@@ -315,7 +317,7 @@ class LLCTest:
     def _process_entity(
         self,
         entity,
-    ) -> Optional[tuple[np.ndarray, np.ndarray, float, int]]:
+    ) -> tuple[np.ndarray, np.ndarray, float, int] | None:
         """Process a single entity for the LLC test.
 
         Returns (e_tilde, v_tilde, sigma_i, T_i) or None if entity is skipped.
@@ -366,7 +368,7 @@ class LLCTest:
         dy_dep: np.ndarray,
         y_lag: np.ndarray,
         T_i: int,
-    ) -> Optional[tuple[np.ndarray, float, float, int]]:
+    ) -> tuple[np.ndarray, float, float, int] | None:
         """Orthogonalize Δy and y_{t-1} w.r.t. regressors Z."""
         try:
             Z_mat = np.column_stack(Z)
@@ -378,7 +380,7 @@ class LLCTest:
             if sigma_i > 0 and len(e_tilde) > 0:
                 return (e_tilde, v_tilde, sigma_i, T_i)
         except Exception:
-            pass
+            logger.debug("Orthogonalization failed for entity")
         return None
 
     def _pooled_regression(

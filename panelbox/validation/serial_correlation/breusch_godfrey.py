@@ -256,7 +256,6 @@ class BreuschGodfreyTest(ValidationTest):
             return None
 
         model = self.results._model
-        assert model is not None, "Model should be non-None after hasattr check"
 
         if hasattr(model, "formula_parser") and hasattr(model, "data"):
             try:
@@ -265,6 +264,6 @@ class BreuschGodfreyTest(ValidationTest):
                 )
                 return np.asarray(X)
             except Exception:
-                pass
+                logger.debug("Failed to rebuild design matrices from model")
 
         return None

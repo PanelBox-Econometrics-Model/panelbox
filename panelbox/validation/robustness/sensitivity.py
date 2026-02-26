@@ -16,7 +16,6 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -60,8 +59,8 @@ class SensitivityResults:
     method: str
     estimates: pd.DataFrame
     std_errors: pd.DataFrame
-    statistics: Dict
-    influential_units: List
+    statistics: dict
+    influential_units: list
     subsample_info: pd.DataFrame
 
 
@@ -203,7 +202,7 @@ class SensitivityAnalysis:
                 iterator = tqdm(self.entities, desc="LOO Entities")
             except ImportError:
                 iterator = self.entities
-                warnings.warn("Install tqdm for progress bars: pip install tqdm")
+                warnings.warn("Install tqdm for progress bars: pip install tqdm", stacklevel=2)
         else:
             iterator = self.entities
 
@@ -237,7 +236,7 @@ class SensitivityAnalysis:
                 )
 
                 if self.show_progress:
-                    warnings.warn(f"Failed to estimate without entity {entity}: {e}")
+                    warnings.warn(f"Failed to estimate without entity {entity}: {e}", stacklevel=2)
 
         # Convert to DataFrames
         estimates_df = pd.DataFrame(
@@ -302,7 +301,7 @@ class SensitivityAnalysis:
                 iterator = tqdm(self.time_periods, desc="LOO Periods")
             except ImportError:
                 iterator = self.time_periods
-                warnings.warn("Install tqdm for progress bars: pip install tqdm")
+                warnings.warn("Install tqdm for progress bars: pip install tqdm", stacklevel=2)
         else:
             iterator = self.time_periods
 
@@ -336,7 +335,7 @@ class SensitivityAnalysis:
                 )
 
                 if self.show_progress:
-                    warnings.warn(f"Failed to estimate without period {period}: {e}")
+                    warnings.warn(f"Failed to estimate without period {period}: {e}", stacklevel=2)
 
         # Convert to DataFrames
         estimates_df = pd.DataFrame(
@@ -373,7 +372,7 @@ class SensitivityAnalysis:
         n_subsamples: int = 20,
         subsample_size: float = 0.8,
         stratify: bool = True,
-        random_state: Optional[int] = None,
+        random_state: int | None = None,
     ) -> SensitivityResults:
         """
         Subsample sensitivity analysis.
@@ -424,7 +423,7 @@ class SensitivityAnalysis:
                 iterator = tqdm(range(n_subsamples), desc="Subsamples")
             except ImportError:
                 iterator = range(n_subsamples)
-                warnings.warn("Install tqdm for progress bars: pip install tqdm")
+                warnings.warn("Install tqdm for progress bars: pip install tqdm", stacklevel=2)
         else:
             iterator = range(n_subsamples)
 
@@ -473,7 +472,7 @@ class SensitivityAnalysis:
                 )
 
                 if self.show_progress:
-                    warnings.warn(f"Failed to estimate subsample {i}: {e}")
+                    warnings.warn(f"Failed to estimate subsample {i}: {e}", stacklevel=2)
 
         # Convert to DataFrames
         estimates_df = pd.DataFrame(
@@ -505,8 +504,8 @@ class SensitivityAnalysis:
     def plot_sensitivity(
         self,
         sensitivity_results: SensitivityResults,
-        params: Optional[List[str]] = None,
-        figsize: Tuple[float, float] = (12, 6),
+        params: list[str] | None = None,
+        figsize: tuple[float, float] = (12, 6),
         reference_line: bool = True,
         confidence_band: bool = True,
         **kwargs,
@@ -678,7 +677,7 @@ class SensitivityAnalysis:
 
         return new_model
 
-    def _calculate_statistics(self, estimates_df: pd.DataFrame, threshold: float) -> Dict:
+    def _calculate_statistics(self, estimates_df: pd.DataFrame, threshold: float) -> dict:
         """Calculate summary statistics from estimates."""
         statistics = {}
 
@@ -710,7 +709,7 @@ class SensitivityAnalysis:
 
         return statistics
 
-    def _identify_influential_units(self, estimates_df: pd.DataFrame, threshold: float) -> List:
+    def _identify_influential_units(self, estimates_df: pd.DataFrame, threshold: float) -> list:
         """Identify influential units based on threshold."""
         influential = []
 
@@ -741,7 +740,7 @@ class SensitivityAnalysis:
 
 
 def dfbetas(
-    results: PanelResults, entity_col: Optional[str] = None, time_col: Optional[str] = None
+    results: PanelResults, entity_col: str | None = None, time_col: str | None = None
 ) -> pd.DataFrame:
     """
     Calculate DFBETAS influence statistics.

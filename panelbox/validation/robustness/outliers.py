@@ -21,7 +21,6 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -60,7 +59,7 @@ class OutlierResults:
         return self.outliers[self.outliers["is_outlier"]].copy()
 
     @property
-    def studentized_residuals(self) -> Optional[pd.Series]:
+    def studentized_residuals(self) -> pd.Series | None:
         """Return studentized residuals Series if available, else None."""
         if "studentized_residual" in self.outliers.columns:
             return self.outliers["studentized_residual"]
@@ -149,7 +148,8 @@ class OutlierDetector:
 
         # Extract model information
         self.model = results._model
-        assert self.model is not None, "Results must have a model reference for outlier detection"
+        if self.model is None:
+            raise RuntimeError("Results must have a model reference for outlier detection")
         self.data = self.model.data.data
 
         # Get entity and time columns
@@ -157,10 +157,10 @@ class OutlierDetector:
         self.time_col = self.model.data.time_col
 
         # Results storage
-        self.outlier_results_: Optional[OutlierResults] = None
+        self.outlier_results_: OutlierResults | None = None
 
     def detect_outliers_univariate(
-        self, variable: Optional[str] = None, method: str = "iqr", threshold: float = 1.5
+        self, variable: str | None = None, method: str = "iqr", threshold: float = 1.5
     ) -> OutlierResults:
         """
         Detect outliers using univariate methods.
@@ -280,7 +280,7 @@ class OutlierDetector:
             cov_inv = np.linalg.inv(cov)
         except np.linalg.LinAlgError:
             # Use pseudo-inverse if singular
-            warnings.warn("Covariance matrix is singular, using pseudo-inverse")
+            warnings.warn("Covariance matrix is singular, using pseudo-inverse", stacklevel=2)
             cov_inv = np.linalg.pinv(np.cov(X.values.T))
 
         diff = X.values - mean
@@ -422,7 +422,7 @@ class OutlierDetector:
         """
         return self.detect_outliers_residuals(method=method, threshold=threshold)
 
-    def detect_leverage_points(self, threshold: Optional[float] = None) -> pd.DataFrame:
+    def detect_leverage_points(self, threshold: float | None = None) -> pd.DataFrame:
         """
         Detect high-leverage points.
 
@@ -464,7 +464,7 @@ class OutlierDetector:
             cov = np.cov(X.values.T)
             cov_inv = np.linalg.inv(cov)
         except np.linalg.LinAlgError:
-            warnings.warn("Using pseudo-inverse for leverage calculation")
+            warnings.warn("Using pseudo-inverse for leverage calculation", stacklevel=2)
             cov_inv = np.linalg.pinv(np.cov(X.values.T))
 
         diff = X.values - mean
@@ -493,7 +493,7 @@ class OutlierDetector:
 
         return leverage_df
 
-    def plot_diagnostics(self, save_path: Optional[str] = None):
+    def plot_diagnostics(self, save_path: str | None = None):
         """
         Plot diagnostic plots for outlier detection.
 
@@ -512,9 +512,9 @@ class OutlierDetector:
         except ImportError:
             raise ImportError(
                 "matplotlib is required for plotting. Install with: pip install matplotlib"
-            )
+            ) from None
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        _fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
         residuals = self.results.resid
         fitted = self.results.fittedvalues

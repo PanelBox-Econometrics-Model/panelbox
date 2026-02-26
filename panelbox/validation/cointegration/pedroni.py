@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -66,7 +65,7 @@ class PedroniTestResult:
     group_rho: float
     group_pp: float
     group_adf: float
-    pvalues: Dict[str, float]
+    pvalues: dict[str, float]
     n_obs: int
     n_entities: int
     trend: str
@@ -177,11 +176,11 @@ class PedroniTest:
         self,
         data: pd.DataFrame,
         dependent: str,
-        independents: List[str],
+        independents: list[str],
         entity_col: str,
         time_col: str,
         trend: str = "c",
-        lags: Optional[int] = None,
+        lags: int | None = None,
     ):
         self.data = data.copy()
         self.dependent = dependent
@@ -209,7 +208,7 @@ class PedroniTest:
         self.entities = self.data[entity_col].unique()
         self.n_entities = len(self.entities)
 
-        self.result: Optional[PedroniTestResult] = None
+        self.result: PedroniTestResult | None = None
 
     def _estimate_cointegrating_regression(self, entity_data: pd.DataFrame) -> np.ndarray:
         """
@@ -242,7 +241,7 @@ class PedroniTest:
         except Exception:
             return np.full(len(y), np.nan)
 
-    def _compute_panel_statistics(self, residuals_dict: Dict) -> Dict[str, float]:
+    def _compute_panel_statistics(self, residuals_dict: dict) -> dict[str, float]:
         """
         Compute panel (within-dimension) statistics.
 
@@ -261,7 +260,7 @@ class PedroniTest:
         all_resid_lag: list[float] = []
         all_delta_resid: list[float] = []
 
-        for entity, resid in residuals_dict.items():
+        for _entity, resid in residuals_dict.items():
             if len(resid) < 3:
                 continue
 
@@ -313,7 +312,7 @@ class PedroniTest:
             "panel_adf": panel_adf,
         }
 
-    def _compute_group_statistics(self, residuals_dict: Dict) -> Dict[str, float]:
+    def _compute_group_statistics(self, residuals_dict: dict) -> dict[str, float]:
         """
         Compute group (between-dimension) statistics.
 
@@ -331,7 +330,7 @@ class PedroniTest:
         pp_list = []
         adf_list = []
 
-        for entity, resid in residuals_dict.items():
+        for _entity, resid in residuals_dict.items():
             if len(resid) < 3:
                 continue
 

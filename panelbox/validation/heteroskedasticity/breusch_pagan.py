@@ -12,7 +12,7 @@ Greene, W. H. (2018). Econometric Analysis (8th ed.). Pearson.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
@@ -71,11 +71,8 @@ class BreuschPaganTest(ValidationTest):
 
         # Store original design matrix if available
         # We'll need the original X matrix for the auxiliary regression
-        self._X: Optional[np.ndarray] = None
+        self._X: np.ndarray | None = None
         if hasattr(results, "_model") and results._model is not None:
-            assert results._model is not None, (
-                "Model reference should be non-None after hasattr check"
-            )
             if hasattr(results._model, "_X_orig"):
                 self._X = results._model._X_orig
 
@@ -215,7 +212,6 @@ class BreuschPaganTest(ValidationTest):
         # Try to get from model through results
         if hasattr(self.results, "_model") and self.results._model is not None:
             model = self.results._model
-            assert model is not None, "Model should be non-None after hasattr check"
 
             # Try to rebuild design matrices
             if hasattr(model, "formula_parser") and hasattr(model, "data"):
@@ -225,6 +221,6 @@ class BreuschPaganTest(ValidationTest):
                     )
                     return np.asarray(X)
                 except Exception:
-                    pass
+                    logger.debug("Failed to rebuild design matrices from model")
 
         return None

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -132,7 +131,7 @@ class KaoTest:
         self,
         data: pd.DataFrame,
         dependent: str,
-        independents: List[str],
+        independents: list[str],
         entity_col: str,
         time_col: str,
         trend: str = "c",
@@ -162,7 +161,7 @@ class KaoTest:
         self.entities = self.data[entity_col].unique()
         self.n_entities = len(self.entities)
 
-        self.result: Optional[KaoTestResult] = None
+        self.result: KaoTestResult | None = None
 
     def _estimate_cointegrating_regression(self, entity_data: pd.DataFrame) -> np.ndarray:
         """

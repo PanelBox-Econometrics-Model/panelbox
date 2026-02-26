@@ -168,7 +168,7 @@ class ChowTest(ValidationTest):
             ssr_restricted = np.sum(results_restricted.resid**2)
 
         except Exception as e:
-            raise ValueError(f"Failed to estimate restricted model: {e}")
+            raise ValueError(f"Failed to estimate restricted model: {e}") from e
 
         # Estimate unrestricted model (separate for each subperiod)
         # Model 1: period < break_time
@@ -253,7 +253,8 @@ class ChowTest(ValidationTest):
             return None, None, None, None, None
 
         # Type narrowing: model is not None and has required attributes
-        assert model is not None
+        if model is None:
+            return None, None, None, None, None
 
         try:
             data = model.data.data.copy()

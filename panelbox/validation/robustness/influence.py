@@ -17,7 +17,6 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -114,14 +113,13 @@ class InfluenceDiagnostics:
         self.results = results
         self.verbose = verbose
         self.model = results._model
-        assert self.model is not None, (
-            "Results must have a model reference for influence diagnostics"
-        )
+        if self.model is None:
+            raise RuntimeError("Results must have a model reference for influence diagnostics")
         self.data = self.model.data.data
         self.entity_col = self.model.data.entity_col
         self.time_col = self.model.data.time_col
 
-        self.influence_results_: Optional[InfluenceResults] = None
+        self.influence_results_: InfluenceResults | None = None
 
     def compute(self) -> InfluenceResults:
         """
@@ -188,7 +186,7 @@ class InfluenceDiagnostics:
             cov = np.cov(X.values.T)
             cov_inv = np.linalg.inv(cov)
         except np.linalg.LinAlgError:
-            warnings.warn("Using pseudo-inverse for leverage")
+            warnings.warn("Using pseudo-inverse for leverage", stacklevel=2)
             cov_inv = np.linalg.pinv(np.cov(X.values.T))
 
         diff = X.values - mean
@@ -233,7 +231,8 @@ class InfluenceDiagnostics:
         """Leverage (hat) values; calls compute() if not yet done."""
         if self.influence_results_ is None:
             self.compute()
-        assert self.influence_results_ is not None
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
         return self.influence_results_.leverage
 
     @property
@@ -241,7 +240,8 @@ class InfluenceDiagnostics:
         """Cook's distance values; calls compute() if not yet done."""
         if self.influence_results_ is None:
             self.compute()
-        assert self.influence_results_ is not None
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
         return self.influence_results_.cooks_d
 
     @property
@@ -249,7 +249,8 @@ class InfluenceDiagnostics:
         """DFFITS values; calls compute() if not yet done."""
         if self.influence_results_ is None:
             self.compute()
-        assert self.influence_results_ is not None
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
         return self.influence_results_.dffits
 
     @property
@@ -257,11 +258,12 @@ class InfluenceDiagnostics:
         """DFBETAS DataFrame (obs × params); calls compute() if not yet done."""
         if self.influence_results_ is None:
             self.compute()
-        assert self.influence_results_ is not None
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
         return self.influence_results_.dfbetas
 
     def influential_observations(
-        self, method: str = "cooks_d", threshold: Optional[float] = None
+        self, method: str = "cooks_d", threshold: float | None = None
     ) -> pd.DataFrame:
         """
         Identify influential observations.
@@ -281,7 +283,8 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
-        assert self.influence_results_ is not None, "compute() should have set influence_results_"
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
 
         if method == "cooks_d":
             if threshold is None:
@@ -335,10 +338,11 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
-        assert self.influence_results_ is not None, "compute() should have set influence_results_"
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
         return self.influence_results_.summary()
 
-    def plot_influence(self, save_path: Optional[str] = None):
+    def plot_influence(self, save_path: str | None = None):
         """
         Plot influence diagnostics.
 
@@ -350,14 +354,15 @@ class InfluenceDiagnostics:
         if self.influence_results_ is None:
             self.compute()
 
-        assert self.influence_results_ is not None, "compute() should have set influence_results_"
+        if self.influence_results_ is None:
+            raise RuntimeError("compute() should have set influence_results_")
 
         try:
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError("matplotlib required for plotting")
+            raise ImportError("matplotlib required for plotting") from None
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        _fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
         # Plot 1: Cook's Distance
         ax1 = axes[0, 0]

@@ -1,6 +1,4 @@
-"""
-Heteroskedasticity tests for panel models.
-"""
+"""Heteroskedasticity tests for panel models."""
 
 from __future__ import annotations
 

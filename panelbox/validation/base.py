@@ -1,12 +1,10 @@
-"""
-Base classes for validation tests.
-"""
+"""Base classes for validation tests."""
 
 from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from panelbox.core.results import PanelResults
@@ -48,8 +46,8 @@ class ValidationTestResult:
         null_hypothesis: str,
         alternative_hypothesis: str,
         alpha: float = 0.05,
-        df: Optional[Any] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        df: Any | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.test_name = test_name
         self.statistic = statistic

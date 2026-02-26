@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -161,15 +161,15 @@ class PanelBootstrap:
 
     def __init__(
         self,
-        results: Optional[PanelResults] = None,
+        results: PanelResults | None = None,
         n_bootstrap: int = 1000,
         method: Literal["pairs", "wild", "block", "residual"] = "pairs",
-        block_size: Optional[int] = None,
-        random_state: Optional[int] = None,
+        block_size: int | None = None,
+        random_state: int | None = None,
         show_progress: bool = True,
         parallel: bool = False,
-        model: Optional[PanelResults] = None,  # Alias for results (for backward compatibility)
-        seed: Optional[int] = None,  # Alias for random_state (for backward compatibility)
+        model: PanelResults | None = None,  # Alias for results (for backward compatibility)
+        seed: int | None = None,  # Alias for random_state (for backward compatibility)
     ):
         # Handle backward compatibility: 'model' as alias for 'results'
         if model is not None and results is None:
@@ -199,6 +199,7 @@ class PanelBootstrap:
                 f"n_bootstrap={n_bootstrap} is quite small. "
                 "Recommend at least 500 for standard errors, 1000 for confidence intervals.",
                 UserWarning,
+                stacklevel=2,
             )
 
         valid_methods = ["pairs", "wild", "block", "residual"]
@@ -229,13 +230,15 @@ class PanelBootstrap:
         # Check for parallel (not yet implemented)
         if parallel:
             warnings.warn(
-                "Parallel processing not yet implemented. Running sequentially.", UserWarning
+                "Parallel processing not yet implemented. Running sequentially.",
+                UserWarning,
+                stacklevel=2,
             )
 
         # Results storage
-        self.bootstrap_estimates_: Optional[np.ndarray] = None
-        self.bootstrap_se_: Optional[np.ndarray] = None
-        self.bootstrap_t_stats_: Optional[np.ndarray] = None
+        self.bootstrap_estimates_: np.ndarray | None = None
+        self.bootstrap_se_: np.ndarray | None = None
+        self.bootstrap_t_stats_: np.ndarray | None = None
         self.n_failed_: int = 0
         self._fitted = False
 
@@ -291,6 +294,7 @@ class PanelBootstrap:
                 "Results may be unreliable. Consider using a different method or "
                 "checking your model specification.",
                 UserWarning,
+                stacklevel=2,
             )
 
         return self
@@ -398,8 +402,8 @@ class PanelBootstrap:
         """
         # Get data
         data_df = self.model.data.data
-        self.model.data.entity_col
-        self.model.data.time_col
+        _entity_col = self.model.data.entity_col
+        _time_col = self.model.data.time_col
 
         # Get residuals and fitted values from original model
         residuals = self.results.resid
@@ -407,7 +411,7 @@ class PanelBootstrap:
 
         # Get original data in same order
         # We need to reconstruct y from fitted + residuals
-        fitted_values + residuals
+        _y_orig = fitted_values + residuals
 
         # Storage for estimates
         n_params = len(self.results.params)
@@ -497,7 +501,7 @@ class PanelBootstrap:
         """
         # Get data
         data_df = self.model.data.data
-        self.model.data.entity_col
+        _entity_col = self.model.data.entity_col
         time_col = self.model.data.time_col
 
         # Get unique time periods
@@ -520,6 +524,7 @@ class PanelBootstrap:
                 f"block_size={block_size} is larger than n_periods={n_periods}. "
                 f"Setting block_size={n_periods}",
                 UserWarning,
+                stacklevel=2,
             )
             block_size = n_periods
 
@@ -822,6 +827,7 @@ class PanelBootstrap:
             "BCa confidence intervals not yet fully implemented. "
             "Falling back to percentile method.",
             UserWarning,
+            stacklevel=2,
         )
         return self._conf_int_percentile(alpha)
 
@@ -836,6 +842,7 @@ class PanelBootstrap:
             "Studentized confidence intervals not yet fully implemented. "
             "Falling back to percentile method.",
             UserWarning,
+            stacklevel=2,
         )
         return self._conf_int_percentile(alpha)
 
@@ -856,9 +863,8 @@ class PanelBootstrap:
         if not self._fitted:
             raise RuntimeError("Must call run() before summary()")
 
-        assert self.bootstrap_estimates_ is not None, (
-            "bootstrap_estimates_ should be set after run()"
-        )
+        if self.bootstrap_estimates_ is None:
+            raise RuntimeError("bootstrap_estimates_ should be set after run()")
 
         summary = pd.DataFrame(
             {
@@ -875,7 +881,7 @@ class PanelBootstrap:
 
         return summary
 
-    def plot_distribution(self, param: Optional[str] = None):
+    def plot_distribution(self, param: str | None = None):
         """
         Plot bootstrap distribution of coefficients.
 
@@ -894,7 +900,7 @@ class PanelBootstrap:
         except ImportError:
             raise ImportError(
                 "matplotlib is required for plotting. Install with: pip install matplotlib"
-            )
+            ) from None
 
         if not self._fitted:
             raise RuntimeError("Must call run() before plot_distribution()")
@@ -908,7 +914,7 @@ class PanelBootstrap:
             boot_values = self.bootstrap_estimates_[:, param_idx]
             original_value = self.results.params.iloc[param_idx]
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            _fig, ax = plt.subplots(figsize=(10, 6))
             ax.hist(boot_values, bins=50, alpha=0.7, edgecolor="black")
             ax.axvline(
                 original_value,
@@ -929,7 +935,7 @@ class PanelBootstrap:
             n_cols = min(3, n_params)
             n_rows = (n_params + n_cols - 1) // n_cols
 
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+            _fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
             if n_params == 1:
                 axes = np.array([axes])
             axes = axes.flatten()
