@@ -31,7 +31,6 @@ class TestCountModelsVsR:
 
         # Load panel data
         cls.data = pd.read_csv(data_path / "panel_count.csv")
-        cls.data = cls.data.set_index(["entity", "time"])
 
         # Load R reference results if available
         ref_file = data_path / "reference_results_count.json"
@@ -48,7 +47,7 @@ class TestCountModelsVsR:
             pytest.skip("R results for Pooled Poisson not available")
 
         # Fit PanelBox model
-        model = PooledPoisson.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledPoisson("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -86,7 +85,7 @@ class TestCountModelsVsR:
             pytest.skip("R results not available")
 
         # Fit PanelBox model
-        model = PooledPoisson.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledPoisson("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R dispersion test
@@ -110,7 +109,7 @@ class TestCountModelsVsR:
             pytest.skip(f"R FE Poisson failed: {self.r_results['fe_poisson']['error']}")
 
         # Fit PanelBox model
-        model = PoissonFixedEffects.from_formula("y ~ x1 + x2", data=self.data)
+        model = PoissonFixedEffects("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -141,7 +140,7 @@ class TestCountModelsVsR:
             pytest.skip(f"R RE Poisson failed: {self.r_results['re_poisson']['error']}")
 
         # Fit PanelBox model
-        model = RandomEffectsPoisson.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsPoisson("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -169,7 +168,7 @@ class TestCountModelsVsR:
             pytest.skip(f"R NB failed: {self.r_results['negative_binomial']['error']}")
 
         # Fit PanelBox model
-        model = NegativeBinomial.from_formula("y ~ x1 + x2", data=self.data)
+        model = NegativeBinomial("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -205,7 +204,7 @@ class TestCountModelsVsR:
             pytest.skip("R predicted counts not available")
 
         # Fit PanelBox model
-        model = PooledPoisson.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledPoisson("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get predictions for first 100 observations

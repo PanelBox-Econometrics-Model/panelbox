@@ -31,7 +31,6 @@ class TestBinaryModelsVsR:
 
         # Load panel data
         cls.data = pd.read_csv(data_path / "panel_binary.csv")
-        cls.data = cls.data.set_index(["entity", "time"])
 
         # Load R reference results if available
         ref_file = data_path / "reference_results_binary.json"
@@ -48,7 +47,7 @@ class TestBinaryModelsVsR:
             pytest.skip("R results for Pooled Logit not available")
 
         # Fit PanelBox model
-        model = PooledLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -86,7 +85,7 @@ class TestBinaryModelsVsR:
             pytest.skip("R results for Pooled Probit not available")
 
         # Fit PanelBox model
-        model = PooledProbit.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledProbit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -122,7 +121,7 @@ class TestBinaryModelsVsR:
             pytest.skip(f"R FE Logit failed: {self.r_results['fe_logit']['error']}")
 
         # Fit PanelBox model
-        model = FixedEffectsLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = FixedEffectsLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -153,7 +152,7 @@ class TestBinaryModelsVsR:
             pytest.skip(f"R RE Probit failed: {self.r_results['re_probit']['error']}")
 
         # Fit PanelBox model
-        model = RandomEffectsProbit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsProbit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -182,7 +181,7 @@ class TestBinaryModelsVsR:
             pytest.skip(f"R AME failed: {self.r_results['ame_logit']['error']}")
 
         # Fit PanelBox model
-        model = PooledLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Calculate AME
@@ -211,7 +210,7 @@ class TestBinaryModelsVsR:
             pytest.skip("R predicted probabilities not available")
 
         # Fit PanelBox model
-        model = PooledLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get predictions for first 100 observations
@@ -235,7 +234,7 @@ class TestBinaryModelsVsR:
             pytest.skip("R results not available")
 
         # Fit PanelBox model
-        model = PooledLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = PooledLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         r_model = self.r_results["pooled_logit"]

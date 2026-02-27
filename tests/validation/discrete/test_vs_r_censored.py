@@ -26,7 +26,6 @@ class TestCensoredModelsVsR:
 
         # Load panel data
         cls.data = pd.read_csv(data_path / "panel_censored.csv")
-        cls.data = cls.data.set_index(["entity", "time"])
 
         # Load R reference results if available
         ref_file = data_path / "reference_results_censored.json"
@@ -46,7 +45,7 @@ class TestCensoredModelsVsR:
             pytest.skip(f"R Pooled Tobit failed: {self.r_results['pooled_tobit']['error']}")
 
         # Fit PanelBox model (using RE Tobit without entity effects as pooled)
-        model = RandomEffectsTobit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsTobit("y ~ x1 + x2", self.data, "entity", "time")
         # For pooled, we'd set sigma_alpha very small or use a pooled version
         result = model.fit()
 
@@ -91,7 +90,7 @@ class TestCensoredModelsVsR:
             pytest.skip("R Pooled Tobit failed")
 
         # Fit PanelBox model
-        model = RandomEffectsTobit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsTobit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R censoring stats
@@ -123,7 +122,7 @@ class TestCensoredModelsVsR:
             pytest.skip("R predicted values not available")
 
         # Fit PanelBox model
-        model = RandomEffectsTobit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsTobit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get predictions for first 100 observations
@@ -150,7 +149,7 @@ class TestCensoredModelsVsR:
             pytest.skip("R latent values not available")
 
         # Fit PanelBox model
-        model = RandomEffectsTobit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsTobit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get latent predictions for first 100 observations
@@ -188,7 +187,7 @@ class TestCensoredModelsVsR:
             pytest.skip("R Pooled Tobit failed")
 
         # Fit PanelBox model
-        model = RandomEffectsTobit.from_formula("y ~ x1 + x2", data=self.data)
+        model = RandomEffectsTobit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R AIC

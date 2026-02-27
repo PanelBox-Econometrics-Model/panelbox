@@ -26,7 +26,6 @@ class TestOrderedModelsVsR:
 
         # Load panel data
         cls.data = pd.read_csv(data_path / "panel_ordered.csv")
-        cls.data = cls.data.set_index(["entity", "time"])
 
         # Load R reference results if available
         ref_file = data_path / "reference_results_ordered.json"
@@ -46,7 +45,7 @@ class TestOrderedModelsVsR:
             pytest.skip(f"R Ordered Logit failed: {self.r_results['ordered_logit']['error']}")
 
         # Fit PanelBox model
-        model = OrderedLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = OrderedLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -100,7 +99,7 @@ class TestOrderedModelsVsR:
             pytest.skip(f"R Ordered Probit failed: {self.r_results['ordered_probit']['error']}")
 
         # Fit PanelBox model
-        model = OrderedProbit.from_formula("y ~ x1 + x2", data=self.data)
+        model = OrderedProbit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R results
@@ -154,7 +153,7 @@ class TestOrderedModelsVsR:
             pytest.skip("R predicted probabilities not available")
 
         # Fit PanelBox model
-        model = OrderedLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = OrderedLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get predictions for first 50 observations
@@ -186,7 +185,7 @@ class TestOrderedModelsVsR:
             pytest.skip("R predicted classes not available")
 
         # Fit PanelBox model
-        model = OrderedLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = OrderedLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get predictions for first 50 observations
@@ -209,7 +208,7 @@ class TestOrderedModelsVsR:
             pytest.skip("R Ordered Logit failed")
 
         # Fit PanelBox model
-        model = OrderedLogit.from_formula("y ~ x1 + x2", data=self.data)
+        model = OrderedLogit("y ~ x1 + x2", self.data, "entity", "time")
         result = model.fit()
 
         # Get R AIC
