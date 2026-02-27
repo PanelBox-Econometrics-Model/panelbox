@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
 })
 
 # Set working directory to data folder
-setwd("../data")
+setwd("data")
 
 # Load data
 data <- read.csv("panel_binary.csv")

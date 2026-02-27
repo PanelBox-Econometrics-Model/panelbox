@@ -214,6 +214,9 @@ papers/
 # Conference submodule (separate repo)
 conference/
 
+# GraphRAG (separate repo)
+graphrag/
+
 # =============================================================================
 # PanelBox Output and Script Directories
 # =============================================================================

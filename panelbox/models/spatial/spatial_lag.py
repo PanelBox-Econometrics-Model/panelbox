@@ -110,6 +110,8 @@ class SpatialLag(SpatialPanelModel):
         SpatialPanelResults
             Estimation results
         """
+        self._validate_panel_structure()
+
         if effects == "fixed" and method == "qml":
             return self._fit_qml_fe(rho_grid_size, optimizer, maxiter, verbose, **kwargs)
         elif effects == "pooled" and method == "qml":
