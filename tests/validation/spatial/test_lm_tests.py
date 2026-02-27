@@ -356,10 +356,13 @@ class TestRunLMTests:
 
     def test_no_spatial_dependence(self):
         """Test recommendation with no spatial dependence."""
+        # Use dedicated RNG to avoid interference from test ordering
+        rng = np.random.RandomState(12345)
+
         # Generate data without spatial structure
-        X = np.random.randn(self.N, 3)
+        X = rng.randn(self.N, 3)
         beta_true = np.array([0.5, 1.0, -0.5, 0.3])
-        epsilon = np.random.randn(self.N)
+        epsilon = rng.randn(self.N)
 
         X_with_const = np.column_stack([np.ones(self.N), X])
         y = X_with_const @ beta_true + epsilon
@@ -369,13 +372,17 @@ class TestRunLMTests:
         y_hat = X_with_const @ beta_ols
         resid = y - y_hat
 
-        # Create mock result
-        ols_result = MockOLSResult(resid=resid, fittedvalues=y_hat, nobs=self.N)
+        # Create mock result with explicit params/bse to avoid global RNG
+        params = pd.Series(beta_ols, index=[f"x{i}" for i in range(len(beta_ols))])
+        bse = pd.Series(np.abs(rng.randn(len(beta_ols))), index=params.index)
+        ols_result = MockOLSResult(
+            resid=resid, fittedvalues=y_hat, nobs=self.N, params=params, bse=bse
+        )
 
         # Run all tests
         results = run_lm_tests(ols_result, self.W, verbose=False)
 
-        # Should recommend OLS
+        # Should recommend OLS (no spatial dependence in DGP)
         assert results["recommendation"] == "OLS"
         assert results["lm_lag"].pvalue > 0.01
         assert results["lm_error"].pvalue > 0.01

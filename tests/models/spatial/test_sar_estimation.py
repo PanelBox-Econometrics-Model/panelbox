@@ -841,9 +841,10 @@ class TestSARPredict:
         # Pooled has rho + const + x1 + x2
         custom_params = {"rho": 0.3, "const": 0.1, "x1": 0.8, "x2": -0.3}
 
-        # Predict with custom params dict - will fail at line 826 with KeyError (dict[1:] invalid)
-        # This exposes the bug where code assumes dict has drop() method or can be sliced
-        with pytest.raises(KeyError):
+        # Predict with custom params dict - will fail because dict doesn't support
+        # drop() or slice indexing. Raises TypeError (unhashable type: 'slice')
+        # or KeyError depending on Python version.
+        with pytest.raises((KeyError, TypeError)):
             model.predict(params=custom_params)
 
     def test_model_predict_with_effects(self):

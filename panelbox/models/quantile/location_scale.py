@@ -652,7 +652,8 @@ class LocationScaleResult(QuantilePanelResult):
         for i in range(len(self.location_result.params)):
             print(f"β{i + 1:<7}", end="")
             for t in tau_list:
-                coef = self.results[t].params[i]
+                params = self.results[t].params
+                coef = params.iloc[i] if hasattr(params, "iloc") else params[i]
                 print(f"{coef:7.3f} ", end="")
             print()
 
