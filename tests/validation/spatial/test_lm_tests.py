@@ -405,6 +405,7 @@ class TestRunLMTests:
     )
     def test_sar_recommendation(self):
         """Test recommendation for SAR model."""
+        np.random.seed(42)
         # Generate SAR data
         rho = 0.6
         X = np.random.randn(self.N, 3)
@@ -438,6 +439,7 @@ class TestRunLMTests:
 
     def test_sem_recommendation(self):
         """Test recommendation for SEM model."""
+        np.random.seed(42)
         # Generate SEM data
         lambda_val = 0.7
         X = np.random.randn(self.N, 3)
@@ -467,6 +469,7 @@ class TestRunLMTests:
 
     def test_summary_output(self):
         """Test summary DataFrame output."""
+        np.random.seed(42)
         # Generate some spatial data
         X = np.random.randn(self.N, 3)
         beta_true = np.array([0.5, 1.0, -0.5, 0.3])
