@@ -260,6 +260,13 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
         if df is not None:
             base_info["n_obs"] = len(df)
             base_info["variables"] = list(df.columns)
+
+            # Check if panel is balanced
+            entity_col = base_info.get("entity_col")
+            time_col = base_info.get("time_col")
+            if entity_col and time_col and entity_col in df.columns and time_col in df.columns:
+                counts = df.groupby(entity_col)[time_col].count()
+                base_info["balanced"] = bool(counts.min() == counts.max())
     except Exception as e:
         base_info["error"] = str(e)
 
