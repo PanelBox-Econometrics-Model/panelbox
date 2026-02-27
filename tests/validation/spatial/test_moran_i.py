@@ -128,12 +128,17 @@ class TestMoranIPanelTest:
         np.random.seed(10)
         expected_rhos = np.linspace(0.0, 0.9, self.T)
 
+        # Row-standardize W for DGP so eigenvalues are in [-1, 1]
+        row_sums = self.W.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1
+        W_std = self.W / row_sums
+
         # Build per-period spatial vectors with increasing autocorrelation
         u_by_t = []
         for _t, rho in enumerate(expected_rhos):
             epsilon = np.random.randn(self.N)
             if rho > 0:
-                I_rhoW_inv = linalg.inv(np.eye(self.N) - rho * self.W)
+                I_rhoW_inv = linalg.inv(np.eye(self.N) - rho * W_std)
                 u_t = I_rhoW_inv @ epsilon
             else:
                 u_t = epsilon
