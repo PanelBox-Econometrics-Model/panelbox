@@ -71,6 +71,7 @@ class TestLMLagTest:
 
     def test_no_spatial_lag(self):
         """Test LM-lag with no spatial lag dependence."""
+        np.random.seed(123)
         # Generate data without spatial lag
         X = np.random.randn(self.N, 3)
         beta_true = np.array([0.5, 1.0, -0.5, 0.3])
@@ -160,6 +161,7 @@ class TestLMErrorTest:
 
     def test_no_spatial_error(self):
         """Test LM-error with no spatial error dependence."""
+        np.random.seed(123)
         # Generate data without spatial error
         X = np.random.randn(self.N, 3)
         beta_true = np.array([0.5, 1.0, -0.5, 0.3])
