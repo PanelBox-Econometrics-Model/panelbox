@@ -795,7 +795,7 @@ class TestSARPredict:
     """Tests for SpatialLag.predict() method (lines 818-859)."""
 
     def test_model_predict_basic(self):
-        """Test calling predict() directly on the model - exercises lines but has known bug."""
+        """Test calling predict() directly on the model."""
         # Generate and fit model
         n, t = 25, 10
         rho_true = 0.4
@@ -813,15 +813,12 @@ class TestSARPredict:
         # Use pooled to avoid FE dimension issues
         model.fit(effects="pooled", method="qml")
 
-        # model.predict() has a bug where it calls self.W.to_dense() but self.W is ndarray
-        # Test that it raises AttributeError (this exercises the lines up to 854)
-        with pytest.raises(
-            AttributeError, match=r"'numpy\.ndarray' object has no attribute 'to_dense'"
-        ):
-            model.predict()
+        predictions = model.predict()
+        assert predictions is not None
+        assert len(predictions) == n * t
 
     def test_model_predict_with_custom_params(self):
-        """Test model.predict() with custom params dict - exposes bug at line 826."""
+        """Test model.predict() with custom params dict."""
         n, t = 25, 10
         rho_true = 0.4
         beta_true = np.array([1.0, -0.5])
@@ -841,14 +838,12 @@ class TestSARPredict:
         # Pooled has rho + const + x1 + x2
         custom_params = {"rho": 0.3, "const": 0.1, "x1": 0.8, "x2": -0.3}
 
-        # Predict with custom params dict - will fail because dict doesn't support
-        # drop() or slice indexing. Raises TypeError (unhashable type: 'slice')
-        # or KeyError depending on Python version.
-        with pytest.raises((KeyError, TypeError)):
-            model.predict(params=custom_params)
+        predictions = model.predict(params=custom_params)
+        assert predictions is not None
+        assert len(predictions) == n * t
 
     def test_model_predict_with_effects(self):
-        """Test model.predict() with effects argument - exercises line 836-837."""
+        """Test model.predict() with effects argument."""
         n, t = 25, 10
         rho_true = 0.4
         beta_true = np.array([1.0, -0.5])
@@ -867,9 +862,9 @@ class TestSARPredict:
         # Create effects array
         effects = np.random.normal(0, 0.1, n * t)
 
-        # Predict with effects - will fail at self.W.to_dense() but exercises lines 818-837
-        with pytest.raises(AttributeError):
-            model.predict(effects=effects)
+        predictions = model.predict(effects=effects)
+        assert predictions is not None
+        assert len(predictions) == n * t
 
     def test_model_predict_before_fit_raises(self):
         """Test that predict() raises error when model not fitted - exposes bug at line 818."""

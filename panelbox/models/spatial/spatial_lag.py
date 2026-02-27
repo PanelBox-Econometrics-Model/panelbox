@@ -824,12 +824,25 @@ class SpatialLag(SpatialPanelModel):
             params = self.results.params
 
         # Extract parameters
-        rho = params["rho"] if isinstance(params, dict) else params[0]
-        beta = params.drop("rho") if hasattr(params, "drop") else params[1:]
+        if isinstance(params, dict):
+            rho = params["rho"]
+            beta_keys = [k for k in params if k != "rho"]
+            beta = np.array([params[k] for k in beta_keys])
+        elif hasattr(params, "drop"):
+            # pandas Series
+            rho = params["rho"]
+            beta = params.drop("rho").values
+        else:
+            rho = params[0]
+            beta = params[1:]
 
         # Use provided or training exog
         if exog is None:
-            exog = self.exog
+            exog = np.asarray(self.exog)
+
+        # Add constant column if beta includes one but exog doesn't
+        if exog.shape[1] < len(beta):
+            exog = np.column_stack([np.ones(exog.shape[0]), exog])
 
         # Linear prediction
         Xbeta = exog @ beta
@@ -853,7 +866,7 @@ class SpatialLag(SpatialPanelModel):
             Xbeta_t = Xbeta[start_idx:end_idx]
 
             # Compute (I - ρW)⁻¹ Xβ
-            I_rhoW = np.eye(N) - rho * self.W.to_dense()
+            I_rhoW = np.eye(N) - rho * self.W
             y_pred_t = np.linalg.solve(I_rhoW, Xbeta_t)
 
             predictions[start_idx:end_idx] = y_pred_t

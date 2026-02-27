@@ -490,9 +490,15 @@ class SpatialError(SpatialPanelModel):
             logger.info(f"Estimating SEM-{effects.upper()} using ML")
 
         # Apply transformations
+        dropped_intercept = False
         if effects == "fixed":
             y = self._within_transformation(np.asarray(self.endog).reshape(-1, 1)).flatten()
             X = self._within_transformation(self.exog)
+            # Remove intercept column if present (becomes all zeros after demeaning)
+            if hasattr(self, "formula_parser") and self.formula_parser.has_intercept:
+                if np.allclose(X[:, 0], 0):
+                    X = X[:, 1:]
+                    dropped_intercept = True
         else:
             y = np.asarray(self.endog).flatten()
             X = np.asarray(self.exog)
@@ -598,9 +604,14 @@ class SpatialError(SpatialPanelModel):
 
         # Parameter names
         if hasattr(self.exog, "columns"):
-            param_names = ["lambda", *list(self.exog.columns)]
+            col_names = list(self.exog.columns)
+            if dropped_intercept:
+                # Remove first column name (intercept) since it was dropped
+                col_names = col_names[1:]
+            param_names = ["lambda", *col_names]
         else:
-            param_names = ["lambda"] + [f"x{i}" for i in range(X.shape[1])]
+            start_idx = 1 if dropped_intercept else 0
+            param_names = ["lambda"] + [f"x{i}" for i in range(start_idx, start_idx + X.shape[1])]
 
         # Results
         params = result.x
@@ -657,11 +668,20 @@ class SpatialError(SpatialPanelModel):
             params = self.results.params
 
         # Extract β (skip λ)
-        beta = params.drop("lambda") if isinstance(params, pd.Series) else params[1:]
+        if isinstance(params, pd.Series):
+            beta = params.drop("lambda").values
+        elif isinstance(params, dict):
+            beta = np.array([v for k, v in params.items() if k != "lambda"])
+        else:
+            beta = params[1:]
 
         # Use provided or training exog
         if exog is None:
-            exog = self.exog
+            exog = np.asarray(self.exog)
+
+        # Drop intercept column from exog if beta doesn't include it (FE estimation)
+        if exog.shape[1] > len(beta):
+            exog = exog[:, exog.shape[1] - len(beta) :]
 
         # Linear prediction (SEM doesn't have spatial multiplier in mean)
         predictions = exog @ beta
