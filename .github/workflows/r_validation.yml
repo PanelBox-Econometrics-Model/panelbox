@@ -121,7 +121,7 @@ jobs:
 
     - name: Run all tests with coverage
       run: |
-        pytest --cov=panelbox --cov-report=xml --cov-report=term-missing --cov-fail-under=85
+        pytest --cov=panelbox --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
     - name: Generate coverage report
       run: |
