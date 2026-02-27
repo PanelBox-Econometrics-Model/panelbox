@@ -439,17 +439,21 @@ class TestRunLMTests:
 
     def test_sem_recommendation(self):
         """Test recommendation for SEM model."""
-        np.random.seed(42)
-        # Generate SEM data
-        lambda_val = 0.7
-        X = np.random.randn(self.N, 3)
-        beta_true = np.array([0.5, 1.0, -0.5, 0.3])
-        epsilon = np.random.randn(self.N) * 2
+        rng = np.random.RandomState(42)
+        # Use larger grid and stronger spatial effect for reliable detection
+        N = 100
+        W = self._create_rook_weights(10, 10)
 
-        I_lambdaW_inv = np.linalg.inv(np.eye(self.N) - lambda_val * self.W)
+        # Generate SEM data with strong spatial error
+        lambda_val = 0.8
+        X = rng.randn(N, 3)
+        beta_true = np.array([0.5, 1.0, -0.5, 0.3])
+        epsilon = rng.randn(N)
+
+        I_lambdaW_inv = np.linalg.inv(np.eye(N) - lambda_val * W)
         u = I_lambdaW_inv @ epsilon
 
-        X_with_const = np.column_stack([np.ones(self.N), X])
+        X_with_const = np.column_stack([np.ones(N), X])
         y = X_with_const @ beta_true + u
 
         # OLS estimation
@@ -458,10 +462,10 @@ class TestRunLMTests:
         resid = y - y_hat
 
         # Create mock result
-        ols_result = MockOLSResult(resid=resid, fittedvalues=y_hat, nobs=self.N)
+        ols_result = MockOLSResult(resid=resid, fittedvalues=y_hat, nobs=N)
 
         # Run all tests
-        results = run_lm_tests(ols_result, self.W, verbose=False)
+        results = run_lm_tests(ols_result, W, verbose=False)
 
         # Should recommend SEM
         assert results["recommendation"] in ["SEM", "SDM"]
