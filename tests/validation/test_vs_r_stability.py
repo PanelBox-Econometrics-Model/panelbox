@@ -39,9 +39,14 @@ def r_stability_results():
     script_path = Path(__file__).parent / "test_vs_r_stability.R"
 
     # Run R script
-    result = subprocess.run(
-        ["Rscript", str(script_path)], capture_output=True, text=True, timeout=60
-    )
+    try:
+        result = subprocess.run(
+            ["Rscript", str(script_path)], capture_output=True, text=True, timeout=60
+        )
+    except subprocess.TimeoutExpired:
+        pytest.skip("R script timed out")
+    except FileNotFoundError:
+        pytest.skip("Rscript not found - R not installed")
 
     if result.returncode != 0:
         pytest.skip(f"R script failed: {result.stderr}")
