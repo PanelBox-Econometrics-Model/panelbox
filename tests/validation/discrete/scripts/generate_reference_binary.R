@@ -151,7 +151,7 @@ results$pooled_logit$accuracy <- accuracy
 
 # Confusion matrix
 conf_matrix <- table(Actual = actual_class, Predicted = predicted_class)
-results$pooled_logit$confusion_matrix <- as.matrix(conf_matrix)
+results$pooled_logit$confusion_matrix <- unclass(as.matrix(conf_matrix))
 
 # ========================================================================
 # SAVE RESULTS
