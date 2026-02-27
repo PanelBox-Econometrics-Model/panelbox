@@ -178,3 +178,161 @@ class TestReportManager:
         assert "ReportManager" in repr_str
         assert "cache=" in repr_str
         assert "minify=" in repr_str
+
+    def test_generate_validation_report_no_plotly(self, report_manager):
+        """Test validation report without Plotly (non-interactive path)."""
+        data = {
+            "model_info": {"model_type": "FE"},
+            "tests": [],
+            "summary": {
+                "total_tests": 0,
+                "total_passed": 0,
+                "total_failed": 0,
+                "pass_rate": 100.0,
+                "pass_rate_formatted": "100.0%",
+                "has_issues": False,
+                "overall_status": "excellent",
+                "status_message": "OK",
+            },
+            "recommendations": [],
+        }
+        html = report_manager.generate_report(
+            report_type="validation",
+            template="validation/interactive/index.html",
+            context={
+                "report_title": "No Plotly Report",
+                **data,
+                **data.get("model_info", {}),
+            },
+            include_plotly=False,
+        )
+        assert isinstance(html, str)
+        assert "No Plotly Report" in html
+
+    def test_generate_validation_report_with_subtitle(self, report_manager, sample_validation_data):
+        """Test validation report with subtitle."""
+        html = report_manager.generate_validation_report(
+            validation_data=sample_validation_data,
+            title="Main Title",
+            subtitle="Sub Title",
+        )
+        assert isinstance(html, str)
+        assert "Main Title" in html
+
+    def test_generate_report_embed_assets_false(self, report_manager, sample_validation_data):
+        """Test report generation with embed_assets=False."""
+        html = report_manager.generate_report(
+            report_type="validation",
+            template="validation/interactive/index.html",
+            context={
+                "report_title": "Test No Embed",
+                **sample_validation_data,
+                **sample_validation_data.get("model_info", {}),
+            },
+            embed_assets=False,
+            include_plotly=False,
+        )
+        assert isinstance(html, str)
+
+    def test_generate_report_include_plotly_false(self, report_manager, sample_validation_data):
+        """Test report generation with include_plotly=False."""
+        html = report_manager.generate_report(
+            report_type="validation",
+            template="validation/interactive/index.html",
+            context={
+                "report_title": "No Plotly",
+                **sample_validation_data,
+                **sample_validation_data.get("model_info", {}),
+            },
+            embed_assets=True,
+            include_plotly=False,
+        )
+        assert isinstance(html, str)
+
+    def test_generate_residual_report(self, report_manager):
+        """Test residual diagnostics report generation."""
+        data = {
+            "residual_charts": {
+                "histogram": "<div>Histogram</div>",
+                "qq_plot": "<div>QQ Plot</div>",
+            },
+            "model_info": {
+                "estimator": "FixedEffects",
+                "nobs": 500,
+                "n_entities": 50,
+                "n_periods": 10,
+            },
+        }
+        html = report_manager.generate_residual_report(
+            residual_data=data, title="Residual Diagnostics"
+        )
+        assert isinstance(html, str)
+        assert "Residual Diagnostics" in html
+
+    def test_generate_comparison_report(self, report_manager):
+        """Test model comparison report generation."""
+        data = {
+            "comparison_charts": {
+                "coefficients": "<div>Coef Chart</div>",
+                "r_squared": "<div>R2 Chart</div>",
+            },
+            "models_info": [
+                {
+                    "name": "FE",
+                    "estimator": "PanelOLS",
+                    "nobs": 1000,
+                    "r_squared": 0.85,
+                    "aic": 2300,
+                    "bic": 2400,
+                },
+                {
+                    "name": "RE",
+                    "estimator": "RandomEffects",
+                    "nobs": 1000,
+                    "r_squared": 0.82,
+                    "aic": 2350,
+                    "bic": 2420,
+                },
+            ],
+            "best_model_aic": "FE",
+            "best_model_bic": "FE",
+        }
+        html = report_manager.generate_comparison_report(
+            comparison_data=data, title="Model Comparison"
+        )
+        assert isinstance(html, str)
+        assert "Model Comparison" in html
+
+    def test_prepare_context(self, report_manager):
+        """Test _prepare_context adds metadata."""
+        context = {"report_title": "My Report"}
+        result = report_manager._prepare_context("validation", context)
+        assert "panelbox_version" in result
+        assert "python_version" in result
+        assert "report_type" in result
+        assert result["report_type"] == "validation"
+        assert result["report_title"] == "My Report"
+        assert "generation_date" in result
+
+    def test_get_css_files(self, report_manager):
+        """Test _get_css_files returns list."""
+        css_files = report_manager._get_css_files()
+        assert isinstance(css_files, list)
+        assert len(css_files) > 0
+
+    def test_get_js_files(self, report_manager):
+        """Test _get_js_files returns list."""
+        js_files = report_manager._get_js_files()
+        assert isinstance(js_files, list)
+        assert "utils.js" in js_files
+        assert "tab-navigation.js" in js_files
+
+    def test_get_js_files_with_custom(self, report_manager):
+        """Test _get_js_files with custom JS files."""
+        js_files = report_manager._get_js_files(custom_js=["extra.js"])
+        assert "extra.js" in js_files
+
+    def test_init_with_minify(self):
+        """Test initialization with minify enabled."""
+        rm = ReportManager(minify=True)
+        assert rm.minify is True

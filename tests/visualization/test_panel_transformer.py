@@ -491,5 +491,254 @@ class TestPanelDataTransformerEdgeCases:
         assert result["n_periods"] == 2
 
 
+class TestExtractEntityEffectsAlternativePaths:
+    """Tests for extract_entity_effects alternative code paths."""
+
+    def test_via_resids_entity_info(self):
+        """Test entity effects extraction via resids + entity_info path (lines 68-86)."""
+        mock_result = Mock(spec=["resids", "entity_info"])
+        np.random.seed(42)
+        n_per_entity = 5
+        n_entities = 4
+        entity_ids = ["A", "B", "C", "D"]
+        entity_labels = np.repeat(entity_ids, n_per_entity)
+
+        mock_result.resids = pd.Series(np.random.randn(n_per_entity * n_entities))
+        mock_result.entity_info = {
+            "entity_ids": entity_ids,
+            "entity_labels": entity_labels,
+        }
+
+        result = PanelDataTransformer.extract_entity_effects(mock_result)
+
+        assert result is not None
+        assert len(result["entity_id"]) == 4
+        assert len(result["effect"]) == 4
+        assert result["std_error"] is None
+        assert set(result["entity_id"]) == {"A", "B", "C", "D"}
+
+    def test_via_model_entity_ids_with_entity_params(self):
+        """Test entity effects via model.entity_ids + params with entity prefixes (lines 89-118)."""
+        mock_result = Mock(spec=["model", "params", "std_errors"])
+        mock_result.model = Mock(spec=["entity_ids"])
+        mock_result.model.entity_ids = ["E1", "E2", "E3"]
+        mock_result.params = pd.Series(
+            {"entity_E1": 0.5, "entity_E2": -0.3, "entity_E3": 0.1, "x1": 1.2}
+        )
+        mock_result.std_errors = pd.Series(
+            {"entity_E1": 0.1, "entity_E2": 0.12, "entity_E3": 0.11, "x1": 0.3}
+        )
+
+        result = PanelDataTransformer.extract_entity_effects(mock_result)
+
+        assert result is not None
+        assert len(result["entity_id"]) == 3
+        assert len(result["effect"]) == 3
+        assert result["std_error"] is not None
+        assert len(result["std_error"]) == 3
+
+    def test_via_model_entity_ids_no_entity_params(self):
+        """Test entity effects via model.entity_ids but no entity params (lines 113-118)."""
+        mock_result = Mock(spec=["model", "params"])
+        mock_result.model = Mock(spec=["entity_ids"])
+        mock_result.model.entity_ids = ["E1", "E2", "E3"]
+        mock_result.params = pd.Series({"x1": 1.2, "x2": 0.5})
+
+        result = PanelDataTransformer.extract_entity_effects(mock_result)
+
+        assert result is not None
+        assert result["entity_id"] == ["E1", "E2", "E3"]
+        assert result["effect"] == [0.0, 0.0, 0.0]
+        assert result["std_error"] is None
+
+    def test_no_data_raises_value_error(self):
+        """Test that missing entity data raises ValueError (line 121)."""
+        mock_result = Mock(spec=[])
+
+        with pytest.raises(ValueError, match="Failed to extract entity effects"):
+            PanelDataTransformer.extract_entity_effects(mock_result)
+
+
+class TestExtractTimeEffectsAlternativePaths:
+    """Tests for extract_time_effects alternative code paths."""
+
+    def test_via_resids_time_info(self):
+        """Test time effects extraction via resids + time_info path (lines 170-188)."""
+        mock_result = Mock(spec=["resids", "time_info"])
+        np.random.seed(42)
+        n_per_period = 5
+        time_periods = [2000, 2001, 2002]
+        time_labels = np.repeat(time_periods, n_per_period)
+
+        mock_result.resids = pd.Series(np.random.randn(n_per_period * len(time_periods)))
+        mock_result.time_info = {
+            "time_periods": time_periods,
+            "time_labels": time_labels,
+        }
+
+        result = PanelDataTransformer.extract_time_effects(mock_result)
+
+        assert result is not None
+        assert len(result["time"]) == 3
+        assert len(result["effect"]) == 3
+        assert result["std_error"] is None
+        assert result["time"] == [2000, 2001, 2002]
+
+    def test_via_params_regex_with_time_prefix(self):
+        """Test time effects via params with time/year regex (lines 191-220)."""
+        mock_result = Mock(spec=["params", "std_errors"])
+        mock_result.params = pd.Series(
+            {
+                "C(year)[T.2001]": 0.5,
+                "C(year)[T.2002]": -0.3,
+                "C(year)[T.2003]": 0.1,
+                "x1": 1.2,
+            }
+        )
+        mock_result.std_errors = pd.Series(
+            {
+                "C(year)[T.2001]": 0.1,
+                "C(year)[T.2002]": 0.12,
+                "C(year)[T.2003]": 0.11,
+                "x1": 0.3,
+            }
+        )
+
+        result = PanelDataTransformer.extract_time_effects(mock_result)
+
+        assert result is not None
+        assert len(result["time"]) == 3
+        assert result["time"] == [2001, 2002, 2003]
+        assert len(result["effect"]) == 3
+        assert result["std_error"] is not None
+        assert len(result["std_error"]) == 3
+
+    def test_via_params_time_prefix_no_regex_match(self):
+        """Test time effects via params with time prefix but no regex match."""
+        mock_result = Mock(spec=["params"])
+        mock_result.params = pd.Series({"time_dummy_1": 0.5, "time_dummy_2": -0.3, "x1": 1.2})
+
+        result = PanelDataTransformer.extract_time_effects(mock_result)
+
+        assert result is not None
+        assert len(result["time"]) == 2
+        # Without regex match, param name is used as-is
+        assert result["time"] == ["time_dummy_1", "time_dummy_2"]
+
+    def test_no_data_raises_value_error(self):
+        """Test that missing time data raises ValueError (line 222)."""
+        mock_result = Mock(spec=["params"])
+        mock_result.params = pd.Series({"x1": 1.2, "x2": 0.5})
+
+        with pytest.raises(ValueError, match="Failed to extract time effects"):
+            PanelDataTransformer.extract_time_effects(mock_result)
+
+    def test_no_params_no_effects_raises(self):
+        """Test error when no time data available at all."""
+        mock_result = Mock(spec=[])
+
+        with pytest.raises(ValueError, match="Failed to extract time effects"):
+            PanelDataTransformer.extract_time_effects(mock_result)
+
+
+class TestVarianceDecompositionAlternativePaths:
+    """Tests for calculate_between_within alternative paths."""
+
+    def test_panel_data_wrapper(self):
+        """Test variance decomposition with PanelData-like wrapper (line 266)."""
+        np.random.seed(42)
+        index = pd.MultiIndex.from_product(
+            [["A", "B", "C"], [2000, 2001, 2002]], names=["entity", "time"]
+        )
+        df = pd.DataFrame({"x1": np.random.randn(9), "x2": np.random.randn(9)}, index=index)
+
+        # Create PanelData-like wrapper with .dataframe attribute
+        wrapper = Mock(spec=["dataframe"])
+        wrapper.dataframe = df
+
+        result = PanelDataTransformer.calculate_between_within(wrapper)
+
+        assert len(result["variables"]) == 2
+        assert set(result["variables"]) == {"x1", "x2"}
+        assert all(v >= 0 for v in result["between_var"])
+        assert all(v >= 0 for v in result["within_var"])
+
+    def test_no_multiindex_raises(self):
+        """Test error when DataFrame has no MultiIndex (line 278)."""
+        df = pd.DataFrame({"x1": [1, 2, 3], "x2": [4, 5, 6]})
+
+        with pytest.raises(ValueError, match="MultiIndex"):
+            PanelDataTransformer.calculate_between_within(df)
+
+
+class TestPanelStructureAlternativePaths:
+    """Tests for analyze_panel_structure alternative paths."""
+
+    def test_panel_data_wrapper(self):
+        """Test panel structure with PanelData-like wrapper (line 342)."""
+        np.random.seed(42)
+        index = pd.MultiIndex.from_product(
+            [["A", "B"], [2000, 2001, 2002]], names=["entity", "time"]
+        )
+        df = pd.DataFrame({"x1": np.random.randn(6)}, index=index)
+
+        wrapper = Mock(spec=["dataframe"])
+        wrapper.dataframe = df
+
+        result = PanelDataTransformer.analyze_panel_structure(wrapper)
+
+        assert result["n_entities"] == 2
+        assert result["n_periods"] == 3
+        assert result["is_balanced"]
+
+    def test_no_multiindex_raises(self):
+        """Test error when DataFrame has no MultiIndex (line 350)."""
+        df = pd.DataFrame({"x1": [1, 2, 3]})
+
+        with pytest.raises(ValueError, match="MultiIndex"):
+            PanelDataTransformer.analyze_panel_structure(df)
+
+
+class TestPreparePanelSummary:
+    """Tests for prepare_panel_summary method."""
+
+    def test_returns_expected_structure(self, sample_panel_dataframe):
+        """Test prepare_panel_summary returns expected structure (lines 430-433)."""
+        result = PanelDataTransformer.prepare_panel_summary(sample_panel_dataframe)
+
+        assert "structure" in result
+        assert "variance_decomposition" in result
+
+        # Verify structure sub-dict
+        structure = result["structure"]
+        assert "entities" in structure
+        assert "time_periods" in structure
+        assert "is_balanced" in structure
+        assert "n_entities" in structure
+        assert "n_periods" in structure
+
+        # Verify variance_decomposition sub-dict
+        bw = result["variance_decomposition"]
+        assert "variables" in bw
+        assert "between_var" in bw
+        assert "within_var" in bw
+        assert "total_var" in bw
+
+    def test_with_panel_data_wrapper(self):
+        """Test prepare_panel_summary with PanelData-like wrapper."""
+        np.random.seed(42)
+        index = pd.MultiIndex.from_product([["A", "B"], [2000, 2001]], names=["entity", "time"])
+        df = pd.DataFrame({"x1": [1.0, 2.0, 3.0, 4.0]}, index=index)
+
+        wrapper = Mock(spec=["dataframe"])
+        wrapper.dataframe = df
+
+        result = PanelDataTransformer.prepare_panel_summary(wrapper)
+
+        assert result["structure"]["n_entities"] == 2
+        assert result["structure"]["n_periods"] == 2
+        assert len(result["variance_decomposition"]["variables"]) == 1
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

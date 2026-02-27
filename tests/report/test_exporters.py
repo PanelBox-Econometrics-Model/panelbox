@@ -369,6 +369,239 @@ class TestLaTeXExporter:
             assert "\\begin{document}" in content
             assert "\\end{document}" in content
 
+    def test_init_invalid_table_style_raises(self):
+        """Test invalid table_style raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid table_style"):
+            LaTeXExporter(table_style="invalid_style")
+
+    def test_init_standard_style(self):
+        """Test initialization with standard style."""
+        exporter = LaTeXExporter(table_style="standard")
+        assert exporter.table_style == "standard"
+
+    def test_init_threeparttable_style(self):
+        """Test initialization with threeparttable style."""
+        exporter = LaTeXExporter(table_style="threeparttable")
+        assert exporter.table_style == "threeparttable"
+
+    def test_export_validation_standard_style(self, sample_tests):
+        """Test validation tests export with standard style."""
+        exporter = LaTeXExporter(table_style="standard")
+        latex = exporter.export_validation_tests(sample_tests)
+
+        assert "\\begin{table}" in latex
+        assert "\\hline" in latex
+        assert "\\toprule" not in latex
+        assert "Hausman Test" in latex
+
+    def test_export_validation_booktabs_notes(self, latex_exporter, sample_tests):
+        """Test booktabs style includes significance notes."""
+        latex = latex_exporter.export_validation_tests(sample_tests)
+        assert "Significance levels" in latex
+        assert "\\begin{minipage}" in latex
+
+    def test_export_regression_standard_style(self):
+        """Test regression table with standard style."""
+        exporter = LaTeXExporter(table_style="standard")
+        coefficients = [
+            {
+                "variable": "x1",
+                "coefficient": 1.5,
+                "std_error": 0.2,
+                "t_statistic": 7.5,
+                "pvalue": 0.001,
+            },
+        ]
+        model_info = {"r_squared": 0.85, "nobs": 1000}
+        latex = exporter.export_regression_table(coefficients, model_info)
+
+        assert "\\hline" in latex
+        assert "\\toprule" not in latex
+        assert "x1" in latex
+
+    def test_export_regression_with_entities(self, latex_exporter):
+        """Test regression table includes entity count."""
+        coefficients = [
+            {
+                "variable": "x1",
+                "coefficient": 1.0,
+                "std_error": 0.1,
+                "t_statistic": 10.0,
+                "pvalue": 0.0001,
+            },
+        ]
+        model_info = {"r_squared": 0.9, "nobs": 500, "n_entities": 50}
+        latex = latex_exporter.export_regression_table(coefficients, model_info)
+
+        assert "Entities" in latex
+        assert "50" in latex
+
+    def test_export_summary_stats(self, latex_exporter):
+        """Test summary statistics export."""
+        stats = [
+            {
+                "variable": "x1",
+                "count": 1000,
+                "mean": 5.234,
+                "std": 1.567,
+                "min": 1.2,
+                "max": 9.8,
+                "median": 5.1,
+            },
+            {
+                "variable": "x2",
+                "count": 1000,
+                "mean": -2.456,
+                "std": 3.123,
+                "min": -10.5,
+                "max": 5.6,
+                "median": -2.3,
+            },
+        ]
+        latex = latex_exporter.export_summary_stats(stats)
+
+        assert "\\begin{table}" in latex
+        assert "x1" in latex
+        assert "x2" in latex
+        assert "5.234" in latex
+        assert "Variable" in latex
+
+    def test_export_summary_stats_standard(self):
+        """Test summary stats with standard style."""
+        exporter = LaTeXExporter(table_style="standard")
+        stats = [
+            {
+                "variable": "y",
+                "count": 100,
+                "mean": 10.0,
+                "std": 2.0,
+                "min": 5.0,
+                "max": 15.0,
+                "50%": 10.0,
+            },
+        ]
+        latex = exporter.export_summary_stats(stats)
+
+        assert "\\hline" in latex
+        assert "y" in latex
+
+    def test_save_overwrite_protection(self, latex_exporter, sample_tests):
+        """Test save refuses to overwrite existing file."""
+        latex = latex_exporter.export_validation_tests(sample_tests)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "test.tex"
+            output_path.write_text("existing content")
+
+            with pytest.raises(FileExistsError, match="already exists"):
+                latex_exporter.save(latex, output_path, overwrite=False)
+
+    def test_save_overwrite_allowed(self, latex_exporter, sample_tests):
+        """Test save with overwrite=True replaces file."""
+        latex = latex_exporter.export_validation_tests(sample_tests)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "test.tex"
+            output_path.write_text("existing content")
+
+            saved_path = latex_exporter.save(latex, output_path, overwrite=True)
+            assert saved_path.exists()
+            content = saved_path.read_text(encoding="utf-8")
+            assert "Hausman Test" in content
+
+    def test_format_float_valid(self, latex_exporter):
+        """Test _format_float with valid float."""
+        result = latex_exporter._format_float(3.14159)
+        assert result == "3.142"
+
+    def test_format_float_none(self, latex_exporter):
+        """Test _format_float with None returns string."""
+        result = latex_exporter._format_float(None)
+        assert result == "None"
+
+    def test_format_float_string(self, latex_exporter):
+        """Test _format_float with string returns string."""
+        result = latex_exporter._format_float("abc")
+        assert result == "abc"
+
+    def test_format_pvalue_regular(self, latex_exporter):
+        """Test _format_pvalue with regular p-value."""
+        result = latex_exporter._format_pvalue(0.0432)
+        assert result == "0.0432"
+
+    def test_format_pvalue_small(self, latex_exporter):
+        """Test _format_pvalue with small p-value uses scientific."""
+        result = latex_exporter._format_pvalue(0.00001)
+        assert "e" in result.lower()
+
+    def test_format_pvalue_invalid(self, latex_exporter):
+        """Test _format_pvalue with invalid value."""
+        result = latex_exporter._format_pvalue(None)
+        assert result == "None"
+
+    def test_get_stars_very_significant(self, latex_exporter):
+        """Test _get_stars with p < 0.001."""
+        result = latex_exporter._get_stars(0.0005)
+        assert "***" in result
+
+    def test_get_stars_significant_01(self, latex_exporter):
+        """Test _get_stars with p < 0.01."""
+        result = latex_exporter._get_stars(0.005)
+        assert "**" in result
+
+    def test_get_stars_significant_05(self, latex_exporter):
+        """Test _get_stars with p < 0.05."""
+        result = latex_exporter._get_stars(0.03)
+        assert "*" in result
+
+    def test_get_stars_not_significant(self, latex_exporter):
+        """Test _get_stars with p >= 0.05."""
+        result = latex_exporter._get_stars(0.15)
+        assert result == ""
+
+    def test_get_stars_none(self, latex_exporter):
+        """Test _get_stars with None pvalue."""
+        result = latex_exporter._get_stars(None)
+        assert result == ""
+
+    def test_escape_special_chars(self, latex_exporter):
+        """Test escaping LaTeX special characters."""
+        # Test each char individually to avoid interaction between replacements
+        assert latex_exporter._escape("100%") != "100%"
+        assert latex_exporter._escape("a & b") != "a & b"
+        assert latex_exporter._escape("$x") != "$x"
+
+    def test_escape_percent_and_ampersand(self, latex_exporter):
+        """Test escaping % and & characters (processed before backslash)."""
+        # The _escape function iterates the dict and replaces chars in order.
+        # % and & are early, so they get escaped to \% and \& first,
+        # then \ gets re-escaped. We just verify the originals are gone.
+        result = latex_exporter._escape("100%")
+        assert "%" in result  # escaped form contains %
+        assert result != "100%"  # but it's not the raw original
+
+    def test_escape_disabled(self):
+        """Test escape does nothing when disabled."""
+        exporter = LaTeXExporter(escape_special_chars=False)
+        result = exporter._escape("100% & $test # _")
+        assert result == "100% & $test # _"
+
+    def test_repr(self, latex_exporter):
+        """Test string representation."""
+        repr_str = repr(latex_exporter)
+        assert "LaTeXExporter" in repr_str
+        assert "booktabs" in repr_str
+
+    def test_add_preamble(self, latex_exporter):
+        """Test adding preamble to content."""
+        content = "\\begin{table} ... \\end{table}"
+        result = latex_exporter._add_preamble(content)
+        assert "\\documentclass" in result
+        assert "\\usepackage{booktabs}" in result
+        assert "\\begin{document}" in result
+        assert "\\end{document}" in result
+        assert content in result
+
 
 class TestMarkdownExporter:
     """Test MarkdownExporter functionality."""

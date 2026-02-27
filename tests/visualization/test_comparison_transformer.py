@@ -425,3 +425,221 @@ class TestPrepareIC:
         assert len(data["aic"]) == 2
         assert data["aic"][0] == 305.0
         assert data["aic"][1] == 294.4
+
+
+class TestCoefExtractionFallbackPaths:
+    """Tests for coefficient/stderr/pvalues extraction fallback paths."""
+
+    def test_coef_extraction_via_index_iloc(self):
+        """Test coef extraction fallback via index + iloc (lines 127-141)."""
+        # Create a params object with .index and .iloc but no .get()
+        results = Mock(spec=["params"])
+        params_array = np.array([1.2, -0.5])
+        params_mock = Mock(spec=["index", "iloc", "__iter__", "__len__"])
+        params_mock.index = ["x1", "x2"]
+        params_mock.iloc.__getitem__ = Mock(side_effect=lambda i: params_array[i])
+        params_mock.__len__ = Mock(return_value=2)
+
+        results.params = params_mock
+
+        transformer = ComparisonDataTransformer()
+        coefficients = transformer._extract_coefficients([results])
+
+        assert "x1" in coefficients
+        assert "x2" in coefficients
+        assert coefficients["x1"] == [1.2]
+        assert coefficients["x2"] == [-0.5]
+
+    def test_stderr_extraction_via_index_iloc(self):
+        """Test stderr extraction fallback via index + iloc (lines 179-190).
+
+        The source code checks `not isinstance(std_errors_attr, Mock)`, so we
+        need a non-Mock object that has .index and .iloc but not .get().
+        """
+        results = Mock(spec=["params", "std_errors"])
+        results.params = pd.Series({"x1": 1.2, "x2": -0.5})
+
+        # Use a real numpy array wrapped in a simple namespace (not a Mock)
+        class ArrayWithIndex:
+            def __init__(self, values, index):
+                self._values = values
+                self.index = index
+
+            def iloc(self):
+                pass
+
+            def __getitem__(self, key):
+                return self._values[key]
+
+        se_obj = ArrayWithIndex(np.array([0.3, 0.2]), ["x1", "x2"])
+        # Add iloc as property-like access
+        se_obj.iloc = type("Iloc", (), {"__getitem__": lambda self2, i: se_obj._values[i]})()
+        results.std_errors = se_obj
+
+        transformer = ComparisonDataTransformer()
+        std_errors = transformer._extract_std_errors([results])
+
+        assert "x1" in std_errors
+        assert "x2" in std_errors
+        assert std_errors["x1"] == [0.3]
+        assert std_errors["x2"] == [0.2]
+
+    def test_stderr_extraction_via_bse_index(self):
+        """Test stderr extraction via bse.index (lines 196-205).
+
+        The source code checks `not isinstance(bse_attr, Mock)`.
+        """
+        results = Mock(spec=["params"])
+        results.params = pd.Series({"x1": 1.2, "x2": -0.5})
+
+        class ArrayWithIndex:
+            def __init__(self, values, index):
+                self._values = values
+                self.index = index
+
+        bse_obj = ArrayWithIndex(np.array([0.15, 0.1]), ["x1", "x2"])
+        bse_obj.iloc = type("Iloc", (), {"__getitem__": lambda self2, i: bse_obj._values[i]})()
+        results.bse = bse_obj
+
+        transformer = ComparisonDataTransformer()
+        std_errors = transformer._extract_std_errors([results])
+
+        assert "x1" in std_errors
+        assert "x2" in std_errors
+        assert std_errors["x1"] == [0.15]
+        assert std_errors["x2"] == [0.1]
+
+    def test_pvalues_extraction_via_index_iloc(self):
+        """Test pvalues extraction fallback via index + iloc (lines 240-253)."""
+        results = Mock(spec=["params", "pvalues"])
+        results.params = pd.Series({"x1": 1.2, "x2": -0.5})
+
+        # Create pvalues with .index and .iloc but no .get()
+        pval_array = np.array([0.001, 0.05])
+        pval_mock = Mock(spec=["index", "iloc", "__iter__", "__len__"])
+        pval_mock.index = ["x1", "x2"]
+        pval_mock.iloc.__getitem__ = Mock(side_effect=lambda i: pval_array[i])
+        pval_mock.__len__ = Mock(return_value=2)
+        results.pvalues = pval_mock
+
+        transformer = ComparisonDataTransformer()
+        pvalues = transformer._extract_pvalues([results])
+
+        assert "x1" in pvalues
+        assert "x2" in pvalues
+        assert pvalues["x1"] == [0.001]
+        assert pvalues["x2"] == [0.05]
+
+    def test_coef_extraction_missing_var_in_index(self):
+        """Test coef extraction when var not found in index (line 136)."""
+        # Two results: one has x1 and x2, the other only has x1
+        # When extracting x2 from the second result, it should hit ValueError
+        results1 = Mock(spec=["params"])
+        params1 = Mock(spec=["index", "iloc"])
+        params1.index = ["x1", "x2"]
+        params1.iloc.__getitem__ = Mock(side_effect=lambda i: [1.2, -0.5][i])
+        results1.params = params1
+
+        results2 = Mock(spec=["params"])
+        params2 = Mock(spec=["index", "iloc"])
+        params2.index = ["x1"]
+        params2.iloc.__getitem__ = Mock(side_effect=lambda i: [1.5][i])
+        results2.params = params2
+
+        transformer = ComparisonDataTransformer()
+        coefficients = transformer._extract_coefficients([results1, results2])
+
+        assert "x2" in coefficients
+        # x2 for results2 should be NaN (ValueError in list.index())
+        assert np.isnan(coefficients["x2"][1])
+
+    def test_coef_extraction_no_params(self):
+        """Test coef extraction when results has no params (line 141)."""
+        results1 = Mock()
+        results1.params = pd.Series({"x1": 1.2})
+
+        results2 = Mock(spec=[])  # No params
+
+        transformer = ComparisonDataTransformer()
+        coefficients = transformer._extract_coefficients([results1, results2])
+
+        assert "x1" in coefficients
+        assert coefficients["x1"][0] == 1.2
+        assert np.isnan(coefficients["x1"][1])
+
+    def test_coef_extraction_no_index_no_get(self):
+        """Test coef extraction when params has no .get() and no .index (line 138-139)."""
+        results1 = Mock()
+        results1.params = pd.Series({"x1": 1.2})
+
+        results2 = Mock(spec=["params"])
+        # params with no .get() and no .index
+        results2.params = Mock(spec=[])
+        results2.params.index = ["x1"]  # Need index to discover vars
+
+        # Actually we need one result that discovers vars and another that
+        # can't access them. Use first result for var discovery.
+        # The second result's params has no .get() and no .index at access time.
+        results3 = Mock(spec=["params"])
+        results3.params = 42  # Not an object with .get or .index
+
+        transformer = ComparisonDataTransformer()
+        coefficients = transformer._extract_coefficients([results1, results3])
+
+        assert "x1" in coefficients
+        assert np.isnan(coefficients["x1"][1])
+
+
+class TestFitMetricsAlternativePaths:
+    """Tests for fit metrics extraction alternative attribute names."""
+
+    def test_fit_metrics_with_alternative_attrs(self):
+        """Test fit metrics extraction with f_statistic and loglik attrs (lines 299-352)."""
+        results = Mock(spec=["rsquared", "rsquared_adj", "f_statistic", "loglik"])
+        results.rsquared = 0.8
+        results.rsquared_adj = 0.78
+        results.f_statistic = 55.0
+        results.loglik = -140.0
+
+        transformer = ComparisonDataTransformer()
+        metrics = transformer._extract_fit_metrics([results])
+
+        assert metrics["R²"] == [0.8]
+        assert metrics["Adj. R²"] == [0.78]
+        assert metrics["F-statistic"] == [55.0]
+        assert metrics["Log-Likelihood"] == [-140.0]
+
+    def test_prepare_model_fit_comparison_keys(self):
+        """Test prepare_model_fit_comparison returns expected keys (line 490)."""
+        results1 = Mock()
+        results1.params = pd.Series({"x1": 1.2})
+        results1.rsquared = 0.75
+        results1.rsquared_adj = 0.73
+        results1.fvalue = 45.2
+        results1.llf = -150.5
+        results1.aic = 305.0
+        results1.bic = 315.0
+        results1.hqic = 308.5
+
+        results2 = Mock()
+        results2.params = pd.Series({"x1": 1.5})
+        results2.rsquared = 0.80
+        results2.rsquared_adj = 0.78
+        results2.fvalue = 52.1
+        results2.llf = -145.2
+        results2.aic = 294.4
+        results2.bic = 304.4
+        results2.hqic = 297.9
+
+        transformer = ComparisonDataTransformer()
+        data = transformer.prepare_model_fit_comparison([results1, results2], names=["FE", "RE"])
+
+        assert data["models"] == ["FE", "RE"]
+        assert "r_squared" in data
+        assert "adj_r_squared" in data
+        assert "f_statistic" in data
+        assert "log_likelihood" in data
+        assert "normalize" in data
+        assert data["normalize"] is False
+        assert data["r_squared"] == [0.75, 0.80]
+        assert data["adj_r_squared"] == [0.73, 0.78]
