@@ -26,12 +26,15 @@ class TestCointegrationVsR:
         script_path = os.path.join(os.path.dirname(__file__), "..", "scripts", "cointegration_r.R")
 
         # Run R script
-        result = subprocess.run(
-            ["Rscript", script_path],
-            capture_output=True,
-            text=True,
-            cwd=os.path.dirname(script_path),
-        )
+        try:
+            result = subprocess.run(
+                ["Rscript", script_path],
+                capture_output=True,
+                text=True,
+                cwd=os.path.dirname(script_path),
+            )
+        except FileNotFoundError:
+            pytest.skip("Rscript not found - R not installed")
 
         if result.returncode != 0:
             pytest.skip(f"R script failed: {result.stderr}")
