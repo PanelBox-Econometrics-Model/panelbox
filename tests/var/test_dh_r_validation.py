@@ -101,9 +101,12 @@ if (!is.null(result_r_ztilde)) {{
             f.write(r_script)
 
         # Run R script
-        result = subprocess.run(
-            ["R", "--vanilla", "--slave", "-f", script_path], capture_output=True, text=True
-        )
+        try:
+            result = subprocess.run(
+                ["R", "--vanilla", "--slave", "-f", script_path], capture_output=True, text=True
+            )
+        except FileNotFoundError:
+            pytest.skip("R not found - R not installed")
 
         if result.returncode != 0:
             raise RuntimeError(f"R script failed:\n{result.stderr}")
@@ -335,9 +338,12 @@ write.csv(Grunfeld, "{data_path}", row.names = FALSE)
         with open(script_path, "w") as f:
             f.write(r_script)
 
-        result = subprocess.run(
-            ["R", "--vanilla", "--slave", "-f", script_path], capture_output=True, text=True
-        )
+        try:
+            result = subprocess.run(
+                ["R", "--vanilla", "--slave", "-f", script_path], capture_output=True, text=True
+            )
+        except FileNotFoundError:
+            pytest.skip("R not found - R not installed")
 
         if result.returncode != 0:
             pytest.skip(f"Could not load Grunfeld data: {result.stderr}")
