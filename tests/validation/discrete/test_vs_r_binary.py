@@ -46,9 +46,9 @@ class TestBinaryModelsVsR:
         if self.r_results is None or "pooled_logit" not in self.r_results:
             pytest.skip("R results for Pooled Logit not available")
 
-        # Fit PanelBox model
+        # Fit PanelBox model with nonrobust SEs to match R's glm() default
         model = PooledLogit("y ~ x1 + x2", self.data, "entity", "time")
-        result = model.fit()
+        result = model.fit(cov_type="nonrobust")
 
         # Get R results
         r_model = self.r_results["pooled_logit"]
@@ -88,9 +88,9 @@ class TestBinaryModelsVsR:
         if self.r_results is None or "pooled_probit" not in self.r_results:
             pytest.skip("R results for Pooled Probit not available")
 
-        # Fit PanelBox model
+        # Fit PanelBox model with nonrobust SEs to match R's glm() default
         model = PooledProbit("y ~ x1 + x2", self.data, "entity", "time")
-        result = model.fit()
+        result = model.fit(cov_type="nonrobust")
 
         # Get R results
         r_model = self.r_results["pooled_probit"]

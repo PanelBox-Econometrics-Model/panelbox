@@ -69,7 +69,7 @@ class TestCensoredModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors_coef"])
         np.testing.assert_allclose(
-            result.bse[: len(r_se)].values,
+            result.bse[: len(r_se)],
             r_se,
             rtol=1e-3,
             atol=1e-5,

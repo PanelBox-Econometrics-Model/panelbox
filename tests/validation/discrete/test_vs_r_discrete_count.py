@@ -46,9 +46,9 @@ class TestCountModelsVsR:
         if self.r_results is None or "pooled_poisson" not in self.r_results:
             pytest.skip("R results for Pooled Poisson not available")
 
-        # Fit PanelBox model
+        # Fit PanelBox model with nonrobust SEs to match R's glm() default
         model = PooledPoisson("y ~ x1 + x2", self.data, "entity", "time")
-        result = model.fit()
+        result = model.fit(se_type="nonrobust")
 
         # Get R results
         r_model = self.r_results["pooled_poisson"]
@@ -66,7 +66,7 @@ class TestCountModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
+            result.se.values, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
         )
 
         # Compare log-likelihood
@@ -128,7 +128,7 @@ class TestCountModelsVsR:
         # Compare standard errors (more tolerance for FE)
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=5e-3, atol=1e-3, err_msg="Standard errors differ from R"
+            result.se.values, r_se, rtol=5e-3, atol=1e-3, err_msg="Standard errors differ from R"
         )
 
     def test_poisson_re_vs_r(self):

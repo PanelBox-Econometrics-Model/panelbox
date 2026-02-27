@@ -78,7 +78,7 @@ class TestOrderedModelsVsR:
         # Compare standard errors
         r_se_coef = np.array(r_model["std_errors_coef"])
         np.testing.assert_allclose(
-            result.bse[: len(r_se_coef)].values,
+            result.bse[: len(r_se_coef)],
             r_se_coef,
             rtol=1e-3,
             atol=1e-5,
@@ -132,7 +132,7 @@ class TestOrderedModelsVsR:
         # Compare standard errors
         r_se_coef = np.array(r_model["std_errors_coef"])
         np.testing.assert_allclose(
-            result.bse[: len(r_se_coef)].values,
+            result.bse[: len(r_se_coef)],
             r_se_coef,
             rtol=1e-3,
             atol=1e-5,
