@@ -375,9 +375,14 @@ class TestMoranIntegration:
         N = 25
         W = _create_rook_weights(5, 5)
 
+        # Row-standardize W before DGP so (I - rho*W) is well-conditioned
+        row_sums = W.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1
+        W_std = W / row_sums
+
         rho = 0.5
         epsilon = np.random.randn(N)
-        I_rhoW_inv = linalg.inv(np.eye(N) - rho * W)
+        I_rhoW_inv = linalg.inv(np.eye(N) - rho * W_std)
         residuals = I_rhoW_inv @ epsilon
 
         entity_index = np.arange(N)
