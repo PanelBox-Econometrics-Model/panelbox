@@ -254,7 +254,7 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
     base_info: dict[str, Any] = dict(
         known_info.get(
             dataset_name,
-            {"name": dataset_name, "description": "", "source": ""},
+            {"name": dataset_name, "description": "Unknown dataset", "source": ""},
         )
     )
 
@@ -279,7 +279,7 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
     return base_info
 
 
-def load_dataset(name: str, category: str | None = None) -> pd.DataFrame | None:
+def load_dataset(name: str, category: str | None = None, **kwargs: Any) -> pd.DataFrame | None:
     """
     Load a dataset by name.
 
@@ -308,9 +308,9 @@ def load_dataset(name: str, category: str | None = None) -> pd.DataFrame | None:
     """
     # Shortcut for named loaders
     if name == "grunfeld" and category is None:
-        return load_grunfeld()
+        return load_grunfeld(**kwargs)
     if name == "abdata" and category is None:
-        return load_abdata()
+        return load_abdata(**kwargs)
 
     # Handle "category/name" format
     if "/" in name and category is None:
