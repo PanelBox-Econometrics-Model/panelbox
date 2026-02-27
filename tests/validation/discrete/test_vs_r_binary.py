@@ -66,7 +66,11 @@ class TestBinaryModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
+            result.std_errors.values,
+            r_se,
+            rtol=1e-3,
+            atol=1e-5,
+            err_msg="Standard errors differ from R",
         )
 
         # Compare log-likelihood
@@ -104,7 +108,11 @@ class TestBinaryModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
+            result.std_errors.values,
+            r_se,
+            rtol=1e-3,
+            atol=1e-5,
+            err_msg="Standard errors differ from R",
         )
 
         # Compare log-likelihood
@@ -140,7 +148,11 @@ class TestBinaryModelsVsR:
         # Compare standard errors (more tolerance for FE)
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=5e-3, atol=1e-3, err_msg="Standard errors differ from R"
+            result.std_errors.values,
+            r_se,
+            rtol=5e-3,
+            atol=1e-3,
+            err_msg="Standard errors differ from R",
         )
 
     def test_re_probit_vs_r(self):
