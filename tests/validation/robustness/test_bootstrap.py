@@ -704,16 +704,16 @@ class TestPanelBootstrapBlockSize:
         fe = FixedEffects("y ~ x1 + x2", balanced_panel_data, "entity", "time")
         results = fe.fit()
 
-        with pytest.warns(UserWarning, match="block_size=.*is larger than n_periods"):
-            bootstrap = PanelBootstrap(
-                results,
-                n_bootstrap=20,
-                method="block",
-                block_size=100,  # Much larger than n_periods (5)
-                random_state=42,
-                show_progress=False,
-            )
+        bootstrap = PanelBootstrap(
+            results,
+            n_bootstrap=20,
+            method="block",
+            block_size=100,  # Much larger than n_periods (5)
+            random_state=42,
+            show_progress=False,
+        )
 
-        bootstrap.run()
+        with pytest.warns(UserWarning, match="block_size=.*is larger than n_periods"):
+            bootstrap.run()
 
         assert bootstrap._fitted is True
