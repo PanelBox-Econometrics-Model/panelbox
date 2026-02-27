@@ -11,6 +11,7 @@ Reference:
 
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -57,7 +58,7 @@ def test_data():
     df = pd.DataFrame(data_list)
 
     # Save for Stata
-    data_path = Path("/tmp/pvar_gmm_test_data.dta")
+    data_path = Path(tempfile.gettempdir()) / "pvar_gmm_test_data.dta"
     df.to_stata(data_path, write_index=False)
 
     return df
@@ -89,6 +90,7 @@ def stata_results(test_data):
     script_path = Path(__file__).parent / "test_gmm_vs_stata.do"
 
     # Create Stata script if it doesn't exist
+    tmpdir = tempfile.gettempdir()
     if not script_path.exists():
         stata_code = """
 * Validation script for Panel VAR GMM
@@ -98,7 +100,7 @@ clear all
 set more off
 
 * Load data
-use "/tmp/pvar_gmm_test_data.dta", clear
+use "TMPDIR_PLACEHOLDER/pvar_gmm_test_data.dta", clear
 
 * Declare panel structure
 xtset entity time
@@ -131,7 +133,7 @@ scalar n_instruments = e(ninstr)
 
 * Export results to JSON
 capture file close results_file
-file open results_file using "/tmp/pvar_gmm_stata_results.json", write replace
+file open results_file using "TMPDIR_PLACEHOLDER/pvar_gmm_stata_results.json", write replace
 
 file write results_file "{" _n
 file write results_file `"  "method": "pvar_fod_gmm","' _n
@@ -176,7 +178,7 @@ display "N instruments: " n_instruments
 
 exit, clear
 """
-        script_path.write_text(stata_code)
+        script_path.write_text(stata_code.replace("TMPDIR_PLACEHOLDER", tmpdir))
 
     # Run Stata script
     try:
@@ -205,7 +207,7 @@ exit, clear
         pytest.skip("Stata not installed or not in PATH")
 
     # Load results
-    results_path = Path("/tmp/pvar_gmm_stata_results.json")
+    results_path = Path(tempfile.gettempdir()) / "pvar_gmm_stata_results.json"
     if not results_path.exists():
         pytest.skip("Stata results file not found")
 

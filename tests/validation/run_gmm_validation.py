@@ -7,6 +7,7 @@ This script runs without pytest dependencies for quick validation.
 
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -26,7 +27,7 @@ def main():
     print("=" * 70)
 
     # Load R results
-    r_results_path = Path("/tmp/pvar_gmm_r_results.json")
+    r_results_path = Path(tempfile.gettempdir()) / "pvar_gmm_r_results.json"
     if not r_results_path.exists():
         print("ERROR: R results not found. Run the R script first:")
         print("  Rscript tests/validation/test_gmm_vs_r_panelvar.R")
@@ -36,7 +37,7 @@ def main():
         r_results = json.load(f)
 
     # Load test data
-    data_path = Path("/tmp/pvar_gmm_test_data.csv")
+    data_path = Path(tempfile.gettempdir()) / "pvar_gmm_test_data.csv"
     if not data_path.exists():
         print("ERROR: Test data not found")
         return 1

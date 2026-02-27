@@ -47,22 +47,25 @@ def _find_dataset(name: str, category: str | None = None) -> str | None:
         Full path to the CSV file, or None if not found.
     """
     filename = f"{name}.csv"
+    data_dir = _get_data_path()
 
     # 1. Check root data directory
-    root_path = os.path.join(_DATA_DIR, filename)
+    root_path = os.path.join(data_dir, filename)
     if category is None and os.path.isfile(root_path):
         return root_path
 
     # 2. Check specific category
     if category is not None:
-        cat_path = os.path.join(_DATA_DIR, category, filename)
+        cat_path = os.path.join(data_dir, category, filename)
         if os.path.isfile(cat_path):
             return cat_path
         return None
 
     # 3. Search all subdirectories
-    for entry in sorted(os.listdir(_DATA_DIR)):
-        subdir = os.path.join(_DATA_DIR, entry)
+    if not os.path.isdir(data_dir):
+        return None
+    for entry in sorted(os.listdir(data_dir)):
+        subdir = os.path.join(data_dir, entry)
         if os.path.isdir(subdir):
             candidate = os.path.join(subdir, filename)
             if os.path.isfile(candidate):
@@ -94,7 +97,7 @@ def load_grunfeld(return_panel_data: bool = False) -> pd.DataFrame | PanelData:
     >>> print(data.shape)
     (200, 5)
     """
-    data_path = os.path.join(_DATA_DIR, "grunfeld.csv")
+    data_path = os.path.join(_get_data_path(), "grunfeld.csv")
     df = pd.read_csv(data_path)
 
     if return_panel_data:
@@ -126,7 +129,7 @@ def load_abdata(return_panel_data: bool = False) -> pd.DataFrame | PanelData | N
     >>> from panelbox.datasets import load_abdata
     >>> data = load_abdata()
     """
-    data_path = os.path.join(_DATA_DIR, "abdata.csv")
+    data_path = os.path.join(_get_data_path(), "abdata.csv")
 
     if not os.path.exists(data_path):
         return None
@@ -165,12 +168,13 @@ def list_datasets(category: str | None = None) -> list[str]:
     >>> count_ds = list_datasets("count")
     """
     datasets: list[str] = []
+    data_dir = _get_data_path()
 
-    if not os.path.exists(_DATA_DIR):
+    if not os.path.exists(data_dir):
         return datasets
 
     if category is not None:
-        cat_dir = os.path.join(_DATA_DIR, category)
+        cat_dir = os.path.join(data_dir, category)
         if os.path.isdir(cat_dir):
             for f in os.listdir(cat_dir):
                 if f.endswith(".csv"):
@@ -178,13 +182,13 @@ def list_datasets(category: str | None = None) -> list[str]:
         return sorted(datasets)
 
     # Root-level datasets
-    for f in os.listdir(_DATA_DIR):
+    for f in os.listdir(data_dir):
         if f.endswith(".csv"):
             datasets.append(f[:-4])
 
     # Categorized datasets
-    for entry in sorted(os.listdir(_DATA_DIR)):
-        subdir = os.path.join(_DATA_DIR, entry)
+    for entry in sorted(os.listdir(data_dir)):
+        subdir = os.path.join(data_dir, entry)
         if os.path.isdir(subdir):
             for f in os.listdir(subdir):
                 if f.endswith(".csv"):
@@ -261,10 +265,12 @@ def get_dataset_info(dataset_name: str) -> dict[str, Any]:
             base_info["n_obs"] = len(df)
             base_info["variables"] = list(df.columns)
 
-            # Check if panel is balanced
+            # Check if panel is balanced and add entity/period counts
             entity_col = base_info.get("entity_col")
             time_col = base_info.get("time_col")
             if entity_col and time_col and entity_col in df.columns and time_col in df.columns:
+                base_info["n_entities"] = int(df[entity_col].nunique())
+                base_info["n_periods"] = int(df[time_col].nunique())
                 counts = df.groupby(entity_col)[time_col].count()
                 base_info["balanced"] = bool(counts.min() == counts.max())
     except Exception as e:

@@ -11,6 +11,7 @@ averaging across entities (Larsson et al. 2001).
 
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -53,7 +54,7 @@ def r_validation_results():
         print(result.stdout)
 
     # Load results
-    results_path = Path("/tmp/vecm_rank_r_results.json")
+    results_path = Path(tempfile.gettempdir()) / "vecm_rank_r_results.json"
     if not results_path.exists():
         pytest.skip("R results file not found")
 
@@ -73,7 +74,7 @@ def panel_data():
     pd.DataFrame
         Panel data with cointegrated variables
     """
-    data_path = Path("/tmp/vecm_rank_test_data.csv")
+    data_path = Path(tempfile.gettempdir()) / "vecm_rank_test_data.csv"
     if not data_path.exists():
         pytest.skip("R test data not found")
 

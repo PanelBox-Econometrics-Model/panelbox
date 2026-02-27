@@ -69,7 +69,7 @@ class OrderedMarginalEffectsResult:
     def pvalues(self) -> pd.DataFrame:
         """P-values from two-sided z-tests."""
         z_stats = self.z_stats
-        return z_stats.applymap(lambda z: 2 * norm.cdf(-abs(z)))
+        return z_stats.map(lambda z: 2 * norm.cdf(-abs(z)))
 
     def verify_sum_to_zero(self, tol: float = 1e-10) -> bool:
         """
@@ -183,7 +183,7 @@ class OrderedMarginalEffectsResult:
                 return ""
 
         pvals = self.pvalues
-        stars_df = pvals.applymap(add_stars)
+        stars_df = pvals.map(add_stars)
 
         # Combine effects with significance stars
         output_df = self.marginal_effects.copy()
@@ -213,9 +213,7 @@ class OrderedMarginalEffectsResult:
         )
 
 
-def compute_ordered_ame(
-    result, varlist: list[str] | None = None
-) -> OrderedMarginalEffectsResult:
+def compute_ordered_ame(result, varlist: list[str] | None = None) -> OrderedMarginalEffectsResult:
     """
     Compute Average Marginal Effects (AME) for ordered models.
 
@@ -356,9 +354,7 @@ def compute_ordered_ame(
     return OrderedMarginalEffectsResult(ame_df, se_df, result, me_type="ame")
 
 
-def compute_ordered_mem(
-    result, varlist: list[str] | None = None
-) -> OrderedMarginalEffectsResult:
+def compute_ordered_mem(result, varlist: list[str] | None = None) -> OrderedMarginalEffectsResult:
     """
     Compute Marginal Effects at Means (MEM) for ordered models.
 

@@ -239,6 +239,12 @@ def estimate_css_model(  # noqa: C901
 
     # Check for collinearity
     ZtZ = Z.T @ Z
+    rank = np.linalg.matrix_rank(ZtZ)
+    if rank < ZtZ.shape[0]:
+        raise ValueError(
+            "Design matrix is singular. Check for collinearity or "
+            "insufficient variation in entity/time dimensions."
+        )
     try:
         ZtZ_inv = np.linalg.inv(ZtZ)
     except np.linalg.LinAlgError as err:

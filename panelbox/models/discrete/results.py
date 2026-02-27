@@ -568,17 +568,17 @@ class NonlinearPanelResults(PanelResults):
 
         # Parameters
         for i, name in enumerate(self.model.exog_names):
-            coef = f"{self.params[i]:.4f}"
-            se = f"{self.std_errors[i]:.4f}"
-            z = f"{self.tvalues[i]:.2f}"
-            p = f"{self.pvalues[i]:.3f}"
+            coef = f"{self.params.iloc[i]:.4f}"
+            se = f"{self.std_errors.iloc[i]:.4f}"
+            z = f"{self.tvalues.iloc[i]:.2f}"
+            p = f"{self.pvalues.iloc[i]:.3f}"
 
             # Add significance stars
-            if self.pvalues[i] < 0.01:
+            if self.pvalues.iloc[i] < 0.01:
                 coef += "***"
-            elif self.pvalues[i] < 0.05:
+            elif self.pvalues.iloc[i] < 0.05:
                 coef += "**"
-            elif self.pvalues[i] < 0.10:
+            elif self.pvalues.iloc[i] < 0.10:
                 coef += "*"
 
             latex_lines.append(f"{name} & {coef} & {se} & {z} & {p} \\\\")

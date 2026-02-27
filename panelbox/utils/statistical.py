@@ -138,7 +138,7 @@ def wald_test(
     middle_inv = np.linalg.inv(middle)
 
     # Wald statistic: (R*beta - q)' (R * Vcov * R')^{-1} (R*beta - q)
-    statistic = float(restriction_value.T @ middle_inv @ restriction_value)
+    statistic = float((restriction_value.T @ middle_inv @ restriction_value).item())
 
     # Degrees of freedom
     df = restrictions.shape[0]

@@ -703,8 +703,8 @@ class LocationScaleResult(QuantilePanelResult):
         tau_grid = np.arange(0.05, 1.0, 0.05)
 
         # Get components
-        alpha = self.location_result.params[var_idx]
-        gamma = self.model.scale_params_[var_idx]
+        alpha = self.location_result.params.iloc[var_idx]
+        gamma = self.model.scale_params_.iloc[var_idx]
         sigma = np.exp(gamma / 2)
 
         # Compute quantile coefficients
