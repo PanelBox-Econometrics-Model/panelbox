@@ -1,5 +1,17 @@
 /* Custom styles for PanelBox documentation */
 
+/* Home page logo */
+.home-logo {
+    text-align: center;
+    margin: 1rem 0 0.5rem;
+}
+
+.home-logo img {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+}
+
 /* Header customization */
 .md-header {
     background-color: #ffffff !important;

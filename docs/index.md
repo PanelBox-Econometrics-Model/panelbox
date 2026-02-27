@@ -3,7 +3,9 @@ title: PanelBox - Panel Data Econometrics for Python
 description: Complete Python library for panel data econometrics with 70+ models, 50+ diagnostic tests, and interactive HTML reports
 ---
 
-# PanelBox
+<div class="home-logo" markdown>
+  ![PanelBox](assets/images/logo_panel.svg)
+</div>
 
 **The complete Python toolkit for panel data econometrics.**
 
