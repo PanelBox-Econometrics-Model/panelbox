@@ -36,9 +36,9 @@ results$pooled_logit <- list(
   coef_names = names(coef(pooled_logit)),
   std_errors = as.numeric(sqrt(diag(vcov(pooled_logit)))),
   loglik = as.numeric(logLik(pooled_logit)),
-  aic = AIC(pooled_logit),
-  bic = BIC(pooled_logit),
-  nobs = nobs(pooled_logit)
+  aic = as.numeric(AIC(pooled_logit)),
+  bic = as.numeric(BIC(pooled_logit)),
+  nobs = as.numeric(nobs(pooled_logit))
 )
 
 # ========================================================================
@@ -54,9 +54,9 @@ results$pooled_probit <- list(
   coef_names = names(coef(pooled_probit)),
   std_errors = as.numeric(sqrt(diag(vcov(pooled_probit)))),
   loglik = as.numeric(logLik(pooled_probit)),
-  aic = AIC(pooled_probit),
-  bic = BIC(pooled_probit),
-  nobs = nobs(pooled_probit)
+  aic = as.numeric(AIC(pooled_probit)),
+  bic = as.numeric(BIC(pooled_probit)),
+  nobs = as.numeric(nobs(pooled_probit))
 )
 
 # ========================================================================
@@ -139,7 +139,7 @@ cat("7. Model Fit Statistics...\n")
 
 # McFadden R-squared for pooled logit
 null_logit <- glm(y ~ 1, data = data, family = binomial(link = "logit"))
-mcfadden_r2 <- 1 - (logLik(pooled_logit)/logLik(null_logit))
+mcfadden_r2 <- 1 - (as.numeric(logLik(pooled_logit))/as.numeric(logLik(null_logit)))
 results$pooled_logit$mcfadden_r2 <- as.numeric(mcfadden_r2)
 
 # Classification accuracy

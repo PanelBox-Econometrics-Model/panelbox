@@ -47,8 +47,8 @@ tryCatch({
     threshold_names = names(thresholds),
     std_errors_threshold = as.numeric(se_thresholds),
     loglik = as.numeric(logLik(ordered_logit)),
-    aic = AIC(ordered_logit),
-    deviance = deviance(ordered_logit),
+    aic = as.numeric(AIC(ordered_logit)),
+    deviance = as.numeric(deviance(ordered_logit)),
     edf = ordered_logit$edf,  # effective degrees of freedom
     n_obs = nrow(data)
   )
@@ -85,8 +85,8 @@ tryCatch({
     threshold_names = names(thresholds),
     std_errors_threshold = as.numeric(se_thresholds),
     loglik = as.numeric(logLik(ordered_probit)),
-    aic = AIC(ordered_probit),
-    deviance = deviance(ordered_probit),
+    aic = as.numeric(AIC(ordered_probit)),
+    deviance = as.numeric(deviance(ordered_probit)),
     edf = ordered_probit$edf,
     n_obs = nrow(data)
   )
@@ -102,7 +102,7 @@ if (!is.null(results$ordered_logit$coefficients)) {
   cat("3. Predicted Probabilities for Ordered Logit...\n")
   pred_probs <- predict(ordered_logit, type = "probs")
   # Save first 50 rows
-  results$ordered_logit$predicted_probs_sample <- as.matrix(head(pred_probs, 50))
+  results$ordered_logit$predicted_probs_sample <- unclass(as.matrix(head(pred_probs, 50)))
 
   # Also save predicted classes
   pred_class <- predict(ordered_logit, type = "class")

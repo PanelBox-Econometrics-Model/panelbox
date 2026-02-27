@@ -36,11 +36,11 @@ results$pooled_poisson <- list(
   coef_names = names(coef(pooled_poisson)),
   std_errors = as.numeric(sqrt(diag(vcov(pooled_poisson)))),
   loglik = as.numeric(logLik(pooled_poisson)),
-  aic = AIC(pooled_poisson),
-  bic = BIC(pooled_poisson),
-  nobs = nobs(pooled_poisson),
-  deviance = deviance(pooled_poisson),
-  df_residual = df.residual(pooled_poisson)
+  aic = as.numeric(AIC(pooled_poisson)),
+  bic = as.numeric(BIC(pooled_poisson)),
+  nobs = as.numeric(nobs(pooled_poisson)),
+  deviance = as.numeric(deviance(pooled_poisson)),
+  df_residual = as.numeric(df.residual(pooled_poisson))
 )
 
 # Check for overdispersion
@@ -104,8 +104,8 @@ tryCatch({
     coef_names = names(coef(nb_model)),
     std_errors = as.numeric(sqrt(diag(vcov(nb_model)))),
     loglik = as.numeric(logLik(nb_model)),
-    aic = AIC(nb_model),
-    bic = BIC(nb_model),
+    aic = as.numeric(AIC(nb_model)),
+    bic = as.numeric(BIC(nb_model)),
     theta = nb_model$theta,  # Dispersion parameter
     se_theta = nb_model$SE.theta  # SE of dispersion parameter
   )

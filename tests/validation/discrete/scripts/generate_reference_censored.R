@@ -52,7 +52,7 @@ tryCatch({
     log_sigma = log_sigma,
     se_log_sigma = se_log_sigma,
     loglik = as.numeric(logLik(pooled_tobit)),
-    aic = AIC(pooled_tobit),
+    aic = as.numeric(AIC(pooled_tobit)),
     n_obs = nrow(data),
     n_censored = sum(data$censored),
     n_uncensored = sum(1 - data$censored)
