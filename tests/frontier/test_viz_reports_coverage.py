@@ -261,6 +261,7 @@ class TestCompareModels:
 
     def test_markdown_format(self):
         """Cover line 591: output_format='markdown'."""
+        pytest.importorskip("tabulate")
         models = self._make_two_models()
         result = compare_models(models, output_format="markdown")
         assert isinstance(result, str)
