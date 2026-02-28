@@ -7,6 +7,8 @@ from SFResult/PanelSFResult - only external dependencies are mocked.
 
 from __future__ import annotations
 
+import importlib
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -20,6 +22,9 @@ import pytest
 
 from panelbox.frontier.data import DistributionType, FrontierType, ModelType
 from panelbox.frontier.result import PanelSFResult, SFResult
+
+# Import the actual module (not the function) to allow patching
+_me_module = importlib.import_module("panelbox.frontier.utils.marginal_effects")
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -600,8 +605,9 @@ class TestMarginalEffects:
         )
         result = _make_sfresult(model=model)
         mock_df = pd.DataFrame({"variable": ["firm_age"], "marginal_effect": [0.05]})
-        with patch(
-            "panelbox.frontier.utils.marginal_effects.marginal_effects_wang_2002",
+        with patch.object(
+            _me_module,
+            "marginal_effects_wang_2002",
             return_value=mock_df,
         ) as mock_fn:
             me = result.marginal_effects(method="location")
@@ -616,8 +622,9 @@ class TestMarginalEffects:
         )
         result = _make_sfresult(model=model)
         mock_df = pd.DataFrame({"variable": ["firm_size"], "marginal_effect": [0.03]})
-        with patch(
-            "panelbox.frontier.utils.marginal_effects.marginal_effects_wang_2002",
+        with patch.object(
+            _me_module,
+            "marginal_effects_wang_2002",
             return_value=mock_df,
         ) as mock_fn:
             result.marginal_effects(method="scale")
@@ -633,8 +640,9 @@ class TestMarginalEffects:
         model.het_vars = None
         result = _make_sfresult(model=model)
         mock_df = pd.DataFrame({"variable": ["firm_age"], "marginal_effect": [0.05]})
-        with patch(
-            "panelbox.frontier.utils.marginal_effects.marginal_effects_bc95",
+        with patch.object(
+            _me_module,
+            "marginal_effects_bc95",
             return_value=mock_df,
         ) as mock_fn:
             result.marginal_effects(method="location")
