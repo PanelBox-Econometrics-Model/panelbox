@@ -43,6 +43,9 @@
             {% if classification %}
             <button class="tab-button" data-tab="classification" role="tab" aria-selected="false">Classification</button>
             {% endif %}
+            {% if charts %}
+            <button class="tab-button" data-tab="charts" role="tab" aria-selected="false">Charts</button>
+            {% endif %}
         </div>
 
         <div class="tab-contents">
@@ -133,6 +136,24 @@
                         <div class="metric-value">{{ classification.f1_score|round(4) }}</div>
                     </div>
                 </div>
+            </div>
+            {% endif %}
+
+            {% if charts %}
+            <!-- Charts Tab -->
+            <div class="tab-content" id="tab-charts" role="tabpanel">
+                {% if charts.coefficient_plot %}
+                <h3>Coefficient Estimates</h3>
+                <div class="chart-wrapper">{{ charts.coefficient_plot|safe }}</div>
+                {% endif %}
+                {% if charts.ic_chart %}
+                <h3>Information Criteria</h3>
+                <div class="chart-wrapper">{{ charts.ic_chart|safe }}</div>
+                {% endif %}
+                {% if charts.classification_chart %}
+                <h3>Classification Metrics</h3>
+                <div class="chart-wrapper">{{ charts.classification_chart|safe }}</div>
+                {% endif %}
             </div>
             {% endif %}
         </div>

@@ -28,6 +28,12 @@
             <div class="metric-value text-success">{{ tests|selectattr('status', 'equalto', 'pass')|list|length if tests else 0 }}</div>
         </div>
     </div>
+
+    {% if charts and charts.health_gauge %}
+    <div class="chart-wrapper mt-4">
+        {{ charts.health_gauge|safe }}
+    </div>
+    {% endif %}
 </section>
 {% endblock %}
 
@@ -72,6 +78,13 @@
                 </table>
                 {% else %}
                 <p class="text-gray-500">No diagnostic tests available.</p>
+                {% endif %}
+
+                {% if charts and charts.test_results_chart %}
+                <h3 class="mt-4">Test Results Visualization</h3>
+                <div class="chart-wrapper">
+                    {{ charts.test_results_chart|safe }}
+                </div>
                 {% endif %}
             </div>
 

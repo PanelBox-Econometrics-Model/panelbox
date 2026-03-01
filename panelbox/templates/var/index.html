@@ -46,6 +46,9 @@
             <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
             <button class="tab-button" data-tab="diagnostics-tab" role="tab" aria-selected="false">Diagnostics</button>
             <button class="tab-button" data-tab="stability-tab" role="tab" aria-selected="false">Stability</button>
+            {% if charts %}
+            <button class="tab-button" data-tab="charts" role="tab" aria-selected="false">Charts</button>
+            {% endif %}
         </div>
 
         <div class="tab-contents">
@@ -157,7 +160,11 @@
                 <p class="text-gray-500">No stability data available.</p>
                 {% endif %}
 
-                {% if stability_chart %}
+                {% if charts and charts.stability_chart %}
+                <div class="chart-wrapper mt-4">
+                    {{ charts.stability_chart|safe }}
+                </div>
+                {% elif stability_chart %}
                 <div class="chart-wrapper mt-4">
                     {{ stability_chart|safe }}
                 </div>
@@ -172,6 +179,20 @@
                     </ul>
                 </div>
             </div>
+
+            {% if charts %}
+            <!-- Charts Tab (only charts NOT already shown in dedicated tabs) -->
+            <div class="tab-content" id="tab-charts" role="tabpanel">
+                {% if charts.ic_chart %}
+                <h3>Information Criteria</h3>
+                <div class="chart-wrapper">{{ charts.ic_chart|safe }}</div>
+                {% endif %}
+                {% if charts.coefficient_heatmap %}
+                <h3>Coefficient Heatmap</h3>
+                <div class="chart-wrapper">{{ charts.coefficient_heatmap|safe }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>

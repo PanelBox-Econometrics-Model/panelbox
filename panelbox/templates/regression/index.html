@@ -31,7 +31,10 @@
         <div class="tab-buttons" role="tablist">
             <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
             <button class="tab-button" data-tab="model-info" role="tab" aria-selected="false">Model Info</button>
-            {% if charts or residual_charts %}
+            {% if charts %}
+            <button class="tab-button" data-tab="charts" role="tab" aria-selected="false">Charts</button>
+            {% endif %}
+            {% if residual_charts %}
             <button class="tab-button" data-tab="diagnostics" role="tab" aria-selected="false">Diagnostics</button>
             {% endif %}
         </div>
@@ -109,23 +112,33 @@
                 </table>
             </div>
 
+            {% if charts %}
+            <!-- Charts Tab -->
+            <div class="tab-content" id="tab-charts" role="tabpanel">
+                {% if charts.coefficient_plot %}
+                <h3>Coefficient Estimates</h3>
+                <div class="chart-wrapper">{{ charts.coefficient_plot|safe }}</div>
+                {% endif %}
+                {% if charts.fit_chart %}
+                <h3>Model Fit</h3>
+                <div class="chart-wrapper">{{ charts.fit_chart|safe }}</div>
+                {% endif %}
+                {% if charts.pvalue_chart %}
+                <h3>P-value Summary</h3>
+                <div class="chart-wrapper">{{ charts.pvalue_chart|safe }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <!-- Diagnostics Tab -->
-            {% if charts or residual_charts %}
+            {% if residual_charts %}
             <div class="tab-content" id="tab-diagnostics" role="tabpanel">
                 <h3>Diagnostic Plots</h3>
-                {% if residual_charts %}
-                    {% for name, chart_html in residual_charts.items() %}
-                    <div class="chart-wrapper mb-4">
-                        {{ chart_html|safe }}
-                    </div>
-                    {% endfor %}
-                {% elif charts %}
-                    {% for name, chart_html in charts.items() %}
-                    <div class="chart-wrapper mb-4">
-                        {{ chart_html|safe }}
-                    </div>
-                    {% endfor %}
-                {% endif %}
+                {% for name, chart_html in residual_charts.items() %}
+                <div class="chart-wrapper mb-4">
+                    {{ chart_html|safe }}
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
         </div>

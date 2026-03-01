@@ -466,10 +466,10 @@ class TestDiscreteReportPipeline:
         html = manager.generate_discrete_report(discrete_transformed_data)
         assert "<style>" in html
 
-    def test_discrete_report_no_plotly(self, manager, discrete_transformed_data):
-        """Discrete report does not include Plotly CDN."""
+    def test_discrete_report_includes_plotly(self, manager, discrete_transformed_data):
+        """Discrete report includes Plotly CDN for interactive charts."""
         html = manager.generate_discrete_report(discrete_transformed_data)
-        assert "plotly-2.27.0" not in html
+        assert "plotly-2.27.0" in html
 
     def test_discrete_report_contains_branding(self, manager, discrete_transformed_data):
         """Discrete report includes PanelBox branding."""

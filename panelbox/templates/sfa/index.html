@@ -52,6 +52,9 @@
             <button class="tab-button" data-tab="efficiency" role="tab" aria-selected="false">Efficiency</button>
             {% endif %}
             <button class="tab-button" data-tab="fit" role="tab" aria-selected="false">Model Fit</button>
+            {% if charts %}
+            <button class="tab-button" data-tab="charts" role="tab" aria-selected="false">Charts</button>
+            {% endif %}
         </div>
 
         <div class="tab-contents">
@@ -169,16 +172,38 @@
                     </tbody>
                 </table>
 
-                {% if efficiency_chart %}
+                {% if charts and charts.efficiency_distribution %}
+                <div class="chart-wrapper mt-4">
+                    {{ charts.efficiency_distribution|safe }}
+                </div>
+                {% elif efficiency_chart %}
                 <div class="chart-wrapper mt-4">
                     {{ efficiency_chart|safe }}
                 </div>
                 {% endif %}
 
-                {% if ranking_chart %}
+                {% if charts and charts.efficiency_summary %}
+                <div class="chart-wrapper mt-4">
+                    {{ charts.efficiency_summary|safe }}
+                </div>
+                {% elif ranking_chart %}
                 <div class="chart-wrapper mt-4">
                     {{ ranking_chart|safe }}
                 </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if charts %}
+            <!-- Charts Tab -->
+            <div class="tab-content" id="tab-charts" role="tabpanel">
+                {% if charts.coefficient_plot %}
+                <h3>Coefficient Estimates</h3>
+                <div class="chart-wrapper">{{ charts.coefficient_plot|safe }}</div>
+                {% endif %}
+                {% if charts.variance_chart %}
+                <h3>Variance Decomposition</h3>
+                <div class="chart-wrapper">{{ charts.variance_chart|safe }}</div>
                 {% endif %}
             </div>
             {% endif %}

@@ -348,11 +348,11 @@ class TestQuantileReportPipeline:
         html = manager.generate_quantile_report(data)
         assert "<style>" in html
 
-    def test_quantile_report_no_plotly(self, manager, quantile_mock_report):
-        """Quantile report does not include Plotly CDN."""
+    def test_quantile_report_includes_plotly(self, manager, quantile_mock_report):
+        """Quantile report includes Plotly CDN for interactive charts."""
         data = QuantileTransformer(quantile_mock_report).transform()
         html = manager.generate_quantile_report(data)
-        assert "plotly-2.27.0" not in html
+        assert "plotly-2.27.0" in html
 
     def test_quantile_report_contains_branding(self, manager, quantile_mock_report):
         """Quantile report includes PanelBox branding."""

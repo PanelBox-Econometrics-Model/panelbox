@@ -53,6 +53,9 @@
             <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
             <button class="tab-button" data-tab="diagnostics" role="tab" aria-selected="false">Diagnostics</button>
             <button class="tab-button" data-tab="instruments" role="tab" aria-selected="false">Instruments</button>
+            {% if charts %}
+            <button class="tab-button" data-tab="charts" role="tab" aria-selected="false">Charts</button>
+            {% endif %}
         </div>
 
         <div class="tab-contents">
@@ -180,6 +183,24 @@
                 </div>
                 {% endif %}
             </div>
+
+            {% if charts %}
+            <!-- Charts Tab -->
+            <div class="tab-content" id="tab-charts" role="tabpanel">
+                {% if charts.coefficient_plot %}
+                <h3>Coefficient Estimates</h3>
+                <div class="chart-wrapper">{{ charts.coefficient_plot|safe }}</div>
+                {% endif %}
+                {% if charts.diagnostic_chart %}
+                <h3>Specification Tests</h3>
+                <div class="chart-wrapper">{{ charts.diagnostic_chart|safe }}</div>
+                {% endif %}
+                {% if charts.instrument_chart %}
+                <h3>Instrument Summary</h3>
+                <div class="chart-wrapper">{{ charts.instrument_chart|safe }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>

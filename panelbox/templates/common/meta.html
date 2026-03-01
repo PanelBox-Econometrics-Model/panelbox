@@ -3,3 +3,6 @@
 <meta name="generator" content="PanelBox {{ panelbox_version }}">
 <meta name="description" content="PanelBox {{ report_type }} Report{% if report_title %} - {{ report_title }}{% endif %}">
 <title>{% if report_title %}{{ report_title }} - {% endif %}PanelBox Report</title>
+{% if logo_base64 %}
+<link rel="icon" type="image/svg+xml" href="{{ logo_base64 }}">
+{% endif %}

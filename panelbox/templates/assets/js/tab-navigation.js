@@ -15,7 +15,7 @@
      * Initialize tab navigation for all tab containers
      */
     function initTabs() {
-        const tabContainers = document.querySelectorAll('.tabs-container');
+        const tabContainers = document.querySelectorAll('.tab-container');
 
         tabContainers.forEach(container => {
             const tabButtons = container.querySelectorAll('.tab-button');
@@ -52,11 +52,23 @@
 
         // Activate target tab
         const targetButton = container.querySelector(`[data-tab="${targetId}"]`);
-        const targetContent = document.getElementById(targetId);
+        // Tab content IDs use "tab-" prefix (e.g. data-tab="coefficients" -> id="tab-coefficients")
+        const targetContent = document.getElementById('tab-' + targetId) || document.getElementById(targetId);
 
         if (targetButton && targetContent) {
             targetButton.classList.add('active');
             targetContent.classList.add('active');
+
+            // Resize Plotly charts that were rendered in hidden tabs
+            // Plotly charts get zero dimensions when inside display:none containers
+            requestAnimationFrame(function() {
+                var plotlyDivs = targetContent.querySelectorAll('.plotly-graph-div');
+                plotlyDivs.forEach(function(div) {
+                    if (typeof Plotly !== 'undefined') {
+                        Plotly.Plots.resize(div);
+                    }
+                });
+            });
 
             // Scroll tab into view if needed
             targetButton.scrollIntoView({
@@ -82,7 +94,7 @@
 
             if (!activeTab) return;
 
-            const container = activeTab.closest('.tabs-container');
+            const container = activeTab.closest('.tab-container');
             const tabButtons = Array.from(container.querySelectorAll('.tab-button'));
             const currentIndex = tabButtons.indexOf(activeTab);
 
@@ -121,7 +133,7 @@
             const tabId = window.location.hash.substring(1);
             const tabButton = document.querySelector(`[data-tab="${tabId}"]`);
             if (tabButton) {
-                const container = tabButton.closest('.tabs-container');
+                const container = tabButton.closest('.tab-container');
                 switchTab(container, tabId);
             }
         }

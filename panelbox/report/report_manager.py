@@ -254,9 +254,19 @@ class ReportManager:
         """
         template = "regression/index.html"
 
+        # Generate charts
+        try:
+            from panelbox.report.charts import RegressionChartBuilder
+
+            chart_builder = RegressionChartBuilder(regression_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
         context = {
             "report_title": title or "Regression Results",
             "report_subtitle": subtitle,
+            "charts": charts,
             **regression_data,
         }
 
@@ -294,7 +304,21 @@ class ReportManager:
         """
         template = "gmm/index.html"
 
-        context = {"report_title": title or "GMM Results", "report_subtitle": subtitle, **gmm_data}
+        # Generate charts
+        try:
+            from panelbox.report.charts import GMMChartBuilder
+
+            chart_builder = GMMChartBuilder(gmm_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
+        context = {
+            "report_title": title or "GMM Results",
+            "report_subtitle": subtitle,
+            "charts": charts,
+            **gmm_data,
+        }
 
         return self.generate_report(
             report_type="gmm", template=template, context=context, include_plotly=True
@@ -327,14 +351,24 @@ class ReportManager:
         """
         template = "discrete/results.html"
 
+        # Generate charts
+        try:
+            from panelbox.report.charts import DiscreteChartBuilder
+
+            chart_builder = DiscreteChartBuilder(discrete_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
         context = {
             "report_title": title or "Discrete Model Results",
             "report_subtitle": subtitle,
+            "charts": charts,
             **discrete_data,
         }
 
         return self.generate_report(
-            report_type="discrete", template=template, context=context, include_plotly=False
+            report_type="discrete", template=template, context=context, include_plotly=True
         )
 
     def generate_sfa_report(
@@ -364,9 +398,19 @@ class ReportManager:
         """
         template = "sfa/index.html"
 
+        # Generate charts
+        try:
+            from panelbox.report.charts import SFAChartBuilder
+
+            chart_builder = SFAChartBuilder(sfa_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
         context = {
             "report_title": title or "Stochastic Frontier Analysis",
             "report_subtitle": subtitle,
+            "charts": charts,
             **sfa_data,
         }
 
@@ -401,9 +445,19 @@ class ReportManager:
         """
         template = "var/index.html"
 
+        # Generate charts
+        try:
+            from panelbox.report.charts import VARChartBuilder
+
+            chart_builder = VARChartBuilder(var_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
         context = {
             "report_title": title or "Panel VAR Results",
             "report_subtitle": subtitle,
+            "charts": charts,
             **var_data,
         }
 
@@ -438,14 +492,24 @@ class ReportManager:
         """
         template = "quantile/diagnostics.html"
 
+        # Generate charts
+        try:
+            from panelbox.report.charts import QuantileChartBuilder
+
+            chart_builder = QuantileChartBuilder(quantile_data)
+            charts = chart_builder.build_all()
+        except Exception:
+            charts = {}
+
         context = {
             "report_title": title or "Quantile Regression Diagnostics",
             "report_subtitle": subtitle,
+            "charts": charts,
             **quantile_data,
         }
 
         return self.generate_report(
-            report_type="quantile", template=template, context=context, include_plotly=False
+            report_type="quantile", template=template, context=context, include_plotly=True
         )
 
     def generate_residual_report(

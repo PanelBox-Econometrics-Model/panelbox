@@ -9,6 +9,9 @@
     </style>
 
     {% block extra_css %}{% endblock %}
+
+    <!-- Plotly.js (must load before chart divs) -->
+    {{ plotly_js|safe }}
 </head>
 <body>
     <div class="report-container">
@@ -24,9 +27,6 @@
         <!-- Footer -->
         {% include 'common/footer.html' %}
     </div>
-
-    <!-- Plotly.js -->
-    {{ plotly_js|safe }}
 
     <!-- Embedded JavaScript -->
     {% if js_inline %}
