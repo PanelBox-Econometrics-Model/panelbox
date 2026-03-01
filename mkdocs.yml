@@ -121,9 +121,9 @@ extra:
       link: https://github.com/PanelBox-Econometrics-Model/panelbox
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/panelbox/
-  # analytics:
-  #   provider: google
-  #   property: G-XXXXXXXXXX  # Add your Google Analytics ID here
+  analytics:
+    provider: google
+    property: G-5Y9QXPVXN6
 
 exclude_docs: |
   # Archive directory (internal-only files)
