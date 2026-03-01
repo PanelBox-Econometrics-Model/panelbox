@@ -399,7 +399,7 @@ class DynamicQuantile(QuantilePanelModel):
         # Step 1: First stage regression to get control function
         # Regress y_{t-1} on exogenous variables
 
-        from ...utils.data import PanelData
+        from ...core.panel_data import PanelData
 
         # Create data for first stage
         fs_data = pd.DataFrame(
