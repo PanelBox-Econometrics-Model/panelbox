@@ -1,7 +1,7 @@
 site_name: PanelBox Documentation
 site_description: Python library for panel data econometrics with GMM, Fixed Effects, and Random Effects
 site_author: PanelBox Development Team
-site_url: https://panelbox-econometrics-model.github.io/panelbox
+site_url: https://panelbox.readthedocs.io/
 
 repo_name: PanelBox-Econometrics-Model/panelbox
 repo_url: https://github.com/PanelBox-Econometrics-Model/panelbox
