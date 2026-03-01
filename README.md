@@ -11,45 +11,12 @@
 [![PyPI version](https://badge.fury.io/py/panelbox.svg)](https://badge.fury.io/py/panelbox)
 [![Python versions](https://img.shields.io/pypi/pyversions/panelbox)](https://pypi.org/project/panelbox/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Development Status](https://img.shields.io/badge/development%20status-beta-orange)
 
 </div>
 
 ---
 
-PanelBox provides comprehensive tools for panel data econometrics, bringing Stata's `xtabond2` and R's `plm` capabilities to Python with modern, user-friendly APIs.
-
-## Features
-
-### ✅ Static Panel Models
-- **Pooled OLS**: Standard OLS with panel data
-- **Fixed Effects**: Control for time-invariant heterogeneity
-- **Random Effects**: GLS estimation with random effects
-- **Hausman Test**: Test for endogeneity of random effects
-
-### ✅ Dynamic Panel GMM (v0.2.0)
-- **Difference GMM**: Arellano-Bond (1991) estimator
-- **System GMM**: Blundell-Bond (1998) estimator
-- **Robust to unbalanced panels**: Smart instrument selection
-- **Windmeijer correction**: Finite-sample standard error correction
-- **Comprehensive diagnostics**:
-  - Hansen J-test for overidentification
-  - Sargan test
-  - Arellano-Bond AR tests
-  - Instrument ratio monitoring
-
-### 🔧 Panel-Specific Features
-- **Unbalanced panel support**: Handles missing observations gracefully
-- **Time effects**: Time dummies, linear trends, or custom time controls
-- **Clustered standard errors**: Robust inference
-- **Instrument generation**: Automatic GMM-style and IV-style instruments
-- **Collapse option**: Avoids instrument proliferation (Roodman 2009)
-
-### 📊 Publication-Ready Output
-- **Summary tables**: Professional regression output
-- **Diagnostic tests**: Comprehensive specification testing
-- **LaTeX export**: Ready for academic papers
-- **Warnings system**: Guides users to correct specifications
+PanelBox is a comprehensive Python library for panel data econometrics, with **70+ models across 13 families**, **50+ diagnostic tests**, and **35+ interactive charts**. It brings the capabilities of Stata's `xtabond2`, `xtreg`, `xtfrontier`, and R's `plm`, `splm`, `frontier` to Python with a modern, unified API.
 
 ## Installation
 
@@ -57,82 +24,13 @@ PanelBox provides comprehensive tools for panel data econometrics, bringing Stat
 pip install panelbox
 ```
 
-Or install from source:
-
-```bash
-git clone https://github.com/PanelBox-Econometrics-Model/panelbox.git
-cd panelbox
-pip install -e .
-```
-
 ## Quick Start
 
-### 🎯 Experiment Pattern (Recommended - v0.6.0+)
-
 ```python
 import panelbox as pb
-import pandas as pd
 
-# Load your panel data
-data = pd.read_csv('panel_data.csv')
-
-# Create experiment
-experiment = pb.PanelExperiment(
-    data=data,
-    formula="invest ~ value + capital",
-    entity_col="firm",
-    time_col="year"
-)
-
-# Fit multiple models at once
-experiment.fit_all_models(names=['pooled', 'fe', 're'])
-
-# Validate model specification
-validation_result = experiment.validate_model('fe')
-print(validation_result.summary())
-validation_result.save_html('validation_report.html', test_type='validation')
-
-# Compare models and select best one
-comparison_result = experiment.compare_models(['pooled', 'fe', 're'])
-print(f"Best model: {comparison_result.best_model}")
-comparison_result.save_html('comparison_report.html', test_type='comparison')
-
-# Analyze residuals (v0.7.0)
-residual_result = experiment.analyze_residuals('fe')
-print(residual_result.summary())
-
-# Check diagnostic tests
-stat, pvalue = residual_result.shapiro_test
-print(f"Shapiro-Wilk normality test: p={pvalue:.4f}")
-
-dw = residual_result.durbin_watson
-print(f"Durbin-Watson statistic: {dw:.4f}")
-
-residual_result.save_html('residuals_report.html', test_type='residuals')
-
-# Generate master report with all sub-reports (NEW in v0.8.0!)
-experiment.save_master_report(
-    'master_report.html',
-    theme='professional',
-    reports=[
-        {'type': 'validation', 'title': 'Model Validation',
-         'description': 'Specification tests', 'file_path': 'validation_report.html'},
-        {'type': 'comparison', 'title': 'Model Comparison',
-         'description': 'Compare pooled, FE, RE', 'file_path': 'comparison_report.html'},
-        {'type': 'residuals', 'title': 'Residual Diagnostics',
-         'description': 'Diagnostic tests', 'file_path': 'residuals_report.html'}
-    ]
-)
-```
-
-### Static Panel Models (Traditional API)
-
-```python
-import panelbox as pb
-import pandas as pd
-
-# Load your panel data
-data = pd.read_csv('panel_data.csv')
+# Load bundled dataset (103 datasets available)
+data = pb.datasets.load_grunfeld()
 
 # Fixed Effects model
 fe = pb.FixedEffects(
@@ -143,200 +41,226 @@ fe = pb.FixedEffects(
 )
 results = fe.fit(cov_type='clustered')
 print(results.summary())
-
-# Hausman test
-hausman = pb.HausmanTest(fe_results, re_results)
-print(hausman)
 ```
+
+## Model Families
+
+### Static Panel Models
+
+| Model | Description |
+|-------|-------------|
+| `PooledOLS` | Pooled OLS estimation |
+| `FixedEffects` | Within estimator (entity/time/two-way) |
+| `RandomEffects` | GLS estimation |
+| `BetweenEstimator` | Between-groups estimator |
+| `FirstDifferenceEstimator` | First-difference estimator |
 
 ### Dynamic Panel GMM
 
-```python
-from panelbox import DifferenceGMM
+| Model | Description |
+|-------|-------------|
+| `DifferenceGMM` | Arellano-Bond (1991) |
+| `SystemGMM` | Blundell-Bond (1998) |
+| `ContinuousUpdatedGMM` | CUE-GMM (Hansen-Heaton-Yaron 1996) |
+| `BiasCorrectedGMM` | Hahn-Kuersteiner (2002) bias correction |
 
-# Arellano-Bond employment equation
-gmm = DifferenceGMM(
-    data=data,
-    dep_var='employment',
-    lags=1,
-    id_var='firm',
-    time_var='year',
-    exog_vars=['wages', 'capital', 'output'],
-    time_dummies=False,
-    collapse=True,
-    two_step=True,
-    robust=True
+Full diagnostic suite: Hansen J, Sargan, AR(1)/AR(2), Windmeijer correction, instrument ratio monitoring, overfit diagnostics.
+
+### Panel VAR
+
+| Model | Description |
+|-------|-------------|
+| `PanelVAR` | Panel Vector Autoregression (OLS/GMM) |
+| `PanelVECM` | Panel Vector Error Correction Model |
+
+Includes IRF, FEVD, Granger causality network visualization, lag selection (AIC/BIC/HQIC), and Johansen cointegration rank test.
+
+### Spatial Models
+
+| Model | Description |
+|-------|-------------|
+| `SpatialLag` | Spatial Autoregressive Model (SAR) |
+| `SpatialError` | Spatial Error Model (SEM) |
+| `SpatialDurbin` | Spatial Durbin Model (SDM) |
+| `GeneralNestingSpatial` | General Nesting Spatial (GNS) |
+| `DynamicSpatialPanel` | Dynamic spatial panel models |
+
+### Stochastic Frontier Analysis
+
+| Model | Description |
+|-------|-------------|
+| `StochasticFrontier` | SFA with half-normal, exponential, truncated-normal, gamma |
+| `FourComponentSFA` | Persistent/transient inefficiency decomposition |
+
+JLMS, BC, and Mode efficiency estimators. TFP decomposition and frontier visualization.
+
+### Count Data Models
+
+| Model | Description |
+|-------|-------------|
+| `PoissonFixedEffects` | Conditional MLE (Hausman-Hall-Griliches 1984) |
+| `RandomEffectsPoisson` | RE Poisson (Gamma/Normal mixing) |
+| `NegativeBinomial` | NB2 for overdispersion |
+| `ZeroInflatedPoisson` | ZIP model |
+| `ZeroInflatedNegativeBinomial` | ZINB model |
+| `PPML` | Poisson Pseudo-ML (gravity models) |
+
+### Discrete Choice Models
+
+| Model | Description |
+|-------|-------------|
+| `FixedEffectsLogit` | Conditional logit (Chamberlain 1980) |
+| `RandomEffectsProbit` | RE probit with GHQ integration |
+| `OrderedLogit` / `OrderedProbit` | Ordered choice models |
+| `MultinomialLogit` | Multinomial choice (FE/RE/Pooled) |
+
+### Quantile Regression
+
+| Model | Description |
+|-------|-------------|
+| `FixedEffectsQuantile` | Koenker (2004) FE quantile regression |
+| `CanayTwoStep` | Canay (2011) two-step estimator |
+| `LocationScale` | MSS (2019) location-scale models |
+| `DynamicQuantile` | Dynamic panel quantile |
+| `QuantileTreatmentEffects` | Quantile treatment effects |
+
+### Selection & Censored Models
+
+| Model | Description |
+|-------|-------------|
+| `PanelHeckman` | Two-step Heckman (Wooldridge 1995) and MLE |
+| `PanelIV` | Panel IV/2SLS estimation |
+
+## Diagnostic Tests (50+)
+
+| Category | Tests |
+|----------|-------|
+| **Unit Root** | LLC, IPS, Fisher, Hadri, Breitung |
+| **Cointegration** | Kao, Pedroni (7 stats), Westerlund (4 stats) |
+| **Specification** | Hausman, Mundlak, RESET, Chow, Davidson-MacKinnon J/Cox |
+| **Heteroskedasticity** | Breusch-Pagan, White, Modified Wald |
+| **Serial Correlation** | Wooldridge AR, Breusch-Godfrey, Baltagi-Wu |
+| **Cross-Sectional Dependence** | Pesaran CD, Frees, Breusch-Pagan LM |
+| **Spatial** | LM Lag/Error (standard + robust), Moran's I, Local LISA |
+| **GMM** | Hansen J, Sargan, AR(1)/AR(2), weak instruments |
+| **Frontier** | LR, Wald, skewness, Vuong, inefficiency presence |
+
+## Robust Standard Errors (8 types)
+
+- **HC0-HC3**: Heteroskedasticity-consistent (White, leverage-adjusted)
+- **Clustered**: One-way (entity/time) and two-way (Cameron-Gelbach-Miller 2011)
+- **Driscoll-Kraay**: Spatial and temporal dependence
+- **Newey-West**: HAC for serial correlation
+- **PCSE**: Panel-corrected (Beck-Katz 1995)
+- **Spatial HAC**: For spatial panel models
+
+## Visualization (35+ interactive charts)
+
+```python
+from panelbox.visualization import (
+    create_residual_diagnostics,
+    create_validation_charts,
+    create_comparison_charts,
+    create_panel_charts,
+    export_charts,
 )
 
-results = gmm.fit()
-print(results.summary())
+# Residual diagnostics (Q-Q, fitted vs residual, scale-location, etc.)
+charts = create_residual_diagnostics(results)
+export_charts(charts, "diagnostics.html")
 
-# Check specification tests
-print(f"Hansen J p-value: {results.hansen_j.pvalue:.3f}")
-print(f"AR(2) p-value: {results.ar2_test.pvalue:.3f}")
+# Entity/time effects, between-within decomposition, panel structure
+charts = create_panel_charts(results)
 ```
 
-### System GMM (Blundell-Bond)
+Three professional themes: `professional`, `academic`, `presentation`. Export to HTML, JSON, PNG, SVG, PDF.
+
+## Experiment Pattern
+
+The `PanelExperiment` class provides a factory-based workflow for comparing models:
 
 ```python
-from panelbox import SystemGMM
+import panelbox as pb
 
-# System GMM for persistent series
-sys_gmm = SystemGMM(
+data = pb.datasets.load_grunfeld()
+
+experiment = pb.PanelExperiment(
     data=data,
-    dep_var='y',
-    lags=1,
-    id_var='id',
-    time_var='year',
-    exog_vars=['x1', 'x2'],
-    collapse=True,
-    two_step=True,
-    robust=True
+    formula="invest ~ value + capital",
+    entity_col="firm",
+    time_col="year"
 )
 
-results = sys_gmm.fit()
-print(results.summary())
+# Fit and compare models
+experiment.fit_all_models(names=['pooled', 'fe', 're'])
+comparison = experiment.compare_models(['pooled', 'fe', 're'])
+print(f"Best model: {comparison.best_model}")
 
-# Compare efficiency with Difference GMM
-print(f"Instrument count: {results.n_instruments}")
-print(f"Instrument ratio: {results.instrument_ratio:.3f}")
+# Validate specification
+validation = experiment.validate_model('fe')
+validation.save_html('validation.html', test_type='validation')
+
+# Residual diagnostics
+residuals = experiment.analyze_residuals('fe')
+print(residuals.summary())
+
+# Master report linking all sub-reports
+experiment.save_master_report('report.html', theme='professional', reports=[...])
 ```
 
-## 📖 Best Practices for GMM
-
-### Recommended: Use `collapse=True`
-
-Following Roodman (2009), we **strongly recommend** using collapsed instruments:
+## Bundled Datasets (103 datasets)
 
 ```python
-# ✅ RECOMMENDED
-gmm = DifferenceGMM(..., collapse=True)
+from panelbox.datasets import load_dataset, list_datasets, list_categories
+
+# Browse categories
+print(list_categories())
+# ['censored', 'count', 'diagnostics', 'discrete', 'frontier', 'gmm',
+#  'marginal_effects', 'production', 'quantile', 'spatial', 'standard_errors',
+#  'validation', 'var']
+
+data = load_dataset("healthcare_visits")
+grunfeld = load_dataset("grunfeld")
 ```
 
-**Why collapse instruments?**
-- ✅ **Better numerical stability** - Avoids ill-conditioned matrices
-- ✅ **Reduces overfitting** - Fewer instruments mean less overfitting risk
-- ✅ **Improves finite-sample properties** - Better performance with limited data
-- ✅ **Grows as O(T) not O(T²)** - Scales better with time periods
-
-**When you use `collapse=False`:**
-- ⚠️ You'll see a detailed warning message
-- ⚠️ May encounter numerical instability warnings
-- ⚠️ Works but requires careful interpretation
-
-See `examples/gmm/unbalanced_panel_guide.py` for detailed guidance.
-
-**Reference:** Roodman, D. (2009). "How to do xtabond2: An introduction to difference and system GMM in Stata." *The Stata Journal*, 9(1), 86-136.
-
-## Key Advantages
-
-### 1. Handles Unbalanced Panels Gracefully
-
-Unlike some implementations, PanelBox:
-- ✅ Automatically detects unbalanced panel structure
-- ✅ Warns about problematic specifications
-- ✅ Intelligently selects instruments based on data availability
-- ✅ Provides clear guidance when specifications fail
-
-```python
-# Smart warnings for unbalanced panels
-gmm = DifferenceGMM(data=unbalanced_data, ...)
-# UserWarning: Unbalanced panel detected (20% balanced) with 8 time dummies.
-# This may result in very few observations being retained.
-#
-# Recommendations:
-#   1. Set time_dummies=False and add a linear trend
-#   2. Use only subset of key time dummies
-#   3. Ensure collapse=True
-```
-
-### 2. Comprehensive Specification Tests
-
-All GMM models include:
-- **Hansen J-test**: Overidentification test with interpretation
-- **Sargan test**: Alternative overidentification test
-- **AR(1) and AR(2) tests**: Serial correlation in first-differenced errors
-- **Instrument ratio**: n_instruments / n_groups (should be < 1.0)
-
-### 3. Follows Best Practices
-
-Based on Roodman (2009) "How to do xtabond2":
-- Collapse option to avoid instrument proliferation
-- Windmeijer (2005) standard error correction
-- Automatic lag selection based on data availability
-- Clear warnings for problematic specifications
-
-### 4. Rich Documentation
-
-- 📚 Comprehensive [tutorial](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/gmm/tutorial.md)
-- 📖 [Interpretation guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/gmm/interpretation_guide.md) with decision tables
-- 💡 [Example scripts](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/) for common use cases
-- 🔬 [Unbalanced panel guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/gmm/unbalanced_panel_guide.py)
-
-## Learning Resources
-
-### 📚 Interactive Tutorials (NEW!)
-
-We've created comprehensive Jupyter notebook tutorials to help you master panel data econometrics:
-
-**[Getting Started Guide](examples/GETTING_STARTED.md)** - Your roadmap to learning PanelBox
-
-#### Module 1: Fundamentals (3.5-4.5 hours)
-Perfect for beginners! Learn the core concepts:
-- [01 - Introduction to Panel Data](examples/tutorials/01_fundamentals/01_introduction_panel_data.ipynb) - Loading and transforming panel data
-- [02 - Model Specification with Formulas](examples/tutorials/01_fundamentals/02_formulas_specification.ipynb) - R-style formula syntax
-- [03 - Estimation and Results Interpretation](examples/tutorials/01_fundamentals/03_estimation_interpretation.ipynb) - Fitting models and understanding output
-- [04 - Spatial Fundamentals](examples/tutorials/01_fundamentals/04_spatial_fundamentals.ipynb) - Creating spatial weight matrices
-
-**More modules coming soon:**
-- Module 2: Classical Estimators (Fixed Effects, Random Effects)
-- Module 3: Dynamic GMM (Arellano-Bond)
-- Module 4: Spatial Panel Models
-
-See the [tutorials directory](examples/tutorials/) for the complete learning path.
-
-### 💡 Example Scripts
-
-See the [examples directory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples) for:
-
-- **OLS vs FE vs GMM comparison**: Demonstrating bias in each estimator
-- **Firm growth model**: Intermediate example with error handling
-- **Production function estimation**: Advanced example with simultaneity bias
-- **Unbalanced panel guide**: Practical solutions for unbalanced data
+All 80+ example notebooks use `load_dataset()` and work directly in Google Colab.
 
 ## Comparison with Other Packages
 
-| Feature | PanelBox | linearmodels | pyfixest | statsmodels |
-|---------|----------|--------------|----------|-------------|
-| Difference GMM | ✅ | ❌ | ❌ | ❌ |
-| System GMM | ✅ | ❌ | ❌ | ❌ |
-| Unbalanced panels | ✅ Smart | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic |
-| Collapse option | ✅ | ❌ | ❌ | ❌ |
-| Windmeijer correction | ✅ | ❌ | ❌ | ❌ |
-| User warnings | ✅ Proactive | ⚠️ Reactive | ⚠️ Reactive | ⚠️ Reactive |
-| Documentation | ✅ Rich | ✅ Good | ✅ Good | ✅ Good |
+| Feature | PanelBox | linearmodels | pyfixest | splm (R) |
+|---------|----------|--------------|----------|----------|
+| Static panel (FE/RE) | 5 models | 5 models | 2 models | - |
+| Dynamic GMM | 4 models | - | - | - |
+| Spatial models | 5 models | - | - | 4 models |
+| Count data | 9 models | - | Poisson | - |
+| Discrete choice | 9 models | - | - | - |
+| Quantile regression | 8 models | - | - | - |
+| Stochastic frontier | 2 models | - | - | - |
+| Panel VAR/VECM | 2 models | - | - | - |
+| Diagnostic tests | 50+ | ~5 | ~5 | ~10 |
+| Interactive charts | 35+ | - | - | - |
+| Robust SE types | 8 | 4 | 3 | 2 |
+| Bundled datasets | 103 | 10 | 5 | - |
 
 ## Requirements
 
 - Python >= 3.9
-- NumPy >= 1.24.0
-- Pandas >= 2.0.0
-- SciPy >= 1.10.0
-- statsmodels >= 0.14.0
-- patsy >= 0.5.3
+- NumPy, Pandas, SciPy, statsmodels, scikit-learn
+- Plotly, Matplotlib, Seaborn (visualization)
+- Numba, Joblib (performance)
 
-## Validation
+See `pyproject.toml` for full dependency list.
 
-PanelBox has been validated against:
-- ✅ Arellano-Bond (1991) employment equation
-- ✅ Stata xtabond2 (with appropriate specifications)
-- ✅ Multiple synthetic datasets with known DGP
+## Documentation
 
-See [validation directory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/validation) for details.
+- [User Guide](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/user-guide) - Comprehensive guides for all model families
+- [API Reference](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/api) - Full API documentation
+- [Tutorials](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples/tutorials) - Interactive Jupyter notebooks
+- [Examples](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/examples) - 80+ example notebooks across all model families
+- [Theory](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/theory) - Econometric theory guides
+- [Benchmarks](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs/benchmarks) - Validation against R/Stata
 
 ## Citation
-
-If you use PanelBox in your research, please cite:
 
 ```bibtex
 @software{panelbox2026,
@@ -348,98 +272,21 @@ If you use PanelBox in your research, please cite:
 }
 ```
 
-## References
-
-### Implemented Methods
-
-- **Arellano, M., & Bond, S. (1991)**. "Some Tests of Specification for Panel Data: Monte Carlo Evidence and an Application to Employment Equations." *Review of Economic Studies*, 58(2), 277-297.
-
-- **Blundell, R., & Bond, S. (1998)**. "Initial Conditions and Moment Restrictions in Dynamic Panel Data Models." *Journal of Econometrics*, 87(1), 115-143.
-
-- **Windmeijer, F. (2005)**. "A Finite Sample Correction for the Variance of Linear Efficient Two-step GMM Estimators." *Journal of Econometrics*, 126(1), 25-51.
-
-- **Roodman, D. (2009)**. "How to do xtabond2: An Introduction to Difference and System GMM in Stata." *Stata Journal*, 9(1), 86-136.
-
-### Textbooks
-
-- **Baltagi, B. H. (2021)**. *Econometric Analysis of Panel Data* (6th ed.). Springer.
-- **Wooldridge, J. M. (2010)**. *Econometric Analysis of Cross Section and Panel Data* (2nd ed.). MIT Press.
-
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! See [CONTRIBUTING.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/LICENSE).
 
 ## Support
 
-- 📫 Issues: [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
-- 📖 Documentation: [GitHub Wiki](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs)
-- 💬 Discussions: [GitHub Discussions](https://github.com/PanelBox-Econometrics-Model/panelbox/discussions)
-
-## Changelog
-
-See [CHANGELOG.md](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md) for complete version history.
-
-### Latest Release: v0.6.1 (2026-02-25)
-
-**📦 Dataset Bundling for Colab Compatibility**
-
-- 103 CSV datasets bundled in the library (13 categories)
-- New `load_dataset()` API — notebooks work in Google Colab
-- 80+ notebooks migrated from relative paths to library imports
-
-### v0.6.0 (2026-02-25)
-
-**🎯 Complete Econometric Toolkit**
-
-- 70+ econometric models across 13 families
-- 50+ diagnostic tests with comprehensive validation against R/Stata
-- Interactive HTML reports with 35+ Plotly charts
-- Complete documentation overhaul with 200+ pages
-- Google Colab tutorials for all model families
-
-**Comprehensive Visualization System:**
-- ✨ 35+ interactive Plotly charts for panel data analysis
-- ✨ 3 professional themes (Professional, Academic, Presentation)
-- ✨ Interactive HTML reports with embedded charts
-- ✨ Multiple export formats (HTML, JSON, PNG, SVG, PDF)
-- ✨ High-level convenience APIs for common visualizations
-
-**Residual Diagnostics (NEW in v0.7.0):**
-- ✨ **Shapiro-Wilk test** - Test for normality of residuals
-- ✨ **Jarque-Bera test** - Alternative normality test
-- ✨ **Durbin-Watson statistic** - Autocorrelation detection
-- ✨ **Ljung-Box test** - Serial correlation up to 10 lags
-- ✨ Summary statistics (mean, std, skewness, kurtosis)
-- ✨ Professional summary output with interpretation guidelines
-
-**Static Panel Models:**
-- ✨ Pooled OLS, Fixed Effects, Random Effects, Between, First Differences
-- ✨ 8 types of robust standard errors (HC0-HC3, clustered, Driscoll-Kraay, Newey-West, PCSE)
-- ✨ Comprehensive specification tests
-
-**Dynamic Panel GMM:**
-- ✨ Difference GMM (Arellano-Bond 1991)
-- ✨ System GMM (Blundell-Bond 1998)
-- ✨ Smart instrument selection for unbalanced panels
-- ✨ Windmeijer finite-sample correction
-
-**Advanced Features:**
-- ✨ Bootstrap inference (4 methods: pairs, wild, block, residual)
-- ✨ Sensitivity analysis (leave-one-out, subset stability)
-- ✨ 20+ validation tests (unit root, cointegration, diagnostics)
-- ✨ Professional report generation (HTML, Markdown, LaTeX)
-
-**Quality & Performance:**
-- 🔧 Complete result container trilogy (Validation, Comparison, Residual)
-- 🔧 Zero console warnings
-- 🔧 16 new tests for ResidualResult (85% coverage)
-- 🔧 HTML reports with embedded interactive charts
-- ✅ Production-ready package
+- [GitHub Issues](https://github.com/PanelBox-Econometrics-Model/panelbox/issues)
+- [Documentation](https://github.com/PanelBox-Econometrics-Model/panelbox/tree/main/docs)
+- [Discussions](https://github.com/PanelBox-Econometrics-Model/panelbox/discussions)
+- [Changelog](https://github.com/PanelBox-Econometrics-Model/panelbox/blob/main/CHANGELOG.md)
 
 ---
 
-**Made with ❤️ for econometricians and researchers**
+**Made with care for econometricians and researchers**
