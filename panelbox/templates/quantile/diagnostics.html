@@ -1,0 +1,102 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">Quantile Regression Diagnostics</h2>
+
+    <div class="metric-grid">
+        <div class="metric-card" style="border-left: 4px solid {{ health.color|default('#6b7280') }};">
+            <div class="metric-label">Health Score</div>
+            <div class="health-summary">
+                <span class="health-score-badge health-{{ health.status|default('poor') }}">
+                    {{ health.score_pct|default('--') }}
+                </span>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Overall Status</div>
+            <div class="metric-value" style="color: {{ health.color|default('#6b7280') }}; text-transform: capitalize;">
+                {{ health.status|default('--') }}
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Tests Run</div>
+            <div class="metric-value">{{ tests|length if tests else 0 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Tests Passed</div>
+            <div class="metric-value text-success">{{ tests|selectattr('status', 'equalto', 'pass')|list|length if tests else 0 }}</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <div class="tab-container" id="quantile-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="test-results" role="tab" aria-selected="true">Test Results</button>
+            {% if recommendations %}
+            <button class="tab-button" data-tab="recommendations" role="tab" aria-selected="false">Recommendations</button>
+            {% endif %}
+        </div>
+
+        <div class="tab-contents">
+            <!-- Test Results Tab -->
+            <div class="tab-content active" id="tab-test-results" role="tabpanel">
+                <h3>Diagnostic Test Results</h3>
+                {% if tests %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Test</th>
+                            <th>Status</th>
+                            <th>Statistic</th>
+                            <th>P-value</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in tests %}
+                        <tr class="test-row-{{ test.status }}">
+                            <td><strong>{{ test.name }}</strong></td>
+                            <td class="{{ test.status_class }}">
+                                <span class="status-icon">{{ test.status_icon|safe }}</span> {{ test.status }}
+                            </td>
+                            <td>{{ test.statistic|round(4) }}</td>
+                            <td>{{ test.pvalue|pvalue_format if test.pvalue is not none else '--' }}</td>
+                            <td>{{ test.message|default('--') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-gray-500">No diagnostic tests available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Recommendations Tab -->
+            {% if recommendations %}
+            <div class="tab-content" id="tab-recommendations" role="tabpanel">
+                <h3>Recommendations</h3>
+                <div class="recommendation-list">
+                    {% for rec in recommendations %}
+                    <div class="recommendation-item">{{ rec }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('quantile-tabs');
+        }
+    });
+</script>
+{% endblock %}

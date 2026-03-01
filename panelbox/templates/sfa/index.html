@@ -1,0 +1,243 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">Stochastic Frontier Analysis</h2>
+
+    {% if model_info %}
+    <p class="section-description">
+        <span class="frontier-type-badge frontier-{{ model_info.frontier_type|default('production')|lower }}">
+            {{ model_info.frontier_type|default('Production') }} Frontier
+        </span>
+        {% if model_info.distribution %}
+        &mdash; {{ model_info.distribution }} distribution
+        {% endif %}
+    </p>
+    {% endif %}
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Log-Likelihood</div>
+            <div class="metric-value">{{ fit_statistics.loglikelihood|default('--')|round(2) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">&sigma;<sub>u</sub> (Inefficiency)</div>
+            <div class="metric-value">{{ variance_components.sigma_u|default('--')|round(4) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">&sigma;<sub>v</sub> (Noise)</div>
+            <div class="metric-value">{{ variance_components.sigma_v|default('--')|round(4) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">&lambda; = &sigma;<sub>u</sub>/&sigma;<sub>v</sub></div>
+            <div class="metric-value">{{ variance_components.lambda_param|default('--')|round(4) }}</div>
+        </div>
+    </div>
+
+    {% if model_info and model_info.converged is defined %}
+    <div class="alert alert-{{ 'success' if model_info.converged else 'danger' }} mt-4">
+        <strong>{% if model_info.converged %}Optimization converged{% else %}Warning: Optimization did not converge{% endif %}</strong>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <div class="tab-container" id="sfa-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="parameters" role="tab" aria-selected="true">Parameters</button>
+            <button class="tab-button" data-tab="variance" role="tab" aria-selected="false">Variance Components</button>
+            {% if efficiency %}
+            <button class="tab-button" data-tab="efficiency" role="tab" aria-selected="false">Efficiency</button>
+            {% endif %}
+            <button class="tab-button" data-tab="fit" role="tab" aria-selected="false">Model Fit</button>
+        </div>
+
+        <div class="tab-contents">
+            <!-- Parameters Tab -->
+            <div class="tab-content active" id="tab-parameters" role="tabpanel">
+                <h3>Parameter Estimates</h3>
+                {% if coefficients %}
+                <table class="data-table" id="coefficients-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Coefficient</th>
+                            <th>Std. Error</th>
+                            <th>t-stat</th>
+                            <th>p-value</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coef in coefficients %}
+                        <tr>
+                            <td><strong>{{ coef.name }}</strong></td>
+                            <td>{{ coef.coef|round(4) }}</td>
+                            <td>{{ coef.se|round(4) }}</td>
+                            <td>{{ coef.tstat|round(3) }}</td>
+                            <td>{{ coef.pvalue|pvalue_format }}</td>
+                            <td class="text-warning"><strong>{{ coef.stars }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-2">Significance: * p&lt;0.1, ** p&lt;0.05, *** p&lt;0.01</p>
+                {% else %}
+                <p class="text-gray-500">No coefficient data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Variance Components Tab -->
+            <div class="tab-content" id="tab-variance" role="tabpanel">
+                <h3>Variance Decomposition</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>&sigma;<sub>v</sub> (Noise)</strong></td>
+                            <td>{{ variance_components.sigma_v|default('--')|round(4) }}</td>
+                            <td class="text-gray-500">Standard deviation of symmetric noise</td>
+                        </tr>
+                        <tr>
+                            <td><strong>&sigma;<sub>u</sub> (Inefficiency)</strong></td>
+                            <td>{{ variance_components.sigma_u|default('--')|round(4) }}</td>
+                            <td class="text-gray-500">Standard deviation of inefficiency</td>
+                        </tr>
+                        <tr>
+                            <td><strong>&sigma; (Composite)</strong></td>
+                            <td>{{ variance_components.sigma|default('--')|round(4) }}</td>
+                            <td class="text-gray-500">&radic;(&sigma;&sup2;<sub>v</sub> + &sigma;&sup2;<sub>u</sub>)</td>
+                        </tr>
+                        {% if variance_components.sigma_sq is defined and variance_components.sigma_sq != '—' %}
+                        <tr>
+                            <td><strong>&sigma;&sup2; (Total Variance)</strong></td>
+                            <td>{{ variance_components.sigma_sq|round(4) }}</td>
+                            <td class="text-gray-500">&sigma;&sup2;<sub>v</sub> + &sigma;&sup2;<sub>u</sub></td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>&lambda; = &sigma;<sub>u</sub>/&sigma;<sub>v</sub></strong></td>
+                            <td>{{ variance_components.lambda_param|default('--')|round(4) }}</td>
+                            <td class="text-gray-500">Signal-to-noise ratio of inefficiency</td>
+                        </tr>
+                        <tr>
+                            <td><strong>&gamma; = &sigma;&sup2;<sub>u</sub>/&sigma;&sup2;</strong></td>
+                            <td>{{ variance_components.gamma|default('--')|round(4) }}</td>
+                            <td class="text-gray-500">Share of variance due to inefficiency</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box mt-4">
+                    <h4 class="info-box-title">Interpretation</h4>
+                    <ul class="info-box-list">
+                        <li><strong>&lambda; &gt; 1:</strong> Inefficiency dominates noise</li>
+                        <li><strong>&gamma; close to 1:</strong> Most variance is due to inefficiency</li>
+                        <li><strong>&gamma; close to 0:</strong> Most variance is noise (OLS may be adequate)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Efficiency Tab -->
+            {% if efficiency %}
+            <div class="tab-content" id="tab-efficiency" role="tabpanel">
+                <h3>Efficiency Summary</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Mean Efficiency</div>
+                        <div class="metric-value">{{ efficiency.mean|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Median Efficiency</div>
+                        <div class="metric-value">{{ efficiency.median|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Min Efficiency</div>
+                        <div class="metric-value">{{ efficiency.min|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Max Efficiency</div>
+                        <div class="metric-value">{{ efficiency.max|percentage }}</div>
+                    </div>
+                </div>
+
+                <table class="data-table mt-4">
+                    <tbody>
+                        <tr><td><strong>Observations</strong></td><td>{{ efficiency.count|number_format }}</td></tr>
+                        <tr><td><strong>Std. Deviation</strong></td><td>{{ efficiency.std|round(4) }}</td></tr>
+                    </tbody>
+                </table>
+
+                {% if efficiency_chart %}
+                <div class="chart-wrapper mt-4">
+                    {{ efficiency_chart|safe }}
+                </div>
+                {% endif %}
+
+                {% if ranking_chart %}
+                <div class="chart-wrapper mt-4">
+                    {{ ranking_chart|safe }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Model Fit Tab -->
+            <div class="tab-content" id="tab-fit" role="tabpanel">
+                <h3>Model Specification</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Frontier type</strong></td>
+                            <td>
+                                {% if model_info and model_info.frontier_type %}
+                                <span class="frontier-type-badge frontier-{{ model_info.frontier_type|lower }}">
+                                    {{ model_info.frontier_type }}
+                                </span>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr><td><strong>Distribution</strong></td><td>{{ model_info.distribution|default('--') if model_info else '--' }}</td></tr>
+                        <tr><td><strong>Observations</strong></td><td>{{ model_info.nobs|default('--')|number_format if model_info else '--' }}</td></tr>
+                        {% if model_info and model_info.n_entities %}
+                        <tr><td><strong>Entities</strong></td><td>{{ model_info.n_entities|number_format }}</td></tr>
+                        {% endif %}
+                        {% if model_info and model_info.n_periods %}
+                        <tr><td><strong>Time periods</strong></td><td>{{ model_info.n_periods }}</td></tr>
+                        {% endif %}
+                        <tr><td><strong>Parameters</strong></td><td>{{ model_info.nparams|default('--') if model_info else '--' }}</td></tr>
+                        <tr><td><strong>Log-Likelihood</strong></td><td>{{ fit_statistics.loglikelihood|default('--')|round(4) }}</td></tr>
+                        <tr><td><strong>AIC</strong></td><td>{{ fit_statistics.aic|default('--')|round(2) }}</td></tr>
+                        <tr><td><strong>BIC</strong></td><td>{{ fit_statistics.bic|default('--')|round(2) }}</td></tr>
+                        <tr>
+                            <td><strong>Converged</strong></td>
+                            <td>
+                                {% if model_info and model_info.converged is defined %}
+                                <span class="convergence-indicator {{ 'converged' if model_info.converged else 'not-converged' }}">
+                                    {{ 'Yes' if model_info.converged else 'No' }}
+                                </span>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('sfa-tabs');
+        }
+    });
+</script>
+{% endblock %}

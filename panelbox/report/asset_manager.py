@@ -183,6 +183,26 @@ class AssetManager:
         self.asset_cache[cache_key] = data_uri
         return data_uri
 
+    def get_logo_base64(self) -> str:
+        """
+        Get PanelBox logo as base64 data URI for embedding in reports.
+
+        Returns
+        -------
+        str
+            Base64-encoded SVG data URI, or empty string if logo not found.
+
+        Examples
+        --------
+        >>> logo = manager.get_logo_base64()
+        >>> # Returns: 'data:image/svg+xml;base64,PHN2ZyB4...'
+        """
+        try:
+            return self.get_image_base64("images/logo.svg")
+        except FileNotFoundError:
+            logger.warning("PanelBox logo not found at assets/images/logo.svg")
+            return ""
+
     def collect_css(self, css_files: list[str]) -> str:
         """
         Collect multiple CSS files into one string.

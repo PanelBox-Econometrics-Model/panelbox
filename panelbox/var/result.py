@@ -1012,6 +1012,43 @@ class PanelVARResult(SerializableMixin):
 
         return "\n".join(lines)
 
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Uses the template system for consistent styling with logo, tabs, and
+        professional layout. For a simple HTML fragment, use ``to_html()`` instead.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "Panel VAR Results".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = results.to_html_report(title="My VAR Analysis")
+        >>> with open("var_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import ReportManager, VARTransformer
+
+        transformer = VARTransformer(self)
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_var_report(data, title=title, subtitle=subtitle)
+
     def plot_stability(
         self, backend: str = "matplotlib", figsize: tuple = (8, 8), show: bool = True
     ) -> object | None:

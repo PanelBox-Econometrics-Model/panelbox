@@ -1,0 +1,110 @@
+/* ==========================================================================
+   Regression Report Styles
+   Report-specific overrides only. Base styles in base_styles.css and
+   report_components.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Chart Wrapper
+   -------------------------------------------------------------------------- */
+
+.chart-wrapper {
+    margin-bottom: var(--space-4, 16px);
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Confidence Interval Columns
+   Subtle highlighting for CI columns in coefficient table.
+   -------------------------------------------------------------------------- */
+
+.data-table th.ci-column {
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--gray-500, #6b7280);
+    font-weight: var(--font-medium, 500);
+}
+
+.data-table td.ci-value {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--gray-600, #4b5563);
+}
+
+/* CI bracket visualization */
+.ci-bracket {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--gray-600, #4b5563);
+}
+
+/* --------------------------------------------------------------------------
+   F-Statistic Emphasis
+   Highlight F-stat in the fit statistics table.
+   -------------------------------------------------------------------------- */
+
+.f-stat-row td {
+    font-weight: var(--font-semibold, 600);
+}
+
+.f-stat-value {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-base, 1rem);
+    font-weight: var(--font-bold, 700);
+    color: var(--brand-dark-blue, #073d7d);
+}
+
+.f-stat-pvalue {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+}
+
+/* --------------------------------------------------------------------------
+   R-squared Emphasis
+   -------------------------------------------------------------------------- */
+
+.r-squared-value {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-2xl, 1.5rem);
+    font-weight: var(--font-bold, 700);
+    color: var(--brand-dark-blue, #073d7d);
+}
+
+/* --------------------------------------------------------------------------
+   Diagnostic Chart Grid
+   -------------------------------------------------------------------------- */
+
+#tab-diagnostics .chart-wrapper {
+    background-color: #ffffff;
+    padding: var(--space-2, 8px);
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .chart-wrapper {
+        page-break-inside: avoid;
+        border: 1px solid var(--gray-300, #d1d5db);
+    }
+
+    #tab-diagnostics .chart-wrapper {
+        max-height: 400px;
+        overflow: hidden;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .data-table td.ci-value {
+        font-size: var(--text-xs, 0.75rem);
+    }
+}

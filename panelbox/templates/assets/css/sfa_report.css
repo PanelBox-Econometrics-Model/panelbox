@@ -1,0 +1,151 @@
+/* ==========================================================================
+   SFA Report Styles
+   Report-specific overrides only. Base styles in base_styles.css and
+   report_components.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Variance Components Table
+   Emphasis on key variance parameters (sigma_v, sigma_u, lambda, gamma).
+   -------------------------------------------------------------------------- */
+
+#tab-variance .data-table td:nth-child(2) {
+    font-weight: var(--font-semibold, 600);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-base, 1rem);
+}
+
+#tab-variance .data-table td:nth-child(3) {
+    color: var(--gray-500, #6b7280);
+    font-size: var(--text-sm, 0.875rem);
+    max-width: 300px;
+}
+
+/* --------------------------------------------------------------------------
+   Efficiency Summary Cards
+   Highlighted cards for efficiency statistics.
+   -------------------------------------------------------------------------- */
+
+#tab-efficiency .metric-card {
+    border-left: 3px solid var(--brand-teal, #34c4bc);
+}
+
+#tab-efficiency .metric-card:first-child {
+    border-left-color: var(--brand-dark-blue, #073d7d);
+}
+
+#tab-efficiency .metric-card:first-child .metric-value {
+    color: var(--brand-dark-blue, #073d7d);
+}
+
+/* --------------------------------------------------------------------------
+   Frontier Type Indicator
+   Visual badge showing production vs cost frontier.
+   -------------------------------------------------------------------------- */
+
+.frontier-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    border-radius: var(--radius, 4px);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-medium, 500);
+    text-transform: capitalize;
+}
+
+.frontier-type-badge.frontier-production {
+    background-color: var(--brand-teal, #34c4bc);
+    color: #ffffff;
+}
+
+.frontier-type-badge.frontier-cost {
+    background-color: var(--brand-secondary-blue, #347ba2);
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Info Box (interpretation guide)
+   -------------------------------------------------------------------------- */
+
+.info-box {
+    background-color: var(--info-light, #dbeafe);
+    border: 1px solid var(--info, #3b82f6);
+    border-radius: var(--radius-lg, 8px);
+    padding: var(--space-4, 16px);
+}
+
+.info-box-title {
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--info, #3b82f6);
+    margin-bottom: var(--space-2, 8px);
+}
+
+.info-box-list {
+    list-style: disc;
+    padding-left: var(--space-5, 20px);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--gray-700, #374151);
+    line-height: var(--line-height-relaxed, 1.75);
+}
+
+.info-box-list li {
+    margin-bottom: var(--space-1, 4px);
+}
+
+/* --------------------------------------------------------------------------
+   Convergence Status
+   -------------------------------------------------------------------------- */
+
+.convergence-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    font-weight: var(--font-medium, 500);
+}
+
+.convergence-indicator.converged {
+    color: var(--success, #10b981);
+}
+
+.convergence-indicator.not-converged {
+    color: var(--danger, #ef4444);
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .frontier-type-badge {
+        border: 1px solid currentColor;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .info-box {
+        background-color: transparent;
+        border: 1px solid var(--gray-300, #d1d5db);
+    }
+
+    #tab-efficiency .metric-card {
+        border-left-width: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    #tab-variance .data-table td:nth-child(3) {
+        display: none;
+    }
+
+    .frontier-type-badge {
+        font-size: var(--text-xs, 0.75rem);
+    }
+}

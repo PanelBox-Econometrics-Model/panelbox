@@ -1,0 +1,33 @@
+/* ==========================================================================
+   GMM Report Styles
+   ========================================================================== */
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: var(--text-xs, 12px);
+    font-weight: var(--font-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background-color: var(--success, #10b981);
+    color: white;
+}
+
+.badge-danger {
+    background-color: var(--danger, #ef4444);
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--warning, #f59e0b);
+    color: white;
+}
+
+.badge-info {
+    background-color: var(--info, #3b82f6);
+    color: white;
+}

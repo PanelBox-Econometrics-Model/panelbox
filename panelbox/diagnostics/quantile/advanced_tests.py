@@ -808,3 +808,40 @@ class DiagnosticReport:
         html += "</div>"
 
         return html
+
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Uses the template system for consistent styling with logo, tabs, and
+        professional layout. For a simple HTML fragment, use ``to_html()`` instead.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "Quantile Regression Diagnostics".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = report.to_html_report(title="My Diagnostics")
+        >>> with open("quantile_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import QuantileTransformer, ReportManager
+
+        transformer = QuantileTransformer(self)
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_quantile_report(data, title=title, subtitle=subtitle)

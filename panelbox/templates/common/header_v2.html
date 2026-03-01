@@ -1,0 +1,55 @@
+<div class="report-header">
+    <div class="report-header-brand">
+        {% if logo_base64 %}
+        <img src="{{ logo_base64 }}" alt="PanelBox" class="report-logo" />
+        {% endif %}
+        <div class="report-header-text">
+            <h1 class="report-title">{{ report_title }}</h1>
+            {% if report_subtitle %}
+            <p class="report-subtitle">{{ report_subtitle }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="report-meta">
+        {% if model_type %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Model:</span>
+            <span>{{ model_type }}</span>
+        </div>
+        {% endif %}
+
+        {% if formula %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Formula:</span>
+            <code class="text-sm">{{ formula }}</code>
+        </div>
+        {% endif %}
+
+        {% if nobs %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Observations:</span>
+            <span>{{ nobs|number_format }}</span>
+        </div>
+        {% endif %}
+
+        {% if n_entities %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Entities:</span>
+            <span>{{ n_entities|number_format }}</span>
+        </div>
+        {% endif %}
+
+        {% if n_periods %}
+        <div class="report-meta-item">
+            <span class="report-meta-label">Periods:</span>
+            <span>{{ n_periods }}</span>
+        </div>
+        {% endif %}
+
+        <div class="report-meta-item">
+            <span class="report-meta-label">Generated:</span>
+            <span>{{ generation_date }}</span>
+        </div>
+    </div>
+</div>

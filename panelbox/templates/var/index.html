@@ -1,0 +1,188 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">Panel VAR Results</h2>
+
+    {% if model_info and model_info.endog_names %}
+    <p class="section-description">
+        Endogenous variables: <code class="text-sm">{{ model_info.endog_names|join(', ') }}</code>
+    </p>
+    {% endif %}
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Equations (K)</div>
+            <div class="metric-value">{{ model_info.K|default('--') if model_info else '--' }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Lags (p)</div>
+            <div class="metric-value">{{ model_info.p|default('--') if model_info else '--' }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Entities (N)</div>
+            <div class="metric-value">{{ model_info.N|default('--')|number_format if model_info else '--' }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Stability</div>
+            <div class="metric-value">
+                {% if stability is defined and stability %}
+                <span class="stability-badge {{ 'stable' if stability.is_stable else 'unstable' }}">
+                    {{ 'Stable' if stability.is_stable else 'Unstable' }}
+                </span>
+                {% else %}
+                --
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <div class="tab-container" id="var-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
+            <button class="tab-button" data-tab="diagnostics-tab" role="tab" aria-selected="false">Diagnostics</button>
+            <button class="tab-button" data-tab="stability-tab" role="tab" aria-selected="false">Stability</button>
+        </div>
+
+        <div class="tab-contents">
+            <!-- Coefficients Tab -->
+            <div class="tab-content active" id="tab-coefficients" role="tabpanel">
+                <h3>Equation Estimates</h3>
+
+                {% if equations %}
+                {% for eq in equations %}
+                <h4 class="mt-4">
+                    <span class="equation-badge">{{ loop.index }}</span>
+                    Equation: {{ eq.name }}
+                </h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Regressor</th>
+                            <th>Coefficient</th>
+                            <th>Std. Error</th>
+                            <th>t-stat</th>
+                            <th>p-value</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coef in eq.coefficients %}
+                        <tr>
+                            <td><strong>{{ coef.name }}</strong></td>
+                            <td>{{ coef.coef|round(4) }}</td>
+                            <td>{{ coef.se|round(4) }}</td>
+                            <td>{{ coef.tstat|round(3) }}</td>
+                            <td>{{ coef.pvalue|pvalue_format }}</td>
+                            <td class="text-warning"><strong>{{ coef.stars }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endfor %}
+                <p class="text-xs text-gray-500 mt-2">Significance: * p&lt;0.1, ** p&lt;0.05, *** p&lt;0.01</p>
+                {% else %}
+                <p class="text-gray-500">No equation data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Diagnostics Tab -->
+            <div class="tab-content" id="tab-diagnostics-tab" role="tabpanel">
+                <h3>Model Information &amp; Criteria</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr><td><strong>Method</strong></td><td>{{ model_info.method|default('--') if model_info else '--' }}</td></tr>
+                        <tr><td><strong>Covariance type</strong></td><td>{{ model_info.cov_type|default('--') if model_info else '--' }}</td></tr>
+                        <tr><td><strong>Observations</strong></td><td>{{ model_info.n_obs|default('--')|number_format if model_info else '--' }}</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="mt-6">Information Criteria</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr><td><strong>Log-Likelihood</strong></td><td>{{ diagnostics.loglik|default('--')|round(4) if diagnostics else '--' }}</td></tr>
+                        <tr><td><strong>AIC</strong></td><td>{{ diagnostics.aic|default('--')|round(2) if diagnostics else '--' }}</td></tr>
+                        <tr><td><strong>BIC</strong></td><td>{{ diagnostics.bic|default('--')|round(2) if diagnostics else '--' }}</td></tr>
+                        <tr><td><strong>HQIC</strong></td><td>{{ diagnostics.hqic|default('--')|round(2) if diagnostics else '--' }}</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box mt-4">
+                    <h4 class="info-box-title">Model Selection</h4>
+                    <ul class="info-box-list">
+                        <li><strong>AIC:</strong> Akaike Information Criterion (favors model fit, may overfit)</li>
+                        <li><strong>BIC:</strong> Bayesian Information Criterion (stronger penalty for complexity)</li>
+                        <li><strong>HQIC:</strong> Hannan-Quinn Information Criterion (compromise between AIC and BIC)</li>
+                        <li>Lower values indicate better model fit for the same data</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Stability Tab -->
+            <div class="tab-content" id="tab-stability-tab" role="tabpanel">
+                <h3>System Stability</h3>
+
+                {% if stability is defined and stability %}
+                <div class="alert alert-{{ 'success' if stability.is_stable else 'danger' }} mt-4">
+                    <strong>
+                        {% if stability.is_stable %}
+                        The VAR system is stable (all eigenvalues inside the unit circle).
+                        {% else %}
+                        Warning: The VAR system is UNSTABLE (eigenvalues outside the unit circle).
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <table class="data-table mt-4">
+                    <tbody>
+                        <tr>
+                            <td><strong>Max eigenvalue modulus</strong></td>
+                            <td>
+                                <span class="eigenvalue-display {{ 'within-unit' if stability.is_stable else 'outside-unit' }}">
+                                    {{ stability.max_eigenvalue_modulus|default('--')|round(4) }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stability margin</strong></td>
+                            <td>{{ stability.stability_margin|default('--')|round(4) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-gray-500">No stability data available.</p>
+                {% endif %}
+
+                {% if stability_chart %}
+                <div class="chart-wrapper mt-4">
+                    {{ stability_chart|safe }}
+                </div>
+                {% endif %}
+
+                <div class="info-box mt-4">
+                    <h4 class="info-box-title">Stability Condition</h4>
+                    <ul class="info-box-list">
+                        <li><strong>Stable:</strong> All eigenvalues of the companion matrix have modulus &lt; 1</li>
+                        <li><strong>Stability margin:</strong> 1 - max(|eigenvalues|). Larger values = more stable</li>
+                        <li>If unstable, impulse responses and forecasts may be explosive</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('var-tabs');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include 'common/meta.html' %}
+
+    <!-- Embedded CSS -->
+    <style>
+        {{ css_inline|safe }}
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="report-container">
+        <!-- Branded Header with Logo -->
+        {% include 'common/header_v2.html' %}
+
+        <!-- Summary Dashboard -->
+        {% block summary %}{% endblock %}
+
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+
+        <!-- Footer -->
+        {% include 'common/footer.html' %}
+    </div>
+
+    <!-- Plotly.js -->
+    {{ plotly_js|safe }}
+
+    <!-- Embedded JavaScript -->
+    {% if js_inline %}
+    <script>
+        {{ js_inline|safe }}
+    </script>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

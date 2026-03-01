@@ -1,0 +1,196 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">GMM Estimation Summary</h2>
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Observations</div>
+            <div class="metric-value">{{ nobs|default('—') }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Groups</div>
+            <div class="metric-value">{{ n_groups|default('—') }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Instruments</div>
+            <div class="metric-value">{{ n_instruments|default('—') }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Hansen J p-value</div>
+            {% if diagnostics and diagnostics.hansen %}
+            <div class="metric-value {% if diagnostics.hansen.status == 'pass' %}text-success{% else %}text-danger{% endif %}">
+                {{ diagnostics.hansen.pvalue|pvalue_format }}
+            </div>
+            {% else %}
+            <div class="metric-value">—</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if summary %}
+    {% if summary.overall_status == 'good' %}
+    <div class="alert alert-success mt-4">
+        <strong>Specification tests passed.</strong>
+        <p class="mt-2">Hansen J-test and AR(2) test do not reject at the 5% level.</p>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mt-4">
+        <strong>Review specification tests.</strong>
+        <p class="mt-2">One or more diagnostic tests indicate potential issues.</p>
+    </div>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <!-- Tab Navigation -->
+    <div class="tab-container" id="gmm-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
+            <button class="tab-button" data-tab="diagnostics" role="tab" aria-selected="false">Diagnostics</button>
+            <button class="tab-button" data-tab="instruments" role="tab" aria-selected="false">Instruments</button>
+        </div>
+
+        <div class="tab-contents">
+            <!-- Coefficients Tab -->
+            <div class="tab-content active" id="tab-coefficients" role="tabpanel">
+                <h3>Parameter Estimates</h3>
+                {% if coefficients %}
+                <table class="data-table" id="coefficients-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Coefficient</th>
+                            <th>Std. Error</th>
+                            <th>t-stat</th>
+                            <th>p-value</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coef in coefficients %}
+                        <tr>
+                            <td><strong>{{ coef.name }}</strong></td>
+                            <td>{{ coef.coef|round(4) }}</td>
+                            <td>{{ coef.se|round(4) }}</td>
+                            <td>{{ coef.tstat|round(3) }}</td>
+                            <td>{{ coef.pvalue|pvalue_format }}</td>
+                            <td class="text-warning"><strong>{{ coef.stars }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-2">Significance: * p&lt;0.1, ** p&lt;0.05, *** p&lt;0.01</p>
+                {% else %}
+                <p class="text-gray-500">No coefficient data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Diagnostics Tab -->
+            <div class="tab-content" id="tab-diagnostics" role="tabpanel">
+                <h3>Specification Tests</h3>
+                {% if diagnostics %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Test</th>
+                            <th>Statistic</th>
+                            <th>p-value</th>
+                            <th>Status</th>
+                            <th>Interpretation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Hansen J-test</strong></td>
+                            <td>{{ diagnostics.hansen.statistic }}</td>
+                            <td>{{ diagnostics.hansen.pvalue|pvalue_format }}</td>
+                            <td>
+                                {% if diagnostics.hansen.status == 'pass' %}
+                                <span class="badge badge-success">PASS</span>
+                                {% else %}
+                                <span class="badge badge-danger">FAIL</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if diagnostics.hansen.status == 'pass' %}Instruments valid (not rejected){% else %}Instruments may be invalid{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AR(1) test</strong></td>
+                            <td>{{ diagnostics.ar1.statistic }}</td>
+                            <td>{{ diagnostics.ar1.pvalue|pvalue_format }}</td>
+                            <td><span class="badge badge-info">Expected</span></td>
+                            <td>First-order autocorrelation expected in differences</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AR(2) test</strong></td>
+                            <td>{{ diagnostics.ar2.statistic }}</td>
+                            <td>{{ diagnostics.ar2.pvalue|pvalue_format }}</td>
+                            <td>
+                                {% if diagnostics.ar2.status == 'pass' %}
+                                <span class="badge badge-success">PASS</span>
+                                {% else %}
+                                <span class="badge badge-danger">FAIL</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if diagnostics.ar2.status == 'pass' %}No second-order autocorrelation{% else %}Second-order autocorrelation detected{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-gray-500">No diagnostic data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Instruments Tab -->
+            <div class="tab-content" id="tab-instruments" role="tabpanel">
+                <h3>Instrument Information</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Number of instruments</strong></td>
+                            <td>{{ n_instruments|default('—') }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Number of groups</strong></td>
+                            <td>{{ n_groups|default('—') }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Instrument/group ratio</strong></td>
+                            <td>{{ model_info.instrument_ratio|default('—') if model_info else '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estimation method</strong></td>
+                            <td>{{ model_info.estimator|default(model_type)|default('GMM') if model_info else model_type|default('GMM') }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Two-step</strong></td>
+                            <td>{{ 'Yes' if (model_info and model_info.two_step) or two_step else 'No' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                {% if n_instruments is defined and n_groups is defined and n_instruments > n_groups %}
+                <div class="alert alert-warning mt-4">
+                    <strong>Warning: Instrument proliferation.</strong>
+                    <p class="mt-2">The number of instruments ({{ n_instruments }}) exceeds the number of groups ({{ n_groups }}). Consider using <code>collapse=True</code> to reduce the instrument count.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('gmm-tabs');
+        }
+    });
+</script>
+{% endblock %}

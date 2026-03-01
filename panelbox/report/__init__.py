@@ -38,16 +38,32 @@ from .css_manager import CSSLayer, CSSManager
 from .exporters import HTMLExporter, LaTeXExporter, MarkdownExporter
 from .report_manager import ReportManager
 from .template_manager import TemplateManager
+
+# Transformers
+from .transformers import (
+    DiscreteTransformer,
+    GMMTransformer,
+    QuantileTransformer,
+    RegressionTransformer,
+    SFATransformer,
+    VARTransformer,
+)
 from .validation_transformer import ValidationTransformer
 
 __all__ = [
     "AssetManager",
     "CSSLayer",
     "CSSManager",
+    "DiscreteTransformer",
+    "GMMTransformer",
     "HTMLExporter",
     "LaTeXExporter",
     "MarkdownExporter",
+    "QuantileTransformer",
+    "RegressionTransformer",
     "ReportManager",
+    "SFATransformer",
     "TemplateManager",
+    "VARTransformer",
     "ValidationTransformer",
 ]

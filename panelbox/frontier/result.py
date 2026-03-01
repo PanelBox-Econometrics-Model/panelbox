@@ -1316,6 +1316,43 @@ class SFResult(SerializableMixin):
 
         return _to_html(self, filename, include_plots, theme, **kwargs)
 
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Uses the template system for consistent styling with logo, tabs, and
+        professional layout. For the legacy inline report, use ``to_html()`` instead.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "Stochastic Frontier Analysis".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = result.to_html_report(title="My SFA Analysis")
+        >>> with open("sfa_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import ReportManager, SFATransformer
+
+        transformer = SFATransformer(self)
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_sfa_report(data, title=title, subtitle=subtitle)
+
     def to_markdown(self) -> str:
         """Generate Markdown report.
 

@@ -1,0 +1,144 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">Regression Results</h2>
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">R-squared</div>
+            <div class="metric-value">{{ r_squared|default((fit_statistics|default({})).get('r_squared', '—'))|round(4) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Observations</div>
+            <div class="metric-value">{{ nobs|default('—')|number_format }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Entities</div>
+            <div class="metric-value">{{ n_entities|default('—')|number_format }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Periods</div>
+            <div class="metric-value">{{ n_periods|default('—') }}</div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <div class="tab-container" id="regression-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
+            <button class="tab-button" data-tab="model-info" role="tab" aria-selected="false">Model Info</button>
+            {% if charts or residual_charts %}
+            <button class="tab-button" data-tab="diagnostics" role="tab" aria-selected="false">Diagnostics</button>
+            {% endif %}
+        </div>
+
+        <div class="tab-contents">
+            <!-- Coefficients Tab -->
+            <div class="tab-content active" id="tab-coefficients" role="tabpanel">
+                <h3>Parameter Estimates</h3>
+                {% if coefficients %}
+                <table class="data-table" id="coefficients-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Coefficient</th>
+                            <th>Std. Error</th>
+                            <th>t-stat</th>
+                            <th>p-value</th>
+                            <th></th>
+                            {% if coefficients[0].ci_lower is defined and coefficients[0].ci_lower != '' %}
+                            <th>[0.025</th>
+                            <th>0.975]</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coef in coefficients %}
+                        <tr>
+                            <td><strong>{{ coef.name }}</strong></td>
+                            <td>{{ coef.coef|round(4) }}</td>
+                            <td>{{ coef.se|round(4) }}</td>
+                            <td>{{ coef.tstat|round(3) }}</td>
+                            <td>{{ coef.pvalue|pvalue_format }}</td>
+                            <td class="text-warning"><strong>{{ coef.stars }}</strong></td>
+                            {% if coef.ci_lower is defined and coef.ci_lower != '' %}
+                            <td>{{ coef.ci_lower|round(4) }}</td>
+                            <td>{{ coef.ci_upper|round(4) }}</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-2">Significance: * p&lt;0.1, ** p&lt;0.05, *** p&lt;0.01</p>
+                {% else %}
+                <p class="text-gray-500">No coefficient data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Model Info Tab -->
+            <div class="tab-content" id="tab-model-info" role="tabpanel">
+                <h3>Model Specification</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr><td><strong>Estimator</strong></td><td>{{ model_info.estimator|default(model_type)|default('—') if model_info else model_type|default('—') }}</td></tr>
+                        <tr><td><strong>Formula</strong></td><td><code>{{ model_info.formula|default(formula)|default('—') if model_info else formula|default('—') }}</code></td></tr>
+                        <tr><td><strong>Standard Errors</strong></td><td>{{ model_info.se_type|default(se_type)|default('—') if model_info else se_type|default('—') }}</td></tr>
+                        <tr><td><strong>Observations</strong></td><td>{{ nobs|default('—')|number_format }}</td></tr>
+                        <tr><td><strong>Entities</strong></td><td>{{ n_entities|default('—')|number_format }}</td></tr>
+                        <tr><td><strong>Periods</strong></td><td>{{ n_periods|default('—') }}</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="mt-4">Fit Statistics</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr><td><strong>R-squared</strong></td><td>{{ r_squared|default((fit_statistics|default({})).get('r_squared', '—'))|round(4) }}</td></tr>
+                        <tr><td><strong>Adj. R-squared</strong></td><td>{{ adj_r_squared|default((fit_statistics|default({})).get('adj_r_squared', '—'))|round(4) }}</td></tr>
+                        {% if f_statistic is defined or (fit_statistics and fit_statistics.get('f_statistic')) %}
+                        <tr><td><strong>F-statistic</strong></td><td>{{ f_statistic|default((fit_statistics|default({})).get('f_statistic', '—'))|round(3) }}</td></tr>
+                        {% endif %}
+                        {% if aic is defined or (fit_statistics and fit_statistics.get('aic')) %}
+                        <tr><td><strong>AIC</strong></td><td>{{ aic|default((fit_statistics|default({})).get('aic', '—'))|round(2) }}</td></tr>
+                        <tr><td><strong>BIC</strong></td><td>{{ bic|default((fit_statistics|default({})).get('bic', '—'))|round(2) }}</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Diagnostics Tab -->
+            {% if charts or residual_charts %}
+            <div class="tab-content" id="tab-diagnostics" role="tabpanel">
+                <h3>Diagnostic Plots</h3>
+                {% if residual_charts %}
+                    {% for name, chart_html in residual_charts.items() %}
+                    <div class="chart-wrapper mb-4">
+                        {{ chart_html|safe }}
+                    </div>
+                    {% endfor %}
+                {% elif charts %}
+                    {% for name, chart_html in charts.items() %}
+                    <div class="chart-wrapper mb-4">
+                        {{ chart_html|safe }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('regression-tabs');
+        }
+    });
+</script>
+{% endblock %}

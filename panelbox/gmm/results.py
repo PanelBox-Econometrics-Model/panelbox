@@ -749,6 +749,88 @@ class GMMResults(SerializableMixin):
             "converged": self.converged,
         }
 
+    def _build_report_data(self) -> dict:
+        """
+        Build data dictionary compatible with GMMTransformer.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys expected by GMMTransformer.
+        """
+        coefficients = []
+        ci = self.conf_int()
+        for var in self.params.index:
+            coefficients.append(
+                {
+                    "name": var,
+                    "coef": float(self.params[var]),
+                    "se": float(self.std_errors[var]),
+                    "tstat": float(self.tvalues[var]),
+                    "pvalue": float(self.pvalues[var]),
+                    "ci_lower": float(ci.loc[var, "lower"]),
+                    "ci_upper": float(ci.loc[var, "upper"]),
+                }
+            )
+
+        return {
+            "model_type": f"{self.model_type.capitalize()} GMM",
+            "nobs": self.nobs,
+            "n_groups": self.n_groups,
+            "n_instruments": self.n_instruments,
+            "two_step": self.two_step,
+            "coefficients": coefficients,
+            "hansen_test": {
+                "statistic": float(self.hansen_j.statistic),
+                "pvalue": float(self.hansen_j.pvalue),
+                "df": self.hansen_j.df,
+            },
+            "ar_tests": {
+                "ar1": {
+                    "statistic": float(self.ar1_test.statistic),
+                    "pvalue": float(self.ar1_test.pvalue),
+                },
+                "ar2": {
+                    "statistic": float(self.ar2_test.statistic),
+                    "pvalue": float(self.ar2_test.pvalue),
+                },
+            },
+        }
+
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "GMM Results".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = results.to_html_report(title="System GMM Results")
+        >>> with open("gmm_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import GMMTransformer, ReportManager
+
+        transformer = GMMTransformer(self._build_report_data())
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_gmm_report(data, title=title, subtitle=subtitle)
+
     def __repr__(self) -> str:
         """Repr showing key info."""
         return (

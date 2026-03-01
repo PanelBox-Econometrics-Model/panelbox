@@ -530,6 +530,86 @@ class NonlinearPanelResults(PanelResults):
 
         return html
 
+    def _build_report_data(self) -> dict:
+        """
+        Build data dictionary compatible with DiscreteTransformer.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys expected by DiscreteTransformer.
+        """
+        coefficients = []
+        ci = self.conf_int()
+        for i, name in enumerate(self.model.exog_names):
+            coefficients.append(
+                {
+                    "name": name,
+                    "coef": float(self.params.iloc[i]),
+                    "se": float(self.std_errors.iloc[i]),
+                    "tstat": float(self.tvalues.iloc[i]),
+                    "pvalue": float(self.pvalues.iloc[i]),
+                    "ci_lower": float(ci.iloc[i, 0]),
+                    "ci_upper": float(ci.iloc[i, 1]),
+                }
+            )
+
+        data = {
+            "model_type": self.model.__class__.__name__,
+            "distribution": getattr(self.model, "distribution", ""),
+            "nobs": self.nobs,
+            "n_entities": self.model.n_entities if hasattr(self.model, "n_entities") else None,
+            "n_periods": self.n_periods,
+            "converged": self.converged,
+            "n_iter": self.n_iter,
+            "se_type": self._se_type,
+            "coefficients": coefficients,
+            "loglikelihood": float(self.llf),
+            "aic": float(self.aic),
+            "bic": float(self.bic),
+            "pseudo_r_squared": float(self.pseudo_r2("mcfadden")),
+        }
+
+        # Add classification metrics for binary models
+        if hasattr(self.model, "model_type") and self.model.model_type == "binary":
+            data["classification_metrics"] = self.classification_metrics()
+
+        return data
+
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "Discrete Model Results".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = result.to_html_report(title="Logit Results")
+        >>> with open("discrete_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import DiscreteTransformer, ReportManager
+
+        transformer = DiscreteTransformer(self._build_report_data())
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_discrete_report(data, title=title, subtitle=subtitle)
+
     def to_latex(
         self,
         filepath: str | Path | None = None,

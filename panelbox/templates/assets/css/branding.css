@@ -1,0 +1,76 @@
+/* ==========================================================================
+   PanelBox Branding
+   Brand identity, logo positioning, and visual identity elements
+   ========================================================================== */
+
+/* Brand color tokens */
+:root {
+    --brand-dark-blue: #073d7d;
+    --brand-secondary-blue: #347ba2;
+    --brand-teal: #34c4bc;
+}
+
+/* --------------------------------------------------------------------------
+   Report Header with Logo
+   -------------------------------------------------------------------------- */
+
+.report-header-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    margin-bottom: var(--space-4, 16px);
+}
+
+.report-logo {
+    height: 48px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.report-header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.report-header-text .report-title {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.report-header-text .report-subtitle {
+    margin: var(--space-1, 4px) 0 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Brand Accent Line
+   -------------------------------------------------------------------------- */
+
+.report-header {
+    border-bottom: 3px solid var(--brand-teal);
+    padding-bottom: var(--space-4, 16px);
+    margin-bottom: var(--space-6, 24px);
+}
+
+/* --------------------------------------------------------------------------
+   Footer Branding
+   -------------------------------------------------------------------------- */
+
+.report-footer-text strong {
+    color: var(--brand-dark-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .report-logo {
+        height: 36px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .report-header {
+        border-bottom-color: var(--brand-teal);
+    }
+}

@@ -1,0 +1,151 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<section class="report-section">
+    <h2 class="section-title">Maximum Likelihood Estimation</h2>
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Log-Likelihood</div>
+            <div class="metric-value">{{ loglikelihood|default((fit_statistics|default({})).get('loglikelihood', '—'))|round(2) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">AIC</div>
+            <div class="metric-value">{{ aic|default((fit_statistics|default({})).get('aic', '—'))|round(2) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">BIC</div>
+            <div class="metric-value">{{ bic|default((fit_statistics|default({})).get('bic', '—'))|round(2) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Pseudo R²</div>
+            <div class="metric-value">{{ pseudo_r_squared|default((fit_statistics|default({})).get('pseudo_r_squared', '—'))|round(4) }}</div>
+        </div>
+    </div>
+
+    {% if converged is defined %}
+    <div class="alert alert-{{ 'success' if converged else 'danger' }} mt-4">
+        <strong>{% if converged %}Optimization converged{% else %}Warning: Optimization did not converge{% endif %}</strong>
+        {% if n_iter is defined %}
+        <p class="mt-2">Completed in {{ n_iter }} iterations.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="report-section">
+    <div class="tab-container" id="discrete-tabs">
+        <div class="tab-buttons" role="tablist">
+            <button class="tab-button active" data-tab="coefficients" role="tab" aria-selected="true">Coefficients</button>
+            <button class="tab-button" data-tab="fit-stats" role="tab" aria-selected="false">Fit Statistics</button>
+            {% if classification %}
+            <button class="tab-button" data-tab="classification" role="tab" aria-selected="false">Classification</button>
+            {% endif %}
+        </div>
+
+        <div class="tab-contents">
+            <!-- Coefficients Tab -->
+            <div class="tab-content active" id="tab-coefficients" role="tabpanel">
+                <h3>Parameter Estimates</h3>
+                {% if coefficients %}
+                <table class="data-table" id="coefficients-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Coefficient</th>
+                            <th>Std. Error</th>
+                            <th>z-stat</th>
+                            <th>P>|z|</th>
+                            <th></th>
+                            {% if coefficients[0].ci_lower is defined and coefficients[0].ci_lower != '' %}
+                            <th>[0.025</th>
+                            <th>0.975]</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coef in coefficients %}
+                        <tr>
+                            <td><strong>{{ coef.name }}</strong></td>
+                            <td>{{ coef.coef|round(4) }}</td>
+                            <td>{{ coef.se|round(4) }}</td>
+                            <td>{{ coef.zstat|round(3) }}</td>
+                            <td>{{ coef.pvalue|pvalue_format }}</td>
+                            <td class="text-warning"><strong>{{ coef.stars }}</strong></td>
+                            {% if coef.ci_lower is defined and coef.ci_lower != '' %}
+                            <td>{{ coef.ci_lower|round(4) }}</td>
+                            <td>{{ coef.ci_upper|round(4) }}</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-2">Significance: * p&lt;0.1, ** p&lt;0.05, *** p&lt;0.01</p>
+                {% else %}
+                <p class="text-gray-500">No coefficient data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Fit Statistics Tab -->
+            <div class="tab-content" id="tab-fit-stats" role="tabpanel">
+                <h3>Model Fit</h3>
+                <table class="data-table">
+                    <tbody>
+                        <tr><td><strong>Model type</strong></td><td>{{ model_type|default(model_info.model_type if model_info else '—') }}</td></tr>
+                        <tr><td><strong>Observations</strong></td><td>{{ nobs|default('—')|number_format }}</td></tr>
+                        <tr><td><strong>Entities</strong></td><td>{{ n_entities|default('—')|number_format }}</td></tr>
+                        <tr><td><strong>Log-Likelihood</strong></td><td>{{ loglikelihood|default((fit_statistics|default({})).get('loglikelihood', '—'))|round(4) }}</td></tr>
+                        <tr><td><strong>AIC</strong></td><td>{{ aic|default((fit_statistics|default({})).get('aic', '—'))|round(2) }}</td></tr>
+                        <tr><td><strong>BIC</strong></td><td>{{ bic|default((fit_statistics|default({})).get('bic', '—'))|round(2) }}</td></tr>
+                        <tr><td><strong>Pseudo R²</strong></td><td>{{ pseudo_r_squared|default((fit_statistics|default({})).get('pseudo_r_squared', '—'))|round(4) }}</td></tr>
+                        <tr><td><strong>Converged</strong></td><td>{{ 'Yes' if converged else 'No' }}</td></tr>
+                        {% if n_iter is defined %}
+                        <tr><td><strong>Iterations</strong></td><td>{{ n_iter }}</td></tr>
+                        {% endif %}
+                        {% if se_type is defined %}
+                        <tr><td><strong>Standard errors</strong></td><td>{{ se_type }}</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Classification Tab (conditional) -->
+            {% if classification %}
+            <div class="tab-content" id="tab-classification" role="tabpanel">
+                <h3>Classification Metrics</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Accuracy</div>
+                        <div class="metric-value">{{ classification.accuracy|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Precision</div>
+                        <div class="metric-value">{{ classification.precision|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Recall</div>
+                        <div class="metric-value">{{ classification.recall|percentage }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">F1-Score</div>
+                        <div class="metric-value">{{ classification.f1_score|round(4) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof PanelBoxTabs !== 'undefined') {
+            PanelBoxTabs.init('discrete-tabs');
+        }
+    });
+</script>
+{% endblock %}

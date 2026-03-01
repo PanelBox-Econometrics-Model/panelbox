@@ -1,0 +1,146 @@
+/* ==========================================================================
+   VAR Report Styles
+   Report-specific overrides only. Base styles in base_styles.css and
+   report_components.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Per-Equation Styling
+   Distinct headers and spacing for each equation in the VAR system.
+   -------------------------------------------------------------------------- */
+
+#tab-coefficients h4 {
+    color: var(--brand-dark-blue, #073d7d);
+    border-bottom: 2px solid var(--gray-200, #e5e7eb);
+    padding-bottom: var(--space-2, 8px);
+    margin-top: var(--space-6, 24px);
+}
+
+#tab-coefficients h4:first-of-type {
+    margin-top: 0;
+}
+
+#tab-coefficients .data-table {
+    margin-bottom: var(--space-6, 24px);
+}
+
+/* Equation counter badge */
+.equation-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full, 9999px);
+    background-color: var(--brand-dark-blue, #073d7d);
+    color: #ffffff;
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: var(--font-bold, 700);
+    margin-right: var(--space-2, 8px);
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Stability Indicator
+   Eigenvalue badge and status styling for VAR stability.
+   -------------------------------------------------------------------------- */
+
+.stability-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    border-radius: var(--radius, 4px);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stability-badge.stable {
+    background-color: var(--success-light, #d1fae5);
+    color: var(--success, #10b981);
+}
+
+.stability-badge.unstable {
+    background-color: var(--danger-light, #fee2e2);
+    color: var(--danger, #ef4444);
+}
+
+/* Eigenvalue modulus display */
+.eigenvalue-display {
+    font-family: var(--font-mono, monospace);
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--text-lg, 1.125rem);
+}
+
+.eigenvalue-display.within-unit {
+    color: var(--success, #10b981);
+}
+
+.eigenvalue-display.outside-unit {
+    color: var(--danger, #ef4444);
+}
+
+/* --------------------------------------------------------------------------
+   Information Criteria Comparison
+   Emphasized display of AIC, BIC, HQIC values.
+   -------------------------------------------------------------------------- */
+
+#tab-diagnostics-tab .data-table td:nth-child(2) {
+    font-family: var(--font-mono, monospace);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* --------------------------------------------------------------------------
+   Stability Chart Container
+   -------------------------------------------------------------------------- */
+
+#tab-stability-tab .chart-wrapper {
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    padding: var(--space-4, 16px);
+    background-color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .stability-badge {
+        border: 1px solid currentColor;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .equation-badge {
+        border: 1px solid var(--brand-dark-blue, #073d7d);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    #tab-coefficients h4 {
+        page-break-after: avoid;
+    }
+
+    #tab-coefficients .data-table {
+        page-break-inside: avoid;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .equation-badge {
+        width: 24px;
+        height: 24px;
+        font-size: 0.625rem;
+    }
+
+    .stability-badge {
+        font-size: var(--text-xs, 0.75rem);
+    }
+}

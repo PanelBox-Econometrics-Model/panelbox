@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Quantile Regression Diagnostics Report Styles
+   Report-specific overrides only. Base styles in base_styles.css and
+   report_components.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Health Score Badge
+   Circular indicator showing overall diagnostic health percentage.
+   -------------------------------------------------------------------------- */
+
+.health-score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-full, 9999px);
+    font-size: var(--text-xl, 1.25rem);
+    font-weight: var(--font-bold, 700);
+    color: #ffffff;
+    text-align: center;
+    line-height: 1;
+}
+
+.health-score-badge.health-good {
+    background-color: var(--success, #10b981);
+    box-shadow: 0 0 0 4px var(--success-light, #d1fae5);
+}
+
+.health-score-badge.health-fair {
+    background-color: var(--warning, #f59e0b);
+    box-shadow: 0 0 0 4px var(--warning-light, #fef3c7);
+}
+
+.health-score-badge.health-poor {
+    background-color: var(--danger, #ef4444);
+    box-shadow: 0 0 0 4px var(--danger-light, #fee2e2);
+}
+
+/* --------------------------------------------------------------------------
+   Test Status Row Styling
+   Color-coded rows in the diagnostic results table.
+   -------------------------------------------------------------------------- */
+
+.data-table .test-row-pass {
+    border-left: 3px solid var(--success, #10b981);
+}
+
+.data-table .test-row-warning {
+    border-left: 3px solid var(--warning, #f59e0b);
+}
+
+.data-table .test-row-fail {
+    border-left: 3px solid var(--danger, #ef4444);
+}
+
+/* Status icon alignment in table cells */
+.data-table td .status-icon {
+    margin-right: var(--space-1, 4px);
+    font-size: var(--text-base, 1rem);
+    vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+   Recommendation Cards
+   Styled list of actionable recommendations.
+   -------------------------------------------------------------------------- */
+
+.recommendation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    background-color: var(--gray-50, #f9fafb);
+    border-radius: var(--radius-lg, 8px);
+    border-left: 3px solid var(--info, #3b82f6);
+    margin-bottom: var(--space-3, 12px);
+    line-height: var(--line-height-relaxed, 1.75);
+    font-size: var(--text-sm, 0.875rem);
+}
+
+.recommendation-item::before {
+    content: "\2192";
+    color: var(--info, #3b82f6);
+    font-weight: var(--font-bold, 700);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   Summary health status emphasis
+   -------------------------------------------------------------------------- */
+
+.health-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+}
+
+.health-summary .metric-value {
+    font-size: var(--text-3xl, 1.875rem);
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .health-score-badge {
+        box-shadow: none;
+        border: 2px solid currentColor;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .data-table .test-row-pass,
+    .data-table .test-row-warning,
+    .data-table .test-row-fail {
+        border-left-width: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .recommendation-item {
+        background-color: transparent;
+        border-left-width: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .health-score-badge {
+        width: 56px;
+        height: 56px;
+        font-size: var(--text-lg, 1.125rem);
+    }
+
+    .health-summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

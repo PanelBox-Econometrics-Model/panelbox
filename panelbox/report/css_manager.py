@@ -70,6 +70,7 @@ class CSSManager:
     # Default layer configuration
     DEFAULT_LAYERS = {
         "base": CSSLayer(name="base", files=["base_styles.css"], priority=0),
+        "branding": CSSLayer(name="branding", files=["branding.css"], priority=5),
         "components": CSSLayer(name="components", files=["report_components.css"], priority=10),
         "custom": CSSLayer(name="custom", files=[], priority=20),
     }

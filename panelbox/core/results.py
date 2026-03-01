@@ -747,6 +747,80 @@ class PanelResults:
         suite = ValidationSuite(self)
         return suite.run(tests=tests, alpha=alpha, verbose=verbose)
 
+    def _build_report_data(self) -> dict[str, Any]:
+        """
+        Build data dictionary compatible with RegressionTransformer.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys expected by RegressionTransformer.
+        """
+        coefficients = []
+        ci = self.conf_int()
+        for var in self.params.index:
+            coefficients.append(
+                {
+                    "name": var,
+                    "coef": float(self.params[var]),
+                    "se": float(self.std_errors[var]),
+                    "tstat": float(self.tvalues[var]),
+                    "pvalue": float(self.pvalues[var]),
+                    "ci_lower": float(ci.loc[var, "lower"]),
+                    "ci_upper": float(ci.loc[var, "upper"]),
+                }
+            )
+
+        return {
+            "model_type": self.model_type,
+            "formula": self.formula,
+            "nobs": self.nobs,
+            "n_entities": self.n_entities,
+            "n_periods": self.n_periods,
+            "cov_type": self.cov_type,
+            "coefficients": coefficients,
+            "r_squared": float(self.rsquared) if not np.isnan(self.rsquared) else None,
+            "adj_r_squared": (
+                float(self.rsquared_adj) if not np.isnan(self.rsquared_adj) else None
+            ),
+            "f_statistic": self.f_statistic,
+            "f_pvalue": self.f_pvalue,
+        }
+
+    def to_html_report(
+        self,
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a complete, self-contained HTML report with PanelBox branding.
+
+        Parameters
+        ----------
+        title : str, optional
+            Report title. Defaults to "Regression Results".
+        subtitle : str, optional
+            Report subtitle.
+
+        Returns
+        -------
+        str
+            Complete self-contained HTML report.
+
+        Examples
+        --------
+        >>> html = results.to_html_report(title="Fixed Effects Results")
+        >>> with open("regression_report.html", "w") as f:
+        ...     f.write(html)
+        """
+        from panelbox.report import RegressionTransformer, ReportManager
+
+        transformer = RegressionTransformer(self._build_report_data())
+        data = transformer.transform()
+
+        mgr = ReportManager()
+        return mgr.generate_regression_report(data, title=title, subtitle=subtitle)
+
     def __repr__(self) -> str:
         """String representation."""
         return (

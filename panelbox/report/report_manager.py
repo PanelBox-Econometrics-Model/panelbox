@@ -300,6 +300,154 @@ class ReportManager:
             report_type="gmm", template=template, context=context, include_plotly=True
         )
 
+    def generate_discrete_report(
+        self,
+        discrete_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a discrete/MLE results report.
+
+        Convenience method for discrete model reports (Logit, Probit, etc.).
+
+        Parameters
+        ----------
+        discrete_data : dict
+            Discrete model data (from DiscreteTransformer)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+
+        Returns
+        -------
+        str
+            Complete HTML discrete model report
+        """
+        template = "discrete/results.html"
+
+        context = {
+            "report_title": title or "Discrete Model Results",
+            "report_subtitle": subtitle,
+            **discrete_data,
+        }
+
+        return self.generate_report(
+            report_type="discrete", template=template, context=context, include_plotly=False
+        )
+
+    def generate_sfa_report(
+        self,
+        sfa_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a Stochastic Frontier Analysis report.
+
+        Convenience method for SFA reports.
+
+        Parameters
+        ----------
+        sfa_data : dict
+            SFA data (from SFATransformer)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+
+        Returns
+        -------
+        str
+            Complete HTML SFA report
+        """
+        template = "sfa/index.html"
+
+        context = {
+            "report_title": title or "Stochastic Frontier Analysis",
+            "report_subtitle": subtitle,
+            **sfa_data,
+        }
+
+        return self.generate_report(
+            report_type="sfa", template=template, context=context, include_plotly=True
+        )
+
+    def generate_var_report(
+        self,
+        var_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a Panel VAR report.
+
+        Convenience method for VAR reports.
+
+        Parameters
+        ----------
+        var_data : dict
+            VAR data (from VARTransformer)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+
+        Returns
+        -------
+        str
+            Complete HTML VAR report
+        """
+        template = "var/index.html"
+
+        context = {
+            "report_title": title or "Panel VAR Results",
+            "report_subtitle": subtitle,
+            **var_data,
+        }
+
+        return self.generate_report(
+            report_type="var", template=template, context=context, include_plotly=True
+        )
+
+    def generate_quantile_report(
+        self,
+        quantile_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate a Quantile Regression Diagnostics report.
+
+        Convenience method for quantile regression diagnostic reports.
+
+        Parameters
+        ----------
+        quantile_data : dict
+            Quantile data (from QuantileTransformer)
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+
+        Returns
+        -------
+        str
+            Complete HTML quantile diagnostics report
+        """
+        template = "quantile/diagnostics.html"
+
+        context = {
+            "report_title": title or "Quantile Regression Diagnostics",
+            "report_subtitle": subtitle,
+            **quantile_data,
+        }
+
+        return self.generate_report(
+            report_type="quantile", template=template, context=context, include_plotly=False
+        )
+
     def generate_residual_report(
         self,
         residual_data: dict[str, Any],
@@ -505,9 +653,7 @@ class ReportManager:
             include_plotly=interactive,
         )
 
-    def save_report(
-        self, html: str, output_path: str | Path, overwrite: bool = False
-    ) -> Path:
+    def save_report(self, html: str, output_path: str | Path, overwrite: bool = False) -> Path:
         """
         Save HTML report to file.
 
@@ -574,6 +720,8 @@ class ReportManager:
             "report_type": report_type,
             "generation_date": now.strftime("%Y-%m-%d %H:%M:%S"),
             "generation_timestamp": now.isoformat(),
+            # Branding
+            "logo_base64": self.asset_manager.get_logo_base64(),
             # Report display options
             "show_export_buttons": True,
             "show_navigation": True,

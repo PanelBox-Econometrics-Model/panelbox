@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Discrete/MLE Report Styles
+   Report-specific overrides only. Base styles in base_styles.css and
+   report_components.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Classification Metrics Cards
+   Emphasized styling for classification tab metric cards.
+   -------------------------------------------------------------------------- */
+
+#tab-classification .metric-card {
+    border-left: 3px solid var(--info, #3b82f6);
+}
+
+#tab-classification .metric-card:first-child {
+    border-left-color: var(--brand-dark-blue, #073d7d);
+}
+
+#tab-classification .metric-card:first-child .metric-value {
+    color: var(--brand-dark-blue, #073d7d);
+}
+
+/* --------------------------------------------------------------------------
+   Convergence Status Alert
+   Visual indicator for optimization convergence.
+   -------------------------------------------------------------------------- */
+
+.convergence-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border-radius: var(--radius-lg, 8px);
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--text-sm, 0.875rem);
+}
+
+.convergence-status.converged {
+    background-color: var(--success-light, #d1fae5);
+    color: var(--success, #10b981);
+    border: 1px solid var(--success, #10b981);
+}
+
+.convergence-status.not-converged {
+    background-color: var(--danger-light, #fee2e2);
+    color: var(--danger, #ef4444);
+    border: 1px solid var(--danger, #ef4444);
+}
+
+.convergence-iterations {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--gray-600, #4b5563);
+    margin-left: var(--space-2, 8px);
+}
+
+/* --------------------------------------------------------------------------
+   Confidence Interval Columns
+   -------------------------------------------------------------------------- */
+
+.data-table td.ci-value {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--gray-600, #4b5563);
+}
+
+/* --------------------------------------------------------------------------
+   Fit Statistics
+   Emphasis on key statistics (Pseudo R-squared, Log-Likelihood).
+   -------------------------------------------------------------------------- */
+
+#tab-fit-stats .data-table td:nth-child(2) {
+    font-family: var(--font-mono, monospace);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* --------------------------------------------------------------------------
+   z-statistic column header (different from regression t-stat)
+   -------------------------------------------------------------------------- */
+
+.data-table th.z-header {
+    font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+
+@media print {
+    .convergence-status {
+        border: 1px solid currentColor;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    #tab-classification .metric-card {
+        border-left-width: 3px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .convergence-status {
+        font-size: var(--text-xs, 0.75rem);
+        padding: var(--space-1, 4px) var(--space-3, 12px);
+    }
+}
