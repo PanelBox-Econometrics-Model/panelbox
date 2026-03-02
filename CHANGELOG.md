@@ -5,6 +5,17 @@ All notable changes to PanelBox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-03-01
+
+### Changed
+
+- **Version 1.0.0 Release**: First stable release
+- Interactive Plotly charts for all report types (SFA, VAR, GMM, Regression, Discrete, Quantile)
+- Report System v2 with unified templates and chart builders
+- Fixed chart rendering in tabbed report views
+- Documentation link updated to panelbox.readthedocs.io
+- Enhanced branding with larger logo and favicon support
+
 ## [0.6.1] - 2026-02-25
 
 ### Added

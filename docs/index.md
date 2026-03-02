@@ -14,7 +14,8 @@ description: Complete Python library for panel data econometrics with 70+ models
 [![PyPI](https://img.shields.io/pypi/v/panelbox)](https://pypi.org/project/panelbox/)
 [![Python](https://img.shields.io/pypi/pyversions/panelbox)](https://pypi.org/project/panelbox/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Development Status](https://img.shields.io/badge/development%20status-beta-orange)
+![Development Status](https://img.shields.io/badge/development%20status-stable-brightgreen)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 70+ econometric models | 50+ diagnostic tests | Interactive HTML reports | Google Colab tutorials
 
@@ -282,7 +283,7 @@ If you use PanelBox in academic research, please cite:
   author = {PanelBox Development Team},
   year = {2026},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox},
-  version = {0.6.1}
+  version = {1.0.0}
 }
 ```
 

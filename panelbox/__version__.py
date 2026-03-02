@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-__version__ = "0.6.1"
+__version__ = "1.0.0"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
 
 # Version history
+# 1.0.0 (2026-03-01): First Stable Release
+#                     - Interactive Plotly charts for all report types
+#                     - Report System v2 with unified templates and chart builders
+#                     - Fixed chart rendering in tabbed report views
+#                     - Enhanced branding with larger logo and favicon support
 # 0.6.1 (2026-02-25): Dataset Bundling for Colab Compatibility
 #                     - Bundle 103 CSV datasets in the library package
 #                     - New load_dataset() API with category-based organization

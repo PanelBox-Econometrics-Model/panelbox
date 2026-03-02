@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panelbox"
-version = "0.6.1"
+version = "1.0.0"
 description = "Panel data econometrics in Python: Fixed Effects, Random Effects, GMM (Arellano-Bond, Blundell-Bond), Experiment Pattern with Result Containers (Validation, Comparison, Residual), Test Runners & Master Reports, Interactive Visualizations (35 Charts), Professional HTML Reports, Robust Standard Errors (HC, Clustered, Driscoll-Kraay, Newey-West), Comprehensive Diagnostics"
 authors = [
     {name = "Gustavo Haase", email = "gustavo.haase@gmail.com"},

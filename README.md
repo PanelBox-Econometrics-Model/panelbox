@@ -11,6 +11,8 @@
 [![PyPI version](https://badge.fury.io/py/panelbox.svg)](https://badge.fury.io/py/panelbox)
 [![Python versions](https://img.shields.io/pypi/pyversions/panelbox)](https://pypi.org/project/panelbox/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Development Status](https://img.shields.io/badge/development%20status-stable-brightgreen)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/panelbox)
 
 </div>
 
@@ -267,7 +269,7 @@ See `pyproject.toml` for full dependency list.
   author = {Haase, Gustavo and Dourado, Paulo},
   title = {PanelBox: Panel Data Econometrics in Python},
   year = {2026},
-  version = {0.6.1},
+  version = {1.0.0},
   url = {https://github.com/PanelBox-Econometrics-Model/panelbox}
 }
 ```
