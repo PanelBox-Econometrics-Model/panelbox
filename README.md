@@ -13,6 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Development Status](https://img.shields.io/badge/development%20status-stable-brightgreen)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/panelbox)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18828968.svg)](https://doi.org/10.5281/zenodo.18828968)
 
 </div>
 

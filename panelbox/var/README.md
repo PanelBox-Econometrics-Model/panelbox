@@ -6,6 +6,7 @@
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18828968.svg)](https://doi.org/10.5281/zenodo.18828968)
 
 ---
 
