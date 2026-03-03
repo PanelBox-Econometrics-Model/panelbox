@@ -2,786 +2,786 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://panelbox.readthedocs.io/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/404/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/censored/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/cli/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/core/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/count/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/datasets/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/discrete/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/experiment/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/frontier/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/iv/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/marginal-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/quantile/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/report/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/standard-errors/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/static-models/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/validation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/var/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/api/visualization/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/comparison/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/heckman/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/sfa/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/benchmarks/spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/contributing/changelog/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/contributing/code-of-conduct/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/contributing/contributing/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/contributing/roadmap/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cointegration/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cointegration/kao/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cointegration/pedroni/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cointegration/westerlund/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cross-sectional/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cross-sectional/bp-lm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/cross-sectional/pesaran-cd/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/heteroskedasticity/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/heteroskedasticity/breusch-pagan/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/heteroskedasticity/modified-wald/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/heteroskedasticity/white/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/bootstrap/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/cross-validation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/influence/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/jackknife/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/outliers/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/robustness/sensitivity/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/serial-correlation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/serial-correlation/baltagi-wu/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/serial-correlation/breusch-godfrey/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/serial-correlation/wooldridge/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/chow/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/cox-encompassing/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/hausman/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/j-test/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/mundlak/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/specification/reset/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/breitung/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/fisher/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/hadri/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/ips/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/diagnostics/unit-root/llc/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/faq/advanced/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/faq/general/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/faq/spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/faq/troubleshooting/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/getting-started/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/getting-started/choosing-model/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/getting-started/core-concepts/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/getting-started/installation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/getting-started/quickstart/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/clustered/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/comparison/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/driscoll-kraay/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/mle-variance/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/newey-west/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/pcse/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/robust/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/inference/spatial-hac/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/gmm-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/panel-fundamentals/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/quantile-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/references/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/selection-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/sfa-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/spatial-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/theory/var-theory/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/censored/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/count/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/discrete/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/frontier/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/fundamentals/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/marginal-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/production/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/quantile/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/standard-errors/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/static-models/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/validation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/var/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/tutorials/visualization/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/heckman/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/honore/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/marginal-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/murphy-topel/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/censored/tobit/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/marginal-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/negative-binomial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/poisson/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/ppml/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/count/zero-inflated/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/binary/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/dynamic/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/marginal-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/multinomial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/discrete/ordered/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/four-component/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/panel-sfa/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/production-cost/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/sign-convention/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/tfp/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/frontier/true-models/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/bias-corrected/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/complete-guide/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/cue-gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/difference-gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/instruments/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/gmm/system-gmm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/iv/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/iv/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/iv/panel-iv/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/canay/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/dynamic/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/fixed-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/location-scale/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/monotonicity/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/pooled/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/quantile/treatment-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/choosing-model/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/dynamic-spatial/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/gns/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/spatial-durbin/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/spatial-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/spatial-error/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/spatial-lag/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/spatial/spatial-weights/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/between/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/fe-vs-re/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/first-difference/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/fixed-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/pooled-ols/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/static-models/random-effects/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/estimation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/fevd/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/forecasting/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/granger/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/irf/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/user-guide/var/vecm/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/comparison/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/model-diagnostics/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/panel-structure/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/specialized/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/test-plots/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/charts/themes/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/comparison/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/fitting/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/master-reports/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/residuals/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/spatial-extension/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
     <url>
          <loc>https://panelbox.readthedocs.io/visualization/experiment/validation/</loc>
-         <lastmod>2026-03-02</lastmod>
+         <lastmod>2026-03-03</lastmod>
     </url>
 </urlset>
