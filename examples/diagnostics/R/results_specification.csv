@@ -1,0 +1,21 @@
+"test_name","dataset","model_spec","statistic","p_value","df","df1","df2"
+"Hausman","NLS_Work","ln_wage ~ experience + tenure + union + married",48.0491199006848,9.21791359036161e-10,"4",4,NA
+"FE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0198094172702989,6.73873833276042e-273,"experience",0.000536422657920623,NA
+"FE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0157668098110713,2.68884811429876e-19,"tenure",0.00175049906114621,NA
+"FE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.103406919380784,1.38339651631241e-34,"union",0.00838496152540539,NA
+"FE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0399207312667187,3.73934934469035e-08,"married",0.00724659342477773,NA
+"RE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",1.44222888355963,0,"(Intercept)",0.0173938263829938,NA
+"RE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0202467655691302,3.10511391388448e-296,"experience",0.000550395026948738,NA
+"RE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0170617300659977,1.96696695559575e-21,"tenure",0.00179469485567416,NA
+"RE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.094549469896163,3.654199489112e-28,"union",0.00859225705272319,NA
+"RE_coefficient","NLS_Work","ln_wage ~ experience + tenure + union + married",0.0403682480391519,5.56979499483622e-08,"married",0.00743144005401553,NA
+"Hausman","Grunfeld","invest ~ value + capital",0.930267278310576,0.628051167353592,"2",2,NA
+"Breusch_Pagan_LM","NLS_Work","ln_wage ~ experience + tenure + union + married",21530.5852697177,0,"1",1,NA
+"Breusch_Pagan_LM","Grunfeld","invest ~ value + capital",938.34319199496,4.53588876671735e-206,"1",1,NA
+"Honda_LM","NLS_Work","ln_wage ~ experience + tenure + union + married",146.733040824886,0,"1",1,NA
+"F_test_FE","NLS_Work","ln_wage ~ experience + tenure + union + married",31.4681414386756,0,"499,6996",499,6996
+"F_test_FE","Grunfeld","invest ~ value + capital",58.2743728470093,1.06435673707703e-49,"9,188",9,188
+"Poolability","Grunfeld","invest ~ value + capital",4.31266792194468,1.54263475904698e-07,"18,170",18,170
+"Hausman","Firm_Productivity","log_output ~ log_capital + log_labor + log_materials",1.7296432432037,0.630363658109326,"3",3,NA
+"Pesaran_CD","Grunfeld","invest ~ value + capital",1.09924629811697,0.271660649221369,"NA",NA,NA
+"Breusch_Godfrey_SC","Grunfeld","invest ~ value + capital",71.7433659746467,9.43328044123146e-08,"20",20,NA

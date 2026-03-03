@@ -1,0 +1,9 @@
+"test_name","dataset","y_var","x_vars","statistic","p_value"
+"Kao_LLC_residual","OECD","log_C","log_Y",-10.3041394470099,3.37465106446954e-25
+"Kao_IPS_residual","OECD","log_C","log_Y",-10.5350352575916,2.97804770740155e-26
+"Pedroni_group_ADF","OECD","log_C","log_Y",-24.6302165839532,2.99835489859687e-134
+"Kao_LLC_residual","PPP","log_S","log_P_ratio",-3.92466291868943,4.34256325243375e-05
+"Kao_IPS_residual","PPP","log_S","log_P_ratio",-4.17867601885869,1.46605510726788e-05
+"Pedroni_group_ADF","PPP","log_S","log_P_ratio",-16.5196827305891,1.3239364358244e-61
+"Kao_LLC_residual","Interest_Rates","domestic_rate","us_rate",-4.9044595752129,4.68424560956498e-07
+"Kao_IPS_residual","Interest_Rates","domestic_rate","us_rate",-5.20935256716212,9.47503590892526e-08
