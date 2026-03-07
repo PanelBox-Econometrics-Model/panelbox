@@ -14,6 +14,7 @@
 ![Development Status](https://img.shields.io/badge/development%20status-stable-brightgreen)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/panelbox?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/panelbox)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18828968.svg)](https://doi.org/10.5281/zenodo.18828968)
+[![Documentation](https://readthedocs.org/projects/panelbox/badge/?version=latest)](https://panelbox.readthedocs.io/)
 
 </div>
 
