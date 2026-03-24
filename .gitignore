@@ -214,6 +214,9 @@ papers/
 # Conference submodule (separate repo)
 conference/
 
+# Temporary research data
+comerce/
+
 # GraphRAG (separate repo)
 graphrag/
 
