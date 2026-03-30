@@ -216,7 +216,9 @@ def cox_test(
         # Fallback: use simple approximation based on sample size
         se_diff = np.sqrt(2 / n)
         warnings.warn(
-            "Could not compute exact variance. Using approximation.", UserWarning, stacklevel=2
+            "Could not compute exact variance. Using approximation.",
+            UserWarning,
+            stacklevel=2,
         )
 
     # Test statistic
@@ -238,7 +240,12 @@ def cox_test(
         alternative="Models have different fit quality",
         model1_name=model1_name,
         model2_name=model2_name,
-        additional_info={"llf1": llf1, "llf2": llf2, "llf_diff": llf_diff, "se_diff": se_diff},
+        additional_info={
+            "llf1": llf1,
+            "llf2": llf2,
+            "llf_diff": llf_diff,
+            "se_diff": se_diff,
+        },
     )
 
 

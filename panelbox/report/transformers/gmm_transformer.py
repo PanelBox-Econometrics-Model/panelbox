@@ -85,9 +85,9 @@ class GMMTransformer:
                 "statistic": hansen.get("statistic", "—"),
                 "pvalue": hansen_p if hansen_p != 0 else "—",
                 "df": hansen.get("df", "—"),
-                "status": "pass"
-                if isinstance(hansen_p, (int, float)) and hansen_p > 0.05
-                else "fail",
+                "status": (
+                    "pass" if isinstance(hansen_p, (int, float)) and hansen_p > 0.05 else "fail"
+                ),
             },
             "ar1": {
                 "statistic": ar_tests.get("ar1", {}).get("statistic", "—"),
@@ -96,7 +96,7 @@ class GMMTransformer:
             "ar2": {
                 "statistic": ar_tests.get("ar2", {}).get("statistic", "—"),
                 "pvalue": ar2_p if ar2_p != 0 else "—",
-                "status": "pass" if isinstance(ar2_p, (int, float)) and ar2_p > 0.05 else "fail",
+                "status": ("pass" if isinstance(ar2_p, (int, float)) and ar2_p > 0.05 else "fail"),
             },
         }
 

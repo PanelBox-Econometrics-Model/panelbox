@@ -186,7 +186,9 @@ def _moments_exponential(m2: float, m3: float) -> tuple[float, float]:
         sigma_u_sq = 1e-6
         sigma_v_sq = max(m2, 1e-6)
         warnings.warn(
-            "Third moment near zero. Setting σ_u to small value.", UserWarning, stacklevel=2
+            "Third moment near zero. Setting σ_u to small value.",
+            UserWarning,
+            stacklevel=2,
         )
     else:
         # From third moment
@@ -201,14 +203,21 @@ def _moments_exponential(m2: float, m3: float) -> tuple[float, float]:
             sigma_u_sq = 0.5 * total_var
             sigma_v_sq = 0.5 * total_var
             warnings.warn(
-                "Negative variance from moments. Using equal split.", UserWarning, stacklevel=2
+                "Negative variance from moments. Using equal split.",
+                UserWarning,
+                stacklevel=2,
             )
 
     return sigma_u_sq, max(sigma_v_sq, 1e-6)
 
 
 def grid_search_starting_values(
-    y: np.ndarray, X: np.ndarray, dist: str, likelihood_func, sign: int, n_points: int = 5
+    y: np.ndarray,
+    X: np.ndarray,
+    dist: str,
+    likelihood_func,
+    sign: int,
+    n_points: int = 5,
 ) -> tuple[np.ndarray, float, float]:
     """Grid search for starting values.
 

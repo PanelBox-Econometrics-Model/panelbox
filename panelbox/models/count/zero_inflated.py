@@ -156,7 +156,10 @@ class ZeroInflatedPoisson:
 
         # For zeros: log(π + (1-π)exp(-λ))
         ll_zero = np.log(
-            np.maximum(pi[zero_mask] + (1 - pi[zero_mask]) * np.exp(-lambda_[zero_mask]), 1e-300)
+            np.maximum(
+                pi[zero_mask] + (1 - pi[zero_mask]) * np.exp(-lambda_[zero_mask]),
+                1e-300,
+            )
         )
 
         # For non-zeros: log((1-π)) + log(Poisson(y|λ))

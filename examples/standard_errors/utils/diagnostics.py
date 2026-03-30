@@ -308,7 +308,9 @@ def test_autocorrelation(
 
 
 def test_spatial_correlation(
-    residuals: np.ndarray, coords: np.ndarray, weights_matrix: Optional[np.ndarray] = None
+    residuals: np.ndarray,
+    coords: np.ndarray,
+    weights_matrix: Optional[np.ndarray] = None,
 ) -> TestResult:
     """
     Test for spatial correlation using Moran's I.

@@ -211,7 +211,8 @@ class TestMultinomialLogitValidation:
         assert np.any(np.abs(z_stats) > 1.96)  # Some significant
 
     @pytest.mark.xfail(
-        strict=False, reason="MultinomialLogit convergence may fail on some platforms/seeds"
+        strict=False,
+        reason="MultinomialLogit convergence may fail on some platforms/seeds",
     )
     def test_alternative_specific_intercepts(self):
         """

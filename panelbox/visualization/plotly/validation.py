@@ -243,7 +243,9 @@ class PValueDistributionChart(PlotlyChartBase):
             yaxis_config["range"] = [-4, 0]  # 0.0001 to 1
 
         fig.update_layout(
-            xaxis_title=self.config.get("xaxis_title", "Test"), yaxis=yaxis_config, showlegend=False
+            xaxis_title=self.config.get("xaxis_title", "Test"),
+            yaxis=yaxis_config,
+            showlegend=False,
         )
 
         return fig
@@ -509,7 +511,12 @@ class ValidationDashboard(PlotlyChartBase):
         fig = make_subplots(
             rows=2,
             cols=2,
-            subplot_titles=("Test Overview", "P-value Distribution", "Test Statistics", "Summary"),
+            subplot_titles=(
+                "Test Overview",
+                "P-value Distribution",
+                "Test Statistics",
+                "Summary",
+            ),
             specs=[
                 [{"type": "bar"}, {"type": "bar"}],
                 [{"type": "scatter"}, {"type": "indicator"}],
@@ -525,12 +532,22 @@ class ValidationDashboard(PlotlyChartBase):
         failed = overview_data["failed"]
 
         fig.add_trace(
-            go.Bar(name="Passed", x=categories, y=passed, marker_color=self.theme.success_color),
+            go.Bar(
+                name="Passed",
+                x=categories,
+                y=passed,
+                marker_color=self.theme.success_color,
+            ),
             row=1,
             col=1,
         )
         fig.add_trace(
-            go.Bar(name="Failed", x=categories, y=failed, marker_color=self.theme.danger_color),
+            go.Bar(
+                name="Failed",
+                x=categories,
+                y=failed,
+                marker_color=self.theme.danger_color,
+            ),
             row=1,
             col=1,
         )
@@ -544,7 +561,9 @@ class ValidationDashboard(PlotlyChartBase):
         colors = [get_color_for_pvalue(p, alpha) for p in pvalues]
 
         fig.add_trace(
-            go.Bar(x=test_names, y=pvalues, marker_color=colors, showlegend=False), row=1, col=2
+            go.Bar(x=test_names, y=pvalues, marker_color=colors, showlegend=False),
+            row=1,
+            col=2,
         )
 
         # Subplot 3: Test Statistics

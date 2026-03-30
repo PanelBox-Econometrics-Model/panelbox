@@ -9,7 +9,9 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
-from panelbox.report.renderers.static_validation_renderer import StaticValidationRenderer
+from panelbox.report.renderers.static_validation_renderer import (
+    StaticValidationRenderer,
+)
 
 
 class TestStaticValidationRendererInit:

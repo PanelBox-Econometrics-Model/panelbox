@@ -14,7 +14,9 @@ import numpy as np
 import pytest
 
 from panelbox.frontier.css import estimate_css_model
-from panelbox.frontier.css import test_time_trend_specification as _test_time_trend_specification
+from panelbox.frontier.css import (
+    test_time_trend_specification as _test_time_trend_specification,
+)
 from panelbox.frontier.panel_likelihoods import (
     loglik_battese_coelli_92,
     loglik_battese_coelli_95,

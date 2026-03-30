@@ -93,7 +93,13 @@ def plot_residuals(
             from statsmodels.nonparametric.smoothers_lowess import lowess
 
             smoothed = lowess(residuals, fitted, frac=0.3)
-            ax.plot(smoothed[:, 0], smoothed[:, 1], "blue", linewidth=2, label="LOWESS trend")
+            ax.plot(
+                smoothed[:, 0],
+                smoothed[:, 1],
+                "blue",
+                linewidth=2,
+                label="LOWESS trend",
+            )
         except ImportError:
             # Fallback to simple moving average if statsmodels not available
             sorted_idx = np.argsort(fitted)
@@ -149,7 +155,13 @@ def plot_acf_pacf(
         ax1.set_ylabel("ACF")
 
         # PACF plot
-        plot_pacf(data, lags=lags, ax=ax2, alpha=alpha, title="Partial Autocorrelation Function")
+        plot_pacf(
+            data,
+            lags=lags,
+            ax=ax2,
+            alpha=alpha,
+            title="Partial Autocorrelation Function",
+        )
         ax2.set_xlabel("Lag")
         ax2.set_ylabel("PACF")
 
@@ -255,7 +267,10 @@ def plot_se_comparison(
         ax1.errorbar(
             coefs,
             y_pos,
-            xerr=[np.array(coefs) - np.array(ci_lower), np.array(ci_upper) - np.array(coefs)],
+            xerr=[
+                np.array(coefs) - np.array(ci_lower),
+                np.array(ci_upper) - np.array(coefs),
+            ],
             fmt="none",
             ecolor="black",
             capsize=5,
@@ -272,7 +287,10 @@ def plot_se_comparison(
         ax1.errorbar(
             x_pos,
             coefs,
-            yerr=[np.array(coefs) - np.array(ci_lower), np.array(ci_upper) - np.array(coefs)],
+            yerr=[
+                np.array(coefs) - np.array(ci_lower),
+                np.array(ci_upper) - np.array(coefs),
+            ],
             fmt="none",
             ecolor="black",
             capsize=5,
@@ -366,7 +384,12 @@ def plot_quantile_process(
     # Add confidence bands if provided
     if ci_lower is not None and ci_upper is not None:
         ax.fill_between(
-            quantiles, ci_lower, ci_upper, alpha=0.2, color="steelblue", label="95% Confidence Band"
+            quantiles,
+            ci_lower,
+            ci_upper,
+            alpha=0.2,
+            color="steelblue",
+            label="95% Confidence Band",
         )
 
     # Add OLS reference line if provided

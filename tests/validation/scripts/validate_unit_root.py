@@ -7,7 +7,11 @@ Compares PanelBox results with R's plm package.
 import numpy as np
 import pandas as pd
 
-from panelbox.diagnostics.unit_root import breitung_test, hadri_test, panel_unit_root_test
+from panelbox.diagnostics.unit_root import (
+    breitung_test,
+    hadri_test,
+    panel_unit_root_test,
+)
 
 
 def generate_stationary_panel(n_entities=10, n_time=100, rho=0.6, seed=42):

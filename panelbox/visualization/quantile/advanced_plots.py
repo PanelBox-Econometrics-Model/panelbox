@@ -42,7 +42,10 @@ class QuantileVisualizer:
     """
 
     def __init__(
-        self, style: str = "academic", dpi: int = 300, figsize: tuple[float, float] | None = None
+        self,
+        style: str = "academic",
+        dpi: int = 300,
+        figsize: tuple[float, float] | None = None,
     ):
         """Initialize visualizer with specified style and settings."""
         self.style = style
@@ -165,7 +168,10 @@ class QuantileVisualizer:
         n_rows = (n_vars + n_cols - 1) // n_cols
 
         fig, axes = plt.subplots(
-            n_rows, n_cols, figsize=(figsize[0], figsize[1] * n_rows / 2), constrained_layout=True
+            n_rows,
+            n_cols,
+            figsize=(figsize[0], figsize[1] * n_rows / 2),
+            constrained_layout=True,
         )
 
         if n_vars == 1:
@@ -213,7 +219,14 @@ class QuantileVisualizer:
                 coefs.append(coef)
 
             # Plot coefficient path
-            ax.plot(tau_list, coefs, color=color, linewidth=2.5, label="QR Estimate", zorder=3)
+            ax.plot(
+                tau_list,
+                coefs,
+                color=color,
+                linewidth=2.5,
+                label="QR Estimate",
+                zorder=3,
+            )
 
             # Add confidence bands
             if len(lower_ci) == len(tau_list) and len(upper_ci) == len(tau_list):
@@ -275,7 +288,12 @@ class QuantileVisualizer:
                 if tau_special in tau_list:
                     idx_special = tau_list.index(tau_special)
                     ax.plot(
-                        tau_special, coefs[idx_special], "o", color="black", markersize=6, zorder=4
+                        tau_special,
+                        coefs[idx_special],
+                        "o",
+                        color="black",
+                        markersize=6,
+                        zorder=4,
                     )
 
         # Hide unused subplots
@@ -284,7 +302,10 @@ class QuantileVisualizer:
 
         # Main title
         fig.suptitle(
-            "Quantile Process: Coefficient Evolution", fontsize=14, fontweight="bold", y=1.02
+            "Quantile Process: Coefficient Evolution",
+            fontsize=14,
+            fontweight="bold",
+            y=1.02,
         )
 
         return fig
@@ -398,7 +419,12 @@ class QuantileVisualizer:
         # Plot median
         if 0.5 in predictions:
             ax.plot(
-                time_index, predictions[0.5], color="red", linewidth=2.5, label="Median", zorder=3
+                time_index,
+                predictions[0.5],
+                color="red",
+                linewidth=2.5,
+                label="Median",
+                zorder=3,
             )
 
         # Formatting
@@ -413,7 +439,12 @@ class QuantileVisualizer:
             if tau in predictions:
                 y_pos = predictions[tau][-1]
                 ax.text(
-                    time_index[-1], y_pos, f"{int(tau * 100)}%", fontsize=8, ha="left", va="center"
+                    time_index[-1],
+                    y_pos,
+                    f"{int(tau * 100)}%",
+                    fontsize=8,
+                    ha="left",
+                    va="center",
                 )
 
         return fig
@@ -682,7 +713,13 @@ class QuantileVisualizer:
 
                 predictions.append(pred)
 
-            ax.plot(tau_grid, predictions, color="gray", alpha=individual_alpha, linewidth=0.5)
+            ax.plot(
+                tau_grid,
+                predictions,
+                color="gray",
+                alpha=individual_alpha,
+                linewidth=0.5,
+            )
 
         # Highlight specific quantiles
         colors = ["blue", "red", "green"]

@@ -259,7 +259,12 @@ def compute_rootogram_data(observed, expected, breaks=None):
     x = breaks[:-1] + 0.5
     residuals = obs_sqrt - exp_sqrt
 
-    return {"x": x, "observed_sqrt": obs_sqrt, "expected_sqrt": exp_sqrt, "residuals": residuals}
+    return {
+        "x": x,
+        "observed_sqrt": obs_sqrt,
+        "expected_sqrt": exp_sqrt,
+        "residuals": residuals,
+    }
 
 
 def detect_outliers_count(result, threshold=3, method="pearson"):

@@ -489,7 +489,7 @@ def granger_causality_summary(results, significance=0.05):
                     "effect": effect_name,
                     "wald_stat": wald_stat,
                     "p_value": p_value,
-                    "significant": p_value < significance if np.isfinite(p_value) else False,
+                    "significant": (p_value < significance if np.isfinite(p_value) else False),
                 }
             )
 

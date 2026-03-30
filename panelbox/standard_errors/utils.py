@@ -84,7 +84,10 @@ def compute_bread(X: np.ndarray) -> np.ndarray:
 
 
 def compute_meat_hc(
-    X: np.ndarray, resid: np.ndarray, method: str = "HC1", leverage: np.ndarray | None = None
+    X: np.ndarray,
+    resid: np.ndarray,
+    method: str = "HC1",
+    leverage: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Compute the "meat" of the sandwich for heteroskedasticity-robust SEs.

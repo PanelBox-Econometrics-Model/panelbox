@@ -32,7 +32,12 @@ References
 from __future__ import annotations
 
 from .negbin import FixedEffectsNegativeBinomial, NegativeBinomial
-from .poisson import PoissonFixedEffects, PoissonQML, PooledPoisson, RandomEffectsPoisson
+from .poisson import (
+    PoissonFixedEffects,
+    PoissonQML,
+    PooledPoisson,
+    RandomEffectsPoisson,
+)
 from .ppml import PPML, PPMLResult
 from .zero_inflated import (
     ZeroInflatedNegativeBinomial,

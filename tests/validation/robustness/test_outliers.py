@@ -359,7 +359,13 @@ class TestDataFrameColumns:
         detector = OutlierDetector(mock_results, verbose=False)
         results = detector.detect_outliers_multivariate()
 
-        expected_cols = {"entity", "time", "mahalanobis_distance", "is_outlier", "distance"}
+        expected_cols = {
+            "entity",
+            "time",
+            "mahalanobis_distance",
+            "is_outlier",
+            "distance",
+        }
         assert expected_cols.issubset(set(results.outliers.columns))
 
 

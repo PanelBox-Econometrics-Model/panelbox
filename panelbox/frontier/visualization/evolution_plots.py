@@ -196,7 +196,12 @@ def plot_efficiency_timeseries(  # noqa: C901
         # Range band
         if show_range:
             ax.fill_between(
-                time_points, min_eff, max_eff, alpha=0.2, color="gray", label="Range (Min-Max)"
+                time_points,
+                min_eff,
+                max_eff,
+                alpha=0.2,
+                color="gray",
+                label="Range (Min-Max)",
             )
 
         # CI band
@@ -208,7 +213,14 @@ def plot_efficiency_timeseries(  # noqa: C901
             )
 
         # Mean line
-        ax.plot(time_points, mean_eff, "b-o", linewidth=3, markersize=8, label="Mean Efficiency")
+        ax.plot(
+            time_points,
+            mean_eff,
+            "b-o",
+            linewidth=3,
+            markersize=8,
+            label="Mean Efficiency",
+        )
 
         # Median line
         if show_median:
@@ -368,7 +380,10 @@ def plot_efficiency_spaghetti(
 
             if highlight is not None and entity in highlight:
                 ax.plot(
-                    entity_data["time"], entity_data["efficiency"], linewidth=3, label=str(entity)
+                    entity_data["time"],
+                    entity_data["efficiency"],
+                    linewidth=3,
+                    label=str(entity),
                 )
             else:
                 ax.plot(
@@ -382,7 +397,13 @@ def plot_efficiency_spaghetti(
         # Mean trajectory
         if show_mean:
             mean_by_time = efficiency_df.groupby("time")["efficiency"].mean()
-            ax.plot(mean_by_time.index, mean_by_time.values, "k--", linewidth=4, label="Mean")
+            ax.plot(
+                mean_by_time.index,
+                mean_by_time.values,
+                "k--",
+                linewidth=4,
+                label="Mean",
+            )
 
         ax.set_xlabel("Time", fontsize=12)
         ax.set_ylabel("Technical Efficiency", fontsize=12)
@@ -594,7 +615,13 @@ def plot_efficiency_fanchart(
         # Plot median
         median_idx = percentiles.index(50) if 50 in percentiles else None
         if median_idx is not None:
-            ax.plot(time_points, percentile_data["p50"], "k-", linewidth=3, label="P50 (Median)")
+            ax.plot(
+                time_points,
+                percentile_data["p50"],
+                "k-",
+                linewidth=3,
+                label="P50 (Median)",
+            )
 
         # Fill between percentiles
         sorted_p = sorted(percentiles)

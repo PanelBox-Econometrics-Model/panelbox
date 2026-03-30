@@ -397,7 +397,11 @@ Minified: {self.minify}
         """
         size_bytes = len(html_content.encode("utf-8"))
 
-        return {"bytes": size_bytes, "kb": size_bytes / 1024, "mb": size_bytes / (1024 * 1024)}
+        return {
+            "bytes": size_bytes,
+            "kb": size_bytes / 1024,
+            "mb": size_bytes / (1024 * 1024),
+        }
 
     def __repr__(self) -> str:
         """String representation."""

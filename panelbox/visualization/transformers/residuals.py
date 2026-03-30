@@ -196,13 +196,16 @@ class ResidualDataTransformer:
                 XtX_inv = np.linalg.inv(X.T @ X)
                 leverage = np.sum((X @ XtX_inv) * X, axis=1)
                 return leverage
-            except Exception:  # noqa: S110 — leverage computation may fail for singular matrices
+            except Exception:  # noqa: S110
                 pass
 
         return None
 
     def _compute_cooks_distance(
-        self, results: Any, standardized_residuals: np.ndarray, leverage: np.ndarray | None
+        self,
+        results: Any,
+        standardized_residuals: np.ndarray,
+        leverage: np.ndarray | None,
     ) -> np.ndarray | None:
         """
         Compute Cook's distance.
@@ -266,7 +269,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(1).values
-                    except Exception:  # noqa: S110 — fallback to alternative time index extraction
+                    except Exception:  # noqa: S110
                         pass
 
         # Try from original data
@@ -297,7 +300,7 @@ class ResidualDataTransformer:
                 if hasattr(data.row_labels, "get_level_values"):
                     try:
                         return data.row_labels.get_level_values(0).values
-                    except Exception:  # noqa: S110 — fallback to alternative entity index extraction
+                    except Exception:  # noqa: S110
                         pass
 
         # Try from original data
@@ -323,7 +326,15 @@ class ResidualDataTransformer:
         info = {}
 
         # Extract common attributes
-        attrs = ["nobs", "df_resid", "df_model", "rsquared", "rsquared_adj", "fvalue", "f_pvalue"]
+        attrs = [
+            "nobs",
+            "df_resid",
+            "df_model",
+            "rsquared",
+            "rsquared_adj",
+            "fvalue",
+            "f_pvalue",
+        ]
 
         for attr in attrs:
             if hasattr(results, attr):
@@ -385,7 +396,12 @@ class ResidualDataTransformer:
         residuals = self._extract_residuals(results)
         fitted = self._extract_fitted(results)
 
-        return {"fitted": fitted, "residuals": residuals, "add_lowess": True, "add_reference": True}
+        return {
+            "fitted": fitted,
+            "residuals": residuals,
+            "add_lowess": True,
+            "add_reference": True,
+        }
 
     def prepare_scale_location_data(self, results: Any) -> dict[str, Any]:
         """
@@ -483,4 +499,9 @@ class ResidualDataTransformer:
         """
         residuals = self._extract_residuals(results)
 
-        return {"residuals": residuals, "bins": "auto", "show_kde": True, "show_normal": True}
+        return {
+            "residuals": residuals,
+            "bins": "auto",
+            "show_kde": True,
+            "show_normal": True,
+        }

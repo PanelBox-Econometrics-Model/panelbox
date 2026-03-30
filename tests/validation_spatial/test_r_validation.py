@@ -41,7 +41,12 @@ class TestValidationBase:
         # Load SEM data
         sem_data = pd.read_csv(data_dir / f"sem_{scenario_name}.csv")
 
-        return {"metadata": metadata, "W": W, "sar_data": sar_data, "sem_data": sem_data}
+        return {
+            "metadata": metadata,
+            "W": W,
+            "sar_data": sar_data,
+            "sem_data": sem_data,
+        }
 
     @staticmethod
     def load_r_results(result_file):
@@ -84,7 +89,11 @@ class TestSARValidation(TestValidationBase):
 
         # Estimate model
         model = SpatialLag(
-            formula=formula, data=sar_data, entity_col="entity", time_col="time", W=W_obj
+            formula=formula,
+            data=sar_data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -152,7 +161,11 @@ class TestSEMValidation(TestValidationBase):
 
         # Estimate model
         model = SpatialError(
-            formula=formula, data=sem_data, entity_col="entity", time_col="time", W=W_obj
+            formula=formula,
+            data=sem_data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")

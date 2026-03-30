@@ -16,7 +16,10 @@ from panelbox.validation.spatial import (
     SpatialHausmanTest,
     run_lm_tests,
 )
-from panelbox.validation.spatial.utils import standardize_spatial_weights, validate_spatial_weights
+from panelbox.validation.spatial.utils import (
+    standardize_spatial_weights,
+    validate_spatial_weights,
+)
 
 
 def create_spatial_weights(N: int, style: str = "queen", row_standardize: bool = True):
@@ -282,7 +285,11 @@ class TestLocalMoranI:
 
         # Run LISA
         lisa = LocalMoranI(
-            variable=values, W=W, entity_index=entity_index, time_index=time_index, threshold=0.05
+            variable=values,
+            W=W,
+            entity_index=entity_index,
+            time_index=time_index,
+            threshold=0.05,
         )
         results = lisa.run(n_permutations=99, seed=42)
 
@@ -346,7 +353,11 @@ class TestLMTests:
                 self.model = type(
                     "Model",
                     (),
-                    {"N": data_dict["N"], "T": data_dict["T"], "data": type("Data", (), {"y": y})},
+                    {
+                        "N": data_dict["N"],
+                        "T": data_dict["T"],
+                        "data": type("Data", (), {"y": y}),
+                    },
                 )()
 
         self.ols_result = MockOLSResult(self.data_dict)
@@ -433,7 +444,11 @@ class TestLMTests:
                 self.model = type(
                     "Model",
                     (),
-                    {"N": data_dict["N"], "T": data_dict["T"], "data": type("Data", (), {"y": y})},
+                    {
+                        "N": data_dict["N"],
+                        "T": data_dict["T"],
+                        "data": type("Data", (), {"y": y}),
+                    },
                 )()
 
         ols_result = MockOLSResult(data_dict)
@@ -461,7 +476,11 @@ class TestLMTests:
                 self.model = type(
                     "Model",
                     (),
-                    {"N": data_dict["N"], "T": data_dict["T"], "data": type("Data", (), {"y": y})},
+                    {
+                        "N": data_dict["N"],
+                        "T": data_dict["T"],
+                        "data": type("Data", (), {"y": y}),
+                    },
                 )()
 
         ols_result = MockOLSResult(data_dict)
@@ -486,7 +505,9 @@ class TestSpatialHausman:
             def cov_params(self):
                 # Simple diagonal covariance
                 return pd.DataFrame(
-                    np.diag(self.bse**2), index=self.params.index, columns=self.params.index
+                    np.diag(self.bse**2),
+                    index=self.params.index,
+                    columns=self.params.index,
                 )
 
         class MockResult2:
@@ -496,7 +517,9 @@ class TestSpatialHausman:
 
             def cov_params(self):
                 return pd.DataFrame(
-                    np.diag(self.bse**2), index=self.params.index, columns=self.params.index
+                    np.diag(self.bse**2),
+                    index=self.params.index,
+                    columns=self.params.index,
                 )
 
         result1 = MockResult1()
@@ -527,7 +550,9 @@ class TestSpatialHausman:
 
             def cov_params(self):
                 return pd.DataFrame(
-                    np.diag(self.bse**2), index=self.params.index, columns=self.params.index
+                    np.diag(self.bse**2),
+                    index=self.params.index,
+                    columns=self.params.index,
                 )
 
         result1 = MockResult({"const": 1.0, "x1": 0.5, "x2": -0.3, "rho": 0.4})

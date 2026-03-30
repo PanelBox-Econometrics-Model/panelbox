@@ -164,7 +164,10 @@ def load_theme(file_path: str | Path, validate: bool = True) -> Theme:
 
 
 def save_theme(
-    theme: Theme, file_path: str | Path, format: str = "yaml", include_defaults: bool = False
+    theme: Theme,
+    file_path: str | Path,
+    format: str = "yaml",
+    include_defaults: bool = False,
 ) -> None:
     """
     Save a theme to YAML or JSON file.

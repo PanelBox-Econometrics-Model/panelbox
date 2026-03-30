@@ -491,7 +491,10 @@ def _plot_network_plotly(
 
     # Update layout
     fig.update_layout(
-        title={"text": title or "Granger Causality Network (Interactive)", "font": {"size": 16}},
+        title={
+            "text": title or "Granger Causality Network (Interactive)",
+            "font": {"size": 16},
+        },
         showlegend=False,
         hovermode="closest",
         margin={"b": 0, "l": 0, "r": 0, "t": 40},

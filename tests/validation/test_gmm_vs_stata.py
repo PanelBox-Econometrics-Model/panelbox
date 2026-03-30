@@ -183,7 +183,10 @@ exit, clear
     # Run Stata script
     try:
         result = subprocess.run(
-            ["stata", "-b", "do", str(script_path)], capture_output=True, text=True, timeout=120
+            ["stata", "-b", "do", str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
 
         if result.returncode != 0:

@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.validation.robustness.influence import InfluenceDiagnostics, InfluenceResults
+from panelbox.validation.robustness.influence import (
+    InfluenceDiagnostics,
+    InfluenceResults,
+)
 
 
 @pytest.fixture

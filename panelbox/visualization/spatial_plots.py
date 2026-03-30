@@ -96,7 +96,14 @@ def create_moran_scatterplot(
 
         # Label quadrants
         ax.text(
-            0.05, 0.95, "HH", transform=ax.transAxes, fontsize=12, color="gray", ha="left", va="top"
+            0.05,
+            0.95,
+            "HH",
+            transform=ax.transAxes,
+            fontsize=12,
+            color="gray",
+            ha="left",
+            va="top",
         )
         ax.text(
             0.95,
@@ -326,7 +333,12 @@ def plot_morans_i_by_period(
 
     # Show expected value
     if show_expected and expected is not None:
-        ax.axhline(y=expected[0], color="gray", linestyle="--", label="E[I] (no autocorrelation)")
+        ax.axhline(
+            y=expected[0],
+            color="gray",
+            linestyle="--",
+            label="E[I] (no autocorrelation)",
+        )
 
     # Highlight significant periods
     if show_significance:
@@ -503,7 +515,13 @@ def create_spatial_diagnostics_dashboard(
         f"Reason: {spatial_diagnostics['lm_tests']['reason']}"
     )
     ax2.text(
-        0.5, -0.1, rec_text, transform=ax2.transAxes, fontsize=11, ha="center", fontweight="bold"
+        0.5,
+        -0.1,
+        rec_text,
+        transform=ax2.transAxes,
+        fontsize=11,
+        ha="center",
+        fontweight="bold",
     )
 
     # 3. LISA clusters summary
@@ -774,7 +792,13 @@ def plot_direct_vs_indirect(
     if show_diagonal:
         lim_min = min(direct_vals.min(), indirect_vals.min())
         lim_max = max(direct_vals.max(), indirect_vals.max())
-        ax.plot([lim_min, lim_max], [lim_min, lim_max], "r--", alpha=0.5, label="Direct = Indirect")
+        ax.plot(
+            [lim_min, lim_max],
+            [lim_min, lim_max],
+            "r--",
+            alpha=0.5,
+            label="Direct = Indirect",
+        )
 
     # Add reference lines at zero
     ax.axhline(y=0, color="gray", linestyle="-", linewidth=0.5, alpha=0.5)

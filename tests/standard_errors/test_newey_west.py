@@ -5,7 +5,11 @@ Tests for Newey-West HAC Standard Errors.
 import numpy as np
 import pytest
 
-from panelbox.standard_errors.newey_west import NeweyWestResult, NeweyWestStandardErrors, newey_west
+from panelbox.standard_errors.newey_west import (
+    NeweyWestResult,
+    NeweyWestStandardErrors,
+    newey_west,
+)
 
 
 @pytest.fixture

@@ -13,7 +13,11 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import stats
 
-from panelbox.standard_errors import cluster_by_entity, driscoll_kraay, robust_covariance
+from panelbox.standard_errors import (
+    cluster_by_entity,
+    driscoll_kraay,
+    robust_covariance,
+)
 
 logger = logging.getLogger(__name__)
 

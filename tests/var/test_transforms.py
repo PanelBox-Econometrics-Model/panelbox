@@ -71,7 +71,14 @@ class TestForwardOrthogonalDeviation:
         """Test FOD on unbalanced panel"""
         df = pd.DataFrame(
             {
-                "entity": [1, 1, 1, 1, 2, 2],  # Entity 1: 4 periods, Entity 2: 2 periods
+                "entity": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                ],  # Entity 1: 4 periods, Entity 2: 2 periods
                 "time": [1, 2, 3, 4, 1, 2],
                 "y": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
             }
@@ -125,7 +132,12 @@ class TestForwardOrthogonalDeviation:
     def test_fod_preserves_column_order(self):
         """Test that column order is preserved"""
         df = pd.DataFrame(
-            {"entity": [1, 1, 1], "time": [1, 2, 3], "x": [1.0, 2.0, 3.0], "y": [10.0, 20.0, 30.0]}
+            {
+                "entity": [1, 1, 1],
+                "time": [1, 2, 3],
+                "x": [1.0, 2.0, 3.0],
+                "y": [10.0, 20.0, 30.0],
+            }
         )
 
         transformed, _ = forward_orthogonal_deviation(df)
@@ -281,7 +293,11 @@ class TestGetValidInstrumentLags:
     def test_valid_lags_var2(self):
         """Test valid instrument lags for VAR(2)"""
         df = pd.DataFrame(
-            {"entity": [1, 1, 1, 1, 1], "time": [1, 2, 3, 4, 5], "y": [1.0, 2.0, 3.0, 4.0, 5.0]}
+            {
+                "entity": [1, 1, 1, 1, 1],
+                "time": [1, 2, 3, 4, 5],
+                "y": [1.0, 2.0, 3.0, 4.0, 5.0],
+            }
         )
 
         meta = get_valid_instrument_lags(df, "entity", "time", "fod", var_lags=2)
@@ -331,7 +347,15 @@ class TestComparisonFODvsFD:
         df = pd.DataFrame(
             {
                 "entity": [1, 1, 1, 1, 2, 2, 2],
-                "time": [1, 2, 4, 5, 1, 3, 4],  # Entity 1 missing t=3, Entity 2 missing t=2
+                "time": [
+                    1,
+                    2,
+                    4,
+                    5,
+                    1,
+                    3,
+                    4,
+                ],  # Entity 1 missing t=3, Entity 2 missing t=2
                 "y": [1.0, 2.0, 4.0, 5.0, 10.0, 30.0, 40.0],
             }
         )

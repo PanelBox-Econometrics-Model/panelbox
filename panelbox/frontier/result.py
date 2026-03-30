@@ -229,7 +229,10 @@ class SFResult(SerializableMixin):
                 self.gamma_theta = self.params[name]
 
     def summary(
-        self, alpha: float = 0.05, title: str | None = None, include_diagnostics: bool = True
+        self,
+        alpha: float = 0.05,
+        title: str | None = None,
+        include_diagnostics: bool = True,
     ) -> str:
         """Generate summary table of results.
 
@@ -1236,7 +1239,11 @@ class SFResult(SerializableMixin):
             raise ValueError(f"Unknown kind: {kind}. Use '2d', '3d', 'contour', or 'partial'.")
 
     def plot_efficiency(
-        self, kind: str = "histogram", backend: str = "plotly", estimator: str = "bc", **kwargs
+        self,
+        kind: str = "histogram",
+        backend: str = "plotly",
+        estimator: str = "bc",
+        **kwargs,
     ) -> Any:
         """Plot efficiency distribution, ranking, or box plot.
 
@@ -1455,7 +1462,10 @@ class SFResult(SerializableMixin):
                 production function for panel data."
                 Empirical Economics, 20(2), 325-332.
         """
-        from .utils.marginal_effects import marginal_effects_bc95, marginal_effects_wang_2002
+        from .utils.marginal_effects import (
+            marginal_effects_bc95,
+            marginal_effects_wang_2002,
+        )
 
         # Map convenience aliases to internal method names
         method_map = {"location": "mean", "scale": "variance"}
@@ -1883,7 +1893,10 @@ class PanelSFResult(SFResult):
                 var_gamma_v = grad_gamma_v @ self.cov @ grad_gamma_v
                 z_crit = stats.norm.ppf((1 + ci_level) / 2)
                 se_gamma_v = np.sqrt(var_gamma_v) if var_gamma_v > 0 else 0
-                gamma_ci_v = (gamma_v - z_crit * se_gamma_v, gamma_v + z_crit * se_gamma_v)
+                gamma_ci_v = (
+                    gamma_v - z_crit * se_gamma_v,
+                    gamma_v + z_crit * se_gamma_v,
+                )
 
                 # For gamma_u
                 d_gamma_u_d_sigma_v_sq = -sigma_u_sq / (sigma_sq**2) if sigma_sq > 0 else 0
@@ -1899,7 +1912,10 @@ class PanelSFResult(SFResult):
 
                 var_gamma_u = grad_gamma_u @ self.cov @ grad_gamma_u
                 se_gamma_u = np.sqrt(var_gamma_u) if var_gamma_u > 0 else 0
-                gamma_ci_u = (gamma_u - z_crit * se_gamma_u, gamma_u + z_crit * se_gamma_u)
+                gamma_ci_u = (
+                    gamma_u - z_crit * se_gamma_u,
+                    gamma_u + z_crit * se_gamma_u,
+                )
 
                 # For gamma_w
                 d_gamma_w_d_sigma_v_sq = -sigma_w_sq / (sigma_sq**2) if sigma_sq > 0 else 0
@@ -1915,7 +1931,10 @@ class PanelSFResult(SFResult):
 
                 var_gamma_w = grad_gamma_w @ self.cov @ grad_gamma_w
                 se_gamma_w = np.sqrt(var_gamma_w) if var_gamma_w > 0 else 0
-                gamma_ci_w = (gamma_w - z_crit * se_gamma_w, gamma_w + z_crit * se_gamma_w)
+                gamma_ci_w = (
+                    gamma_w - z_crit * se_gamma_w,
+                    gamma_w + z_crit * se_gamma_w,
+                )
 
                 # Lambda CI (same as base class)
                 if sigma_v_sq > 0 and sigma_u_sq > 0:
@@ -1992,7 +2011,11 @@ class PanelSFResult(SFResult):
         }
 
     def plot_efficiency_evolution(
-        self, kind: str = "timeseries", backend: str = "plotly", estimator: str = "bc", **kwargs
+        self,
+        kind: str = "timeseries",
+        backend: str = "plotly",
+        estimator: str = "bc",
+        **kwargs,
     ) -> Any:
         """Plot evolution of efficiency over time for panel data.
 

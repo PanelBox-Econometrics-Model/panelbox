@@ -128,7 +128,14 @@ class TestComparisonResult:
     def test_metrics_without_loglik(self):
         """Test metrics computation without loglik."""
         results = Mock(
-            spec=["rsquared", "rsquared_adj", "f_statistic", "nobs", "df_model", "df_resid"]
+            spec=[
+                "rsquared",
+                "rsquared_adj",
+                "f_statistic",
+                "nobs",
+                "df_model",
+                "df_resid",
+            ]
         )
         results.rsquared = 0.85
         results.rsquared_adj = 0.83

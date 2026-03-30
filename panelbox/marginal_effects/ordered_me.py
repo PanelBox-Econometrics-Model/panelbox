@@ -256,6 +256,7 @@ def compute_ordered_ame(result, varlist: list[str] | None = None) -> OrderedMarg
         def pdf_func(z):
             """Compute the probability density function."""
             return expit(z) * (1 - expit(z))
+
     else:  # Probit
         pdf_func = stats.norm.pdf
 
@@ -400,6 +401,7 @@ def compute_ordered_mem(result, varlist: list[str] | None = None) -> OrderedMarg
         def pdf_func(z):
             """Compute the probability density function."""
             return expit(z) * (1 - expit(z))
+
     else:  # Probit
         pdf_func = stats.norm.pdf
 

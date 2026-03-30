@@ -212,6 +212,33 @@ print(residuals.summary())
 experiment.save_master_report('report.html', theme='professional', reports=[...])
 ```
 
+## AutoExperiment (AutoML for Panel Data)
+
+AutoExperiment automates the entire panel data modeling pipeline — from variable transformation and selection to multi-model estimation, econometric validation, and ranking:
+
+```python
+from panelbox.autoexperiment import AutoExperiment
+
+auto = AutoExperiment(
+    data=data,
+    depvar="invest",
+    entity_col="firm",
+    time_col="year",
+    sign_constraints={"value": "+", "capital": "+"},
+)
+results = auto.run()
+print(results.summary())
+results.report("report.html")
+```
+
+- **Variable transformations**: lags, diffs, logs, growth rates, rolling means, squares
+- **Forward stepwise selection** by BIC/AIC with sign constraints from economic theory
+- **Multi-model comparison**: Pooled OLS, Fixed Effects, Random Effects, First Difference
+- **Automatic validation**: Hausman, Pesaran CD, RESET, Modified Wald, and more
+- **Auto-selected standard errors** based on diagnostic test results
+- **Composite ranking** combining fit, diagnostics, theory compliance, and parsimony
+- **Data mining warnings** when too many combinations are tested
+
 ## Bundled Datasets (103 datasets)
 
 ```python

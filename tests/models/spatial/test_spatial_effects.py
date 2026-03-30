@@ -53,7 +53,13 @@ class TestSpatialEffectsDecomposition:
         time_ids = np.tile(np.arange(T), N)
 
         data = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "x1": X[:, 0], "x2": X[:, 1]}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "x1": X[:, 0],
+                "x2": X[:, 1],
+            }
         )
 
         # Fit SAR model
@@ -138,7 +144,13 @@ class TestSpatialEffectsDecomposition:
         time_ids = np.tile(np.arange(T), N)
 
         data = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "x1": X[:, 0], "x2": X[:, 1]}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "x1": X[:, 0],
+                "x2": X[:, 1],
+            }
         )
 
         # Create SDM model
@@ -276,7 +288,9 @@ class TestSpatialEffectsDecomposition:
 
             # Total = Direct + Indirect
             np.testing.assert_allclose(
-                var_effects["total"], var_effects["direct"] + var_effects["indirect"], rtol=1e-10
+                var_effects["total"],
+                var_effects["direct"] + var_effects["indirect"],
+                rtol=1e-10,
             )
 
             # For SAR, direct effect should be close to β
@@ -310,7 +324,9 @@ class TestSpatialEffectsDecomposition:
 
             # Total = Direct + Indirect
             np.testing.assert_allclose(
-                var_effects["total"], var_effects["direct"] + var_effects["indirect"], rtol=1e-10
+                var_effects["total"],
+                var_effects["direct"] + var_effects["indirect"],
+                rtol=1e-10,
             )
 
             # For SDM, effects depend on both β and θ
@@ -328,7 +344,11 @@ class TestSpatialEffectsDecomposition:
 
         # Compute effects with simulation inference
         effects = compute_spatial_effects(
-            result, variables=["x1"], n_simulations=500, confidence_level=0.95, method="simulation"
+            result,
+            variables=["x1"],
+            n_simulations=500,
+            confidence_level=0.95,
+            method="simulation",
         )
 
         var_effects = effects.effects["x1"]
@@ -446,7 +466,9 @@ class TestSpatialEffectsDecomposition:
 
         # Point estimates should be identical
         np.testing.assert_allclose(
-            effects_sim.effects["x1"]["direct"], effects_delta.effects["x1"]["direct"], rtol=1e-10
+            effects_sim.effects["x1"]["direct"],
+            effects_delta.effects["x1"]["direct"],
+            rtol=1e-10,
         )
 
         # Standard errors should be similar (within 20%)

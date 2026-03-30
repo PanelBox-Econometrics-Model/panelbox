@@ -84,11 +84,19 @@ class TestSFAvsRFrontier:
         # Compare coefficients
         beta_pb = result.params[["const", "log_labor", "log_capital"]].values
         beta_r = np.array(
-            [r_reference_hn["beta_0"], r_reference_hn["beta_1"], r_reference_hn["beta_2"]]
+            [
+                r_reference_hn["beta_0"],
+                r_reference_hn["beta_1"],
+                r_reference_hn["beta_2"],
+            ]
         )
 
         np.testing.assert_allclose(
-            beta_pb, beta_r, rtol=1e-2, atol=1e-2, err_msg="Coefficients differ from R frontier"
+            beta_pb,
+            beta_r,
+            rtol=1e-2,
+            atol=1e-2,
+            err_msg="Coefficients differ from R frontier",
         )
 
     def test_variance_components_match_r(self, r_data, r_reference_hn):

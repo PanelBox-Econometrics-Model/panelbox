@@ -24,7 +24,16 @@ from panelbox.experiment.spatial_extension import (
 class _FakeResult:
     """Minimal fitted result for testing."""
 
-    def __init__(self, resid, params=None, nobs=100, rsquared=0.5, aic=200.0, bic=210.0, llf=-95.0):
+    def __init__(
+        self,
+        resid,
+        params=None,
+        nobs=100,
+        rsquared=0.5,
+        aic=200.0,
+        bic=210.0,
+        llf=-95.0,
+    ):
         self.resid = resid
         self.residuals = resid
         self.params = params if params is not None else pd.Series({"x1": 0.5})
@@ -38,7 +47,15 @@ class _FakeResult:
 class _FakeSpatialResult(_FakeResult):
     """Spatial result with rho/lambda attributes."""
 
-    def __init__(self, resid, rho=0.3, lambda_=None, rho_pvalue=0.01, lambda_pvalue=None, **kwargs):
+    def __init__(
+        self,
+        resid,
+        rho=0.3,
+        lambda_=None,
+        rho_pvalue=0.01,
+        lambda_pvalue=None,
+        **kwargs,
+    ):
         super().__init__(resid, **kwargs)
         self.rho = rho
         self.rho_pvalue = rho_pvalue

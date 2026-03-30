@@ -269,7 +269,13 @@ class SurfacePlotter:
 
             # Add contour lines
             contour_lines = ax.contour(
-                X1_mesh, X2_mesh, Z[tau_idx], levels=15, colors="black", alpha=0.3, linewidths=0.5
+                X1_mesh,
+                X2_mesh,
+                Z[tau_idx],
+                levels=15,
+                colors="black",
+                alpha=0.3,
+                linewidths=0.5,
             )
 
             # Add contour labels
@@ -288,7 +294,10 @@ class SurfacePlotter:
 
         # Overall title
         fig.suptitle(
-            "Quantile Surfaces at Different Levels", fontweight="bold", fontsize=14, y=1.02
+            "Quantile Surfaces at Different Levels",
+            fontweight="bold",
+            fontsize=14,
+            y=1.02,
         )
 
         plt.tight_layout()
@@ -468,7 +477,11 @@ class SurfacePlotter:
         updatemenus = [
             {
                 "buttons": [
-                    {"args": [{"scene.camera": camera}], "label": name, "method": "relayout"}
+                    {
+                        "args": [{"scene.camera": camera}],
+                        "label": name,
+                        "method": "relayout",
+                    }
                     for name, camera in camera_views.items()
                 ],
                 "direction": "down",

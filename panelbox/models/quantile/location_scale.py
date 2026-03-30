@@ -263,13 +263,19 @@ class LocationScale(QuantilePanelModel):
             from ..static.fixed_effects import FixedEffects
 
             scale_model = FixedEffects(
-                formula=scale_formula, data=scale_data, entity_col="entity", time_col="time"
+                formula=scale_formula,
+                data=scale_data,
+                entity_col="entity",
+                time_col="time",
             )
         else:
             from ..static.pooled_ols import PooledOLS
 
             scale_model = PooledOLS(
-                formula=scale_formula, data=scale_data, entity_col="entity", time_col="time"
+                formula=scale_formula,
+                data=scale_data,
+                entity_col="entity",
+                time_col="time",
             )
 
         self.scale_result_ = scale_model.fit()

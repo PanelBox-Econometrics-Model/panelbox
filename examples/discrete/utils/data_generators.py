@@ -195,7 +195,12 @@ def generate_multinomial_choice_data(
             choice = np.argmax(utilities)
 
             # Wide format (one row per observation)
-            row_wide = {"id": obs_id + 1, "choice": choice, "income": income, "age": age}
+            row_wide = {
+                "id": obs_id + 1,
+                "choice": choice,
+                "income": income,
+                "age": age,
+            }
             for alt in range(n_alternatives):
                 row_wide[f"cost_{alt}"] = costs[alt]
                 row_wide[f"time_{alt}"] = times[alt]
@@ -251,7 +256,10 @@ def generate_multinomial_choice_data(
 
 
 def generate_ordered_data(
-    n_individuals: int = 800, n_periods: int = 4, n_categories: int = 4, seed: Optional[int] = None
+    n_individuals: int = 800,
+    n_periods: int = 4,
+    n_categories: int = 4,
+    seed: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Generate synthetic ordered categorical panel data.

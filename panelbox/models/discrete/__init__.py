@@ -38,7 +38,11 @@ from panelbox.models.discrete.multinomial import (
     MultinomialLogit,
     MultinomialLogitResult,
 )
-from panelbox.models.discrete.ordered import OrderedLogit, OrderedProbit, RandomEffectsOrderedLogit
+from panelbox.models.discrete.ordered import (
+    OrderedLogit,
+    OrderedProbit,
+    RandomEffectsOrderedLogit,
+)
 
 __all__ = [
     "ConditionalLogit",

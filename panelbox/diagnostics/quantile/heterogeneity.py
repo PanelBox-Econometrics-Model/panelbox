@@ -107,9 +107,7 @@ class HeterogeneityTests:
             individual_stats=test_stats,
         )
 
-    def test_joint_equality(
-        self, tau_subset: list[float] | None = None
-    ) -> JointEqualityTestResult:
+    def test_joint_equality(self, tau_subset: list[float] | None = None) -> JointEqualityTestResult:
         """
         Joint test that all slope coefficients are equal across quantiles.
 
@@ -295,7 +293,14 @@ class HeterogeneityTests:
                     upper_bounds.append(coef + 1.96 * se)
 
             # Plot coefficient path
-            ax.plot(self.tau_list, coefs, "o-", linewidth=2, markersize=6, label=var_names[i])
+            ax.plot(
+                self.tau_list,
+                coefs,
+                "o-",
+                linewidth=2,
+                markersize=6,
+                label=var_names[i],
+            )
 
             # Add confidence bands
             if confidence_bands:

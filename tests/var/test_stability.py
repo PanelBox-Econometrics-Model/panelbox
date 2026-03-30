@@ -18,7 +18,11 @@ class TestStabilityPlotting:
         pytest.importorskip("matplotlib")
 
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -47,7 +51,11 @@ class TestStabilityPlotting:
         matplotlib.use("Agg")
 
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -69,7 +77,11 @@ class TestStabilityPlotting:
         plotly = pytest.importorskip("plotly", reason="Plotly not installed")
 
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -85,7 +97,11 @@ class TestStabilityPlotting:
     def test_plot_stability_invalid_backend(self, simple_panel_data):
         """Test that invalid backend raises error."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -102,7 +118,11 @@ class TestStabilityProperties:
     def test_eigenvalues_property(self, simple_panel_data):
         """Test that eigenvalues property works."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -121,7 +141,11 @@ class TestStabilityProperties:
     def test_max_eigenvalue_modulus(self, simple_panel_data):
         """Test max eigenvalue modulus."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -158,7 +182,11 @@ class TestStabilityProperties:
     def test_stability_margin(self, simple_panel_data):
         """Test stability margin property."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)

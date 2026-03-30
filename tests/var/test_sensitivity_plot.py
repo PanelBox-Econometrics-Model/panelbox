@@ -92,7 +92,10 @@ class TestSensitivityPlot:
 
         custom_title = "Custom Sensitivity Analysis"
         fig = plot_instrument_sensitivity(
-            mock_sensitivity_results, title=custom_title, backend="matplotlib", show=False
+            mock_sensitivity_results,
+            title=custom_title,
+            backend="matplotlib",
+            show=False,
         )
 
         # Check title is set
@@ -108,7 +111,10 @@ class TestSensitivityPlot:
             pytest.skip("matplotlib not available")
 
         fig = plot_instrument_sensitivity(
-            mock_sensitivity_results, backend="matplotlib", max_coefs_to_plot=2, show=False
+            mock_sensitivity_results,
+            backend="matplotlib",
+            max_coefs_to_plot=2,
+            show=False,
         )
 
         # Should only plot top 2 coefficients with largest changes
@@ -126,7 +132,10 @@ class TestSensitivityPlot:
 
         custom_figsize = (10, 8)
         fig = plot_instrument_sensitivity(
-            mock_sensitivity_results, backend="matplotlib", figsize=custom_figsize, show=False
+            mock_sensitivity_results,
+            backend="matplotlib",
+            figsize=custom_figsize,
+            show=False,
         )
 
         # Check figure size

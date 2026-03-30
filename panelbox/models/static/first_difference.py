@@ -305,7 +305,13 @@ class FirstDifferenceEstimator(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult | PCSEResult
+        result: (
+            RobustCovarianceResult
+            | ClusteredCovarianceResult
+            | DriscollKraayResult
+            | NeweyWestResult
+            | PCSEResult
+        )
 
         if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X_diff, resid_diff, df_resid)

@@ -68,7 +68,15 @@ class SFATransformer:
 
         result = []
         # Filter out variance parameters (they go in variance_components)
-        variance_params = {"sigma_v", "sigma_u", "sigma", "lambda", "mu", "eta", "gamma"}
+        variance_params = {
+            "sigma_v",
+            "sigma_u",
+            "sigma",
+            "lambda",
+            "mu",
+            "eta",
+            "gamma",
+        }
 
         for name in params.index:
             if name.lower() in variance_params:

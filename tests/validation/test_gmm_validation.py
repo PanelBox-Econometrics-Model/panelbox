@@ -90,7 +90,11 @@ class TestCUEGMMValidation:
         print(f"  Diff:     {py_coefs - r_coefs}")
 
         np.testing.assert_allclose(
-            py_coefs, r_coefs, rtol=1e-3, atol=1e-4, err_msg="CUE-GMM coefficients differ from R"
+            py_coefs,
+            r_coefs,
+            rtol=1e-3,
+            atol=1e-4,
+            err_msg="CUE-GMM coefficients differ from R",
         )
 
         # Compare J-statistic (more lenient tolerance)
@@ -134,13 +138,25 @@ class TestCUEGMMValidation:
         z3 = np.array(r_ref["data"]["z3"])
 
         data = pd.DataFrame(
-            {"y": y, "x": x, "z1": z1, "z2": z2, "z3": z3, "entity": np.arange(n), "time": 1}
+            {
+                "y": y,
+                "x": x,
+                "z1": z1,
+                "z2": z2,
+                "z3": z3,
+                "entity": np.arange(n),
+                "time": 1,
+            }
         )
         data = data.set_index(["entity", "time"])
 
         # Estimate
         model = ContinuousUpdatedGMM(
-            data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2", "z3"], weighting="hac"
+            data=data,
+            dep_var="y",
+            exog_vars=["x"],
+            instruments=["z1", "z2", "z3"],
+            weighting="hac",
         )
         results = model.fit(verbose=False)
 
@@ -172,7 +188,11 @@ class TestCUEGMMValidation:
 
         # More lenient for J-statistic
         np.testing.assert_allclose(
-            py_j, r_j, rtol=0.15, atol=0.1, err_msg="J-statistic differs significantly from R"
+            py_j,
+            r_j,
+            rtol=0.15,
+            atol=0.1,
+            err_msg="J-statistic differs significantly from R",
         )
 
         print("\n✓ Test 2 PASSED: Overidentified model validated against R")

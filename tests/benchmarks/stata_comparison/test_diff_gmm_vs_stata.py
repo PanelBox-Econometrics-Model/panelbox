@@ -303,8 +303,7 @@ def instructions():
     print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR MANUAL COMPARISON")
     print("=" * 80)
-    print(
-        """
+    print("""
     1. Run Stata script (requires xtabond2):
        ssc install xtabond2  # If not installed
        cd tests/benchmarks/stata_comparison
@@ -330,8 +329,7 @@ def instructions():
            iv(value capital) ///
            noleveleq ///
            robust small twostep
-    """
-    )
+    """)
 
 
 if __name__ == "__main__":

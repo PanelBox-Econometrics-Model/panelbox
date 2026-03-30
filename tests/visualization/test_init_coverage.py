@@ -86,10 +86,7 @@ class TestVisualizationModuleImports:
 
     def test_plotly_chart_classes(self):
         """Test all plotly chart classes are importable."""
-        from panelbox.visualization import (
-            EntityEffectsPlot,
-            QQPlot,
-        )
+        from panelbox.visualization import EntityEffectsPlot, QQPlot
 
         # If plotly is installed, these should not be None
         if importlib.util.find_spec("plotly") is not None:
@@ -98,27 +95,21 @@ class TestVisualizationModuleImports:
 
     def test_validation_chart_classes(self):
         """Test validation chart imports."""
-        from panelbox.visualization import (
-            TestOverviewChart,
-        )
+        from panelbox.visualization import TestOverviewChart
 
         if importlib.util.find_spec("plotly") is not None:
             assert TestOverviewChart is not None
 
     def test_econometric_test_chart_classes(self):
         """Test econometric test chart imports."""
-        from panelbox.visualization import (
-            ACFPACFPlot,
-        )
+        from panelbox.visualization import ACFPACFPlot
 
         if importlib.util.find_spec("plotly") is not None:
             assert ACFPACFPlot is not None
 
     def test_timeseries_chart_classes(self):
         """Test timeseries chart imports."""
-        from panelbox.visualization import (
-            PanelTimeSeriesChart,
-        )
+        from panelbox.visualization import PanelTimeSeriesChart
 
         if importlib.util.find_spec("plotly") is not None:
             assert PanelTimeSeriesChart is not None

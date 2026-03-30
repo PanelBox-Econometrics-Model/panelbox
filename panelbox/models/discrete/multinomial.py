@@ -768,7 +768,8 @@ class MultinomialLogitResult(PanelModelResults):
         """
         if not hasattr(self, "cov_params") or self.cov_params is None:
             warnings.warn(
-                "Covariance matrix not available. Cannot compute ME standard errors.", stacklevel=2
+                "Covariance matrix not available. Cannot compute ME standard errors.",
+                stacklevel=2,
             )
             me = self.marginal_effects(at=at, variable=variable)
             return np.full_like(me, np.nan)
@@ -1003,7 +1004,10 @@ class MultinomialLogitResult(PanelModelResults):
                 axes[k].set_visible(False)
 
             fig.suptitle(
-                f"Marginal Effects by Alternative (at {at})", fontsize=14, fontweight="bold", y=1.00
+                f"Marginal Effects by Alternative (at {at})",
+                fontsize=14,
+                fontweight="bold",
+                y=1.00,
             )
             plt.tight_layout()
             return fig

@@ -28,7 +28,10 @@ class FEQuantileComparison:
     """Tools for comparing Fixed Effects Quantile Regression estimators."""
 
     def __init__(
-        self, data: PanelData, formula: str | None = None, tau: float | list[float] = 0.5
+        self,
+        data: PanelData,
+        formula: str | None = None,
+        tau: float | list[float] = 0.5,
     ):
         self.data = data
         self.formula = formula
@@ -144,7 +147,10 @@ class FEQuantileComparison:
                 logger.info("-" * 40)
 
             model = FixedEffectsQuantile(
-                self.data, self.formula, self.tau, lambda_fe=kwargs.get("lambda_fe", "auto")
+                self.data,
+                self.formula,
+                self.tau,
+                lambda_fe=kwargs.get("lambda_fe", "auto"),
             )
 
             start = time.time()
@@ -280,7 +286,10 @@ class FEQuantileComparison:
                     boot_results[method].append(params)
                 except Exception as e:
                     # Skip if estimation fails
-                    warnings.warn(f"Bootstrap iteration {b} failed for {method}: {e}", stacklevel=2)
+                    warnings.warn(
+                        f"Bootstrap iteration {b} failed for {method}: {e}",
+                        stacklevel=2,
+                    )
 
         # Compute statistics
         stats = {}
@@ -512,7 +521,14 @@ class ComparisonResults:
         # Add correlation values
         for i in range(len(methods)):
             for j in range(len(methods)):
-                ax.text(j, i, f"{corr_matrix[i, j]:.3f}", ha="center", va="center", color="black")
+                ax.text(
+                    j,
+                    i,
+                    f"{corr_matrix[i, j]:.3f}",
+                    ha="center",
+                    va="center",
+                    color="black",
+                )
 
         ax.set_title(f"Coefficient Correlation Matrix (τ={tau_compare})")
         plt.tight_layout()

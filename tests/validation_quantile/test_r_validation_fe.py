@@ -276,7 +276,13 @@ class TestRValidationCanay:
 
         # Create panel data with entity and time columns included
         df = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "X1": X[:, 1], "X2": X[:, 2]}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "X1": X[:, 1],
+                "X2": X[:, 2],
+            }
         )
 
         panel_data = PanelData(df, entity_col="entity", time_col="time")
@@ -348,7 +354,11 @@ def create_r_validation_report(output_file="validation_report_fe_qr.txt"):
     report.append("=" * 60)
 
     # Test different scenarios
-    scenarios = [("Small N, Large T", 10, 50), ("Large N, Small T", 100, 5), ("Balanced", 30, 30)]
+    scenarios = [
+        ("Small N, Large T", 10, 50),
+        ("Large N, Small T", 100, 5),
+        ("Balanced", 30, 30),
+    ]
 
     for scenario_name, n_entities, n_time in scenarios:
         report.append(f"\nScenario: {scenario_name}")
@@ -367,7 +377,13 @@ def create_r_validation_report(output_file="validation_report_fe_qr.txt"):
         y = X @ np.array([1, -0.5]) + fe_expanded + np.random.randn(n)
 
         df = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "X1": X[:, 0], "X2": X[:, 1]}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "X1": X[:, 0],
+                "X2": X[:, 1],
+            }
         )
         panel_data = PanelData(df, entity_col="entity", time_col="time")
 

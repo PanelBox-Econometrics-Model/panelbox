@@ -6,7 +6,11 @@ import pandas as pd
 
 
 def generate_panel_var_data(
-    n_entities: int = 50, n_periods: int = 20, n_vars: int = 3, var_lags: int = 2, seed: int = 42
+    n_entities: int = 50,
+    n_periods: int = 20,
+    n_vars: int = 3,
+    var_lags: int = 2,
+    seed: int = 42,
 ) -> pd.DataFrame:
     """
     Gera dados de painel com DGP VAR(p) conhecido.

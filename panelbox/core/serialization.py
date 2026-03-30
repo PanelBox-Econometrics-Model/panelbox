@@ -87,7 +87,7 @@ class SerializableMixin:
             raise FileNotFoundError(f"File not found: {filepath}")
 
         with open(filepath, "rb") as f:
-            results = pickle.load(f)  # noqa: S301 — intentional deserialization of user's own saved results
+            results = pickle.load(f)  # noqa: S301
 
         return results
 
@@ -160,6 +160,6 @@ def load_model(filepath: str | Path) -> Any:
         raise FileNotFoundError(f"File not found: {filepath}")
 
     with open(filepath, "rb") as f:
-        results = pickle.load(f)  # noqa: S301 — intentional deserialization of user's own saved results
+        results = pickle.load(f)  # noqa: S301
 
     return results

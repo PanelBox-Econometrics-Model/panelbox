@@ -155,8 +155,7 @@ def compare_with_manual_stata_output():
     print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR MANUAL COMPARISON")
     print("=" * 80)
-    print(
-        """
+    print("""
     1. Run Stata script:
        stata -b do pooled_ols.do
 
@@ -169,8 +168,7 @@ def compare_with_manual_stata_output():
     Stata command used:
        use "https://www.stata-press.com/data/r18/grunfeld.dta", clear
        regress invest value capital
-    """
-    )
+    """)
 
 
 if __name__ == "__main__":

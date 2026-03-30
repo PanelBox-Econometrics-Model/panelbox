@@ -10,7 +10,9 @@ import pytest
 
 from panelbox.models.static.fixed_effects import FixedEffects
 from panelbox.models.static.pooled_ols import PooledOLS
-from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
+from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import (
+    BreuschPaganLMTest,
+)
 
 
 class TestBreuschPaganLM:

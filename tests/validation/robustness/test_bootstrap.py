@@ -70,7 +70,11 @@ class TestPanelBootstrapPairsMethod:
 
         # Run bootstrap (small number for speed)
         bootstrap = PanelBootstrap(
-            results, n_bootstrap=50, method="pairs", random_state=42, show_progress=False
+            results,
+            n_bootstrap=50,
+            method="pairs",
+            random_state=42,
+            show_progress=False,
         )
         bootstrap.run()
 
@@ -88,7 +92,11 @@ class TestPanelBootstrapPairsMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results, n_bootstrap=n_boot, method="pairs", random_state=42, show_progress=False
+            results,
+            n_bootstrap=n_boot,
+            method="pairs",
+            random_state=42,
+            show_progress=False,
         )
         bootstrap.run()
 
@@ -311,7 +319,11 @@ class TestPanelBootstrapWildMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results, n_bootstrap=n_boot, method="wild", random_state=42, show_progress=False
+            results,
+            n_bootstrap=n_boot,
+            method="wild",
+            random_state=42,
+            show_progress=False,
         ).run()
 
         assert bootstrap.bootstrap_estimates_.shape[1] == n_params
@@ -409,7 +421,11 @@ class TestPanelBootstrapResidualMethod:
         results = fe.fit()
 
         bootstrap = PanelBootstrap(
-            results, n_bootstrap=50, method="residual", random_state=42, show_progress=False
+            results,
+            n_bootstrap=50,
+            method="residual",
+            random_state=42,
+            show_progress=False,
         )
         bootstrap.run()
 
@@ -425,7 +441,11 @@ class TestPanelBootstrapResidualMethod:
         n_boot = 50
 
         bootstrap = PanelBootstrap(
-            results, n_bootstrap=n_boot, method="residual", random_state=42, show_progress=False
+            results,
+            n_bootstrap=n_boot,
+            method="residual",
+            random_state=42,
+            show_progress=False,
         ).run()
 
         assert bootstrap.bootstrap_estimates_.shape[1] == n_params
@@ -437,11 +457,19 @@ class TestPanelBootstrapResidualMethod:
         results = fe.fit()
 
         boot1 = PanelBootstrap(
-            results, n_bootstrap=30, method="residual", random_state=42, show_progress=False
+            results,
+            n_bootstrap=30,
+            method="residual",
+            random_state=42,
+            show_progress=False,
         ).run()
 
         boot2 = PanelBootstrap(
-            results, n_bootstrap=30, method="residual", random_state=42, show_progress=False
+            results,
+            n_bootstrap=30,
+            method="residual",
+            random_state=42,
+            show_progress=False,
         ).run()
 
         np.testing.assert_array_almost_equal(
@@ -477,7 +505,11 @@ class TestPanelBootstrapMethodComparison:
         results = fe.fit()
 
         boot_pairs = PanelBootstrap(
-            results, n_bootstrap=50, method="pairs", random_state=42, show_progress=False
+            results,
+            n_bootstrap=50,
+            method="pairs",
+            random_state=42,
+            show_progress=False,
         ).run()
 
         boot_wild = PanelBootstrap(
@@ -628,7 +660,8 @@ class TestPanelBootstrapConfIntAdvanced:
         ).run()
 
         with pytest.warns(
-            UserWarning, match="Studentized confidence intervals not yet fully implemented"
+            UserWarning,
+            match="Studentized confidence intervals not yet fully implemented",
         ):
             ci = bootstrap.conf_int(alpha=0.05, method="studentized")
 

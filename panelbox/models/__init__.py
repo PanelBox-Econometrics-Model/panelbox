@@ -10,4 +10,5 @@ from panelbox.models.static.pooled_ols import PooledOLS
 
 __all__ = [
     "PooledOLS",
+    "dynamic",
 ]

@@ -91,7 +91,9 @@ class TestHeterogeneityTests:
         """Test slope equality test detects heterogeneity."""
         # Fit model at multiple quantiles using CanayTwoStep (formula-based API)
         model = CanayTwoStep(
-            panel_data_heterogeneous, formula="y ~ X1 + X2", tau=[0.1, 0.25, 0.5, 0.75, 0.9]
+            panel_data_heterogeneous,
+            formula="y ~ X1 + X2",
+            tau=[0.1, 0.25, 0.5, 0.75, 0.9],
         )
         result = model.fit()
 
@@ -124,7 +126,9 @@ class TestHeterogeneityTests:
         """Test joint equality of all coefficients across quantiles."""
         # Fit model at multiple quantiles
         model = CanayTwoStep(
-            panel_data_heterogeneous, formula="y ~ X1 + X2", tau=[0.1, 0.3, 0.5, 0.7, 0.9]
+            panel_data_heterogeneous,
+            formula="y ~ X1 + X2",
+            tau=[0.1, 0.3, 0.5, 0.7, 0.9],
         )
         result = model.fit()
 
@@ -142,7 +146,9 @@ class TestHeterogeneityTests:
         """Test monotonicity test for coefficients."""
         # Fit model at multiple quantiles
         model = CanayTwoStep(
-            panel_data_heterogeneous, formula="y ~ X1 + X2", tau=[0.1, 0.3, 0.5, 0.7, 0.9]
+            panel_data_heterogeneous,
+            formula="y ~ X1 + X2",
+            tau=[0.1, 0.3, 0.5, 0.7, 0.9],
         )
         result = model.fit()
 
@@ -232,7 +238,10 @@ class TestHeterogeneityTests:
         """Test heterogeneity tests with fixed effects model."""
         # Fit fixed effects model at multiple quantiles
         model = FixedEffectsQuantile(
-            panel_data_heterogeneous, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], lambda_fe=0.1
+            panel_data_heterogeneous,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            lambda_fe=0.1,
         )
         result = model.fit()
 

@@ -824,7 +824,13 @@ class TestSoftThresholdExtended:
     def test_sequence_of_values(self):
         """Test a sequence of values through soft threshold."""
         lam = 2.0
-        for x, expected in [(5.0, 3.0), (-5.0, -3.0), (1.0, 0.0), (0.0, 0.0), (2.0, 0.0)]:
+        for x, expected in [
+            (5.0, 3.0),
+            (-5.0, -3.0),
+            (1.0, 0.0),
+            (0.0, 0.0),
+            (2.0, 0.0),
+        ]:
             result = PenalizedQuantileOptimizer._soft_threshold(x, lam)
             assert_allclose(result, expected, atol=1e-10)
 

@@ -64,7 +64,10 @@ def main():
     print()
 
     model = pb.FixedEffects(
-        formula="invest ~ value + capital", data=data, entity_col="firm", time_col="year"
+        formula="invest ~ value + capital",
+        data=data,
+        entity_col="firm",
+        time_col="year",
     )
 
     results = model.fit()

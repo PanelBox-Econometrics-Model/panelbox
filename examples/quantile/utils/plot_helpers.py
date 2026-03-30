@@ -437,7 +437,10 @@ def plot_residual_diagnostics(
     ax.hist(residuals, bins=40, density=True, alpha=0.7, color="#1f77b4", edgecolor="white")
     x_range = np.linspace(residuals.min(), residuals.max(), 100)
     ax.plot(
-        x_range, sp_stats.norm.pdf(x_range, residuals.mean(), residuals.std()), "r-", linewidth=2
+        x_range,
+        sp_stats.norm.pdf(x_range, residuals.mean(), residuals.std()),
+        "r-",
+        linewidth=2,
     )
     ax.set_xlabel("Residuals")
     ax.set_ylabel("Density")

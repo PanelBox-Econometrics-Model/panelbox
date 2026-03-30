@@ -61,7 +61,11 @@ def validate_simple_pvar():
     try:
         # Prepare data
         pvar_data = PanelVARData(
-            data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=2
+            data,
+            endog_vars=["y1", "y2", "y3"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         # Estimate model

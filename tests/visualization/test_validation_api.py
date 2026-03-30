@@ -345,7 +345,12 @@ class TestCreateValidationChartsIntegration:
         """Test creating all chart types."""
         charts = create_validation_charts(
             sample_validation_dict,
-            charts=["test_overview", "pvalue_distribution", "test_statistics", "dashboard"],
+            charts=[
+                "test_overview",
+                "pvalue_distribution",
+                "test_statistics",
+                "dashboard",
+            ],
         )
 
         assert len(charts) == 4

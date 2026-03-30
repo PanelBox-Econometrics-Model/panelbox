@@ -6,7 +6,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.var.gmm import GMMEstimationResult, estimate_panel_var_gmm, gmm_one_step, gmm_two_step
+from panelbox.var.gmm import (
+    GMMEstimationResult,
+    estimate_panel_var_gmm,
+    gmm_one_step,
+    gmm_two_step,
+)
 
 
 class TestGMMOneStep:
@@ -135,7 +140,12 @@ class TestEstimatePanelVARGMM:
         for i in range(1, n_entities + 1):
             for t in range(1, n_periods + 1):
                 data_list.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         df = pd.DataFrame(data_list)
@@ -167,7 +177,12 @@ class TestEstimatePanelVARGMM:
         for i in range(1, n_entities + 1):
             for t in range(1, n_periods + 1):
                 data_list.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         df = pd.DataFrame(data_list)
@@ -196,7 +211,12 @@ class TestEstimatePanelVARGMM:
         for i in range(1, n_entities + 1):
             for t in range(1, n_periods + 1):
                 data_list.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         df = pd.DataFrame(data_list)
@@ -224,7 +244,12 @@ class TestEstimatePanelVARGMM:
         for i in range(1, n_entities + 1):
             for t in range(1, n_periods + 1):
                 data_list.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         df = pd.DataFrame(data_list)
@@ -253,13 +278,22 @@ class TestEstimatePanelVARGMM:
         for i in range(1, n_entities + 1):
             for t in range(1, n_periods + 1):
                 data_list.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         df = pd.DataFrame(data_list)
 
         result = estimate_panel_var_gmm(
-            df, var_lags=2, value_cols=["y1", "y2"], transform="fod", gmm_step="one-step"
+            df,
+            var_lags=2,
+            value_cols=["y1", "y2"],
+            transform="fod",
+            gmm_step="one-step",
         )
 
         # VAR(2) with 2 variables: 4 lags × 2 equations = 8 params per equation
@@ -858,7 +892,10 @@ class TestGMMCoverageExtras:
             return Z_wrong, {"type": "mocked"}
 
         with (
-            patch("panelbox.var.gmm.build_gmm_instruments", side_effect=mock_build_instruments),
+            patch(
+                "panelbox.var.gmm.build_gmm_instruments",
+                side_effect=mock_build_instruments,
+            ),
             pytest.raises(ValueError, match=r"Instrument matrix size.*does not match"),
         ):
             estimate_panel_var_gmm(

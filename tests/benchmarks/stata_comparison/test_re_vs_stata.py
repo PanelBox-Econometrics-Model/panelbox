@@ -149,8 +149,16 @@ def test_re_vs_stata():
         variance_comps = [
             ("sigma_u", results.sigma_u, stata_results["sigma_u"]),
             ("sigma_e", results.sigma_e, stata_results["sigma_e"]),
-            ("rho", results.rho if hasattr(results, "rho") else 0, stata_results["rho"]),
-            ("theta", results.theta if hasattr(results, "theta") else 0, stata_results["theta"]),
+            (
+                "rho",
+                results.rho if hasattr(results, "rho") else 0,
+                stata_results["rho"],
+            ),
+            (
+                "theta",
+                results.theta if hasattr(results, "theta") else 0,
+                stata_results["theta"],
+            ),
         ]
 
         for name, pb_val, stata_val in variance_comps:
@@ -233,8 +241,7 @@ def instructions():
     print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR MANUAL COMPARISON")
     print("=" * 80)
-    print(
-        """
+    print("""
     1. Run Stata script:
        cd tests/benchmarks/stata_comparison
        stata -b do random_effects.do
@@ -257,8 +264,7 @@ def instructions():
        xtset company year
        xtreg invest value capital, re
        hausman fe_model re_model
-    """
-    )
+    """)
 
 
 if __name__ == "__main__":

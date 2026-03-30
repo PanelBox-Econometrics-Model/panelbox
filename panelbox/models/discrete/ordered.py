@@ -389,7 +389,9 @@ class OrderedChoiceModel(NonlinearPanelModel, ABC):
         return probs
 
     def predict(
-        self, exog: np.ndarray | None = None, type: Literal["category", "prob"] = "category"
+        self,
+        exog: np.ndarray | None = None,
+        type: Literal["category", "prob"] = "category",
     ) -> np.ndarray:
         """
         Generate predictions from the fitted model.
@@ -661,7 +663,11 @@ class RandomEffectsOrderedLogit(OrderedChoiceModel):
         options.setdefault("disp", True)
 
         result = optimize.minimize(
-            self._negative_log_likelihood, start_params, method=method, options=options, **kwargs
+            self._negative_log_likelihood,
+            start_params,
+            method=method,
+            options=options,
+            **kwargs,
         )
 
         if not result.success:

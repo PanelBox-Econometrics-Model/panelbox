@@ -112,7 +112,11 @@ class TestDesignMatrices:
     def test_build_simple_design_matrix(self):
         """Test building design matrix for simple formula."""
         data = pd.DataFrame(
-            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+            {
+                "y": [1, 2, 3, 4, 5],
+                "x1": [10, 20, 30, 40, 50],
+                "x2": [5, 10, 15, 20, 25],
+            }
         )
 
         parser = FormulaParser("y ~ x1 + x2").parse()
@@ -127,7 +131,11 @@ class TestDesignMatrices:
     def test_build_without_intercept(self):
         """Test building design matrix without intercept."""
         data = pd.DataFrame(
-            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+            {
+                "y": [1, 2, 3, 4, 5],
+                "x1": [10, 20, 30, 40, 50],
+                "x2": [5, 10, 15, 20, 25],
+            }
         )
 
         parser = FormulaParser("y ~ x1 + x2 - 1").parse()
@@ -215,7 +223,11 @@ class TestVariableNames:
     def test_get_variable_names(self):
         """Test getting variable names from design matrix."""
         data = pd.DataFrame(
-            {"y": [1, 2, 3, 4, 5], "x1": [10, 20, 30, 40, 50], "x2": [5, 10, 15, 20, 25]}
+            {
+                "y": [1, 2, 3, 4, 5],
+                "x1": [10, 20, 30, 40, 50],
+                "x2": [5, 10, 15, 20, 25],
+            }
         )
 
         parser = FormulaParser("y ~ x1 + x2").parse()

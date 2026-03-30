@@ -724,7 +724,12 @@ def plot_frontier_partial(
             fontsize=10,
             verticalalignment="bottom",
             horizontalalignment="right",
-            bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8, "edgecolor": "black"},
+            bbox={
+                "boxstyle": "round",
+                "facecolor": "white",
+                "alpha": 0.8,
+                "edgecolor": "black",
+            },
         )
 
         ax.set_xlabel(input_var, fontsize=12)

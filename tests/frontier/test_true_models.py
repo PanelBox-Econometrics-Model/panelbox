@@ -223,7 +223,11 @@ class TestTrueFixedEffects:
 
         # Create parameter vector
         theta = np.concatenate(
-            [dgp["beta_true"], [np.log(dgp["sigma_v"] ** 2)], [np.log(dgp["sigma_u"] ** 2)]]
+            [
+                dgp["beta_true"],
+                [np.log(dgp["sigma_v"] ** 2)],
+                [np.log(dgp["sigma_u"] ** 2)],
+            ]
         )
 
         # Compute likelihood
@@ -241,12 +245,22 @@ class TestTrueFixedEffects:
 
         # Parameter vector
         theta = np.concatenate(
-            [dgp["beta_true"], [np.log(dgp["sigma_v"] ** 2)], [np.log(dgp["sigma_u"] ** 2)]]
+            [
+                dgp["beta_true"],
+                [np.log(dgp["sigma_v"] ** 2)],
+                [np.log(dgp["sigma_u"] ** 2)],
+            ]
         )
 
         # Get alpha estimates
         result = loglik_true_fixed_effects(
-            theta, dgp["y"], dgp["X"], dgp["entity_id"], dgp["time_id"], sign=1, return_alpha=True
+            theta,
+            dgp["y"],
+            dgp["X"],
+            dgp["entity_id"],
+            dgp["time_id"],
+            sign=1,
+            return_alpha=True,
         )
 
         alpha_hat = np.array([result["alpha"][i] for i in range(dgp["N"])])
@@ -262,7 +276,11 @@ class TestTrueFixedEffects:
         dgp = generate_tfe_data(N=25, T=6, k=3, sigma_u=0.0, sigma_v=0.2)
 
         theta = np.concatenate(
-            [dgp["beta_true"], [np.log(dgp["sigma_v"] ** 2)], [np.log(1e-8)]]  # Very small σ_u
+            [
+                dgp["beta_true"],
+                [np.log(dgp["sigma_v"] ** 2)],
+                [np.log(1e-8)],
+            ]  # Very small σ_u
         )
 
         loglik = loglik_true_fixed_effects(
@@ -289,12 +307,22 @@ class TestTrueFixedEffects:
         dgp = generate_tfe_data(N=30, T=5, k=3)  # Small T to induce bias
 
         theta = np.concatenate(
-            [dgp["beta_true"], [np.log(dgp["sigma_v"] ** 2)], [np.log(dgp["sigma_u"] ** 2)]]
+            [
+                dgp["beta_true"],
+                [np.log(dgp["sigma_v"] ** 2)],
+                [np.log(dgp["sigma_u"] ** 2)],
+            ]
         )
 
         # Get uncorrected estimates
         result = loglik_true_fixed_effects(
-            theta, dgp["y"], dgp["X"], dgp["entity_id"], dgp["time_id"], sign=1, return_alpha=True
+            theta,
+            dgp["y"],
+            dgp["X"],
+            dgp["entity_id"],
+            dgp["time_id"],
+            sign=1,
+            return_alpha=True,
         )
 
         alpha_hat = np.array([result["alpha"][i] for i in range(dgp["N"])])
@@ -468,7 +496,13 @@ class TestTrueRandomEffects:
         )
 
         loglik = loglik_true_random_effects(
-            theta, dgp["y"], dgp["X"], dgp["entity_id"], dgp["time_id"], sign=1, n_quadrature=20
+            theta,
+            dgp["y"],
+            dgp["X"],
+            dgp["entity_id"],
+            dgp["time_id"],
+            sign=1,
+            n_quadrature=20,
         )
 
         assert np.isfinite(loglik), "TRE should handle σ_w ≈ 0"
@@ -589,7 +623,13 @@ class TestTrueModelsBC95:
         )
 
         loglik = loglik_tfe_bc95(
-            theta, dgp["y"], dgp["X"], dgp["Z"], dgp["entity_id"], dgp["time_id"], sign=1
+            theta,
+            dgp["y"],
+            dgp["X"],
+            dgp["Z"],
+            dgp["entity_id"],
+            dgp["time_id"],
+            sign=1,
         )
 
         assert np.isfinite(loglik), "TFE+BC95 likelihood should be finite"
@@ -612,7 +652,11 @@ class TestIntegration:
 
         # Verify data can be used with both models
         theta_tfe = np.concatenate(
-            [dgp["beta_true"], [np.log(dgp["sigma_v"] ** 2)], [np.log(dgp["sigma_u"] ** 2)]]
+            [
+                dgp["beta_true"],
+                [np.log(dgp["sigma_v"] ** 2)],
+                [np.log(dgp["sigma_u"] ** 2)],
+            ]
         )
 
         theta_tre = np.concatenate(
@@ -629,7 +673,13 @@ class TestIntegration:
         )
 
         ll_tre = loglik_true_random_effects(
-            theta_tre, dgp["y"], dgp["X"], dgp["entity_id"], dgp["time_id"], sign=1, n_quadrature=20
+            theta_tre,
+            dgp["y"],
+            dgp["X"],
+            dgp["entity_id"],
+            dgp["time_id"],
+            sign=1,
+            n_quadrature=20,
         )
 
         assert np.isfinite(ll_tfe) and np.isfinite(ll_tre)

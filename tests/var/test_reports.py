@@ -13,7 +13,11 @@ class TestReportingMethods:
     def test_to_latex_basic(self, simple_panel_data):
         """Test basic LaTeX export."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -43,7 +47,11 @@ class TestReportingMethods:
     def test_to_latex_single_equation(self, simple_panel_data):
         """Test LaTeX export for single equation."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -59,7 +67,11 @@ class TestReportingMethods:
     def test_to_html_basic(self, simple_panel_data):
         """Test basic HTML export."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -90,7 +102,11 @@ class TestReportingMethods:
     def test_to_html_single_equation(self, simple_panel_data):
         """Test HTML export for single equation."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -106,7 +122,11 @@ class TestReportingMethods:
     def test_latex_html_consistency(self, simple_panel_data):
         """Test that LaTeX and HTML contain similar information."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -139,7 +159,11 @@ class TestLagOrderResultReporting:
     def test_lag_order_summary(self, simple_panel_data):
         """Test lag order selection summary."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -157,7 +181,11 @@ class TestLagOrderResultReporting:
     def test_lag_order_selected(self, simple_panel_data):
         """Test that selected lags are reported."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)

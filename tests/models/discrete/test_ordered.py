@@ -11,8 +11,15 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from panelbox.marginal_effects.discrete_me import compute_ordered_ame, compute_ordered_mem
-from panelbox.models.discrete.ordered import OrderedLogit, OrderedProbit, RandomEffectsOrderedLogit
+from panelbox.marginal_effects.discrete_me import (
+    compute_ordered_ame,
+    compute_ordered_mem,
+)
+from panelbox.models.discrete.ordered import (
+    OrderedLogit,
+    OrderedProbit,
+    RandomEffectsOrderedLogit,
+)
 
 
 class TestOrderedLogit:
@@ -104,7 +111,9 @@ class TestOrderedLogit:
     def test_cutpoint_transformation(self, simulated_data):
         """Test cutpoint transformation to ensure ordering."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         # Test transformation
@@ -124,7 +133,9 @@ class TestOrderedLogit:
     def test_log_likelihood_computation(self, simulated_data):
         """Test log-likelihood computation."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         # Create parameter vector
@@ -142,7 +153,9 @@ class TestOrderedLogit:
     def test_fit_convergence(self, simulated_data):
         """Test model fitting and convergence."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -200,7 +213,9 @@ class TestOrderedLogit:
     def test_predict_proba(self, simulated_data):
         """Test probability predictions."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -222,7 +237,9 @@ class TestOrderedLogit:
     def test_predict_category(self, simulated_data):
         """Test category predictions."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -242,7 +259,9 @@ class TestOrderedLogit:
     def test_summary_output(self, simulated_data):
         """Test summary output."""
         model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -302,7 +321,9 @@ class TestOrderedProbit:
         """Test that probit and logit give different results."""
         # Fit Ordered Probit
         probit_model = OrderedProbit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -311,7 +332,9 @@ class TestOrderedProbit:
 
         # Fit Ordered Logit on same data
         logit_model = OrderedLogit(
-            endog=simulated_data["y"], exog=simulated_data["X"], groups=simulated_data["groups"]
+            endog=simulated_data["y"],
+            exog=simulated_data["X"],
+            groups=simulated_data["groups"],
         )
 
         with warnings.catch_warnings():
@@ -327,7 +350,9 @@ class TestOrderedProbit:
     def test_probit_cdf_pdf(self):
         """Test that probit uses normal CDF and PDF."""
         model = OrderedProbit(
-            endog=np.array([0, 1, 2]), exog=np.array([[1], [2], [3]]), groups=np.array([0, 1, 2])
+            endog=np.array([0, 1, 2]),
+            exog=np.array([[1], [2], [3]]),
+            groups=np.array([0, 1, 2]),
         )
 
         # Test CDF

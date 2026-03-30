@@ -269,7 +269,10 @@ def simulate_panel_var(
 
 
 def theoretical_irf(
-    A_matrices: list[np.ndarray], Sigma: np.ndarray, periods: int = 20, method: str = "cholesky"
+    A_matrices: list[np.ndarray],
+    Sigma: np.ndarray,
+    periods: int = 20,
+    method: str = "cholesky",
 ) -> np.ndarray:
     """
     Compute theoretical (population) IRF for known DGP.

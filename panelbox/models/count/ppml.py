@@ -60,7 +60,9 @@ class PPMLResult(PanelModelResults):
         """
         # Copy attributes from poisson result
         super().__init__(
-            model=poisson_result.model, params=poisson_result.params, vcov=poisson_result.vcov
+            model=poisson_result.model,
+            params=poisson_result.params,
+            vcov=poisson_result.vcov,
         )
 
         # Copy additional attributes
@@ -149,7 +151,9 @@ class PPMLResult(PanelModelResults):
         """
         if not hasattr(self.model, "exog_names"):
             warnings.warn(
-                "Model does not have exog_names. Using generic names.", UserWarning, stacklevel=2
+                "Model does not have exog_names. Using generic names.",
+                UserWarning,
+                stacklevel=2,
             )
             exog_names = [f"x{i}" for i in range(len(self.params))]
         else:

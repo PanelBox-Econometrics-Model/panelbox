@@ -97,7 +97,16 @@ class TestLocalMoranIRun:
         results = lisa.run(n_permutations=99, seed=42)
 
         assert isinstance(results, pd.DataFrame)
-        expected_cols = ["entity", "value", "Ii", "EIi", "VIi", "z_score", "pvalue", "cluster_type"]
+        expected_cols = [
+            "entity",
+            "value",
+            "Ii",
+            "EIi",
+            "VIi",
+            "z_score",
+            "pvalue",
+            "cluster_type",
+        ]
         for col in expected_cols:
             assert col in results.columns
         assert len(results) == N

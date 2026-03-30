@@ -241,7 +241,14 @@ def plot_bootstrap_distribution(
     hi = np.percentile(boot_estimates, 100 * (1 - alpha / 2))
 
     fig, ax = plt.subplots(figsize=figsize)
-    ax.hist(boot_estimates, bins=40, color="steelblue", alpha=0.7, edgecolor="white", linewidth=0.5)
+    ax.hist(
+        boot_estimates,
+        bins=40,
+        color="steelblue",
+        alpha=0.7,
+        edgecolor="white",
+        linewidth=0.5,
+    )
     ax.axvline(
         lo,
         color="red",
@@ -252,7 +259,10 @@ def plot_bootstrap_distribution(
     ax.axvline(hi, color="red", linestyle="--", linewidth=1.5)
     if point_estimate is not None:
         ax.axvline(
-            point_estimate, color="black", linewidth=2, label=f"Estimate: {point_estimate:.3f}"
+            point_estimate,
+            color="black",
+            linewidth=2,
+            label=f"Estimate: {point_estimate:.3f}",
         )
     ax.set_xlabel(param_name)
     ax.set_ylabel("Count")
@@ -294,7 +304,12 @@ def plot_cv_predictions(
         for k, fold in enumerate(unique_folds):
             mask = folds == fold
             ax.scatter(
-                actual[mask], predicted[mask], s=20, alpha=0.6, color=cmap(k), label=f"Fold {fold}"
+                actual[mask],
+                predicted[mask],
+                s=20,
+                alpha=0.6,
+                color=cmap(k),
+                label=f"Fold {fold}",
             )
         ax.legend(title="Fold", markerscale=1.5, fontsize=8)
     else:
@@ -347,9 +362,21 @@ def plot_influence_index(
     flagged = cooks_d > threshold
 
     fig, ax = plt.subplots(figsize=figsize)
-    ax.vlines(indices[~flagged], 0, cooks_d[~flagged], colors="steelblue", linewidth=0.8, alpha=0.7)
     ax.vlines(
-        indices[flagged], 0, cooks_d[flagged], colors="crimson", linewidth=1.2, label="Influential"
+        indices[~flagged],
+        0,
+        cooks_d[~flagged],
+        colors="steelblue",
+        linewidth=0.8,
+        alpha=0.7,
+    )
+    ax.vlines(
+        indices[flagged],
+        0,
+        cooks_d[flagged],
+        colors="crimson",
+        linewidth=1.2,
+        label="Influential",
     )
     ax.scatter(indices[flagged], cooks_d[flagged], color="crimson", s=30, zorder=5)
     ax.axhline(
@@ -363,7 +390,11 @@ def plot_influence_index(
     if labels is not None:
         for i in np.where(flagged)[0]:
             ax.annotate(
-                labels[i], (i, cooks_d[i]), textcoords="offset points", xytext=(0, 4), fontsize=7
+                labels[i],
+                (i, cooks_d[i]),
+                textcoords="offset points",
+                xytext=(0, 4),
+                fontsize=7,
             )
 
     ax.set_xlabel("Observation index")
@@ -417,7 +448,11 @@ def plot_forest_plot(
     ax.hlines(y_pos, lo, hi, colors="steelblue", linewidth=2, alpha=0.8)
     ax.scatter(estimates, y_pos, color="steelblue", s=60, zorder=5)
     ax.axvline(
-        reference, color="red", linestyle="--", linewidth=1, label=f"Reference = {reference}"
+        reference,
+        color="red",
+        linestyle="--",
+        linewidth=1,
+        label=f"Reference = {reference}",
     )
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels, fontsize=9)

@@ -90,13 +90,21 @@ def test_bootstrap_coverage_monte_carlo():
         # Estimate model
         try:
             sf = StochasticFrontier(
-                data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="half_normal"
+                data=df,
+                depvar="y",
+                exog=["x1", "x2"],
+                frontier="production",
+                dist="half_normal",
             )
             result = sf.fit(method="mle")
 
             # Bootstrap CIs
             boot_ci = result.bootstrap(
-                n_boot=n_boot, method="parametric", ci_level=ci_level, seed=2000 + m, n_jobs=2
+                n_boot=n_boot,
+                method="parametric",
+                ci_level=ci_level,
+                seed=2000 + m,
+                n_jobs=2,
             )
 
             # Check coverage for each parameter
@@ -185,7 +193,11 @@ def test_bootstrap_coverage_single_dataset():
 
     # Estimate
     sf = StochasticFrontier(
-        data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="half_normal"
+        data=df,
+        depvar="y",
+        exog=["x1", "x2"],
+        frontier="production",
+        dist="half_normal",
     )
     result = sf.fit(method="mle")
 

@@ -15,7 +15,11 @@ import pytest
 from numpy.testing import assert_allclose
 
 from panelbox.models.count.negbin import NegativeBinomial
-from panelbox.models.count.poisson import PoissonFixedEffects, PooledPoisson, RandomEffectsPoisson
+from panelbox.models.count.poisson import (
+    PoissonFixedEffects,
+    PooledPoisson,
+    RandomEffectsPoisson,
+)
 
 pytestmark = pytest.mark.r_validation
 

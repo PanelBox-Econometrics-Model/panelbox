@@ -146,9 +146,7 @@ class IRFResult:
 
         return self.irf_matrix[:, response_idx, impulse_idx]
 
-    def to_dataframe(
-        self, impulse: str | None = None, response: str | None = None
-    ) -> pd.DataFrame:
+    def to_dataframe(self, impulse: str | None = None, response: str | None = None) -> pd.DataFrame:
         """
         Convert IRFs to DataFrame format.
 

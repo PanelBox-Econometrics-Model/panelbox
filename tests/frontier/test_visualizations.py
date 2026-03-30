@@ -102,7 +102,9 @@ class TestEfficiencyPlots:
         eff_df["region"] = fitted_model.model.data["region"].values[: len(eff_df)]
 
         # Create a new result with modified data to include region
-        from panelbox.frontier.visualization.efficiency_plots import plot_efficiency_boxplot
+        from panelbox.frontier.visualization.efficiency_plots import (
+            plot_efficiency_boxplot,
+        )
 
         fig = plot_efficiency_boxplot(eff_df, group_var="region", backend="plotly")
         assert fig is not None
@@ -227,7 +229,10 @@ class TestFrontierPlots:
     def test_plot_frontier_partial_plotly(self, fitted_model):
         """Test partial frontier plot with Plotly backend."""
         fig = fitted_model.plot_frontier(
-            input_var="log_labor", kind="partial", backend="plotly", fix_others_at="mean"
+            input_var="log_labor",
+            kind="partial",
+            backend="plotly",
+            fix_others_at="mean",
         )
         assert fig is not None
         assert hasattr(fig, "data")
@@ -316,7 +321,8 @@ class TestReports:
         result2 = sf2.fit()
 
         comparison = compare_models(
-            models={"Half-Normal": fitted_model, "Exponential": result2}, output_format="dataframe"
+            models={"Half-Normal": fitted_model, "Exponential": result2},
+            output_format="dataframe",
         )
 
         assert isinstance(comparison, pd.DataFrame)

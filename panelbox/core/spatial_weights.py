@@ -443,7 +443,12 @@ class SpatialWeights:
 
             elif coords is not None:
                 ax.scatter(
-                    coords[:, 0], coords[:, 1], s=50, c="lightblue", edgecolor="black", zorder=3
+                    coords[:, 0],
+                    coords[:, 1],
+                    s=50,
+                    c="lightblue",
+                    edgecolor="black",
+                    zorder=3,
                 )
             else:
                 raise ValueError("Either gdf or coords must be provided")
@@ -502,7 +507,11 @@ class SpatialWeights:
                 x=coords[:, 0],
                 y=coords[:, 1],
                 mode="markers",
-                marker={"size": 10, "color": "lightblue", "line": {"width": 1, "color": "black"}},
+                marker={
+                    "size": 10,
+                    "color": "lightblue",
+                    "line": {"width": 1, "color": "black"},
+                },
                 text=[f"Unit {i}" for i in range(self.n)],
                 hovertemplate="%{text}<extra></extra>",
                 showlegend=False,

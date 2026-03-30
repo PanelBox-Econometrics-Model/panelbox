@@ -31,7 +31,10 @@ class SpatialWeights:
     """
 
     def __init__(
-        self, matrix: np.ndarray | csr_matrix, normalized: bool = False, validate: bool = True
+        self,
+        matrix: np.ndarray | csr_matrix,
+        normalized: bool = False,
+        validate: bool = True,
     ):
         """
         Initialize spatial weight matrix.
@@ -123,7 +126,12 @@ class SpatialWeights:
 
     @classmethod
     def from_distance(
-        cls, coords: np.ndarray, threshold: float, p: float = 2.0, binary: bool = True, **kwargs
+        cls,
+        coords: np.ndarray,
+        threshold: float,
+        p: float = 2.0,
+        binary: bool = True,
+        **kwargs,
     ):
         """
         Create W from distance threshold.

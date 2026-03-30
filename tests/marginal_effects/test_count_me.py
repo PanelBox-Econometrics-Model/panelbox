@@ -10,7 +10,10 @@ import pytest
 from numpy.testing import assert_allclose
 
 try:
-    from panelbox.marginal_effects.count_me import CountMarginalEffects, CountMarginalEffectsResults
+    from panelbox.marginal_effects.count_me import (
+        CountMarginalEffects,
+        CountMarginalEffectsResults,
+    )
 except ImportError:
     pytest.skip("CountMarginalEffects not available", allow_module_level=True)
 from panelbox.models.count.negbin import NegativeBinomial

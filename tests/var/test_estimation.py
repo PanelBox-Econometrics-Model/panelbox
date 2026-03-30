@@ -20,7 +20,11 @@ class TestOLSEstimation:
         """Test that basic OLS estimation runs without errors."""
         # Create data
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         # Fit model
@@ -38,7 +42,11 @@ class TestOLSEstimation:
         """Test that coefficient matrices have correct shape."""
         # Create data with K=2, p=2
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -52,7 +60,11 @@ class TestOLSEstimation:
     def test_different_cov_types(self, simple_panel_data):
         """Test different covariance types."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -107,7 +119,11 @@ class TestCompanionMatrix:
     def test_companion_matrix_dimensions(self, simple_panel_data):
         """Test companion matrix has correct dimensions."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=3
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=3,
         )
 
         model = PanelVAR(data)
@@ -121,7 +137,11 @@ class TestCompanionMatrix:
     def test_companion_matrix_structure(self, simple_panel_data):
         """Test companion matrix has correct structure."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -164,7 +184,11 @@ class TestStability:
     def test_eigenvalues_computed(self, simple_panel_data):
         """Test that eigenvalues are computed."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -186,7 +210,11 @@ class TestInformationCriteria:
     def test_aic_bic_hqic_computed(self, simple_panel_data):
         """Test that AIC, BIC, HQIC are computed."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -210,14 +238,22 @@ class TestInformationCriteria:
 
         # Fit with p=1
         data_1 = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model_1 = PanelVAR(data_1)
         results_1 = model_1.fit()
 
         # Fit with p=3 (larger model)
         data_3 = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=3
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=3,
         )
         model_3 = PanelVAR(data_3)
         results_3 = model_3.fit()
@@ -240,7 +276,11 @@ class TestLagSelection:
     def test_lag_selection_runs(self, simple_panel_data):
         """Test that lag selection runs without errors."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -272,7 +312,11 @@ class TestLagSelection:
     def test_lag_selection_warns_for_large_max_lags(self, simple_panel_data):
         """Test that warning is issued for large max_lags."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -288,7 +332,11 @@ class TestResultMethods:
     def test_coef_matrix_method(self, simple_panel_data):
         """Test coef_matrix() method."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -308,7 +356,11 @@ class TestResultMethods:
     def test_equation_summary(self, simple_panel_data):
         """Test equation_summary() method."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -328,7 +380,11 @@ class TestResultMethods:
     def test_summary_method(self, simple_panel_data):
         """Test summary() method."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -354,7 +410,11 @@ class TestWaldTests:
     def test_wald_test_runs(self, simple_panel_data):
         """Test that Wald test runs."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -375,7 +435,11 @@ class TestWaldTests:
     def test_granger_causality_test(self, simple_panel_data):
         """Test Granger causality test."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -397,7 +461,11 @@ class TestSUREstimation:
         """Test that SUR estimation runs without errors."""
         # Create data
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         # Fit model with SUR
@@ -416,7 +484,11 @@ class TestSUREstimation:
         """Test that SUR gives same coefficients as OLS (only SEs differ)."""
         # Create data
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -440,7 +512,11 @@ class TestSUREstimation:
         """Test that SUR standard errors differ from non-robust OLS."""
         # Create data
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -465,7 +541,11 @@ class TestSUREstimation:
         """Test that SUR covariance matrices have correct dimensions."""
         # Create data with K=2, p=1
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -485,7 +565,11 @@ class TestSUREstimation:
         """Test SUR with multiple lags."""
         # Create data with K=2, p=3
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=3
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=3,
         )
 
         model = PanelVAR(data)
@@ -506,7 +590,11 @@ class TestSUREstimation:
         """Test that summary() works with SUR."""
         # Create data
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -525,7 +613,11 @@ class TestLagSelectionBranches:
     def test_lag_selection_with_explicit_criteria(self, simple_panel_data):
         """Test select_lag_order with explicit criteria list (line 362->366 false branch)."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -543,7 +635,11 @@ class TestLagSelectionBranches:
     def test_lag_selection_with_nonexistent_criterion(self, simple_panel_data):
         """Test select_lag_order with a criterion not in DataFrame columns (line 433->432)."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -660,7 +756,11 @@ class TestSummarySystem:
     def test_summary_system_returns_string(self, simple_panel_data):
         """Test that summary_system() returns a non-empty string."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -672,7 +772,11 @@ class TestSummarySystem:
     def test_summary_system_contains_specification(self, simple_panel_data):
         """Test that summary_system() includes model specification details."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -690,7 +794,11 @@ class TestSummarySystem:
     def test_summary_system_contains_ic(self, simple_panel_data):
         """Test that summary_system() includes information criteria."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -706,7 +814,11 @@ class TestSummarySystem:
     def test_summary_system_contains_stability(self, simple_panel_data):
         """Test that summary_system() includes stability information."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -720,7 +832,11 @@ class TestSummarySystem:
     def test_summary_system_contains_coef_norms(self, simple_panel_data):
         """Test that summary_system() includes coefficient matrix norms."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -736,7 +852,11 @@ class TestSummarySystem:
     def test_summary_system_contains_residual_covariance(self, simple_panel_data):
         """Test that summary_system() includes residual covariance matrix."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -825,7 +945,11 @@ class TestIRFBootstrapCI:
     def test_irf_no_bootstrap_ci_by_default(self, simple_panel_data):
         """Test that without ci_method, CI is not computed."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         results = model.fit(cov_type="nonrobust")
@@ -944,7 +1068,11 @@ class TestLagSelectionPlot:
     def lag_results(self, simple_panel_data):
         """Create lag selection results for plotting."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
         return model.select_lag_order(max_lags=4)

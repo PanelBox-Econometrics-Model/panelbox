@@ -23,7 +23,11 @@ class TestRandomEffectsInitialization:
     def test_init_amemiya(self, balanced_panel_data):
         """Test initialization with Amemiya estimator."""
         model = RandomEffects(
-            "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="amemiya"
+            "y ~ x1 + x2",
+            balanced_panel_data,
+            "entity",
+            "time",
+            variance_estimator="amemiya",
         )
 
         assert model.variance_estimator == "amemiya"
@@ -32,7 +36,11 @@ class TestRandomEffectsInitialization:
         """Test that invalid variance estimator raises ValueError."""
         with pytest.raises(ValueError, match="variance_estimator must be one of"):
             RandomEffects(
-                "y ~ x1 + x2", balanced_panel_data, "entity", "time", variance_estimator="invalid"
+                "y ~ x1 + x2",
+                balanced_panel_data,
+                "entity",
+                "time",
+                variance_estimator="invalid",
             )
 
 

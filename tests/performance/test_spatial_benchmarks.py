@@ -87,7 +87,11 @@ class TestSpatialBenchmarks:
         return data, W
 
     def benchmark_model(
-        self, model_class, data: pd.DataFrame, W: np.ndarray, formula: str = "y ~ X1 + X2"
+        self,
+        model_class,
+        data: pd.DataFrame,
+        W: np.ndarray,
+        formula: str = "y ~ X1 + X2",
     ) -> dict[str, float]:
         """
         Benchmark a spatial model.

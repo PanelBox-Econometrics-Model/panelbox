@@ -291,7 +291,13 @@ def verify_installation():
     >>> if results["all_passed"]:
     ...     print("Installation verified!")
     """
-    results = {"all_passed": True, "directories": {}, "notebooks": {}, "datasets": {}, "utils": {}}
+    results = {
+        "all_passed": True,
+        "directories": {},
+        "notebooks": {},
+        "datasets": {},
+        "utils": {},
+    }
 
     # Check directories
     for dirname in ["notebooks", "data", "outputs", "solutions", "utils", "tests"]:
@@ -324,7 +330,11 @@ def verify_installation():
             results["all_passed"] = False
 
     # Check utils
-    for util_file in ["data_generators.py", "visualization_helpers.py", "diagnostics_helpers.py"]:
+    for util_file in [
+        "data_generators.py",
+        "visualization_helpers.py",
+        "diagnostics_helpers.py",
+    ]:
         util_path = MODULE_DIR / "utils" / util_file
         results["utils"][util_file] = util_path.exists()
         if not util_path.exists():

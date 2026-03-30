@@ -70,7 +70,10 @@ def profile_cue_gmm():
     from panelbox.gmm.cue_gmm import ContinuousUpdatedGMM
 
     model = ContinuousUpdatedGMM(
-        dependent="y", exog=["x2", "x3"], endog=["x1"], instruments=["z1", "z2", "z3", "z4", "z5"]
+        dependent="y",
+        exog=["x2", "x3"],
+        endog=["x1"],
+        instruments=["z1", "z2", "z3", "z4", "z5"],
     )
     result = model.fit(data, maxiter=100)
 
@@ -105,7 +108,10 @@ def profile_bias_corrected():
     from panelbox.gmm.bias_corrected import BiasCorrectedGMM
 
     model = BiasCorrectedGMM(
-        dependent="y", exog=["x2", "x3"], endog=["x1"], instruments=["z1", "z2", "z3", "z4", "z5"]
+        dependent="y",
+        exog=["x2", "x3"],
+        endog=["x1"],
+        instruments=["z1", "z2", "z3", "z4", "z5"],
     )
     result = model.fit(data)
 

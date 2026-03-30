@@ -73,7 +73,11 @@ class TestCountModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.se, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
+            result.se,
+            r_se,
+            rtol=1e-3,
+            atol=1e-5,
+            err_msg="Standard errors differ from R",
         )
 
         # Compare log-likelihood
@@ -143,7 +147,11 @@ class TestCountModelsVsR:
         # Compare standard errors (more tolerance for FE)
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.se, r_se, rtol=5e-3, atol=1e-3, err_msg="Standard errors differ from R"
+            result.se,
+            r_se,
+            rtol=5e-3,
+            atol=1e-3,
+            err_msg="Standard errors differ from R",
         )
 
     @pytest.mark.timeout(60)
@@ -166,7 +174,11 @@ class TestCountModelsVsR:
         r_coefs = np.array(r_model["coefficients"][:3])  # Only intercept, x1, x2
         pb_coefs = result.params[:3]
         np.testing.assert_allclose(
-            pb_coefs, r_coefs, rtol=1e-2, atol=1e-3, err_msg="Coefficients differ from R"
+            pb_coefs,
+            r_coefs,
+            rtol=1e-2,
+            atol=1e-3,
+            err_msg="Coefficients differ from R",
         )
 
     def test_negative_binomial_vs_r(self):

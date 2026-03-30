@@ -231,7 +231,13 @@ class TestSpatialDurbinModel:
         time_ids = np.tile(np.arange(T), N)
 
         data = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "x1": X[:, 0], "x2": X[:, 1]}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "x1": X[:, 0],
+                "x2": X[:, 1],
+            }
         )
 
         # Fit SDM

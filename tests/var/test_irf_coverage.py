@@ -235,7 +235,12 @@ class TestAnalyticalIRFCI:
         cov_params = np.eye(4) * 0.01
 
         ci_lower, ci_upper = compute_analytical_ci(
-            A_matrices, Sigma, cov_params, periods=5, method="generalized", ci_level=0.95
+            A_matrices,
+            Sigma,
+            cov_params,
+            periods=5,
+            method="generalized",
+            ci_level=0.95,
         )
 
         assert ci_lower.shape == (6, 2, 2)

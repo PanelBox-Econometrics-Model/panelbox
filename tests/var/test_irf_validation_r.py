@@ -12,10 +12,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from panelbox.var.irf import (
-    compute_irf_cholesky,
-    compute_phi_non_orthogonalized,
-)
+from panelbox.var.irf import compute_irf_cholesky, compute_phi_non_orthogonalized
 
 pytestmark = pytest.mark.r_validation
 

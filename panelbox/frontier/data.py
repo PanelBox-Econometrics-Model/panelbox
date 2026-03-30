@@ -246,7 +246,9 @@ def prepare_panel_index(
 
 
 def check_distribution_compatibility(
-    dist: DistributionType, model_type: ModelType, inefficiency_vars: list[str] | None = None
+    dist: DistributionType,
+    model_type: ModelType,
+    inefficiency_vars: list[str] | None = None,
 ) -> None:
     """Check if distribution is compatible with model type.
 

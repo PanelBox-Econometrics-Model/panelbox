@@ -40,7 +40,10 @@ class TestPanelHeckmanValidation:
 
         # Selection equation includes an exclusion restriction
         self.Z = np.column_stack(
-            [self.X, np.random.randn(self.n)]  # Include all X  # Exclusion restriction (instrument)
+            [
+                self.X,
+                np.random.randn(self.n),
+            ]  # Include all X  # Exclusion restriction (instrument)
         )
 
         # True parameters

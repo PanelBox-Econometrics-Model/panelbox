@@ -18,7 +18,9 @@ from numpy.testing import assert_allclose, assert_array_almost_equal
 from scipy.sparse import csr_matrix, issparse
 
 from panelbox.core.spatial_weights import SpatialWeights
-from panelbox.models.spatial.spatial_weights import SpatialWeights as ModelSpatialWeights
+from panelbox.models.spatial.spatial_weights import (
+    SpatialWeights as ModelSpatialWeights,
+)
 
 matplotlib.use("Agg")
 
@@ -78,7 +80,12 @@ class TestSpatialWeightsCreation:
         """Test distance-based weights with binary values."""
         # 2×2 grid coordinates
         coords = np.array(
-            [[0, 0], [1, 0], [0, 1], [1, 1]]  # Bottom-left  # Bottom-right  # Top-left  # Top-right
+            [
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [1, 1],
+            ]  # Bottom-left  # Bottom-right  # Top-left  # Top-right
         )
 
         # Threshold = 1.1 (connects direct neighbors only, excludes diagonals at √2≈1.414)

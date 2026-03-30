@@ -169,7 +169,12 @@ def test_dh_size_h0_monte_carlo():
 
         # Run DH test
         result = dumitrescu_hurlin_test(
-            data=data, cause="x1", effect="x2", lags=lags, entity_col="entity", time_col="time"
+            data=data,
+            cause="x1",
+            effect="x2",
+            lags=lags,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Check rejection
@@ -223,7 +228,12 @@ def test_dh_power_homogeneous_causality():
 
         # Run DH test
         result = dumitrescu_hurlin_test(
-            data=data, cause="x1", effect="x2", lags=lags, entity_col="entity", time_col="time"
+            data=data,
+            cause="x1",
+            effect="x2",
+            lags=lags,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Check rejection
@@ -270,12 +280,22 @@ def test_dh_power_heterogeneous_causality():
     for sim in range(n_simulations):
         # Generate data under H1 (heterogeneous causality)
         data = generate_panel_var_heterogeneous(
-            N, T, lags, beta_cause_share=beta_cause_share, beta_value=beta_value, seed=sim + 3000
+            N,
+            T,
+            lags,
+            beta_cause_share=beta_cause_share,
+            beta_value=beta_value,
+            seed=sim + 3000,
         )
 
         # Run DH test
         result = dumitrescu_hurlin_test(
-            data=data, cause="x1", effect="x2", lags=lags, entity_col="entity", time_col="time"
+            data=data,
+            cause="x1",
+            effect="x2",
+            lags=lags,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Check rejection
@@ -320,7 +340,12 @@ def test_dh_moments_accuracy():
 
         # Run DH test
         result = dumitrescu_hurlin_test(
-            data=data, cause="x1", effect="x2", lags=lags, entity_col="entity", time_col="time"
+            data=data,
+            cause="x1",
+            effect="x2",
+            lags=lags,
+            entity_col="entity",
+            time_col="time",
         )
 
         W_bar_values.append(result.W_bar)

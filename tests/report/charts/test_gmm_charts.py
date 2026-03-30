@@ -32,7 +32,14 @@ def full_gmm_data():
                 "pvalue": 0.008,
                 "stars": "***",
             },
-            {"name": "x2", "coef": -0.05, "se": 0.10, "tstat": -0.50, "pvalue": 0.617, "stars": ""},
+            {
+                "name": "x2",
+                "coef": -0.05,
+                "se": 0.10,
+                "tstat": -0.50,
+                "pvalue": 0.617,
+                "stars": "",
+            },
         ],
         "diagnostics": {
             "hansen": {"statistic": 5.2, "pvalue": 0.39, "df": 5, "status": "PASS"},
@@ -53,7 +60,14 @@ def minimal_gmm_data():
     """Minimal data with only coefficients."""
     return {
         "coefficients": [
-            {"name": "x1", "coef": 0.5, "se": 0.1, "tstat": 5.0, "pvalue": 0.001, "stars": "***"},
+            {
+                "name": "x1",
+                "coef": 0.5,
+                "se": 0.1,
+                "tstat": 5.0,
+                "pvalue": 0.001,
+                "stars": "***",
+            },
         ],
     }
 
@@ -67,7 +81,11 @@ class TestBuildAll:
     def test_full_data_returns_three_charts(self, full_gmm_data):
         builder = GMMChartBuilder(full_gmm_data)
         charts = builder.build_all()
-        assert set(charts.keys()) == {"coefficient_plot", "diagnostic_chart", "instrument_chart"}
+        assert set(charts.keys()) == {
+            "coefficient_plot",
+            "diagnostic_chart",
+            "instrument_chart",
+        }
 
     def test_empty_data_returns_empty_dict(self):
         builder = GMMChartBuilder({})

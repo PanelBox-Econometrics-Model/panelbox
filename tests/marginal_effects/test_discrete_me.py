@@ -98,7 +98,14 @@ class TestMarginalEffectsLogit:
 
         # Create DataFrame
         data = pd.DataFrame(
-            {"entity": entity_ids, "time": time_ids, "y": y, "x1": x1, "x2": x2, "x3": x3}
+            {
+                "entity": entity_ids,
+                "time": time_ids,
+                "y": y,
+                "x1": x1,
+                "x2": x2,
+                "x3": x3,
+            }
         )
 
         return data
@@ -177,7 +184,9 @@ class TestMarginalEffectsLogit:
         ame_result = compute_ame(result)
         for var in ["x1", "x3"]:  # For continuous vars
             assert not np.allclose(
-                mem_result.marginal_effects[var], ame_result.marginal_effects[var], rtol=1e-2
+                mem_result.marginal_effects[var],
+                ame_result.marginal_effects[var],
+                rtol=1e-2,
             )
 
     def test_mer_logit(self, setup_logit_data):

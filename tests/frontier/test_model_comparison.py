@@ -216,7 +216,12 @@ class TestCompareAllModels:
         """Result should contain all 4 model names."""
         result = compare_all_models(four_comp_result)
         assert len(result.model_names) == 4
-        assert result.model_names == ["Four-Component", "Pitt-Lee", "True FE", "True RE"]
+        assert result.model_names == [
+            "Four-Component",
+            "Pitt-Lee",
+            "True FE",
+            "True RE",
+        ]
 
     def test_log_likelihoods_are_finite(self, four_comp_result):
         """All log-likelihoods should be finite."""

@@ -610,7 +610,12 @@ def export_charts(
 
             # Export chart
             chart.save_image(
-                str(file_path), format=format, width=width, height=height, scale=scale, **kwargs
+                str(file_path),
+                format=format,
+                width=width,
+                height=height,
+                scale=scale,
+                **kwargs,
             )
 
             exported_paths[chart_name] = str(file_path)
@@ -884,7 +889,12 @@ def create_panel_charts(
 
         # Fallback: try all
         if not chart_types:
-            chart_types = ["entity_effects", "time_effects", "between_within", "structure"]
+            chart_types = [
+                "entity_effects",
+                "time_effects",
+                "between_within",
+                "structure",
+            ]
 
     # Map chart type names to registry names
     chart_map = {
@@ -1251,7 +1261,9 @@ def create_unit_root_test_plot(
 
 
 def create_cointegration_heatmap(
-    cointegration_results: dict[str, Any], theme: str | Theme | None = "academic", **kwargs
+    cointegration_results: dict[str, Any],
+    theme: str | Theme | None = "academic",
+    **kwargs,
 ) -> Any:
     """
     Create cointegration test results heatmap.

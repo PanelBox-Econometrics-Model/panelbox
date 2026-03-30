@@ -1596,7 +1596,12 @@ class TestGrangerIterationExceptionHandler:
         for i in range(5):
             for t in range(10):
                 data.append(
-                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "x1": np.random.randn(),
+                        "x2": np.random.randn(),
+                    }
                 )
         return pd.DataFrame(data)
 
@@ -1642,7 +1647,12 @@ class TestGrangerIterationExceptionHandler:
         for i in range(5):
             for t in range(2):
                 data.append(
-                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "x1": np.random.randn(),
+                        "x2": np.random.randn(),
+                    }
                 )
         panel = pd.DataFrame(data)
         stat = _single_bootstrap_granger_iteration(

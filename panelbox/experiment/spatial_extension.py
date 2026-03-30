@@ -14,7 +14,11 @@ import numpy as np
 import pandas as pd
 
 from panelbox.core.spatial_weights import SpatialWeights
-from panelbox.diagnostics.spatial_tests import LocalMoranI, MoranIPanelTest, run_lm_tests
+from panelbox.diagnostics.spatial_tests import (
+    LocalMoranI,
+    MoranIPanelTest,
+    run_lm_tests,
+)
 from panelbox.effects.spatial_effects import compute_spatial_effects
 from panelbox.models.spatial.gns import GeneralNestingSpatial
 from panelbox.models.spatial.spatial_durbin import SpatialDurbin

@@ -12,7 +12,9 @@ from panelbox.diagnostics.quantile.advanced_tests import (
     DiagnosticReport,
     DiagnosticResult,
 )
-from panelbox.diagnostics.quantile.basic_diagnostics import QuantileRegressionDiagnostics
+from panelbox.diagnostics.quantile.basic_diagnostics import (
+    QuantileRegressionDiagnostics,
+)
 
 __all__ = [
     "AdvancedDiagnostics",

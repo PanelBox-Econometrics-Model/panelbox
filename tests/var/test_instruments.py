@@ -202,7 +202,16 @@ class TestMultipleEntities:
         """Test instrument construction with unbalanced panel"""
         df = pd.DataFrame(
             {
-                "entity": [1, 1, 1, 1, 1, 2, 2, 2],  # Entity 1: 5 periods, Entity 2: 3 periods
+                "entity": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                    2,
+                ],  # Entity 1: 5 periods, Entity 2: 3 periods
                 "time": [1, 2, 3, 4, 5, 1, 2, 3],
                 "y1": [1, 2, 3, 4, 5, 10, 20, 30],
                 "y2": [10, 20, 30, 40, 50, 100, 200, 300],
@@ -320,7 +329,11 @@ class TestConvenienceFunction:
         )
 
         Z, meta = build_gmm_instruments(
-            df, var_lags=1, n_vars=2, value_cols=["y1", "y2"], instrument_type="collapsed"
+            df,
+            var_lags=1,
+            n_vars=2,
+            value_cols=["y1", "y2"],
+            instrument_type="collapsed",
         )
 
         assert Z.shape[0] > 0

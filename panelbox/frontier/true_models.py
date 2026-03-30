@@ -286,7 +286,13 @@ def bias_correct_tfe_jackknife(
 
         # Estimate α_i on reduced sample
         result = loglik_true_fixed_effects(
-            theta, y[mask], X[mask], entity_id[mask], time_id[mask], sign=sign, return_alpha=True
+            theta,
+            y[mask],
+            X[mask],
+            entity_id[mask],
+            time_id[mask],
+            sign=sign,
+            return_alpha=True,
         )
 
         # Store estimates

@@ -25,4 +25,8 @@ Welcome to PanelBox! This section will get you up and running quickly.
 
     Decision guide for selecting the right econometric model
 
+- :material-auto-fix: **[AutoExperiment](../user-guide/autoexperiment.md)**
+
+    Automated model selection -- let PanelBox find the best specification
+
 </div>

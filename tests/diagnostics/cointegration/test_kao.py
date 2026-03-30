@@ -154,7 +154,11 @@ class TestKaoStatistical:
     def test_cointegrated_data(self, cointegrated_panel_data):
         """Test with cointegrated data."""
         result = kao_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         # Statistics should be computed
@@ -166,7 +170,11 @@ class TestKaoStatistical:
     def test_non_cointegrated_data(self, non_cointegrated_panel_data):
         """Test with non-cointegrated data."""
         result = kao_test(
-            non_cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            non_cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         # Should not strongly reject null
@@ -217,7 +225,11 @@ class TestKaoResult:
     def test_repr_method(self, cointegrated_panel_data):
         """Test __repr__ method."""
         result = kao_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         repr_str = repr(result)

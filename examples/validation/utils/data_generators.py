@@ -63,7 +63,8 @@ def generate_firmdata(
 
     # Assign firms to size categories
     categories = np.repeat(
-        ["small", "medium", "large"], [n_firms // 3, n_firms // 3, n_firms - 2 * (n_firms // 3)]
+        ["small", "medium", "large"],
+        [n_firms // 3, n_firms // 3, n_firms - 2 * (n_firms // 3)],
     )
     rng.shuffle(categories)
     size_map = {"small": 1.0, "medium": 2.0, "large": 4.0}
@@ -187,7 +188,13 @@ def generate_small_panel(
             eps = rng.normal(0, 1)
             y = 1.0 + 0.5 * x1 - 0.3 * x2 + fe + eps
             rows.append(
-                {"entity": e, "time": t, "y": round(y, 4), "x1": round(x1, 4), "x2": round(x2, 4)}
+                {
+                    "entity": e,
+                    "time": t,
+                    "y": round(y, 4),
+                    "x1": round(x1, 4),
+                    "x2": round(x2, 4),
+                }
             )
 
     df = pd.DataFrame(rows)

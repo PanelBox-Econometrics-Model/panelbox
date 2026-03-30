@@ -239,7 +239,10 @@ class GMMChartBuilder(BaseReportChartBuilder):
                     "steps": [
                         {"range": [0, 1], "color": "#d4edda"},  # green zone
                         {"range": [1, 2], "color": "#fff3cd"},  # yellow zone
-                        {"range": [2, max(3, ratio * 1.2)], "color": "#f8d7da"},  # red zone
+                        {
+                            "range": [2, max(3, ratio * 1.2)],
+                            "color": "#f8d7da",
+                        },  # red zone
                     ],
                     "threshold": {
                         "line": {"color": PANELBOX_COLORS["danger"], "width": 2},

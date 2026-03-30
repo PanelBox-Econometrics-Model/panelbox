@@ -79,7 +79,9 @@ class CoefficientComparisonChart(PlotlyChartBase):
                     name=model,
                     x=variables,
                     y=coef_values,
-                    error_y={"type": "data", "array": errors, "visible": True} if errors else None,
+                    error_y=(
+                        {"type": "data", "array": errors, "visible": True} if errors else None
+                    ),
                     offsetgroup=i,
                     showlegend=True,
                     hovertemplate=(
@@ -108,7 +110,13 @@ class CoefficientComparisonChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "Coefficient Estimate"),
             barmode="group",
             hovermode="closest",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,
+            },
         )
 
         return fig
@@ -304,7 +312,13 @@ class ModelFitComparisonChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "Value" + (" (Normalized)" if normalize else "")),
             barmode="group",
             hovermode="closest",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,
+            },
         )
 
         return fig
@@ -404,7 +418,13 @@ class InformationCriteriaChart(PlotlyChartBase):
             yaxis_title=data.get("yaxis_title", "IC Value"),
             barmode="group",
             hovermode="closest",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,
+            },
             annotations=[
                 {
                     "text": "★ = Best Model (lowest IC)",

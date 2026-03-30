@@ -231,7 +231,10 @@ class PanelJackknife:
                 )
 
             except Exception as e:
-                warnings.warn(f"Jackknife sample {i} (entity {entity}) failed: {e!s}", stacklevel=2)
+                warnings.warn(
+                    f"Jackknife sample {i} (entity {entity}) failed: {e!s}",
+                    stacklevel=2,
+                )
                 failed_samples.append(entity)
                 continue
 

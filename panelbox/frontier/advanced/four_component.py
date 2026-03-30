@@ -536,7 +536,10 @@ class FourComponentResult:
         """
         # Return frontier parameters (beta) and variance components
         return np.concatenate(
-            [self.beta, [self.sigma_v**2, self.sigma_u**2, self.sigma_mu**2, self.sigma_eta**2]]
+            [
+                self.beta,
+                [self.sigma_v**2, self.sigma_u**2, self.sigma_mu**2, self.sigma_eta**2],
+            ]
         )
 
     @property

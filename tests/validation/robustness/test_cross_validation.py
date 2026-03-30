@@ -105,7 +105,11 @@ def test_get_cv_folds_expanding(mock_results):
 def test_get_cv_folds_rolling(mock_results):
     """Test rolling window fold generation."""
     cv = TimeSeriesCV(
-        mock_results, method="rolling", window_size=3, min_train_periods=3, verbose=False
+        mock_results,
+        method="rolling",
+        window_size=3,
+        min_train_periods=3,
+        verbose=False,
     )
     folds = cv._get_cv_folds()
 
@@ -185,7 +189,11 @@ def test_cross_validate_expanding(mock_results):
 def test_cross_validate_rolling(mock_results):
     """Test rolling window cross-validation."""
     cv = TimeSeriesCV(
-        mock_results, method="rolling", window_size=4, min_train_periods=3, verbose=False
+        mock_results,
+        method="rolling",
+        window_size=4,
+        min_train_periods=3,
+        verbose=False,
     )
 
     cv_results = cv.cross_validate()
@@ -488,7 +496,11 @@ def test_cv_verbose_rolling_logging(mock_results, caplog):
 
     with caplog.at_level(logging.INFO, logger="panelbox.validation.robustness.cross_validation"):
         cv = TimeSeriesCV(
-            mock_results, method="rolling", window_size=4, min_train_periods=3, verbose=True
+            mock_results,
+            method="rolling",
+            window_size=4,
+            min_train_periods=3,
+            verbose=True,
         )
         cv.cross_validate()
 
@@ -573,7 +585,11 @@ def test_rolling_window_min_train_filter(mock_results):
     # With window_size=3 and min_train_periods=3, first valid fold starts
     # when enough periods accumulate
     cv = TimeSeriesCV(
-        mock_results, method="rolling", window_size=3, min_train_periods=3, verbose=False
+        mock_results,
+        method="rolling",
+        window_size=3,
+        min_train_periods=3,
+        verbose=False,
     )
     folds = cv._get_cv_folds()
 

@@ -20,7 +20,15 @@ class TestFirmPanel:
         assert df.shape == (2000, 7)
 
     def test_firm_panel_columns(self, df):
-        expected = {"firm_id", "year", "investment", "value", "capital", "sales", "sector"}
+        expected = {
+            "firm_id",
+            "year",
+            "investment",
+            "value",
+            "capital",
+            "sales",
+            "sector",
+        }
         assert set(df.columns) == expected
 
     def test_firm_panel_no_missing(self, df):

@@ -55,7 +55,14 @@ class TestPooledLogit:
 
         # Create DataFrame
         df = pd.DataFrame(
-            {"entity_id": entity_id, "time_id": time_id, "y": y, "x1": x1, "x2": x2, "x3": x3}
+            {
+                "entity_id": entity_id,
+                "time_id": time_id,
+                "y": y,
+                "x1": x1,
+                "x2": x2,
+                "x3": x3,
+            }
         )
 
         return df, beta_true

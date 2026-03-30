@@ -666,7 +666,13 @@ class TestEdgeCases:
             "cov_kwds": {},
         }
 
-        data_info = {"nobs": 3, "n_entities": 1, "n_periods": 3, "df_model": 1, "df_resid": 1}
+        data_info = {
+            "nobs": 3,
+            "n_entities": 1,
+            "n_periods": 3,
+            "df_model": 1,
+            "df_resid": 1,
+        }
 
         # Create results with NaN R-squared (no rsquared_dict)
         results = PanelResults(

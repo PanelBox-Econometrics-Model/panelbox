@@ -32,7 +32,12 @@ class TestPPML:
                 for j in range(n_countries):
                     if i != j:  # exclude self-trade
                         pairs.append(
-                            {"year": year, "origin": i, "dest": j, "pair_id": i * n_countries + j}
+                            {
+                                "year": year,
+                                "origin": i,
+                                "dest": j,
+                                "pair_id": i * n_countries + j,
+                            }
                         )
 
         df = pd.DataFrame(pairs)
@@ -177,7 +182,11 @@ class TestPPML:
 
         # Fit PPML
         model = PPML(
-            endog=y, exog=X, entity_id=entity_id, fixed_effects=False, exog_names=["const", "x1"]
+            endog=y,
+            exog=X,
+            entity_id=entity_id,
+            fixed_effects=False,
+            exog_names=["const", "x1"],
         )
         result = model.fit()
 
@@ -392,7 +401,11 @@ class TestPPMLResult:
         entity_id = np.repeat(np.arange(40), 5)
 
         model = PPML(
-            endog=y, exog=X, entity_id=entity_id, fixed_effects=False, exog_names=["const", "log_x"]
+            endog=y,
+            exog=X,
+            entity_id=entity_id,
+            fixed_effects=False,
+            exog_names=["const", "log_x"],
         )
         return model.fit()
 

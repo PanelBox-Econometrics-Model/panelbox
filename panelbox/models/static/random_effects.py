@@ -268,7 +268,12 @@ class RandomEffects(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult
+        result: (
+            RobustCovarianceResult
+            | ClusteredCovarianceResult
+            | DriscollKraayResult
+            | NeweyWestResult
+        )
 
         if cov_type_lower == "nonrobust":
             vcov = self._compute_vcov_gls(X, resid_gls, entities, df_resid)
@@ -341,7 +346,7 @@ class RandomEffects(PanelModel):
             "n_periods": self.data.n_periods,
             "df_model": df_model,
             "df_resid": df_resid,
-            "entity_index": entities.ravel() if hasattr(entities, "ravel") else entities,
+            "entity_index": (entities.ravel() if hasattr(entities, "ravel") else entities),
             "time_index": times.ravel() if hasattr(times, "ravel") else times,
         }
 

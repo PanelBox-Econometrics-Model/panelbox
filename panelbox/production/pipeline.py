@@ -212,7 +212,7 @@ class PanelPipeline:
             raise FileNotFoundError(f"Pipeline file not found: {filepath}")
 
         with open(filepath, "rb") as f:
-            pipeline = pickle.load(f)  # noqa: S301 — intentional deserialization of user's own saved pipeline
+            pipeline = pickle.load(f)  # noqa: S301
 
         if not isinstance(pipeline, cls):
             raise TypeError(f"Loaded object is {type(pipeline).__name__}, expected PanelPipeline.")

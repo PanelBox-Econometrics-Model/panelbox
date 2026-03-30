@@ -367,9 +367,12 @@ class FixedEffects(PanelModel):
         unique_times = np.unique(times)
 
         if self.entity_effects:
-            entity_fe_array, entity_fe_values_centered, entity_fe_mean, unique_entities = (
-                self._extract_group_fe(overall_resid, entities, np.zeros(len(y_orig)))
-            )
+            (
+                entity_fe_array,
+                entity_fe_values_centered,
+                entity_fe_mean,
+                unique_entities,
+            ) = self._extract_group_fe(overall_resid, entities, np.zeros(len(y_orig)))
 
         if self.time_effects:
             time_fe_array, time_fe_values_centered, time_fe_mean, unique_times = (
@@ -445,7 +448,7 @@ class FixedEffects(PanelModel):
             "df_resid": df_resid,
             "n_fe_entity": n_fe_entity if self.entity_effects else 0,
             "n_fe_time": n_fe_time if self.time_effects else 0,
-            "entity_index": entities.ravel() if hasattr(entities, "ravel") else entities,
+            "entity_index": (entities.ravel() if hasattr(entities, "ravel") else entities),
             "time_index": times.ravel() if hasattr(times, "ravel") else times,
         }
 

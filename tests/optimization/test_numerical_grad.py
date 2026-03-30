@@ -360,7 +360,11 @@ class TestKnownFunctions:
             return np.array([[6 * x[0] + 4 * x[1], 4 * x[0]], [4 * x[0], 6 * x[1]]])
 
         # Test at multiple points
-        test_points = [np.array([1.0, 2.0]), np.array([-0.5, 0.5]), np.array([2.0, -1.0])]
+        test_points = [
+            np.array([1.0, 2.0]),
+            np.array([-0.5, 0.5]),
+            np.array([2.0, -1.0]),
+        ]
 
         for x in test_points:
             grad_num = approx_gradient(f, x, method="central")
@@ -384,7 +388,11 @@ class TestKnownFunctions:
             return np.array([2 * x[0] / denom, 2 * x[1] / denom])
 
         # Test points
-        test_points = [np.array([1.0, 1.0]), np.array([0.0, 0.0]), np.array([2.0, -1.5])]
+        test_points = [
+            np.array([1.0, 1.0]),
+            np.array([0.0, 0.0]),
+            np.array([2.0, -1.5]),
+        ]
 
         for x in test_points:
             grad_num = approx_gradient(f, x, method="central")
@@ -401,11 +409,18 @@ class TestKnownFunctions:
         # Gradient
         def rosenbrock_gradient(x):
             return np.array(
-                [-2 * (1 - x[0]) - 400 * x[0] * (x[1] - x[0] ** 2), 200 * (x[1] - x[0] ** 2)]
+                [
+                    -2 * (1 - x[0]) - 400 * x[0] * (x[1] - x[0] ** 2),
+                    200 * (x[1] - x[0] ** 2),
+                ]
             )
 
         # Test points including minimum
-        test_points = [np.array([1.0, 1.0]), np.array([0.0, 0.0]), np.array([0.5, 0.5])]  # Minimum
+        test_points = [
+            np.array([1.0, 1.0]),
+            np.array([0.0, 0.0]),
+            np.array([0.5, 0.5]),
+        ]  # Minimum
 
         for x in test_points:
             grad_num = approx_gradient(rosenbrock, x, method="central")

@@ -30,7 +30,9 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from panelbox.models.spatial.base_spatial import SpatialPanelModel
-from panelbox.models.spatial.spatial_lag import SpatialPanelResults as SpatialPanelResult
+from panelbox.models.spatial.spatial_lag import (
+    SpatialPanelResults as SpatialPanelResult,
+)
 
 if TYPE_CHECKING:
     from panelbox.core.spatial_weights import SpatialWeights
@@ -162,7 +164,10 @@ class SpatialDurbin(SpatialPanelModel):
             raise ValueError(f"Invalid combination: effects='{self.effects}', method='{method}'")
 
     def _fit_qml_pooled(
-        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
+        self,
+        initial_values: dict[str, float] | None = None,
+        maxiter: int = 1000,
+        **kwargs,
     ) -> SpatialPanelResult:
         """
         Quasi-Maximum Likelihood estimation (pooled, no fixed effects).
@@ -279,7 +284,10 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
     def _fit_qml_fe(
-        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
+        self,
+        initial_values: dict[str, float] | None = None,
+        maxiter: int = 1000,
+        **kwargs,
     ) -> SpatialPanelResult:
         """
         Quasi-Maximum Likelihood estimation with fixed effects.
@@ -439,7 +447,10 @@ class SpatialDurbin(SpatialPanelModel):
         )
 
     def _fit_ml_re(
-        self, initial_values: dict[str, float] | None = None, maxiter: int = 1000, **kwargs
+        self,
+        initial_values: dict[str, float] | None = None,
+        maxiter: int = 1000,
+        **kwargs,
     ) -> SpatialPanelResult:
         """
         Maximum Likelihood estimation with random effects.
@@ -768,7 +779,9 @@ class SpatialDurbin(SpatialPanelModel):
         return params0
 
     def predict(
-        self, exog: np.ndarray | None = None, effects_type: Literal["direct", "total"] = "total"
+        self,
+        exog: np.ndarray | None = None,
+        effects_type: Literal["direct", "total"] = "total",
     ) -> np.ndarray:
         """
         Generate predictions from the fitted SDM.

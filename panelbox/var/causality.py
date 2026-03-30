@@ -273,7 +273,11 @@ class DumitrescuHurlinResult:
 
             # Add vertical line at mean
             ax.axvline(
-                self.W_bar, color="green", linestyle="-", linewidth=2, label=f"W̄ = {self.W_bar:.2f}"
+                self.W_bar,
+                color="green",
+                linestyle="-",
+                linewidth=2,
+                label=f"W̄ = {self.W_bar:.2f}",
             )
 
             ax.set_xlabel("Individual Wald Statistics (W_i)", fontsize=12)
@@ -834,7 +838,12 @@ def instantaneous_causality(
     p_value = 1 - stats.chi2.cdf(lr_stat, df=1) if np.isfinite(lr_stat) else 0.0
 
     return InstantaneousCausalityResult(
-        var1=var1, var2=var2, correlation=correlation, lr_stat=lr_stat, p_value=p_value, n_obs=n_obs
+        var1=var1,
+        var2=var2,
+        correlation=correlation,
+        lr_stat=lr_stat,
+        p_value=p_value,
+        n_obs=n_obs,
     )
 
 

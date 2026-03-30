@@ -171,6 +171,10 @@ nav:
       - Between Estimator: user-guide/static-models/between.md
       - First Difference: user-guide/static-models/first-difference.md
       - FE vs RE (Hausman): user-guide/static-models/fe-vs-re.md
+      - Slope Heterogeneity (MG/PMG): user-guide/slope-heterogeneity.md
+      - SUR Estimation: user-guide/sur-estimation.md
+    - Dynamic Panels (LSDVC):
+      - user-guide/dynamic-panels.md
     - Dynamic Models (GMM):
       - user-guide/gmm/index.md
       - Difference GMM: user-guide/gmm/difference-gmm.md
@@ -243,6 +247,7 @@ nav:
       - user-guide/iv/index.md
       - Panel IV/2SLS: user-guide/iv/panel-iv.md
       - IV Diagnostics: user-guide/iv/diagnostics.md
+    - AutoExperiment (AutoML): user-guide/autoexperiment.md
 
   - Inference:
     - inference/index.md
@@ -335,9 +340,13 @@ nav:
     - Validation: tutorials/validation.md
     - Visualization: tutorials/visualization.md
     - Production: tutorials/production.md
+    - AutoExperiment Quickstart: tutorials/autoexperiment-quickstart.md
 
   - Theory:
     - Panel Data: theory/panel-fundamentals.md
+    - Nickell Bias & LSDVC: theory/nickell-bias-lsdvc.md
+    - Mean Group Estimator: theory/mean-group-estimator.md
+    - SUR (Zellner): theory/sur-zellner.md
     - GMM Theory: theory/gmm-theory.md
     - Spatial Econometrics: theory/spatial-theory.md
     - Stochastic Frontier: theory/sfa-theory.md
@@ -350,6 +359,7 @@ nav:
     - api/index.md
     - Core: api/core.md
     - Static Models: api/static-models.md
+    - Dynamic Models: api/dynamic-models.md
     - GMM: api/gmm.md
     - Spatial: api/spatial.md
     - Frontier (SFA): api/frontier.md
@@ -366,6 +376,7 @@ nav:
     - Visualization: api/visualization.md
     - Report System: api/report.md
     - Experiment: api/experiment.md
+    - AutoExperiment: api/autoexperiment.md
     - Datasets: api/datasets.md
     - CLI: api/cli.md
 

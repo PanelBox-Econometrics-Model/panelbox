@@ -237,7 +237,14 @@ class TestResidualTransformerEdgeCases:
     def test_alternative_residuals_attribute(self):
         """Test with alternative residuals attribute name."""
         results = Mock(
-            spec=["residuals", "fittedvalues", "params", "df_model", "df_resid", "scale"]
+            spec=[
+                "residuals",
+                "fittedvalues",
+                "params",
+                "df_model",
+                "df_resid",
+                "scale",
+            ]
         )
         results.residuals = np.random.normal(0, 1, 100)  # Note: 'residuals' not 'resid'
         results.fittedvalues = np.random.normal(5, 2, 100)
@@ -293,7 +300,15 @@ class TestResidualTransformerEdgeCases:
     def test_time_index_extraction(self):
         """Test time index extraction."""
         results = Mock(
-            spec=["resid", "fittedvalues", "params", "df_model", "df_resid", "scale", "_data"]
+            spec=[
+                "resid",
+                "fittedvalues",
+                "params",
+                "df_model",
+                "df_resid",
+                "scale",
+                "_data",
+            ]
         )
         results.resid = np.random.normal(0, 1, 100)
         results.fittedvalues = np.random.normal(5, 2, 100)
@@ -317,7 +332,15 @@ class TestResidualTransformerEdgeCases:
     def test_entity_id_extraction(self):
         """Test entity ID extraction."""
         results = Mock(
-            spec=["resid", "fittedvalues", "params", "df_model", "df_resid", "scale", "_data"]
+            spec=[
+                "resid",
+                "fittedvalues",
+                "params",
+                "df_model",
+                "df_resid",
+                "scale",
+                "_data",
+            ]
         )
         results.resid = np.random.normal(0, 1, 100)
         results.fittedvalues = np.random.normal(5, 2, 100)
@@ -464,7 +487,14 @@ class TestFittedValuesAlternativePaths:
         """Test scale extraction via mse_resid attribute (line 160)."""
         np.random.seed(42)
         results = Mock(
-            spec=["resid", "fittedvalues", "params", "df_model", "df_resid", "mse_resid"]
+            spec=[
+                "resid",
+                "fittedvalues",
+                "params",
+                "df_model",
+                "df_resid",
+                "mse_resid",
+            ]
         )
         results.resid = np.random.normal(0, 1, 50)
         results.fittedvalues = np.random.normal(5, 2, 50)

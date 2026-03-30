@@ -111,7 +111,11 @@ class TestCensoredModelsVsR:
         r_coefs = np.array(r_model["coefficients"])
         pb_coefs = result.params[: len(r_coefs)]
         np.testing.assert_allclose(
-            pb_coefs, r_coefs, rtol=1e-2, atol=1e-3, err_msg="Coefficients differ from R"
+            pb_coefs,
+            r_coefs,
+            rtol=1e-2,
+            atol=1e-3,
+            err_msg="Coefficients differ from R",
         )
 
     def test_predicted_values(self):

@@ -368,7 +368,15 @@ class TestGMMDiagnosticsUncoveredBranches:
         y = 1.0 + 2.0 * x + epsilon + 0.5 * v
 
         data = pd.DataFrame(
-            {"y": y, "x": x, "z1": z1, "z2": z2, "z3": z3, "entity": np.arange(n), "time": 1}
+            {
+                "y": y,
+                "x": x,
+                "z1": z1,
+                "z2": z2,
+                "z3": z3,
+                "entity": np.arange(n),
+                "time": 1,
+            }
         )
         data = data.set_index(["entity", "time"])
 
@@ -426,7 +434,15 @@ class TestGMMDiagnosticsUncoveredBranches:
         y = 1.0 + 2.0 * x + epsilon
 
         data = pd.DataFrame(
-            {"y": y, "x": x, "z1": z1, "z2": z2, "z3": z3, "entity": np.arange(n), "time": 1}
+            {
+                "y": y,
+                "x": x,
+                "z1": z1,
+                "z2": z2,
+                "z3": z3,
+                "entity": np.arange(n),
+                "time": 1,
+            }
         )
         data = data.set_index(["entity", "time"])
 

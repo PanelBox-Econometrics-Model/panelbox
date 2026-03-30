@@ -17,10 +17,7 @@ from scipy import stats
 from scipy.optimize import OptimizeResult
 
 from panelbox.core.results import PanelResults
-from panelbox.standard_errors.mle import (
-    bootstrap_mle,
-    compute_mle_standard_errors,
-)
+from panelbox.standard_errors.mle import bootstrap_mle, compute_mle_standard_errors
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +227,9 @@ class NonlinearPanelResults(PanelResults):
             raise ValueError(f"Unknown pseudo-R² method: {method}")
 
     def predict(
-        self, exog: np.ndarray | None = None, type: Literal["linear", "prob", "class"] = "prob"
+        self,
+        exog: np.ndarray | None = None,
+        type: Literal["linear", "prob", "class"] = "prob",
     ) -> np.ndarray:
         """
         Generate predictions from the fitted model.
@@ -497,7 +496,7 @@ class NonlinearPanelResults(PanelResults):
             "title": f"{self.model.__class__.__name__} Results",
             "model_type": self.model.__class__.__name__,
             "observations": self.nobs,
-            "entities": self.model.n_entities if hasattr(self.model, "n_entities") else None,
+            "entities": (self.model.n_entities if hasattr(self.model, "n_entities") else None),
             "log_likelihood": self.llf,
             "aic": self.aic,
             "bic": self.bic,
@@ -520,7 +519,10 @@ class NonlinearPanelResults(PanelResults):
 
         # Generate HTML
         html = report_mgr.generate_report(
-            report_type="discrete", template="discrete/results.html", context=context, **kwargs
+            report_type="discrete",
+            template="discrete/results.html",
+            context=context,
+            **kwargs,
         )
 
         # Save if filepath provided
@@ -558,7 +560,7 @@ class NonlinearPanelResults(PanelResults):
             "model_type": self.model.__class__.__name__,
             "distribution": getattr(self.model, "distribution", ""),
             "nobs": self.nobs,
-            "n_entities": self.model.n_entities if hasattr(self.model, "n_entities") else None,
+            "n_entities": (self.model.n_entities if hasattr(self.model, "n_entities") else None),
             "n_periods": self.n_periods,
             "converged": self.converged,
             "n_iter": self.n_iter,

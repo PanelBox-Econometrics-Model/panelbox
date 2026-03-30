@@ -283,7 +283,10 @@ class PanelHeckman(NonlinearPanelModel):
 
         # Optimize
         result = minimize(
-            self._log_likelihood, init_params, method="BFGS", options={"maxiter": 1000, **kwargs}
+            self._log_likelihood,
+            init_params,
+            method="BFGS",
+            options={"maxiter": 1000, **kwargs},
         )
 
         if not result.success:

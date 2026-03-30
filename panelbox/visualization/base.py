@@ -451,7 +451,10 @@ class PlotlyChartBase(BaseChart):
         }
 
         return pio.to_html(
-            self.figure, include_plotlyjs=include_plotlyjs, config=plotly_config, **kwargs
+            self.figure,
+            include_plotlyjs=include_plotlyjs,
+            config=plotly_config,
+            **kwargs,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -524,7 +527,12 @@ class PlotlyChartBase(BaseChart):
 
         try:
             image_bytes = pio.to_image(
-                self.figure, format=format, width=width, height=height, scale=scale, **kwargs
+                self.figure,
+                format=format,
+                width=width,
+                height=height,
+                scale=scale,
+                **kwargs,
             )
             return image_bytes
         except ValueError as e:

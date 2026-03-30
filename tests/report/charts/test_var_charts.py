@@ -75,9 +75,24 @@ def full_var_data():
                 ],
             },
         ],
-        "diagnostics": {"aic": -1500.0, "bic": -1450.0, "hqic": -1480.0, "loglik": 770.0},
-        "stability": {"is_stable": True, "max_eigenvalue_modulus": 0.85, "stability_margin": 0.15},
-        "model_info": {"K": 2, "p": 1, "N": 50, "n_obs": 450, "endog_names": ["y1", "y2"]},
+        "diagnostics": {
+            "aic": -1500.0,
+            "bic": -1450.0,
+            "hqic": -1480.0,
+            "loglik": 770.0,
+        },
+        "stability": {
+            "is_stable": True,
+            "max_eigenvalue_modulus": 0.85,
+            "stability_margin": 0.15,
+        },
+        "model_info": {
+            "K": 2,
+            "p": 1,
+            "N": 50,
+            "n_obs": 450,
+            "endog_names": ["y1", "y2"],
+        },
     }
 
 
@@ -112,7 +127,11 @@ class TestBuildAll:
     def test_full_data_returns_three_charts(self, full_var_data):
         builder = VARChartBuilder(full_var_data)
         charts = builder.build_all()
-        assert set(charts.keys()) == {"stability_chart", "ic_chart", "coefficient_heatmap"}
+        assert set(charts.keys()) == {
+            "stability_chart",
+            "ic_chart",
+            "coefficient_heatmap",
+        }
 
     def test_empty_data_returns_empty_dict(self):
         builder = VARChartBuilder({})

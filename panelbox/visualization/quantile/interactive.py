@@ -173,7 +173,11 @@ class InteractivePlotter:
         for i, var_name in enumerate(var_names):
             for j, tau in enumerate(tau_list):
                 violin_data.append(
-                    {"Variable": var_name, "Coefficient": coef_matrix[j, i], "Quantile": tau}
+                    {
+                        "Variable": var_name,
+                        "Coefficient": coef_matrix[j, i],
+                        "Quantile": tau,
+                    }
                 )
 
         import pandas as pd
@@ -184,7 +188,10 @@ class InteractivePlotter:
             df_var = df_violin[df_violin["Variable"] == var_name]
             fig.add_trace(
                 go.Violin(
-                    y=df_var["Coefficient"], name=var_name, box_visible=True, meanline_visible=True
+                    y=df_var["Coefficient"],
+                    name=var_name,
+                    box_visible=True,
+                    meanline_visible=True,
                 ),
                 row=2,
                 col=1,
@@ -341,7 +348,10 @@ class InteractivePlotter:
             title=f"Animated Coefficient Path - {var_name}",
             template=self.theme,
             xaxis={"range": [0, 1], "title": "Quantile (τ)"},
-            yaxis={"range": [min(coefs) * 1.1, max(coefs) * 1.1], "title": "Coefficient"},
+            yaxis={
+                "range": [min(coefs) * 1.1, max(coefs) * 1.1],
+                "title": "Coefficient",
+            },
             updatemenus=[
                 {
                     "type": "buttons",
@@ -364,7 +374,10 @@ class InteractivePlotter:
                             "method": "animate",
                             "args": [
                                 [None],
-                                {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"},
+                                {
+                                    "frame": {"duration": 0, "redraw": False},
+                                    "mode": "immediate",
+                                },
                             ],
                         },
                     ],
@@ -383,7 +396,10 @@ class InteractivePlotter:
                         {
                             "args": [
                                 [frame.name],
-                                {"frame": {"duration": 100, "redraw": True}, "mode": "immediate"},
+                                {
+                                    "frame": {"duration": 100, "redraw": True},
+                                    "mode": "immediate",
+                                },
                             ],
                             "label": f"τ={tau_list[i]:.2f}",
                             "method": "animate",
@@ -411,9 +427,7 @@ class InteractivePlotter:
 
         return fig
 
-    def quantile_surface_interactive(
-        self, result, X_grid: np.ndarray | None = None
-    ) -> go.Figure:
+    def quantile_surface_interactive(self, result, X_grid: np.ndarray | None = None) -> go.Figure:
         """
         Create fully interactive 3D surface with controls.
 
@@ -591,14 +605,20 @@ class InteractivePlotter:
                     "colorbar": {"title": "Quantile"},
                 },
                 dimensions=[
-                    {"range": [df[col].min(), df[col].max()], "label": col, "values": df[col]}
+                    {
+                        "range": [df[col].min(), df[col].max()],
+                        "label": col,
+                        "values": df[col],
+                    }
                     for col in var_names
                 ],
             )
         )
 
         fig.update_layout(
-            title="Parallel Coordinates: Coefficient Evolution", template=self.theme, height=600
+            title="Parallel Coordinates: Coefficient Evolution",
+            template=self.theme,
+            height=600,
         )
 
         return fig

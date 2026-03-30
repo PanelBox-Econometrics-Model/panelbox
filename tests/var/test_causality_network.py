@@ -269,7 +269,9 @@ class TestPlotCausalityNetwork:
                     data[i, j] = 0.01 * (i + j + 1)  # Some pattern
 
         df = pd.DataFrame(
-            data, index=[f"x{i}" for i in range(1, 6)], columns=[f"x{i}" for i in range(1, 6)]
+            data,
+            index=[f"x{i}" for i in range(1, 6)],
+            columns=[f"x{i}" for i in range(1, 6)],
         )
 
         fig = plot_causality_network(
@@ -305,7 +307,11 @@ class TestNetworkIntegration:
 
         # Estimate VAR
         pvar_data = PanelVARData(
-            data, endog_vars=["x1", "x2", "x3"], entity_col="entity", time_col="time", lags=2
+            data,
+            endog_vars=["x1", "x2", "x3"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(pvar_data)

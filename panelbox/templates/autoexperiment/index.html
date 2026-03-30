@@ -1,0 +1,409 @@
+{% extends 'common/base_v2.html' %}
+
+{% block summary %}
+<!-- Executive Summary -->
+<section class="report-section">
+    <h2 class="section-title">Executive Summary</h2>
+
+    <div class="ae-summary-grid">
+        <div class="ae-summary-card">
+            <div class="ae-card-label">Best Model</div>
+            <div class="ae-card-value">{{ best_estimator_label|default('N/A') }}</div>
+        </div>
+        <div class="ae-summary-card">
+            <div class="ae-card-label">BIC</div>
+            <div class="ae-card-value">{{ best_bic|default('N/A') }}</div>
+        </div>
+        <div class="ae-summary-card">
+            <div class="ae-card-label">R&sup2; adj</div>
+            <div class="ae-card-value">{{ best_rsq_adj|default('N/A') }}</div>
+        </div>
+        <div class="ae-summary-card">
+            <div class="ae-card-label">Status</div>
+            <div class="ae-card-value ae-{{ best_classification|default('warning')|lower }}">
+                {{ best_classification|default('N/A') }}
+            </div>
+        </div>
+        <div class="ae-summary-card">
+            <div class="ae-card-label">Models Tested</div>
+            <div class="ae-card-value">{{ n_models_tested|default(0) }}</div>
+        </div>
+        <div class="ae-summary-card">
+            <div class="ae-card-label">Combinations</div>
+            <div class="ae-card-value">{{ n_combinations_tested|default(0) }}</div>
+        </div>
+    </div>
+
+    {% if datamining_warning %}
+    <div class="ae-datamining-warning">
+        <strong>Data Mining Warning:</strong> {{ n_combinations_tested }} model/variable
+        combinations were tested. Results should be validated on out-of-sample data.
+        Statistical significance may be overstated due to multiple testing.
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block content %}
+<!-- Tab Navigation -->
+<div class="tab-container" id="ae-tabs">
+    <div class="tab-buttons">
+        <button class="tab-button active" data-tab="ranking-tab">Ranking</button>
+        <button class="tab-button" data-tab="best-model-tab">Best Model</button>
+        <button class="tab-button" data-tab="tests-tab">Specification Tests</button>
+        <button class="tab-button" data-tab="selection-tab">Variable Selection</button>
+        <button class="tab-button" data-tab="transforms-tab">Transformations</button>
+        <button class="tab-button" data-tab="transparency-tab">Transparency</button>
+    </div>
+
+    <div class="tab-contents">
+
+        <!-- ─── Ranking Tab ─────────────────────────────────── -->
+        <div id="ranking-tab" class="tab-content active">
+            <section class="report-section">
+                <h3 class="section-subtitle">Top {{ ranking_rows|length }} Models</h3>
+                <p class="text-muted mb-4">
+                    Click column headers to sort. Ranked by composite score
+                    (criterion + tests + sign constraints + parsimony).
+                </p>
+
+                <div class="table-container">
+                    <table class="ae-ranking-table" id="ranking-table">
+                        <thead>
+                            <tr>
+                                <th data-col="rank"># <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="model">Model <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="formula">Formula <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="bic">BIC <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="aic">AIC <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="rsq_adj">R&sup2; adj <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="status">Status <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="n_vars">Vars <span class="sort-arrow">&#9650;</span></th>
+                                <th data-col="score">Score <span class="sort-arrow">&#9650;</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in ranking_rows %}
+                            <tr class="{{ 'ae-row-best' if loop.first else '' }}">
+                                <td>{{ row.rank }}</td>
+                                <td>{{ row.model_type }}</td>
+                                <td><code class="text-sm">{{ row.formula }}</code></td>
+                                <td>{{ "%.2f"|format(row.bic) }}</td>
+                                <td>{{ "%.2f"|format(row.aic) }}</td>
+                                <td>{{ "%.4f"|format(row.rsq_adj) if row.rsq_adj is not none else 'N/A' }}</td>
+                                <td>
+                                    <span class="ae-badge ae-badge-{{ row.classification|lower }}">
+                                        {{ row.classification }}
+                                    </span>
+                                </td>
+                                <td>{{ row.n_vars }}</td>
+                                <td>{{ "%.3f"|format(row.score) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ─── Best Model Tab ──────────────────────────────── -->
+        <div id="best-model-tab" class="tab-content">
+            <section class="report-section">
+                <h3 class="section-subtitle">Best Model Details</h3>
+
+                {% if best_model_info %}
+                <div class="ae-summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">Estimator</div>
+                        <div class="ae-card-value" style="font-size:1.1rem;">{{ best_estimator_label }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">R&sup2;</div>
+                        <div class="ae-card-value" style="font-size:1.1rem;">{{ best_model_info.rsq|default('N/A') }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">BIC</div>
+                        <div class="ae-card-value" style="font-size:1.1rem;">{{ best_model_info.bic|default('N/A') }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">AIC</div>
+                        <div class="ae-card-value" style="font-size:1.1rem;">{{ best_model_info.aic|default('N/A') }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">RMSE</div>
+                        <div class="ae-card-value" style="font-size:1.1rem;">{{ best_model_info.rmse|default('N/A') }}</div>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-2"><strong>Formula:</strong> <code>{{ best_formula }}</code></p>
+
+                <!-- SE justification -->
+                <div class="ae-se-justification">
+                    <strong>Standard Errors:</strong> {{ best_cov_type }}
+                    {% if se_justification %}
+                    &mdash; {{ se_justification }}
+                    {% endif %}
+                </div>
+
+                <!-- Coefficient table -->
+                {% if coefficients %}
+                <h4 class="section-subtitle mt-6">Coefficients</h4>
+                <div class="table-container">
+                    <table class="ae-coef-table" id="coef-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Estimate</th>
+                                <th>Std. Error</th>
+                                <th>t-stat</th>
+                                <th>p-value</th>
+                                <th>Sig.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for coef in coefficients %}
+                            <tr>
+                                <td>{{ coef.name }}</td>
+                                <td>{{ "%.4f"|format(coef.estimate) }}</td>
+                                <td>{{ "%.4f"|format(coef.std_error) }}</td>
+                                <td>{{ "%.3f"|format(coef.tstat) }}</td>
+                                <td>{{ coef.pvalue|pvalue_format }}</td>
+                                <td>{{ coef.pvalue|significance_stars }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-500">Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05, . p&lt;0.1</p>
+                {% endif %}
+
+                <!-- Diagnostics -->
+                {% if best_diagnostics %}
+                <h4 class="section-subtitle mt-6">Diagnostics</h4>
+                <ul class="info-box-list">
+                    {% for diag_name, diag_val in best_diagnostics.items() %}
+                    <li><strong>{{ diag_name }}:</strong> {{ diag_val }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% else %}
+                <div class="alert alert-info">
+                    <strong>No valid model found.</strong> All models were classified as INVALID.
+                </div>
+                {% endif %}
+            </section>
+        </div>
+
+        <!-- ─── Specification Tests Tab ─────────────────────── -->
+        <div id="tests-tab" class="tab-content">
+            <section class="report-section">
+                <h3 class="section-subtitle">Specification Test Matrix</h3>
+                <p class="text-muted mb-4">
+                    Models &times; tests heatmap. Green = pass, red = fail, gray = not applicable.
+                </p>
+
+                {% if test_matrix %}
+                <div class="table-container" style="overflow-x: auto;">
+                    <table class="ae-test-matrix">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                {% for test_name in test_names %}
+                                <th>{{ test_name }}</th>
+                                {% endfor %}
+                                <th>Classification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for model_name, tests in test_matrix.items() %}
+                            <tr>
+                                <td>{{ model_name }}</td>
+                                {% for test_name in test_names %}
+                                {% set result = tests.get(test_name, 'n/a') %}
+                                <td class="ae-cell-{{ 'pass' if result == 'pass' else ('fail' if result == 'fail' else 'na') }}">
+                                    {{ '&#10003;' if result == 'pass' else ('&#10007;' if result == 'fail' else '&mdash;') }}
+                                </td>
+                                {% endfor %}
+                                <td>
+                                    <span class="ae-badge ae-badge-{{ tests._classification|lower }}">
+                                        {{ tests._classification }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <strong>No test results available.</strong>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+
+        <!-- ─── Variable Selection Tab ──────────────────────── -->
+        <div id="selection-tab" class="tab-content">
+            <section class="report-section">
+                <h3 class="section-subtitle">Variable Selection</h3>
+
+                <!-- BIC path chart -->
+                {% if bic_chart_b64 %}
+                <h4 class="section-subtitle mt-4">BIC Path</h4>
+                <p class="text-muted mb-4">
+                    Information criterion at each forward step, by model type.
+                </p>
+                <div class="ae-bic-chart">
+                    <img src="data:image/png;base64,{{ bic_chart_b64 }}" alt="BIC Path Chart" />
+                </div>
+                {% endif %}
+
+                <!-- Per-model selection details -->
+                {% for model_type, sel in variable_selection.items() %}
+                <h4 class="section-subtitle mt-6">{{ model_type }}</h4>
+                <p>
+                    <strong>Selected ({{ sel.selected_vars|length }}):</strong>
+                    {% for v in sel.selected_vars %}
+                    <code class="ae-var-selected">{{ v }}</code>{{ ', ' if not loop.last else '' }}
+                    {% endfor %}
+                    {% if not sel.selected_vars %}
+                    <em>None</em>
+                    {% endif %}
+                </p>
+
+                {% if sel.rejected_vars %}
+                <p><strong>Rejected:</strong></p>
+                <ul class="info-box-list">
+                    {% for var, reason in sel.rejected_vars.items() %}
+                    <li><code class="ae-var-rejected">{{ var }}</code> &mdash; {{ reason }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% endfor %}
+            </section>
+        </div>
+
+        <!-- ─── Transformations Tab ─────────────────────────── -->
+        <div id="transforms-tab" class="tab-content">
+            <section class="report-section">
+                <h3 class="section-subtitle">Variable Transformations</h3>
+
+                {% if transformations %}
+                <div class="table-container">
+                    <table class="ae-transform-table">
+                        <thead>
+                            <tr>
+                                <th>Original Variable</th>
+                                <th>Transformation</th>
+                                <th>Result Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in transformations %}
+                            <tr>
+                                <td>{{ t.source }}</td>
+                                <td><span class="ae-transform-type">{{ t.type }}</span></td>
+                                <td><code>{{ t.name }}</code></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No transformations were applied.</p>
+                {% endif %}
+            </section>
+        </div>
+
+        <!-- ─── Transparency Tab ────────────────────────────── -->
+        <div id="transparency-tab" class="tab-content">
+            <section class="report-section">
+                <h3 class="section-subtitle">Transparency &amp; Data Mining</h3>
+
+                <div class="ae-summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">Combinations Tested</div>
+                        <div class="ae-card-value">{{ n_combinations_tested|default(0) }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">Models Estimated</div>
+                        <div class="ae-card-value">{{ n_models_tested|default(0) }}</div>
+                    </div>
+                    <div class="ae-summary-card">
+                        <div class="ae-card-label">Transformations</div>
+                        <div class="ae-card-value">{{ transformations|length if transformations else 0 }}</div>
+                    </div>
+                </div>
+
+                {% if datamining_warning %}
+                <div class="ae-datamining-warning">
+                    <strong>Warning:</strong> More than 100 model/variable combinations
+                    ({{ n_combinations_tested }}) were evaluated. This increases the risk
+                    of spurious results due to multiple testing. Report these numbers in
+                    your research for transparency.
+                </div>
+                {% endif %}
+
+                <div class="ae-disclaimer">
+                    <strong>Disclaimer:</strong> AutoExperiment automates model selection
+                    using econometric criteria and diagnostic tests. However, automated
+                    selection does not replace theoretical justification. Results should
+                    be interpreted with caution, validated on held-out data when possible,
+                    and should not be treated as evidence of causal relationships without
+                    further identification arguments.
+                </div>
+            </section>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tabs
+    PanelBoxTabs.init('ae-tabs');
+
+    // Sortable ranking table
+    var table = document.getElementById('ranking-table');
+    if (table) {
+        var headers = table.querySelectorAll('th');
+        headers.forEach(function(header, colIdx) {
+            header.addEventListener('click', function() {
+                sortTable(table, colIdx, header);
+            });
+        });
+    }
+});
+
+function sortTable(table, colIdx, header) {
+    var tbody = table.querySelector('tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var isAsc = header.classList.contains('sort-asc');
+
+    // Clear sort classes
+    table.querySelectorAll('th').forEach(function(th) {
+        th.classList.remove('sort-asc', 'sort-desc');
+    });
+
+    header.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
+    var dir = isAsc ? -1 : 1;
+
+    rows.sort(function(a, b) {
+        var aText = a.cells[colIdx].textContent.trim();
+        var bText = b.cells[colIdx].textContent.trim();
+        var aNum = parseFloat(aText);
+        var bNum = parseFloat(bText);
+
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return (aNum - bNum) * dir;
+        }
+        return aText.localeCompare(bText) * dir;
+    });
+
+    rows.forEach(function(row) { tbody.appendChild(row); });
+}
+</script>
+{% endblock %}

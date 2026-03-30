@@ -78,7 +78,12 @@ class TestDynamicBinaryPanel:
     def test_simple_initial_conditions(self):
         """Test simple approach (dropping first period)."""
         model = DynamicBinaryPanel(
-            self.y, self.X, self.entity, self.time, initial_conditions="simple", effects="pooled"
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
         )
 
         result = model.fit()
@@ -136,7 +141,12 @@ class TestDynamicBinaryPanel:
     def test_predict(self):
         """Test prediction functionality."""
         model = DynamicBinaryPanel(
-            self.y, self.X, self.entity, self.time, initial_conditions="simple", effects="pooled"
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
         )
 
         result = model.fit()
@@ -154,7 +164,12 @@ class TestDynamicBinaryPanel:
     def test_marginal_effects(self):
         """Test marginal effects calculation."""
         model = DynamicBinaryPanel(
-            self.y, self.X, self.entity, self.time, initial_conditions="simple", effects="pooled"
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
         )
 
         result = model.fit()
@@ -184,9 +199,8 @@ class TestDynamicBinaryPanel:
 
     def test_missing_identifiers(self):
         """Test error handling for missing entity/time identifiers."""
-        with pytest.raises(ValueError, match="Entity and time identifiers required"):  # noqa: PT012
-            model = DynamicBinaryPanel(self.y, self.X, entity=None, time=None)
-            model.fit()
+        with pytest.raises(ValueError, match="Entity and time identifiers required"):
+            DynamicBinaryPanel(self.y, self.X, entity=None, time=None).fit()
 
     def test_data_preparation(self):
         """Test data preparation with lags."""

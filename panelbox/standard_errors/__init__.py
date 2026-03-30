@@ -37,7 +37,11 @@ from .clustered import (
 from .comparison import ComparisonResult, StandardErrorComparison
 
 # Driscoll-Kraay standard errors
-from .driscoll_kraay import DriscollKraayResult, DriscollKraayStandardErrors, driscoll_kraay
+from .driscoll_kraay import (
+    DriscollKraayResult,
+    DriscollKraayStandardErrors,
+    driscoll_kraay,
+)
 
 # Newey-West HAC standard errors
 from .newey_west import NeweyWestResult, NeweyWestStandardErrors, newey_west

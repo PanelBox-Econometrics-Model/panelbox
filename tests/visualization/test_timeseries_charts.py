@@ -215,7 +215,10 @@ class TestTrendLineChart:
 
     def test_with_nan_values(self):
         """Test with NaN values in series."""
-        data = {"time": pd.date_range("2020-01-01", periods=50), "values": np.random.randn(50)}
+        data = {
+            "time": pd.date_range("2020-01-01", periods=50),
+            "values": np.random.randn(50),
+        }
         data["values"][10:15] = np.nan  # Add some NaN values
 
         chart = TrendLineChart()

@@ -1061,7 +1061,13 @@ class TestSignificanceStars:
         # 0.05 < p < 0.1 -> 1.645 < |z| < 1.96
         # p > 0.1 -> |z| < 1.645
         me = MarginalEffectsResult(
-            marginal_effects={"x0": 0.35, "x1": 0.03, "x2": 0.022, "x3": 0.018, "x4": 0.005},
+            marginal_effects={
+                "x0": 0.35,
+                "x1": 0.03,
+                "x2": 0.022,
+                "x3": 0.018,
+                "x4": 0.005,
+            },
             std_errors={"x0": 0.01, "x1": 0.01, "x2": 0.01, "x3": 0.01, "x4": 0.01},
             parent_result=None,
         )

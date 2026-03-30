@@ -412,7 +412,14 @@ class PedroniTest:
             pvalues["panel_v"] = 1 - stats.norm.cdf(panel_stats["panel_v"])
 
         # All others are left-tailed
-        for key in ["panel_rho", "panel_pp", "panel_adf", "group_rho", "group_pp", "group_adf"]:
+        for key in [
+            "panel_rho",
+            "panel_pp",
+            "panel_adf",
+            "group_rho",
+            "group_pp",
+            "group_adf",
+        ]:
             key.replace("panel_", "").replace("group_", "")
             if key.startswith("panel"):
                 stat = panel_stats.get(key.replace("panel_", "panel_"))

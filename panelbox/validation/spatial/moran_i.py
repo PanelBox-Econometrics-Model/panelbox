@@ -217,7 +217,11 @@ class MoranIPanelTest(ValidationTest):
         """
         # Reshape residuals to (T, N) format
         df = pd.DataFrame(
-            {"entity": self.entity_index, "time": self.time_index, "residual": self.residuals}
+            {
+                "entity": self.entity_index,
+                "time": self.time_index,
+                "residual": self.residuals,
+            }
         )
 
         # Sort by time first, then entity
@@ -399,7 +403,11 @@ class MoranIPanelTest(ValidationTest):
         for _ in range(n_permutations):
             # Permute residuals within each time period
             df = pd.DataFrame(
-                {"entity": self.entity_index, "time": self.time_index, "residual": self.residuals}
+                {
+                    "entity": self.entity_index,
+                    "time": self.time_index,
+                    "residual": self.residuals,
+                }
             )
 
             # Permute within each time period
@@ -519,7 +527,10 @@ class MoranIPanelTest(ValidationTest):
 
             # Expected value line
             ax.axhline(
-                y=expected[0], color="gray", linestyle="--", label="E[I] (no autocorrelation)"
+                y=expected[0],
+                color="gray",
+                linestyle="--",
+                label="E[I] (no autocorrelation)",
             )
 
             # Highlight significant periods

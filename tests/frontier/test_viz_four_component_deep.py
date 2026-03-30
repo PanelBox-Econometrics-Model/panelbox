@@ -18,9 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from panelbox.frontier.visualization.four_component_plots import (
-    plot_efficiency_scatter,
-)
+from panelbox.frontier.visualization.four_component_plots import plot_efficiency_scatter
 
 
 @pytest.fixture(autouse=True)

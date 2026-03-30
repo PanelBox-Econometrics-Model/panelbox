@@ -1,0 +1,337 @@
+/**
+ * PanelBox Reports - AutoExperiment Report Styles
+ * =================================================
+ *
+ * Styles specific to AutoExperiment reports.
+ * Extends base_styles.css and report_components.css.
+ *
+ * Version: 1.0.0
+ */
+
+/* ─── Executive summary cards ──────────────────────────────── */
+
+.ae-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ae-summary-card {
+    background: #fff;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 8px);
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+}
+
+.ae-summary-card .ae-card-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted, #718096);
+    margin-bottom: 0.35rem;
+}
+
+.ae-summary-card .ae-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a202c);
+}
+
+.ae-summary-card .ae-card-value.ae-valid   { color: var(--color-success, #10b981); }
+.ae-summary-card .ae-card-value.ae-warning { color: var(--color-warning, #f59e0b); }
+.ae-summary-card .ae-card-value.ae-invalid { color: var(--color-danger, #ef4444); }
+
+/* ─── Data mining warning ──────────────────────────────────── */
+
+.ae-datamining-warning {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-left: 4px solid #f59e0b;
+    border-radius: var(--radius-md, 6px);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    color: #92400e;
+    font-size: 0.9rem;
+}
+
+.ae-datamining-warning strong {
+    color: #78350f;
+}
+
+/* ─── Ranking table ────────────────────────────────────────── */
+
+.ae-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    margin-bottom: 1.5rem;
+}
+
+.ae-ranking-table th {
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.ae-ranking-table th:hover {
+    background: var(--color-primary-dark, #1e40af);
+}
+
+.ae-ranking-table th .sort-arrow {
+    margin-left: 0.3em;
+    font-size: 0.7em;
+    opacity: 0.5;
+}
+
+.ae-ranking-table th.sort-asc .sort-arrow,
+.ae-ranking-table th.sort-desc .sort-arrow {
+    opacity: 1;
+}
+
+.ae-ranking-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+    text-align: right;
+    vertical-align: middle;
+}
+
+.ae-ranking-table td:first-child,
+.ae-ranking-table td:nth-child(2),
+.ae-ranking-table td:nth-child(3) {
+    text-align: left;
+}
+
+.ae-ranking-table tbody tr:nth-child(even) {
+    background: var(--color-bg-alt, #f7fafc);
+}
+
+.ae-ranking-table tbody tr:hover {
+    background: var(--color-hover, #ebf4ff);
+}
+
+.ae-ranking-table tbody tr.ae-row-best {
+    background: #ecfdf5;
+    font-weight: 600;
+}
+
+/* Classification badges */
+.ae-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ae-badge-valid   { background: #d1fae5; color: #065f46; }
+.ae-badge-warning { background: #fef3c7; color: #92400e; }
+.ae-badge-invalid { background: #fee2e2; color: #991b1b; }
+
+/* ─── Coefficient table ────────────────────────────────────── */
+
+.ae-coef-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    margin-bottom: 1.5rem;
+}
+
+.ae-coef-table th {
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    padding: 0.55rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.ae-coef-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+    text-align: right;
+    font-family: var(--font-mono, 'Fira Code', monospace);
+    font-size: 0.83rem;
+}
+
+.ae-coef-table td:first-child {
+    text-align: left;
+    font-family: inherit;
+    font-weight: 600;
+    color: var(--color-text-secondary, #4a5568);
+}
+
+.ae-coef-table td:last-child {
+    text-align: center;
+    font-family: inherit;
+}
+
+.ae-coef-table tbody tr:nth-child(even) {
+    background: var(--color-bg-alt, #f7fafc);
+}
+
+.ae-coef-table tbody tr:hover {
+    background: var(--color-hover, #ebf4ff);
+}
+
+/* ─── Test matrix (heatmap) ────────────────────────────────── */
+
+.ae-test-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin-bottom: 1.5rem;
+}
+
+.ae-test-matrix th {
+    padding: 0.5rem 0.6rem;
+    background: var(--color-gray-100, #f3f4f6);
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid var(--color-border, #e2e8f0);
+    font-size: 0.8rem;
+}
+
+.ae-test-matrix th:first-child {
+    text-align: left;
+    min-width: 120px;
+}
+
+.ae-test-matrix td {
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+    border: 1px solid var(--color-border, #e2e8f0);
+    font-weight: 600;
+}
+
+.ae-test-matrix td:first-child {
+    text-align: left;
+    font-weight: 500;
+    background: var(--color-gray-50, #f9fafb);
+}
+
+.ae-cell-pass {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.ae-cell-fail {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ae-cell-na {
+    background: var(--color-gray-50, #f9fafb);
+    color: var(--color-text-muted, #9ca3af);
+}
+
+/* ─── BIC path chart ───────────────────────────────────────── */
+
+.ae-bic-chart {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.ae-bic-chart img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md, 6px);
+    border: 1px solid var(--color-border, #e2e8f0);
+}
+
+/* ─── Transformation table ─────────────────────────────────── */
+
+.ae-transform-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    margin-bottom: 1.5rem;
+}
+
+.ae-transform-table th {
+    background: var(--color-gray-100, #f3f4f6);
+    color: var(--color-text-primary, #1a202c);
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border, #e2e8f0);
+}
+
+.ae-transform-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.ae-transform-table tbody tr:nth-child(even) {
+    background: var(--color-bg-alt, #f7fafc);
+}
+
+.ae-transform-type {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-sm, 3px);
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+/* ─── Variable selection detail ────────────────────────────── */
+
+.ae-var-selected {
+    color: var(--color-success, #10b981);
+}
+
+.ae-var-rejected {
+    color: var(--color-danger, #ef4444);
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* ─── Transparency disclaimer ──────────────────────────────── */
+
+.ae-disclaimer {
+    background: var(--color-gray-50, #f9fafb);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-md, 6px);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary, #4a5568);
+}
+
+.ae-disclaimer strong {
+    color: var(--color-text-primary, #1a202c);
+}
+
+/* ─── SE justification ─────────────────────────────────────── */
+
+.ae-se-justification {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md, 6px);
+    padding: 0.85rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+    color: #1e40af;
+}
+
+/* ─── Print styles ─────────────────────────────────────────── */
+
+@media print {
+    .ae-ranking-table th { background: #ddd !important; color: #000 !important; }
+    .ae-coef-table th    { background: #ddd !important; color: #000 !important; }
+    .ae-badge-valid      { border: 1px solid #065f46; }
+    .ae-badge-warning    { border: 1px solid #92400e; }
+    .ae-badge-invalid    { border: 1px solid #991b1b; }
+}

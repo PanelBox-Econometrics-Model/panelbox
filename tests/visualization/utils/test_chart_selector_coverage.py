@@ -33,9 +33,7 @@ class TestChartRecommendation:
         assert "test_func()" in s
 
     def test_chart_recommendations_populated(self):
-        from panelbox.visualization.utils.chart_selector import (
-            CHART_RECOMMENDATIONS,
-        )
+        from panelbox.visualization.utils.chart_selector import CHART_RECOMMENDATIONS
 
         assert len(CHART_RECOMMENDATIONS) > 10
 
@@ -212,7 +210,9 @@ class TestInteractiveDecisionTree:
 
     def test_interactive_tree_quit(self):
         """Cover lines 516-536: entering and quitting the tree."""
-        from panelbox.visualization.utils.chart_selector import _interactive_decision_tree
+        from panelbox.visualization.utils.chart_selector import (
+            _interactive_decision_tree,
+        )
 
         with patch("builtins.input", return_value="q"):
             result = _interactive_decision_tree()
@@ -220,7 +220,9 @@ class TestInteractiveDecisionTree:
 
     def test_interactive_tree_invalid_then_quit(self):
         """Cover lines 538-540: invalid choice then quit."""
-        from panelbox.visualization.utils.chart_selector import _interactive_decision_tree
+        from panelbox.visualization.utils.chart_selector import (
+            _interactive_decision_tree,
+        )
 
         with patch("builtins.input", side_effect=["z", "q"]):
             result = _interactive_decision_tree()

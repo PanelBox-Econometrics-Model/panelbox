@@ -21,7 +21,11 @@ def test_panel_var_forecasting():
 
     # Prepare data
     pvar_data = PanelVARData(
-        data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=2
+        data,
+        endog_vars=["y1", "y2", "y3"],
+        entity_col="entity",
+        time_col="time",
+        lags=2,
     )
 
     # Fit model
@@ -59,7 +63,11 @@ def test_causality_network():
 
     # Prepare data
     pvar_data = PanelVARData(
-        data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=2
+        data,
+        endog_vars=["y1", "y2", "y3"],
+        entity_col="entity",
+        time_col="time",
+        lags=2,
     )
 
     # Fit model

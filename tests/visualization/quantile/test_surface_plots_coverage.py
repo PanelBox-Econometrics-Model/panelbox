@@ -30,7 +30,9 @@ class MockResult:
         np.random.seed(42)
         for tau in tau_list:
             mock_res = type(
-                "Res", (), {"params": np.array([1.0 + tau, 0.5 - tau * 0.3, -0.2 + tau * 0.1])}
+                "Res",
+                (),
+                {"params": np.array([1.0 + tau, 0.5 - tau * 0.3, -0.2 + tau * 0.1])},
             )()
             self.results[tau] = mock_res
 

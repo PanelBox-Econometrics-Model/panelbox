@@ -196,7 +196,12 @@ class ValidationDataTransformer:
         failed = total - passed
         pass_rate = 100.0 * passed / total if total > 0 else 0.0
 
-        return {"total_tests": total, "passed": passed, "failed": failed, "pass_rate": pass_rate}
+        return {
+            "total_tests": total,
+            "passed": passed,
+            "failed": failed,
+            "pass_rate": pass_rate,
+        }
 
     def _extract_model_info(self, validation_report: Any) -> dict[str, Any]:
         """

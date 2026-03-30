@@ -14,7 +14,10 @@ References:
 import numpy as np
 import pytest
 
-from panelbox.models.count.zero_inflated import ZeroInflatedNegativeBinomial, ZeroInflatedPoisson
+from panelbox.models.count.zero_inflated import (
+    ZeroInflatedNegativeBinomial,
+    ZeroInflatedPoisson,
+)
 
 
 class TestZeroInflatedPoissonValidation:

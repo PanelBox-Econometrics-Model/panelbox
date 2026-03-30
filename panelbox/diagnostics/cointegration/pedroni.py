@@ -63,9 +63,7 @@ class PedroniResult:
     n_entities: int
     n_time: int
 
-    def reject_at(
-        self, alpha: float = 0.05, test: str | None = None
-    ) -> bool | dict[str, bool]:
+    def reject_at(self, alpha: float = 0.05, test: str | None = None) -> bool | dict[str, bool]:
         """
         Check if null hypothesis is rejected at given significance level.
 

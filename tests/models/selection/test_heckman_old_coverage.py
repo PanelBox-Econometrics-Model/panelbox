@@ -171,7 +171,10 @@ class TestPanelHeckmanTwoStep:
 
     def test_two_step_fit(self, heckman_data):
         """Fit Heckman model with two-step procedure."""
-        from panelbox.models.selection.heckman_old import PanelHeckman, PanelHeckmanResult
+        from panelbox.models.selection.heckman_old import (
+            PanelHeckman,
+            PanelHeckmanResult,
+        )
 
         model = PanelHeckman(**heckman_data)
         result = model.fit()
@@ -229,7 +232,10 @@ class TestPanelHeckmanMLE:
 
     def test_mle_fit(self, heckman_data):
         """Fit Heckman model with MLE."""
-        from panelbox.models.selection.heckman_old import PanelHeckman, PanelHeckmanResult
+        from panelbox.models.selection.heckman_old import (
+            PanelHeckman,
+            PanelHeckmanResult,
+        )
 
         model = PanelHeckman(**heckman_data, method="mle")
         result = model.fit()
@@ -361,7 +367,10 @@ class TestPanelHeckmanResult:
 
     def test_summary_positive_rho(self):
         """Summary branch for positive rho (> 0.1)."""
-        from panelbox.models.selection.heckman_old import PanelHeckman, PanelHeckmanResult
+        from panelbox.models.selection.heckman_old import (
+            PanelHeckman,
+            PanelHeckmanResult,
+        )
 
         # Create a result with high positive rho
         rng = np.random.RandomState(99)
@@ -391,7 +400,10 @@ class TestPanelHeckmanResult:
 
     def test_summary_negative_rho(self):
         """Summary branch for negative rho (< -0.1)."""
-        from panelbox.models.selection.heckman_old import PanelHeckman, PanelHeckmanResult
+        from panelbox.models.selection.heckman_old import (
+            PanelHeckman,
+            PanelHeckmanResult,
+        )
 
         rng = np.random.RandomState(99)
         n = 50
@@ -420,7 +432,10 @@ class TestPanelHeckmanResult:
 
     def test_summary_small_rho(self):
         """Summary branch for small rho (abs(rho) <= 0.1)."""
-        from panelbox.models.selection.heckman_old import PanelHeckman, PanelHeckmanResult
+        from panelbox.models.selection.heckman_old import (
+            PanelHeckman,
+            PanelHeckmanResult,
+        )
 
         rng = np.random.RandomState(99)
         n = 50

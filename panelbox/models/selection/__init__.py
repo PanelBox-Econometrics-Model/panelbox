@@ -12,7 +12,12 @@ This module provides models for handling sample selection bias:
 from __future__ import annotations
 
 from .heckman import PanelHeckman, PanelHeckmanResult
-from .inverse_mills import compute_imr, imr_derivative, imr_diagnostics, test_selection_effect
+from .inverse_mills import (
+    compute_imr,
+    imr_derivative,
+    imr_diagnostics,
+    test_selection_effect,
+)
 
 __all__ = [
     "PanelHeckman",

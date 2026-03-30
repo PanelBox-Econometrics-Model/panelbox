@@ -144,7 +144,11 @@ def test_fe_vs_stata():
         variance_comps = [
             ("sigma_u", results.sigma_u, stata_results["sigma_u"]),
             ("sigma_e", results.sigma_e, stata_results["sigma_e"]),
-            ("rho", results.rho if hasattr(results, "rho") else 0, stata_results["rho"]),
+            (
+                "rho",
+                results.rho if hasattr(results, "rho") else 0,
+                stata_results["rho"],
+            ),
         ]
 
         for name, pb_val, stata_val in variance_comps:
@@ -215,8 +219,7 @@ def instructions():
     print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR MANUAL COMPARISON")
     print("=" * 80)
-    print(
-        """
+    print("""
     1. Run Stata script:
        cd tests/benchmarks/stata_comparison
        stata -b do fixed_effects.do
@@ -237,8 +240,7 @@ def instructions():
        use "https://www.stata-press.com/data/r18/grunfeld.dta", clear
        xtset company year
        xtreg invest value capital, fe
-    """
-    )
+    """)
 
 
 if __name__ == "__main__":

@@ -314,7 +314,12 @@ class TestWesterlundEdgeCases:
 
         # Should handle unbalanced panel
         result = westerlund_test(
-            data, entity_col="entity", time_col="time", y_var="y", x_vars="x", use_bootstrap=False
+            data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
+            use_bootstrap=False,
         )
 
         assert isinstance(result, WesterlundResult)

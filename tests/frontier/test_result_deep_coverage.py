@@ -288,7 +288,15 @@ class TestResiduals:
         result = _make_sfresult(
             model=model,
             param_values=np.array([0.5, 0.4, 0.3, 0.2, 0.05, 0.1, 0.01]),
-            param_names=["labor", "capital", "sigma_v", "sigma_u", "eta", "delta_1", "mu"],
+            param_names=[
+                "labor",
+                "capital",
+                "sigma_v",
+                "sigma_u",
+                "eta",
+                "delta_1",
+                "mu",
+            ],
         )
         resid = result.residuals
         assert len(resid) == n_obs
@@ -1007,7 +1015,15 @@ class TestElasticitiesTranslogBranches:
         model = _make_mock_model(n_obs=n_obs, X_df=X_df)
 
         # Has squared terms but no interaction term
-        param_names = ["const", "ln_K", "ln_L", "ln_K_sq", "ln_L_sq", "sigma_v", "sigma_u"]
+        param_names = [
+            "const",
+            "ln_K",
+            "ln_L",
+            "ln_K_sq",
+            "ln_L_sq",
+            "sigma_v",
+            "sigma_u",
+        ]
         param_values = np.array([1.0, 0.6, 0.3, 0.05, 0.04, 0.3, 0.2])
         hessian = -np.eye(len(param_values)) * 10.0
 

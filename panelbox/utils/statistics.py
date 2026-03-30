@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def compute_sandwich_covariance(
-    hessian: np.ndarray, gradient_contributions: np.ndarray, entity_id: np.ndarray | None = None
+    hessian: np.ndarray,
+    gradient_contributions: np.ndarray,
+    entity_id: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Compute sandwich (robust) covariance matrix.
@@ -218,7 +220,10 @@ def wald_test(
 
 
 def hausman_test(
-    params_fe: np.ndarray, params_re: np.ndarray, vcov_fe: np.ndarray, vcov_re: np.ndarray
+    params_fe: np.ndarray,
+    params_re: np.ndarray,
+    vcov_fe: np.ndarray,
+    vcov_re: np.ndarray,
 ) -> dict:
     """
     Perform Hausman test for fixed vs random effects.
@@ -283,7 +288,9 @@ def compute_standard_errors(vcov: np.ndarray) -> np.ndarray:
 
 
 def compute_t_statistics(
-    params: np.ndarray, standard_errors: np.ndarray, null_values: np.ndarray | None = None
+    params: np.ndarray,
+    standard_errors: np.ndarray,
+    null_values: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Compute t-statistics for parameters.
@@ -335,7 +342,10 @@ def compute_p_values(t_statistics: np.ndarray, df: int | None = None) -> np.ndar
 
 
 def compute_confidence_intervals(
-    params: np.ndarray, standard_errors: np.ndarray, alpha: float = 0.05, df: int | None = None
+    params: np.ndarray,
+    standard_errors: np.ndarray,
+    alpha: float = 0.05,
+    df: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute confidence intervals for parameters.

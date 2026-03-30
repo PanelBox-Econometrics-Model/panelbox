@@ -10,7 +10,13 @@ This module provides a comprehensive suite of spatial diagnostics including:
 
 from __future__ import annotations
 
-from .lm_tests import LMErrorTest, LMLagTest, RobustLMErrorTest, RobustLMLagTest, run_lm_tests
+from .lm_tests import (
+    LMErrorTest,
+    LMLagTest,
+    RobustLMErrorTest,
+    RobustLMLagTest,
+    run_lm_tests,
+)
 from .moran_i import MoranIByPeriodResult, MoranIPanelTest
 from .spatial_hausman import SpatialHausmanTest
 from .utils import standardize_spatial_weights, validate_spatial_weights

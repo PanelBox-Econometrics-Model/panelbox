@@ -378,7 +378,10 @@ class CSSManager:
         """
         css = self.compile()
 
-        sizes = {"total": len(css.encode("utf-8")), "total_kb": len(css.encode("utf-8")) / 1024}
+        sizes = {
+            "total": len(css.encode("utf-8")),
+            "total_kb": len(css.encode("utf-8")) / 1024,
+        }
 
         # Estimate per layer
         for name, layer in self.layers.items():

@@ -22,7 +22,10 @@ except ImportError:
     plt = None
 
 from panelbox.models.static.fixed_effects import FixedEffects
-from panelbox.validation.robustness.sensitivity import SensitivityAnalysis, SensitivityResults
+from panelbox.validation.robustness.sensitivity import (
+    SensitivityAnalysis,
+    SensitivityResults,
+)
 
 # ============================================================================
 # Test Fixtures
@@ -678,7 +681,8 @@ class TestResultsModelNone:
         fitted_model._model = None
         try:
             with pytest.raises(
-                ValueError, match="Results object must contain a reference to the original model"
+                ValueError,
+                match="Results object must contain a reference to the original model",
             ):
                 SensitivityAnalysis(fitted_model)
         finally:

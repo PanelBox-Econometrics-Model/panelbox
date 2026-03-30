@@ -42,7 +42,11 @@ class MarkdownExporter:
         self.include_toc = include_toc
         self.github_flavor = github_flavor
 
-    _SEVERITY_EMOJI = {"CRITICAL": "\U0001f534", "HIGH": "\U0001f7e0", "MEDIUM": "\U0001f7e1"}
+    _SEVERITY_EMOJI = {
+        "CRITICAL": "\U0001f534",
+        "HIGH": "\U0001f7e0",
+        "MEDIUM": "\U0001f7e1",
+    }
 
     def _format_model_info(self, model_info: dict[str, Any]) -> list[str]:
         """Format model information section."""
@@ -375,9 +379,7 @@ class MarkdownExporter:
 
         return "\n".join(lines)
 
-    def save(
-        self, markdown_content: str, output_path: str | Path, overwrite: bool = False
-    ) -> Path:
+    def save(self, markdown_content: str, output_path: str | Path, overwrite: bool = False) -> Path:
         """
         Save Markdown content to file.
 

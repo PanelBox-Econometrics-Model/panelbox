@@ -196,7 +196,10 @@ class DynamicBinaryPanel(NonlinearPanelModel):
         # print(f"Valid obs: {valid_obs.sum()} out of {len(valid_obs)}")
 
         self.exog_augmented = np.column_stack(
-            [self.exog[valid_obs], self.endog_lagged[valid_obs].reshape(-1, 1)]  # Ensure 2D
+            [
+                self.exog[valid_obs],
+                self.endog_lagged[valid_obs].reshape(-1, 1),
+            ]  # Ensure 2D
         )
 
         self.endog_clean = self.endog[valid_obs]

@@ -59,7 +59,9 @@ def panel_data_with_heteroskedasticity():
     return pd.concat(data_list, ignore_index=True)
 
 
-def test_wild_bootstrap_vs_residual_with_heteroskedasticity(panel_data_with_heteroskedasticity):
+def test_wild_bootstrap_vs_residual_with_heteroskedasticity(
+    panel_data_with_heteroskedasticity,
+):
     """
     Test that wild bootstrap is more robust than residual bootstrap under heteroskedasticity.
 

@@ -194,7 +194,9 @@ class ComparisonResult(BaseResult):
         dict_keys(['models', 'comparison_table', 'summary', 'charts'])
         """
         from panelbox.visualization import create_comparison_charts
-        from panelbox.visualization.transformers.comparison import ComparisonDataTransformer
+        from panelbox.visualization.transformers.comparison import (
+            ComparisonDataTransformer,
+        )
 
         # Convert models dict to list and names
         model_names = list(self.models.keys())

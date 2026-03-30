@@ -538,9 +538,7 @@ def to_markdown(result) -> str:
     return "\n".join(lines)
 
 
-def compare_models(
-    models: dict[str, Any], output_format: str = "dataframe"
-) -> pd.DataFrame | str:
+def compare_models(models: dict[str, Any], output_format: str = "dataframe") -> pd.DataFrame | str:
     """Compare multiple SFA models side by side.
 
     Parameters

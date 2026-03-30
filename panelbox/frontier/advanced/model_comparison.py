@@ -341,7 +341,13 @@ def compare_with_true_effects(
             "True FE": [0.0, 0.0, 0.0, 1.0, 1.0],
             "True RE": [0.0, 0.0, 0.0, 1.0, 1.0],
         },
-        index=["Overall (4C)", "Persistent (4C)", "Transient (4C)", "True FE", "True RE"],
+        index=[
+            "Overall (4C)",
+            "Persistent (4C)",
+            "Transient (4C)",
+            "True FE",
+            "True RE",
+        ],
     )
 
     return ModelComparisonResult(
@@ -497,7 +503,9 @@ def compare_all_models(
 
     # Compute correlation matrix
     corr_matrix = pd.DataFrame(
-        np.corrcoef(list(corr_data.values())), index=corr_data.keys(), columns=corr_data.keys()
+        np.corrcoef(list(corr_data.values())),
+        index=corr_data.keys(),
+        columns=corr_data.keys(),
     )
 
     return ModelComparisonResult(

@@ -472,7 +472,11 @@ class GMMTests:
             df=df_diff,
             distribution="chi2",
             null_hypothesis=f"{subset_name} instruments are valid",
-            details={"J_full": J_full, "J_subset": J_subset, "n_instruments_tested": df_diff},
+            details={
+                "J_full": J_full,
+                "J_subset": J_subset,
+                "n_instruments_tested": df_diff,
+            },
         )
 
     def weak_instruments_test(self, X: np.ndarray, Z: np.ndarray) -> tuple[float, bool]:

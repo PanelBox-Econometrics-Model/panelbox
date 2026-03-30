@@ -41,7 +41,9 @@ class TestValidationReportInit:
         )
 
         report = ValidationReport(
-            model_info=model_info, serial_tests={"Wooldridge": test1}, het_tests={"White": test2}
+            model_info=model_info,
+            serial_tests={"Wooldridge": test1},
+            het_tests={"White": test2},
         )
 
         assert len(report.serial_tests) == 1
@@ -125,7 +127,12 @@ class TestValidationReportSummary:
 
     def test_summary_with_tests(self):
         """Test summary with test results."""
-        model_info = {"model_type": "FE", "formula": "y ~ x", "nobs": 100, "n_entities": 5}
+        model_info = {
+            "model_type": "FE",
+            "formula": "y ~ x",
+            "nobs": 100,
+            "n_entities": 5,
+        }
 
         test_reject = ValidationTestResult(
             test_name="Serial Test",
@@ -431,7 +438,12 @@ class TestSummaryAsDataFrame:
         """Test that summary(as_dataframe=True) returns a DataFrame."""
         import pandas as pd
 
-        model_info = {"model_type": "FE", "formula": "y ~ x", "nobs": 100, "n_entities": 5}
+        model_info = {
+            "model_type": "FE",
+            "formula": "y ~ x",
+            "nobs": 100,
+            "n_entities": 5,
+        }
         test = ValidationTestResult(
             test_name="Test",
             statistic=3.0,

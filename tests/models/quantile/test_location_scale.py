@@ -60,7 +60,10 @@ class TestLocationScale:
     def test_basic_estimation(self, simulated_data):
         """Test basic location-scale estimation."""
         model = LocationScale(
-            simulated_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], distribution="normal"
+            simulated_data,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            distribution="normal",
         )
 
         result = model.fit(verbose=False)
@@ -108,7 +111,11 @@ class TestLocationScale:
             kwargs = {"df_t": 5} if dist == "t" else {}
 
             model = LocationScale(
-                simulated_data, formula="y ~ X1 + X2", tau=0.5, distribution=dist, **kwargs
+                simulated_data,
+                formula="y ~ X1 + X2",
+                tau=0.5,
+                distribution=dist,
+                **kwargs,
             )
 
             result = model.fit()
@@ -136,7 +143,10 @@ class TestLocationScale:
     def test_predict_quantiles(self, simulated_data):
         """Test quantile prediction."""
         model = LocationScale(
-            simulated_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], distribution="normal"
+            simulated_data,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            distribution="normal",
         )
 
         model.fit()
@@ -283,7 +293,10 @@ class TestLocationScaleWithRealData:
 
         # Estimate
         model = LocationScale(
-            panel_data, formula="y ~ X1 + X2", tau=np.arange(0.1, 1.0, 0.1), distribution="normal"
+            panel_data,
+            formula="y ~ X1 + X2",
+            tau=np.arange(0.1, 1.0, 0.1),
+            distribution="normal",
         )
 
         model.fit()
@@ -389,7 +402,10 @@ class TestLocationScaleUncovered:
         )
         panel_data = PanelData(df, entity_col="entity", time_col="time")
         model = LocationScale(
-            panel_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], distribution="uniform"
+            panel_data,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            distribution="uniform",
         )
         result = model.fit()
         assert result is not None

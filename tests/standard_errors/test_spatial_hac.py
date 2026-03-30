@@ -140,7 +140,9 @@ class TestSpatialHAC:
 
         # Uniform kernel
         hac_uniform = SpatialHAC(
-            distance_matrix=data["distance_matrix"], spatial_cutoff=cutoff, spatial_kernel="uniform"
+            distance_matrix=data["distance_matrix"],
+            spatial_cutoff=cutoff,
+            spatial_kernel="uniform",
         )
         weights_uniform = hac_uniform._spatial_kernel_weight(distances)
         expected_uniform = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 0.0])
@@ -234,7 +236,9 @@ class TestSpatialHAC:
 
         # Spatial HAC
         hac = SpatialHAC(
-            distance_matrix=data["distance_matrix"], spatial_cutoff=100, temporal_cutoff=2
+            distance_matrix=data["distance_matrix"],
+            spatial_cutoff=100,
+            temporal_cutoff=2,
         )
 
         comparison = hac.compare_with_standard_errors(
@@ -309,7 +313,9 @@ class TestSpatialHAC:
 
         for t_cutoff in temp_cutoffs:
             hac = SpatialHAC(
-                distance_matrix=data["distance_matrix"], spatial_cutoff=50, temporal_cutoff=t_cutoff
+                distance_matrix=data["distance_matrix"],
+                spatial_cutoff=50,
+                temporal_cutoff=t_cutoff,
             )
 
             V_hac = hac.compute(
@@ -353,7 +359,9 @@ class TestSpatialHAC:
 
         # Spatial HAC
         hac = SpatialHAC(
-            distance_matrix=data["distance_matrix"], spatial_cutoff=100, temporal_cutoff=2
+            distance_matrix=data["distance_matrix"],
+            spatial_cutoff=100,
+            temporal_cutoff=2,
         )
 
         V_hac = hac.compute(
@@ -406,7 +414,10 @@ class TestSpatialHAC:
 
         with pytest.warns(UserWarning, match="Unbalanced panel"):
             V_hac = hac.compute(
-                X=X, residuals=residuals, entity_index=entity_index, time_index=time_index
+                X=X,
+                residuals=residuals,
+                entity_index=entity_index,
+                time_index=time_index,
             )
 
         # Should still compute despite warning

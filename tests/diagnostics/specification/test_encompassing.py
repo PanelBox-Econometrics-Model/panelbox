@@ -135,7 +135,11 @@ class TestWaldEncompassingTest:
 
         # Unrestricted: y ~ x1 + x2 (correct)
         X_u = np.column_stack(
-            [np.ones(nested_ols_data["n"]), nested_ols_data["x1"], nested_ols_data["x2"]]
+            [
+                np.ones(nested_ols_data["n"]),
+                nested_ols_data["x1"],
+                nested_ols_data["x2"],
+            ]
         )
         result_u = OLS(nested_ols_data["y"], X_u).fit()
 
@@ -150,7 +154,11 @@ class TestWaldEncompassingTest:
         """Test that Wald test doesn't reject when restriction is valid."""
         # Restricted: y ~ x1 + x2 (correct)
         X_r = np.column_stack(
-            [np.ones(nested_ols_data["n"]), nested_ols_data["x1"], nested_ols_data["x2"]]
+            [
+                np.ones(nested_ols_data["n"]),
+                nested_ols_data["x1"],
+                nested_ols_data["x2"],
+            ]
         )
         result_r = OLS(nested_ols_data["y"], X_r).fit()
 
@@ -180,7 +188,11 @@ class TestWaldEncompassingTest:
 
         # Unrestricted: y ~ x1 + x2
         X_u = np.column_stack(
-            [np.ones(nested_ols_data["n"]), nested_ols_data["x1"], nested_ols_data["x2"]]
+            [
+                np.ones(nested_ols_data["n"]),
+                nested_ols_data["x1"],
+                nested_ols_data["x2"],
+            ]
         )
         result_u = OLS(nested_ols_data["y"], X_u).fit()
 
@@ -195,7 +207,11 @@ class TestWaldEncompassingTest:
     def test_wald_test_error_when_not_nested(self, nested_ols_data):
         """Test error when unrestricted doesn't have more parameters."""
         X1 = np.column_stack(
-            [np.ones(nested_ols_data["n"]), nested_ols_data["x1"], nested_ols_data["x2"]]
+            [
+                np.ones(nested_ols_data["n"]),
+                nested_ols_data["x1"],
+                nested_ols_data["x2"],
+            ]
         )
         result1 = OLS(nested_ols_data["y"], X1).fit()
 
@@ -235,7 +251,11 @@ class TestLikelihoodRatioTest:
 
         # Unrestricted: y ~ x1 + x2 (correct)
         X_u = np.column_stack(
-            [np.ones(logit_nested_data["n"]), logit_nested_data["x1"], logit_nested_data["x2"]]
+            [
+                np.ones(logit_nested_data["n"]),
+                logit_nested_data["x1"],
+                logit_nested_data["x2"],
+            ]
         )
         result_u = Logit(logit_nested_data["y"], X_u).fit(disp=0)
 
@@ -258,7 +278,11 @@ class TestLikelihoodRatioTest:
         """Test that LR test doesn't reject when restriction is valid."""
         # Restricted: y ~ x1 + x2 (correct)
         X_r = np.column_stack(
-            [np.ones(logit_nested_data["n"]), logit_nested_data["x1"], logit_nested_data["x2"]]
+            [
+                np.ones(logit_nested_data["n"]),
+                logit_nested_data["x1"],
+                logit_nested_data["x2"],
+            ]
         )
         result_r = Logit(logit_nested_data["y"], X_r).fit(disp=0)
 
@@ -286,7 +310,11 @@ class TestLikelihoodRatioTest:
         result_r = Logit(logit_nested_data["y"], X_r).fit(disp=0)
 
         X_u = np.column_stack(
-            [np.ones(logit_nested_data["n"]), logit_nested_data["x1"], logit_nested_data["x2"]]
+            [
+                np.ones(logit_nested_data["n"]),
+                logit_nested_data["x1"],
+                logit_nested_data["x2"],
+            ]
         )
         result_u = Logit(logit_nested_data["y"], X_u).fit(disp=0)
 
@@ -327,7 +355,11 @@ class TestLikelihoodRatioTest:
         result_r = Logit(logit_nested_data["y"], X_r).fit(disp=0)
 
         X_u = np.column_stack(
-            [np.ones(logit_nested_data["n"]), logit_nested_data["x1"], logit_nested_data["x2"]]
+            [
+                np.ones(logit_nested_data["n"]),
+                logit_nested_data["x1"],
+                logit_nested_data["x2"],
+            ]
         )
         result_u = Logit(logit_nested_data["y"], X_u).fit(disp=0)
 

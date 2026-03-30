@@ -166,15 +166,27 @@ class TestVsRPvar:
         # Compare with slightly higher tolerance due to different conventions
         # Small differences (< 2%) are acceptable due to different calculation methods
         np.testing.assert_allclose(
-            aic_py, aic_r, rtol=0.02, atol=0.02, err_msg="AIC does not match R implementation"
+            aic_py,
+            aic_r,
+            rtol=0.02,
+            atol=0.02,
+            err_msg="AIC does not match R implementation",
         )
 
         np.testing.assert_allclose(
-            bic_py, bic_r, rtol=0.02, atol=0.02, err_msg="BIC does not match R implementation"
+            bic_py,
+            bic_r,
+            rtol=0.02,
+            atol=0.02,
+            err_msg="BIC does not match R implementation",
         )
 
         np.testing.assert_allclose(
-            hqic_py, hqic_r, rtol=0.02, atol=0.02, err_msg="HQIC does not match R implementation"
+            hqic_py,
+            hqic_r,
+            rtol=0.02,
+            atol=0.02,
+            err_msg="HQIC does not match R implementation",
         )
 
     def test_residual_covariance_close(self, python_results, r_validation_results):

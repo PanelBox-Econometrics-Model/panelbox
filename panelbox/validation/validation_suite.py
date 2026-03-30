@@ -7,7 +7,9 @@ import warnings
 
 from panelbox.core.results import PanelResults
 from panelbox.validation.base import ValidationTestResult
-from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
+from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import (
+    BreuschPaganLMTest,
+)
 from panelbox.validation.cross_sectional_dependence.frees import FreesTest
 from panelbox.validation.cross_sectional_dependence.pesaran_cd import PesaranCDTest
 from panelbox.validation.heteroskedasticity.breusch_pagan import BreuschPaganTest
@@ -62,7 +64,10 @@ class ValidationSuite:
         self.model_type = results.model_type
 
     def run(
-        self, tests: str | list[str] = "default", alpha: float = 0.05, verbose: bool = False
+        self,
+        tests: str | list[str] = "default",
+        alpha: float = 0.05,
+        verbose: bool = False,
     ) -> ValidationReport:
         """
         Run validation tests.

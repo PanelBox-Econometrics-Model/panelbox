@@ -615,9 +615,11 @@ def inefficiency_presence_test(
         "skewness": skewness,
         "skewness_warning": skewness_warning,
         "distribution": distribution,
-        "test_type": "mixed_chi_square"
-        if distribution in ["half_normal", "exponential", "truncated_normal"]
-        else "standard_chi_square",
+        "test_type": (
+            "mixed_chi_square"
+            if distribution in ["half_normal", "exponential", "truncated_normal"]
+            else "standard_chi_square"
+        ),
     }
 
 

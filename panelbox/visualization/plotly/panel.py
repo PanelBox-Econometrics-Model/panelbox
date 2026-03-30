@@ -82,7 +82,7 @@ class EntityEffectsPlot(PlotlyChartBase):
             {
                 "entity_id": entity_ids,
                 "effect": effects,
-                "std_error": std_errors if std_errors is not None else [0] * len(effects),
+                "std_error": (std_errors if std_errors is not None else [0] * len(effects)),
             }
         )
 
@@ -112,7 +112,7 @@ class EntityEffectsPlot(PlotlyChartBase):
 
         # Color by significance
         colors = [
-            self.theme.success_color if sig else self.theme.get_color(5)  # Brown/neutral
+            (self.theme.success_color if sig else self.theme.get_color(5))  # Brown/neutral
             for sig in df["significant"]
         ]
 
@@ -138,7 +138,10 @@ class EntityEffectsPlot(PlotlyChartBase):
                 y=df["entity_id"],
                 x=df["effect"],
                 orientation="h",
-                marker={"color": colors, "line": {"color": "rgba(0,0,0,0.3)", "width": 1}},
+                marker={
+                    "color": colors,
+                    "line": {"color": "rgba(0,0,0,0.3)", "width": 1},
+                },
                 error_x=error_x,
                 text=[f"{e:.3f}" for e in df["effect"]],
                 textposition="auto",
@@ -239,7 +242,7 @@ class TimeEffectsPlot(PlotlyChartBase):
             {
                 "time": time_periods,
                 "effect": effects,
-                "std_error": std_errors if std_errors is not None else [0] * len(effects),
+                "std_error": (std_errors if std_errors is not None else [0] * len(effects)),
             }
         ).sort_values("time")
 
@@ -387,7 +390,10 @@ class BetweenWithinPlot(PlotlyChartBase):
         # Get config - use 'style' instead of 'chart_type' to avoid conflict
         style = kwargs.get(
             "chart_type",
-            kwargs.get("style", self.config.get("chart_type", self.config.get("style", "stacked"))),
+            kwargs.get(
+                "style",
+                self.config.get("chart_type", self.config.get("style", "stacked")),
+            ),
         )
         show_percentages = kwargs.get("show_percentages", self.config.get("show_percentages", True))
 
@@ -399,11 +405,21 @@ class BetweenWithinPlot(PlotlyChartBase):
         # Create figure based on style
         if style == "stacked":
             fig = self._create_stacked_chart(
-                variables, between_var, within_var, between_pct, within_pct, show_percentages
+                variables,
+                between_var,
+                within_var,
+                between_pct,
+                within_pct,
+                show_percentages,
             )
         elif style == "side_by_side":
             fig = self._create_side_by_side_chart(
-                variables, between_var, within_var, between_pct, within_pct, show_percentages
+                variables,
+                between_var,
+                within_var,
+                between_pct,
+                within_pct,
+                show_percentages,
             )
         else:  # scatter
             fig = self._create_scatter_chart(
@@ -418,7 +434,13 @@ class BetweenWithinPlot(PlotlyChartBase):
         return fig
 
     def _create_stacked_chart(
-        self, variables, between_var, within_var, between_pct, within_pct, show_percentages
+        self,
+        variables,
+        between_var,
+        within_var,
+        between_pct,
+        within_pct,
+        show_percentages,
     ):
         """Create stacked bar chart."""
         fig = go.Figure()
@@ -463,7 +485,13 @@ class BetweenWithinPlot(PlotlyChartBase):
         return fig
 
     def _create_side_by_side_chart(
-        self, variables, between_var, within_var, between_pct, within_pct, show_percentages
+        self,
+        variables,
+        between_var,
+        within_var,
+        between_pct,
+        within_pct,
+        show_percentages,
     ):
         """Create side-by-side bar chart."""
         fig = go.Figure()

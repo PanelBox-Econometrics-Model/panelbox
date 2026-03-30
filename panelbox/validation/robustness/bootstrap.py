@@ -168,7 +168,7 @@ class PanelBootstrap:
         random_state: int | None = None,
         show_progress: bool = True,
         parallel: bool = False,
-        model: PanelResults | None = None,  # Alias for results (for backward compatibility)
+        model: (PanelResults | None) = None,  # Alias for results (for backward compatibility)
         seed: int | None = None,  # Alias for random_state (for backward compatibility)
     ):
         # Handle backward compatibility: 'model' as alias for 'results'

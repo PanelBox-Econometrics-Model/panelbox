@@ -234,8 +234,8 @@ def test_complete_workflow(panel_data):
         hausman_result = hausman_test_tfe_tre(
             result_tfe.params,
             result_tre.params,
-            result_tfe.cov if hasattr(result_tfe, "cov") else np.eye(len(result_tfe.params)),
-            result_tre.cov if hasattr(result_tre, "cov") else np.eye(len(result_tre.params)),
+            (result_tfe.cov if hasattr(result_tfe, "cov") else np.eye(len(result_tfe.params))),
+            (result_tre.cov if hasattr(result_tre, "cov") else np.eye(len(result_tre.params))),
         )
         print(f"  ✓ Hausman test executed: statistic={hausman_result['statistic']:.2f}")
     except Exception as e:

@@ -66,7 +66,10 @@ def gauss_hermite_quadrature(n_points: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 def integrate_normal(
-    func: Callable[[float], float], n_points: int = 12, mu: float = 0.0, sigma: float = 1.0
+    func: Callable[[float], float],
+    n_points: int = 12,
+    mu: float = 0.0,
+    sigma: float = 1.0,
 ) -> float:
     """
     Integrate a function over a normal distribution using Gauss-Hermite quadrature.
@@ -343,7 +346,10 @@ class GaussHermiteQuadrature:
         return np.sum(self.weights * values)
 
     def integrate_vectorized(
-        self, func: Callable[[np.ndarray], np.ndarray], mu: float = 0.0, sigma: float = 1.0
+        self,
+        func: Callable[[np.ndarray], np.ndarray],
+        mu: float = 0.0,
+        sigma: float = 1.0,
     ) -> float:
         """
         Integrate using vectorized function evaluation.

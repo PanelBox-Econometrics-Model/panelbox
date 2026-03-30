@@ -122,7 +122,12 @@ def within_between_scatter(
     data_within[f"{x_col}_demeaned"] = data[x_col] - entity_means_x
     data_within[f"{y_col}_demeaned"] = data[y_col] - entity_means_y
 
-    ax1.scatter(data_within[f"{x_col}_demeaned"], data_within[f"{y_col}_demeaned"], alpha=0.5, s=20)
+    ax1.scatter(
+        data_within[f"{x_col}_demeaned"],
+        data_within[f"{y_col}_demeaned"],
+        alpha=0.5,
+        s=20,
+    )
     ax1.set_xlabel(f"{x_col} (demeaned)")
     ax1.set_ylabel(f"{y_col} (demeaned)")
     ax1.set_title("Within Variation")
@@ -141,7 +146,10 @@ def within_between_scatter(
 
 
 def variance_decomposition_plot(
-    data: pd.DataFrame, entity_col: str, variables: list[str], figsize: tuple[int, int] = (10, 6)
+    data: pd.DataFrame,
+    entity_col: str,
+    variables: list[str],
+    figsize: tuple[int, int] = (10, 6),
 ) -> plt.Axes:
     """
     Plot variance decomposition (within vs between) for multiple variables.

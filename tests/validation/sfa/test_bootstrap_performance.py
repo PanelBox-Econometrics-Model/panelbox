@@ -58,7 +58,11 @@ def test_bootstrap_performance_999_replications():
     # Estimate model
     print("Estimating SFA model...")
     sf = StochasticFrontier(
-        data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="half_normal"
+        data=df,
+        depvar="y",
+        exog=["x1", "x2"],
+        frontier="production",
+        dist="half_normal",
     )
 
     result = sf.fit(method="mle")
@@ -112,7 +116,11 @@ def test_bootstrap_performance_100_replications():
 
     # Estimate
     sf = StochasticFrontier(
-        data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="half_normal"
+        data=df,
+        depvar="y",
+        exog=["x1", "x2"],
+        frontier="production",
+        dist="half_normal",
     )
 
     result = sf.fit(method="mle")

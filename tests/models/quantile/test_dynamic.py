@@ -134,7 +134,11 @@ class TestDynamicQuantile:
     def test_long_run_effects(self, dynamic_panel_data):
         """Test long-run effects computation."""
         model = DynamicQuantile(
-            dynamic_panel_data, formula="y ~ X1 + X2", tau=[0.25, 0.5, 0.75], lags=1, method="iv"
+            dynamic_panel_data,
+            formula="y ~ X1 + X2",
+            tau=[0.25, 0.5, 0.75],
+            lags=1,
+            method="iv",
         )
 
         result = model.fit()

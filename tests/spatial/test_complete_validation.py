@@ -155,7 +155,11 @@ class TestCompleteValidation:
         r_sar_re = r_validation["sar_re"]
 
         model = SpatialLag(
-            formula="y ~ x1 + x2 + x3", data=df, entity_col="entity", time_col="time", W=W
+            formula="y ~ x1 + x2 + x3",
+            data=df,
+            entity_col="entity",
+            time_col="time",
+            W=W,
         )
 
         result = model.fit(effects="random", method="ml")
@@ -204,7 +208,11 @@ class TestParameterRecovery:
         df, W, true_params = spatial_test_data
 
         model = SpatialLag(
-            formula="y ~ x1 + x2 + x3", data=df, entity_col="entity", time_col="time", W=W
+            formula="y ~ x1 + x2 + x3",
+            data=df,
+            entity_col="entity",
+            time_col="time",
+            W=W,
         )
 
         result = model.fit(effects="random", method="ml")
@@ -226,7 +234,11 @@ class TestParameterRecovery:
         df, W, true_params = spatial_test_data
 
         model = SpatialLag(
-            formula="y ~ x1 + x2 + x3", data=df, entity_col="entity", time_col="time", W=W
+            formula="y ~ x1 + x2 + x3",
+            data=df,
+            entity_col="entity",
+            time_col="time",
+            W=W,
         )
 
         result = model.fit(effects="random", method="ml")

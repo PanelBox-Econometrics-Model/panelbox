@@ -83,7 +83,11 @@ def plot_coefficient_comparison(
 
     if true_value is not None:
         ax.axvline(
-            true_value, color="red", linestyle="--", alpha=0.7, label=f"True value = {true_value}"
+            true_value,
+            color="red",
+            linestyle="--",
+            alpha=0.7,
+            label=f"True value = {true_value}",
         )
         ax.legend()
 
@@ -261,7 +265,11 @@ def plot_bootstrap_distribution(
 
     if true_value is not None:
         ax.axvline(
-            true_value, color="red", linestyle="--", linewidth=2, label=f"True value = {true_value}"
+            true_value,
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            label=f"True value = {true_value}",
         )
 
     # Confidence interval

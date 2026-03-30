@@ -489,7 +489,11 @@ class PanelExperiment:
         return model
 
     def validate_model(
-        self, name: str, tests: str = "default", alpha: float = 0.05, verbose: bool = False
+        self,
+        name: str,
+        tests: str = "default",
+        alpha: float = 0.05,
+        verbose: bool = False,
     ):
         """
         Run validation tests on a fitted model and return ValidationResult.
@@ -576,7 +580,10 @@ class PanelExperiment:
         return ComparisonResult.from_experiment(experiment=self, model_names=model_names, **kwargs)
 
     def fit_all_models(
-        self, model_types: list[str] | None = None, names: list[str] | None = None, **kwargs
+        self,
+        model_types: list[str] | None = None,
+        names: list[str] | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Fit multiple models at once.
@@ -999,7 +1006,11 @@ class PanelExperiment:
             logger.info("=" * 50)
             logger.info("SPATIAL DIAGNOSTICS SUMMARY")
             logger.info("=" * 50)
-            logger.info("Moran's I: %.4f (p=%.4f)", morans_result.statistic, morans_result.pvalue)
+            logger.info(
+                "Moran's I: %.4f (p=%.4f)",
+                morans_result.statistic,
+                morans_result.pvalue,
+            )
 
             # LISA clusters summary
             cluster_counts = lisa_results["cluster_type"].value_counts()

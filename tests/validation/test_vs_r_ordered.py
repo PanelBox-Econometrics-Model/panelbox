@@ -272,7 +272,11 @@ class TestVsROrdered:
 
         # Check coefficients match (within tolerance)
         assert_allclose(
-            beta_pb, beta_r, rtol=1e-3, atol=1e-4, err_msg="Coefficients should match R polr"
+            beta_pb,
+            beta_r,
+            rtol=1e-3,
+            atol=1e-4,
+            err_msg="Coefficients should match R polr",
         )
 
         # Compare cutpoints

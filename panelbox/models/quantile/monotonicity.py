@@ -305,7 +305,8 @@ class QuantileMonotonicity:
 
         if not result.success:
             warnings.warn(
-                f"Constrained optimization did not converge: {result.message}", stacklevel=2
+                f"Constrained optimization did not converge: {result.message}",
+                stacklevel=2,
             )
 
         # Extract results
@@ -444,7 +445,11 @@ class CrossingReport:
     """Report on quantile crossing detection."""
 
     def __init__(
-        self, has_crossing: bool, crossings: list[dict], total_inversions: int, pct_affected: float
+        self,
+        has_crossing: bool,
+        crossings: list[dict],
+        total_inversions: int,
+        pct_affected: float,
     ):
         self.has_crossing = has_crossing
         self.crossings = crossings
@@ -523,7 +528,14 @@ class CrossingReport:
         df[["tau1", "tau2"]] = pd.DataFrame(df["tau_pair"].tolist(), index=df.index)
         df = df.drop("tau_pair", axis=1)
         df = df[
-            ["tau1", "tau2", "n_inversions", "pct_inversions", "max_violation", "mean_violation"]
+            [
+                "tau1",
+                "tau2",
+                "n_inversions",
+                "pct_inversions",
+                "max_violation",
+                "mean_violation",
+            ]
         ]
 
         return df
@@ -605,7 +617,10 @@ class MonotonicityComparison:
                     results[tau] = type(
                         "Result",
                         (),
-                        {"params": monotone_coefs[i], "model": type("Model", (), {"X": self.X})()},
+                        {
+                            "params": monotone_coefs[i],
+                            "model": type("Model", (), {"X": self.X})(),
+                        },
                     )()
 
             elif method == "constrained":
@@ -620,7 +635,10 @@ class MonotonicityComparison:
                     results[tau] = type(
                         "Result",
                         (),
-                        {"params": beta_dict[tau], "model": type("Model", (), {"X": self.X})()},
+                        {
+                            "params": beta_dict[tau],
+                            "model": type("Model", (), {"X": self.X})(),
+                        },
                     )()
 
             # Check crossing

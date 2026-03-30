@@ -115,7 +115,11 @@ class TestLagSelectionVsR:
 
         # Compare
         np.testing.assert_allclose(
-            aic_py, aic_r, rtol=0.02, atol=0.02, err_msg="AIC values do not match R implementation"
+            aic_py,
+            aic_r,
+            rtol=0.02,
+            atol=0.02,
+            err_msg="AIC values do not match R implementation",
         )
 
     def test_bic_values_close(self, python_lag_selection_results, r_lag_selection_results):
@@ -131,7 +135,11 @@ class TestLagSelectionVsR:
 
         # Compare
         np.testing.assert_allclose(
-            bic_py, bic_r, rtol=0.02, atol=0.02, err_msg="BIC values do not match R implementation"
+            bic_py,
+            bic_r,
+            rtol=0.02,
+            atol=0.02,
+            err_msg="BIC values do not match R implementation",
         )
 
     def test_hqic_values_close(self, python_lag_selection_results, r_lag_selection_results):

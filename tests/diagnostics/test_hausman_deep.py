@@ -18,10 +18,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.diagnostics.hausman import (
-    HausmanTestResult,
-    hausman_test_discrete,
-)
+from panelbox.diagnostics.hausman import HausmanTestResult, hausman_test_discrete
 
 # ---------------------------------------------------------------------------
 # Helpers

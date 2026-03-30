@@ -304,7 +304,10 @@ class TestCrossingReport:
         ]
 
         report = CrossingReport(
-            has_crossing=True, crossings=crossings, total_inversions=10, pct_affected=20.0
+            has_crossing=True,
+            crossings=crossings,
+            total_inversions=10,
+            pct_affected=20.0,
         )
 
         # Test summary (should not raise)
@@ -389,7 +392,10 @@ class TestMonotonicityUncoveredLines:
             },
         ]
         report = CrossingReport(
-            has_crossing=True, crossings=crossings, total_inversions=20, pct_affected=40.0
+            has_crossing=True,
+            crossings=crossings,
+            total_inversions=20,
+            pct_affected=40.0,
         )
         result = report.summary()
         # summary() returns self

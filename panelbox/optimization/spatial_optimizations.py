@@ -360,7 +360,10 @@ class ChebyshevApproximation:
         self.order = order
 
     def log_determinant(
-        self, rho: float, W: np.ndarray | csr_matrix, eigenvalues: np.ndarray | None = None
+        self,
+        rho: float,
+        W: np.ndarray | csr_matrix,
+        eigenvalues: np.ndarray | None = None,
     ) -> float:
         """
         Approximate log|I - rho*W| using Chebyshev polynomials.

@@ -348,7 +348,11 @@ class TestSimulationInference:
         np.random.seed(42)
         # Pass "x2" in variables list but it is not in effects dict
         effects = _simulation_inference(
-            mock_result, effects, ["x1", "nonexistent"], n_simulations=50, confidence_level=0.95
+            mock_result,
+            effects,
+            ["x1", "nonexistent"],
+            n_simulations=50,
+            confidence_level=0.95,
         )
         # Should still work for x1
         assert "direct_se" in effects["x1"]

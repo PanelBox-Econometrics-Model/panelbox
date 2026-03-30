@@ -73,7 +73,10 @@ class TestSpatialIntegration:
 
         # Create experiment
         experiment = PanelExperiment(
-            data=data, formula="y ~ x1 + x2 + x3", entity_col="entity_id", time_col="time_id"
+            data=data,
+            formula="y ~ x1 + x2 + x3",
+            entity_col="entity_id",
+            time_col="time_id",
         )
 
         # Step 1: Estimate baseline OLS

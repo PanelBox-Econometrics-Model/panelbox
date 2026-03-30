@@ -348,7 +348,13 @@ class TestGMMTransformer:
         data = {
             "estimator": "Difference GMM",
             "coefficients": [
-                {"name": "y", "coefficient": 0.5, "std_error": 0.1, "t_stat": 5.0, "pval": 0.001},
+                {
+                    "name": "y",
+                    "coefficient": 0.5,
+                    "std_error": 0.1,
+                    "t_stat": 5.0,
+                    "pval": 0.001,
+                },
             ],
             "hansen_j": {"statistic": 30.0, "p_value": 0.5, "df": 25},
         }
@@ -434,7 +440,13 @@ class TestRegressionTransformer:
             "estimator": "Random Effects",
             "cov_type": "HC1",
             "coefficients": [
-                {"name": "z", "coefficient": 1.0, "std_error": 0.2, "t_stat": 5.0, "pval": 0.001},
+                {
+                    "name": "z",
+                    "coefficient": 1.0,
+                    "std_error": 0.2,
+                    "t_stat": 5.0,
+                    "pval": 0.001,
+                },
             ],
         }
         result = RegressionTransformer(data).transform()

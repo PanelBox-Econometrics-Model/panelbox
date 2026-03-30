@@ -351,13 +351,23 @@ class TestGMMVARCoverage:
         for i in range(1, 9):
             for t in range(1, 21):
                 rows.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         # 2 entities with only 2 periods (will be skipped after transform)
         for i in range(9, 11):
             for t in range(1, 3):
                 rows.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(rows)
 

@@ -42,9 +42,7 @@ class ComparisonDataTransformer:
     >>> chart.create(comparison_data)
     """
 
-    def transform(
-        self, results_list: list[Any], names: list[str] | None = None
-    ) -> dict[str, Any]:
+    def transform(self, results_list: list[Any], names: list[str] | None = None) -> dict[str, Any]:
         """
         Transform multiple model results to comparison format.
 
@@ -406,7 +404,10 @@ class ComparisonDataTransformer:
         }
 
     def prepare_forest_plot(
-        self, results: Any, variables: list[str] | None = None, confidence_level: float = 0.95
+        self,
+        results: Any,
+        variables: list[str] | None = None,
+        confidence_level: float = 0.95,
     ) -> dict[str, Any]:
         """
         Prepare data for forest plot (single model).

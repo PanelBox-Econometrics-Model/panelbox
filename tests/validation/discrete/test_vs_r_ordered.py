@@ -99,7 +99,11 @@ class TestOrderedModelsVsR:
         )
 
         np.testing.assert_allclose(
-            pb_thresholds, r_thresholds, rtol=1e-2, atol=1e-3, err_msg="Thresholds differ from R"
+            pb_thresholds,
+            r_thresholds,
+            rtol=1e-2,
+            atol=1e-3,
+            err_msg="Thresholds differ from R",
         )
 
     def test_ordered_probit_vs_r(self):

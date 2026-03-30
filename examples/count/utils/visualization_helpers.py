@@ -336,12 +336,20 @@ def plot_panel_trends(data, id_col, time_col, y_col, n_ids=10, ax=None):
     # Plot each unit
     for unit_id in sampled_ids:
         unit_data = data[data[id_col] == unit_id].sort_values(time_col)
-        ax.plot(unit_data[time_col], unit_data[y_col], marker="o", alpha=0.6, label=f"ID {unit_id}")
+        ax.plot(
+            unit_data[time_col],
+            unit_data[y_col],
+            marker="o",
+            alpha=0.6,
+            label=f"ID {unit_id}",
+        )
 
     ax.set_xlabel(time_col.capitalize(), fontsize=12)
     ax.set_ylabel(y_col.replace("_", " ").title(), fontsize=12)
     ax.set_title(
-        f"Panel Trends (Random Sample of {len(sampled_ids)} Units)", fontsize=14, fontweight="bold"
+        f"Panel Trends (Random Sample of {len(sampled_ids)} Units)",
+        fontsize=14,
+        fontweight="bold",
     )
     ax.grid(alpha=0.3)
     if n_ids <= 10:

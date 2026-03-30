@@ -184,7 +184,11 @@ class TestEfficiencyEstimation:
             df = pd.DataFrame({"y": y, "x": x})
 
             sf = StochasticFrontier(
-                data=df, depvar="y", exog=["x"], frontier="production", dist="half_normal"
+                data=df,
+                depvar="y",
+                exog=["x"],
+                frontier="production",
+                dist="half_normal",
             )
 
             try:

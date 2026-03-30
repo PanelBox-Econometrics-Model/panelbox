@@ -412,8 +412,16 @@ def test_time_trend_specification(
     summary = pd.DataFrame(
         {
             "Specification": ["None (FE only)", "Linear", "Quadratic"],
-            "R²": [result_none.r_squared, result_linear.r_squared, result_quadratic.r_squared],
-            "σ_v": [result_none.sigma_v, result_linear.sigma_v, result_quadratic.sigma_v],
+            "R²": [
+                result_none.r_squared,
+                result_linear.r_squared,
+                result_quadratic.r_squared,
+            ],
+            "σ_v": [
+                result_none.sigma_v,
+                result_linear.sigma_v,
+                result_quadratic.sigma_v,
+            ],
             "Mean_Efficiency": [
                 np.mean(result_none.efficiency_it),
                 np.mean(result_linear.efficiency_it),

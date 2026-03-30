@@ -386,7 +386,11 @@ class SpatialHAC:
         return distance_matrix
 
     def compare_with_standard_errors(
-        self, X: np.ndarray, residuals: np.ndarray, entity_index: np.ndarray, time_index: np.ndarray
+        self,
+        X: np.ndarray,
+        residuals: np.ndarray,
+        entity_index: np.ndarray,
+        time_index: np.ndarray,
     ) -> dict:
         """
         Compare Spatial HAC with standard OLS and clustered standard errors.

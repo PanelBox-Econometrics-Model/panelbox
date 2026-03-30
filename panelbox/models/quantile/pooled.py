@@ -225,7 +225,9 @@ class PooledQuantile(QuantilePanelModel):
 
             if not info.get("converged", False):
                 warnings.warn(
-                    f"Optimization did not converge for τ={tau}", ConvergenceWarning, stacklevel=2
+                    f"Optimization did not converge for τ={tau}",
+                    ConvergenceWarning,
+                    stacklevel=2,
                 )
                 self.converged = False
             else:
@@ -250,7 +252,13 @@ class PooledQuantile(QuantilePanelModel):
         return PooledQuantileResults(self, params_arr, vcov_arr, self.quantiles)
 
     def _compute_nonrobust_vcov(
-        self, params: np.ndarray, tau: float, X: np.ndarray, y: np.ndarray, n_obs: int, n_vars: int
+        self,
+        params: np.ndarray,
+        tau: float,
+        X: np.ndarray,
+        y: np.ndarray,
+        n_obs: int,
+        n_vars: int,
     ) -> np.ndarray:
         """
         Compute classical (non-robust) variance-covariance matrix.
@@ -295,7 +303,13 @@ class PooledQuantile(QuantilePanelModel):
         return vcov
 
     def _compute_robust_vcov(
-        self, params: np.ndarray, tau: float, X: np.ndarray, y: np.ndarray, n_obs: int, n_vars: int
+        self,
+        params: np.ndarray,
+        tau: float,
+        X: np.ndarray,
+        y: np.ndarray,
+        n_obs: int,
+        n_vars: int,
     ) -> np.ndarray:
         """
         Compute heteroskedasticity-robust variance-covariance matrix.
@@ -345,7 +359,13 @@ class PooledQuantile(QuantilePanelModel):
         return vcov
 
     def _compute_cluster_vcov(
-        self, params: np.ndarray, tau: float, X: np.ndarray, y: np.ndarray, n_obs: int, n_vars: int
+        self,
+        params: np.ndarray,
+        tau: float,
+        X: np.ndarray,
+        y: np.ndarray,
+        n_obs: int,
+        n_vars: int,
     ) -> np.ndarray:
         """
         Compute cluster-robust variance-covariance matrix.
@@ -515,7 +535,11 @@ class PooledQuantileResults(QuantilePanelResult):
     """
 
     def __init__(
-        self, model: PooledQuantile, params: np.ndarray, vcov: np.ndarray, quantiles: np.ndarray
+        self,
+        model: PooledQuantile,
+        params: np.ndarray,
+        vcov: np.ndarray,
+        quantiles: np.ndarray,
     ):
         """Initialize results object."""
         # Store directly as attributes instead of calling super().__init__

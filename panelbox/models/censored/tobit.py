@@ -498,7 +498,10 @@ class RandomEffectsTobit(NonlinearPanelModel):
         panelbox.marginal_effects.censored_me.compute_tobit_ame
         panelbox.marginal_effects.censored_me.compute_tobit_mem
         """
-        from panelbox.marginal_effects.censored_me import compute_tobit_ame, compute_tobit_mem
+        from panelbox.marginal_effects.censored_me import (
+            compute_tobit_ame,
+            compute_tobit_mem,
+        )
 
         if at == "overall":
             return compute_tobit_ame(self, which=which, varlist=varlist)
@@ -719,7 +722,11 @@ class PooledTobit(NonlinearPanelModel):
         options.setdefault("disp", False)
 
         result = optimize.minimize(
-            self._negative_log_likelihood, start_params, method=method, options=options, **kwargs
+            self._negative_log_likelihood,
+            start_params,
+            method=method,
+            options=options,
+            **kwargs,
         )
 
         if not result.success:
@@ -939,7 +946,10 @@ class PooledTobit(NonlinearPanelModel):
         panelbox.marginal_effects.censored_me.compute_tobit_ame
         panelbox.marginal_effects.censored_me.compute_tobit_mem
         """
-        from panelbox.marginal_effects.censored_me import compute_tobit_ame, compute_tobit_mem
+        from panelbox.marginal_effects.censored_me import (
+            compute_tobit_ame,
+            compute_tobit_mem,
+        )
 
         if at == "overall":
             return compute_tobit_ame(self, which=which, varlist=varlist)

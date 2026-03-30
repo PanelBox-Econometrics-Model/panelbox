@@ -484,7 +484,7 @@ def _plot_sensitivity_plotly(
             showarrow=False,
             font={
                 "size": 12,
-                "color": "darkgreen" if "stable" in interpretation.lower() else "darkred",
+                "color": ("darkgreen" if "stable" in interpretation.lower() else "darkred"),
             },
             bgcolor="lightyellow",
             bordercolor="gray",
@@ -751,7 +751,10 @@ def _plot_irf_plotly(
                 y=irf_values,
                 mode="lines",
                 name="IRF",
-                line={"color": theme_config["line_color"], "width": theme_config["linewidth"]},
+                line={
+                    "color": theme_config["line_color"],
+                    "width": theme_config["linewidth"],
+                },
                 showlegend=(idx == 0),
             ),
             row=row,
@@ -958,7 +961,9 @@ def _plot_fevd_matplotlib(
                 ax.grid(True, alpha=0.3, axis="y")
 
             ax.legend(
-                loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=theme_config["fontsize"] - 2
+                loc="upper left",
+                bbox_to_anchor=(1.01, 1),
+                fontsize=theme_config["fontsize"] - 2,
             )
 
         plt.tight_layout()
@@ -1010,7 +1015,9 @@ def _plot_fevd_matplotlib(
                 ax.grid(True, alpha=0.3, axis="y")
 
             ax.legend(
-                loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=theme_config["fontsize"] - 2
+                loc="upper left",
+                bbox_to_anchor=(1.01, 1),
+                fontsize=theme_config["fontsize"] - 2,
             )
 
         plt.tight_layout()

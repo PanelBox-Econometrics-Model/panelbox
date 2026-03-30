@@ -168,9 +168,7 @@ class TestPlotFrontierContour:
 
     def test_plotly_backend(self, mock_sf_result):
         """Test contour plot with plotly backend."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_contour,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_contour
 
         fig = plot_frontier_contour(
             mock_sf_result,
@@ -182,9 +180,7 @@ class TestPlotFrontierContour:
 
     def test_matplotlib_backend(self, mock_sf_result):
         """Test contour plot with matplotlib backend."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_contour,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_contour
 
         fig = plot_frontier_contour(
             mock_sf_result,
@@ -196,9 +192,7 @@ class TestPlotFrontierContour:
 
     def test_invalid_backend(self, mock_sf_result):
         """Test invalid backend raises ValueError."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_contour,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_contour
 
         with pytest.raises(ValueError, match="Unknown backend"):
             plot_frontier_contour(
@@ -213,9 +207,7 @@ class TestPlotFrontierPartial:
 
     def test_plotly_fix_at_mean(self, mock_sf_result):
         """Test partial frontier with plotly, fix_others_at='mean'."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         fig = plot_frontier_partial(
             mock_sf_result,
@@ -227,9 +219,7 @@ class TestPlotFrontierPartial:
 
     def test_matplotlib_fix_at_median(self, mock_sf_result):
         """Test partial frontier with matplotlib, fix_others_at='median'."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         fig = plot_frontier_partial(
             mock_sf_result,
@@ -241,9 +231,7 @@ class TestPlotFrontierPartial:
 
     def test_fix_at_dict(self, mock_sf_result):
         """Test partial frontier with dict of fixed values."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         fig = plot_frontier_partial(
             mock_sf_result,
@@ -255,9 +243,7 @@ class TestPlotFrontierPartial:
 
     def test_invalid_fix_others_string(self, mock_sf_result):
         """Test invalid fix_others_at string raises ValueError."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         with pytest.raises(ValueError, match="Unknown fix_others_at"):
             plot_frontier_partial(
@@ -268,9 +254,7 @@ class TestPlotFrontierPartial:
 
     def test_invalid_fix_others_type(self, mock_sf_result):
         """Test invalid fix_others_at type raises ValueError."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         with pytest.raises(ValueError, match="must be 'mean', 'median', or dict"):
             plot_frontier_partial(
@@ -281,9 +265,7 @@ class TestPlotFrontierPartial:
 
     def test_invalid_backend(self, mock_sf_result):
         """Test invalid backend raises ValueError."""
-        from panelbox.frontier.visualization.frontier_plots import (
-            plot_frontier_partial,
-        )
+        from panelbox.frontier.visualization.frontier_plots import plot_frontier_partial
 
         with pytest.raises(ValueError, match="Unknown backend"):
             plot_frontier_partial(

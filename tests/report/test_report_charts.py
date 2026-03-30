@@ -14,7 +14,9 @@ go = pytest.importorskip("plotly.graph_objects")
 from panelbox.report.charts.discrete_charts import DiscreteChartBuilder  # noqa: E402
 from panelbox.report.charts.gmm_charts import GMMChartBuilder  # noqa: E402
 from panelbox.report.charts.quantile_charts import QuantileChartBuilder  # noqa: E402
-from panelbox.report.charts.regression_charts import RegressionChartBuilder  # noqa: E402
+from panelbox.report.charts.regression_charts import (  # noqa: E402
+    RegressionChartBuilder,
+)
 from panelbox.report.charts.sfa_charts import SFAChartBuilder  # noqa: E402
 from panelbox.report.charts.var_charts import VARChartBuilder  # noqa: E402
 
@@ -525,9 +527,24 @@ class TestQuantileChartBuilder:
                 "color": "#28a745",
             },
             "tests": [
-                {"name": "Shapiro-Wilk", "statistic": 0.98, "pvalue": 0.12, "status": "pass"},
-                {"name": "Breusch-Pagan", "statistic": 3.5, "pvalue": 0.06, "status": "warning"},
-                {"name": "Durbin-Watson", "statistic": 5.2, "pvalue": 0.02, "status": "fail"},
+                {
+                    "name": "Shapiro-Wilk",
+                    "statistic": 0.98,
+                    "pvalue": 0.12,
+                    "status": "pass",
+                },
+                {
+                    "name": "Breusch-Pagan",
+                    "statistic": 3.5,
+                    "pvalue": 0.06,
+                    "status": "warning",
+                },
+                {
+                    "name": "Durbin-Watson",
+                    "statistic": 5.2,
+                    "pvalue": 0.02,
+                    "status": "fail",
+                },
             ],
         }
 
@@ -681,7 +698,10 @@ class TestSFAReportWithCharts:
 
     def test_sfa_report_contains_plotly_divs(self, manager):
         data = {
-            "model_info": {"frontier_type": "production", "distribution": "half-normal"},
+            "model_info": {
+                "frontier_type": "production",
+                "distribution": "half-normal",
+            },
             "coefficients": [
                 {
                     "name": "x1",
@@ -755,8 +775,18 @@ class TestQuantileReportWithCharts:
                 "color": "#28a745",
             },
             "tests": [
-                {"name": "Shapiro-Wilk", "statistic": 0.98, "pvalue": 0.12, "status": "pass"},
-                {"name": "Breusch-Pagan", "statistic": 3.5, "pvalue": 0.06, "status": "warning"},
+                {
+                    "name": "Shapiro-Wilk",
+                    "statistic": 0.98,
+                    "pvalue": 0.12,
+                    "status": "pass",
+                },
+                {
+                    "name": "Breusch-Pagan",
+                    "statistic": 3.5,
+                    "pvalue": 0.06,
+                    "status": "warning",
+                },
             ],
             "recommendations": ["Consider robust standard errors"],
         }

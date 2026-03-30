@@ -476,7 +476,10 @@ class RobustLMErrorTest(ValidationTest):
 
 
 def run_lm_tests(
-    ols_result, W: np.ndarray | SpatialWeights, alpha: float = 0.05, verbose: bool = True
+    ols_result,
+    W: np.ndarray | SpatialWeights,
+    alpha: float = 0.05,
+    verbose: bool = True,
 ) -> dict:
     """
     Run complete battery of LM tests for spatial dependence.
@@ -564,7 +567,12 @@ def run_lm_tests(
             robust_lm_lag.statistic,
             robust_lm_error.statistic,
         ],
-        "p-value": [lm_lag.pvalue, lm_error.pvalue, robust_lm_lag.pvalue, robust_lm_error.pvalue],
+        "p-value": [
+            lm_lag.pvalue,
+            lm_error.pvalue,
+            robust_lm_lag.pvalue,
+            robust_lm_error.pvalue,
+        ],
         "Significant": [lag_sig, error_sig, robust_lag_sig, robust_error_sig],
     }
 

@@ -16,10 +16,7 @@ import pandas as pd
 from scipy import optimize
 from scipy.special import digamma, gammaln
 
-from ...utils.statistics import (
-    compute_standard_errors,
-    likelihood_ratio_test,
-)
+from ...utils.statistics import compute_standard_errors, likelihood_ratio_test
 from ..base import NonlinearPanelModel, PanelModelResults
 from ..count.poisson import PooledPoisson
 
@@ -517,7 +514,8 @@ class FixedEffectsNegativeBinomial(NegativeBinomial):
             import warnings
 
             warnings.warn(
-                f"Large number of entities ({n_entities}). Estimation may be slow.", stacklevel=2
+                f"Large number of entities ({n_entities}). Estimation may be slow.",
+                stacklevel=2,
             )
 
         # Add entity dummies to exog (excluding one for identification)

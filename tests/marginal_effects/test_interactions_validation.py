@@ -18,11 +18,8 @@ import pandas as pd
 import pytest
 from scipy import stats
 
-from panelbox.marginal_effects.interactions import (
-    compute_interaction_effects,
-)
-
 # Import with alias to prevent pytest from collecting the source function as a test
+from panelbox.marginal_effects.interactions import compute_interaction_effects
 from panelbox.marginal_effects.interactions import (
     test_interaction_significance as _test_interaction_significance,
 )

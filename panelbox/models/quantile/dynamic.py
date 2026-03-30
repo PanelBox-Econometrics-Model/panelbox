@@ -182,7 +182,11 @@ class DynamicQuantile(QuantilePanelModel):
         self.X_with_lags = np.column_stack([self.y_lagged, self.X_dynamic])
 
     def fit(
-        self, iv_lags: int = 2, bootstrap: bool = False, n_boot: int = 100, verbose: bool = False
+        self,
+        iv_lags: int = 2,
+        bootstrap: bool = False,
+        n_boot: int = 100,
+        verbose: bool = False,
     ) -> DynamicQuantileResult:
         """
         Fit dynamic quantile regression.
@@ -403,7 +407,11 @@ class DynamicQuantile(QuantilePanelModel):
 
         # Create data for first stage
         fs_data = pd.DataFrame(
-            {"y_lag": self.y_lagged[:, 0], "entity": self.entity_ids, "time": self.time_ids}
+            {
+                "y_lag": self.y_lagged[:, 0],
+                "entity": self.entity_ids,
+                "time": self.time_ids,
+            }
         )
 
         # Add exogenous variables

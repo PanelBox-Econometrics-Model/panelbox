@@ -42,22 +42,48 @@ class TestCompareTransforms:
         data = []
         # Entity 0: Full time series
         for t in range(20):
-            data.append({"entity": 0, "time": t, "y1": np.random.randn(), "y2": np.random.randn()})
+            data.append(
+                {
+                    "entity": 0,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
+            )
 
         # Entity 1: Missing some periods
         for t in [0, 1, 2, 3, 5, 7, 9, 12, 15, 18]:
-            data.append({"entity": 1, "time": t, "y1": np.random.randn(), "y2": np.random.randn()})
+            data.append(
+                {
+                    "entity": 1,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
+            )
 
         # Entity 2: Short series
         for t in range(8):
-            data.append({"entity": 2, "time": t, "y1": np.random.randn(), "y2": np.random.randn()})
+            data.append(
+                {
+                    "entity": 2,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
+            )
 
         # Add more entities with varying lengths
         for i in range(3, 25):
             T_i = np.random.randint(10, 18)
             for t in range(T_i):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
 
         return pd.DataFrame(data)
@@ -172,7 +198,12 @@ class TestCompareTransforms:
         for i in range(15):
             for t in range(10):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(data)
 
@@ -248,7 +279,12 @@ class TestCompareTransforms:
         for i in range(20):
             for t in range(12):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(data)
 
@@ -287,7 +323,12 @@ class TestCompareTransforms:
         for i in range(30):
             for t in range(18):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(data)
 
@@ -347,7 +388,12 @@ class TestCompareTransforms:
         for i in range(20):
             for t in range(12):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(data)
 
@@ -367,7 +413,14 @@ class TestCompareTransforms:
         rec = result["recommendation"].lower()
 
         # Should mention either FOD, FD, or diagnostic actions
-        relevant_keywords = ["fod", "fd", "transformation", "hansen", "diagnostic", "appropriate"]
+        relevant_keywords = [
+            "fod",
+            "fd",
+            "transformation",
+            "hansen",
+            "diagnostic",
+            "appropriate",
+        ]
         assert any(kw in rec for kw in relevant_keywords)
 
     def test_compare_transforms_prints_summary(self, capsys):
@@ -378,7 +431,12 @@ class TestCompareTransforms:
         for i in range(15):
             for t in range(10):
                 data.append(
-                    {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": np.random.randn(),
+                        "y2": np.random.randn(),
+                    }
                 )
         df = pd.DataFrame(data)
 

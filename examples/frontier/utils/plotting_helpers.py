@@ -104,7 +104,13 @@ def plot_frontier_2d(
                 if not mask.sum() >= 2:
                     y_frontier += np.std(y) * 0.5
             if y_frontier > y[idx]:
-                ax.plot([x[idx], x[idx]], [y[idx], y_frontier], "gray", alpha=0.3, linewidth=0.8)
+                ax.plot(
+                    [x[idx], x[idx]],
+                    [y[idx], y_frontier],
+                    "gray",
+                    alpha=0.3,
+                    linewidth=0.8,
+                )
 
     ax.set_xlabel(input_var)
     ax.set_ylabel(output_var)
@@ -253,7 +259,11 @@ def plot_efficiency_ranking(
     # Add value labels
     for bar, val in zip(bars, combined.values):
         ax.text(
-            val + 0.005, bar.get_y() + bar.get_height() / 2, f"{val:.3f}", va="center", fontsize=9
+            val + 0.005,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val:.3f}",
+            va="center",
+            fontsize=9,
         )
 
     # Add separator line
@@ -329,7 +339,13 @@ def plot_efficiency_evolution(
 
     if show_mean:
         mean_eff = efficiency_df.groupby(time_col)[efficiency_col].mean()
-        ax.plot(mean_eff.index, mean_eff.values, "k-", linewidth=3, label="Cross-sectional Mean")
+        ax.plot(
+            mean_eff.index,
+            mean_eff.values,
+            "k-",
+            linewidth=3,
+            label="Cross-sectional Mean",
+        )
 
     ax.set_xlabel(time_col.capitalize())
     ax.set_ylabel("Technical Efficiency")

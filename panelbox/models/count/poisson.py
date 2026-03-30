@@ -347,7 +347,10 @@ class PooledPoisson(NonlinearPanelModel):
         panelbox.marginal_effects.count_me.compute_poisson_ame
         panelbox.marginal_effects.count_me.compute_poisson_mem
         """
-        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+        from ...marginal_effects.count_me import (
+            compute_poisson_ame,
+            compute_poisson_mem,
+        )
 
         # Get result object
         if result is None:
@@ -729,7 +732,10 @@ class PoissonFixedEffects(NonlinearPanelModel):
         panelbox.marginal_effects.count_me.compute_poisson_ame
         panelbox.marginal_effects.count_me.compute_poisson_mem
         """
-        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+        from ...marginal_effects.count_me import (
+            compute_poisson_ame,
+            compute_poisson_mem,
+        )
 
         # Get result object
         if result is None:
@@ -947,7 +953,10 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         return self._log_likelihood_gamma(params)
 
     def fit(
-        self, distribution: str = "gamma", start_params: np.ndarray | None = None, **kwargs
+        self,
+        distribution: str = "gamma",
+        start_params: np.ndarray | None = None,
+        **kwargs,
     ) -> PanelModelResults:
         """
         Fit Random Effects Poisson model.
@@ -1148,7 +1157,10 @@ class RandomEffectsPoisson(NonlinearPanelModel):
         panelbox.marginal_effects.count_me.compute_poisson_ame
         panelbox.marginal_effects.count_me.compute_poisson_mem
         """
-        from ...marginal_effects.count_me import compute_poisson_ame, compute_poisson_mem
+        from ...marginal_effects.count_me import (
+            compute_poisson_ame,
+            compute_poisson_mem,
+        )
 
         # Get result object
         if result is None:

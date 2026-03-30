@@ -181,7 +181,11 @@ class TestSEMEstimation:
 
         # Estimate model
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")
@@ -216,7 +220,11 @@ class TestSEMEstimation:
 
         # Estimate model
         model = SpatialError(
-            formula="y ~ x1 + x2 + x3", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2 + x3",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")
@@ -245,7 +253,11 @@ class TestSEMEstimation:
 
         # Estimate model
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")
@@ -277,7 +289,11 @@ class TestSEMEstimation:
         # Test with different numbers of lags
         for n_lags in [1, 2, 3]:
             model = SpatialError(
-                formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+                formula="y ~ x1 + x2",
+                data=data,
+                entity_col="entity",
+                time_col="time",
+                W=W_obj,
             )
 
             result = model.fit(effects="fixed", method="gmm", n_lags=n_lags)
@@ -304,7 +320,11 @@ class TestSEMEstimation:
 
         # Estimate model
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")
@@ -341,7 +361,11 @@ class TestSEMEstimation:
 
         # Estimate model
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm")
@@ -396,7 +420,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="ml")
@@ -433,7 +461,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="random", method="ml")
@@ -466,7 +498,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         model.fit(effects="fixed", method="ml")
@@ -493,7 +529,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         model.fit(effects="fixed", method="ml")
@@ -523,7 +563,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Model is not fitted, so predict without params should raise.
@@ -546,7 +590,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         with pytest.raises(NotImplementedError, match="not yet implemented"):
@@ -567,7 +615,11 @@ class TestSEMEstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="pooled", method="gmm")
@@ -623,7 +675,11 @@ class TestSEMGMMInstruments:
         )
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Access internal methods to check instrument construction
@@ -665,7 +721,11 @@ class TestSEMGMMInstruments:
         )
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Perform within transformation
@@ -718,7 +778,11 @@ class TestSEMComparison:
 
         # Estimate SEM model
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result_sem = model.fit(effects="fixed", method="gmm")
@@ -750,7 +814,11 @@ class TestSEMGMMFE:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Try to fit with GMM-FE (will hit bug but test structure)
@@ -776,7 +844,11 @@ class TestSEMGMMFE:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit with verbose to hit logger lines
@@ -801,7 +873,11 @@ class TestSEMGMMFE:
 
         # Test with n_lags=1
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="gmm", n_lags=1)
@@ -822,7 +898,11 @@ class TestSEMGMMFE:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit will execute two-step GMM internally
@@ -852,7 +932,11 @@ class TestSEMGMMCovariance:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit with pooled GMM (works fine)
@@ -896,7 +980,11 @@ class TestSEMGMMCovariance:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit to initialize model state
@@ -931,7 +1019,11 @@ class TestSEMGMMCovariance:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit to set n_entities and n_periods
@@ -975,7 +1067,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit model
@@ -1004,7 +1100,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit first
@@ -1039,7 +1139,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit model
@@ -1070,7 +1174,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit model
@@ -1103,7 +1211,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Don't fit, try to predict without params
@@ -1126,7 +1238,11 @@ class TestSEMPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit model
@@ -1185,7 +1301,11 @@ class TestSEMEdgeCases:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit to initialize
@@ -1221,7 +1341,11 @@ class TestSEMEdgeCases:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit with verbose to hit logger line
@@ -1283,7 +1407,11 @@ class TestSEMVerboseLogging:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Capture logging output
@@ -1329,7 +1457,11 @@ class TestSEMVerboseLogging:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         import logging
@@ -1368,7 +1500,11 @@ class TestSEMVerboseLogging:
         W_obj = SpatialWeights(W)
 
         model = SpatialError(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         import logging

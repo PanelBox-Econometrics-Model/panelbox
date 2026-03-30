@@ -52,7 +52,11 @@ class ParallelPermutationTest:
         self.seed = seed
 
     def run(
-        self, data: np.ndarray, W: np.ndarray, observed_stat: float | None = None, **kwargs
+        self,
+        data: np.ndarray,
+        W: np.ndarray,
+        observed_stat: float | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Run parallel permutation test.
@@ -304,9 +308,17 @@ class ParallelBootstrap:
         params : np.ndarray
             Array of bootstrap parameter estimates
         """
-        (n_samples, data, W, formula, entity_col, time_col, model_kwargs, bootstrap_type, seed) = (
-            work_package
-        )
+        (
+            n_samples,
+            data,
+            W,
+            formula,
+            entity_col,
+            time_col,
+            model_kwargs,
+            bootstrap_type,
+            seed,
+        ) = work_package
 
         if seed is not None:
             np.random.seed(seed)
@@ -346,7 +358,8 @@ class ParallelBootstrap:
                     data[time_col].unique(), n_time, replace=True
                 )
                 boot_data = pd.concat(
-                    [data[data[time_col] == t].copy() for t in sampled_times], ignore_index=True
+                    [data[data[time_col] == t].copy() for t in sampled_times],
+                    ignore_index=True,
                 )
 
             else:

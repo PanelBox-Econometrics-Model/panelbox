@@ -334,7 +334,9 @@ class ResidualResult(BaseResult):
         >>> print(data.keys())
         dict_keys(['residuals', 'fitted', 'tests', 'summary', ...])
         """
-        from panelbox.visualization.transformers.residuals import ResidualDataTransformer
+        from panelbox.visualization.transformers.residuals import (
+            ResidualDataTransformer,
+        )
 
         # Use transformer to get chart-ready data
         transformer = ResidualDataTransformer()

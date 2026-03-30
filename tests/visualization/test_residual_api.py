@@ -176,7 +176,10 @@ class TestCreateResidualDiagnosticsOptions:
 
     def test_multiple_configs(self, mock_results):
         """Test configs for multiple charts."""
-        config = {"qq_plot": {"title": "Q-Q Plot"}, "residual_vs_fitted": {"title": "Residuals"}}
+        config = {
+            "qq_plot": {"title": "Q-Q Plot"},
+            "residual_vs_fitted": {"title": "Residuals"},
+        }
 
         charts = create_residual_diagnostics(
             mock_results, charts=["qq_plot", "residual_vs_fitted"], config=config

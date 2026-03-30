@@ -481,7 +481,13 @@ class TimeSeriesCV:
         # Add diagonal line
         min_val = min(predictions["actual"].min(), predictions["predicted"].min())
         max_val = max(predictions["actual"].max(), predictions["predicted"].max())
-        ax1.plot([min_val, max_val], [min_val, max_val], "r--", lw=2, label="Perfect prediction")
+        ax1.plot(
+            [min_val, max_val],
+            [min_val, max_val],
+            "r--",
+            lw=2,
+            label="Perfect prediction",
+        )
 
         ax1.set_xlabel("Actual Values")
         ax1.set_ylabel("Predicted Values")

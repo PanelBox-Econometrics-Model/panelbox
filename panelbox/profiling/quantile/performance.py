@@ -112,7 +112,12 @@ class PerformanceProfiler:
             self.current_run[name] = result
 
     def benchmark_estimators(
-        self, data, formula, tau: float = 0.5, methods: list[str] | None = None, n_runs: int = 3
+        self,
+        data,
+        formula,
+        tau: float = 0.5,
+        methods: list[str] | None = None,
+        n_runs: int = 3,
     ) -> BenchmarkReport:
         """
         Benchmark different QR estimators.
@@ -157,7 +162,9 @@ class PerformanceProfiler:
 
                             model = CanayTwoStep(data, formula, tau)
                         elif method == "fe":
-                            from ...models.quantile.fixed_effects import FixedEffectsQuantile
+                            from ...models.quantile.fixed_effects import (
+                                FixedEffectsQuantile,
+                            )
 
                             model = FixedEffectsQuantile(data, formula, tau)
                         elif method == "location_scale":
@@ -193,7 +200,11 @@ class PerformanceProfiler:
         return self._create_benchmark_report(results)
 
     def profile_scaling(
-        self, data_generator: Callable, sizes: list[int], method: str = "pooled", tau: float = 0.5
+        self,
+        data_generator: Callable,
+        sizes: list[int],
+        method: str = "pooled",
+        tau: float = 0.5,
     ) -> pd.DataFrame:
         """
         Profile performance scaling with data size.
@@ -299,13 +310,21 @@ class PerformanceProfiler:
         bottlenecks = {
             "time": {
                 "top_3": [
-                    {"name": m.name, "time": m.time, "percentage": 100 * m.time / total_time}
+                    {
+                        "name": m.name,
+                        "time": m.time,
+                        "percentage": 100 * m.time / total_time,
+                    }
                     for m in sorted_by_time[:3]
                 ]
             },
             "memory": {
                 "top_3": [
-                    {"name": m.name, "peak_memory": m.peak_memory, "memory_delta": m.memory_delta}
+                    {
+                        "name": m.name,
+                        "peak_memory": m.peak_memory,
+                        "memory_delta": m.memory_delta,
+                    }
                     for m in sorted_by_memory[:3]
                 ]
             },

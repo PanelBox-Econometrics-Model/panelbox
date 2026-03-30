@@ -211,7 +211,12 @@ class PerformanceProfiler:
             except Exception as e:
                 print(f"\nError profiling {name}: {e}")
                 results.append(
-                    {"name": name, "execution_time": None, "success": False, "error": str(e)}
+                    {
+                        "name": name,
+                        "execution_time": None,
+                        "success": False,
+                        "error": str(e),
+                    }
                 )
 
         self.results = results

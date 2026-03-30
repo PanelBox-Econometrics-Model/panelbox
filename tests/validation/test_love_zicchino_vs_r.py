@@ -61,7 +61,11 @@ def test_panelbox_vs_r_gmm_coefficients(love_zicchino_data, r_reference_results)
     # Estimate with GMM (FOD transformation)
     model = PanelVAR(var_data)
     result = model.fit(
-        method="gmm", transformation="fod", gmm_type="twostep", max_instruments=3, collapse=True
+        method="gmm",
+        transformation="fod",
+        gmm_type="twostep",
+        max_instruments=3,
+        collapse=True,
     )
 
     # Get R reference coefficients
@@ -158,7 +162,11 @@ def test_panelbox_gmm_stability(love_zicchino_data):
 
     model = PanelVAR(var_data)
     result = model.fit(
-        method="gmm", transformation="fod", gmm_type="twostep", max_instruments=3, collapse=True
+        method="gmm",
+        transformation="fod",
+        gmm_type="twostep",
+        max_instruments=3,
+        collapse=True,
     )
 
     print("\n=== Stability Check ===")
@@ -189,7 +197,11 @@ def test_panelbox_forecast_functionality(love_zicchino_data):
 
     model = PanelVAR(var_data)
     result = model.fit(
-        method="gmm", transformation="fod", gmm_type="twostep", max_instruments=3, collapse=True
+        method="gmm",
+        transformation="fod",
+        gmm_type="twostep",
+        max_instruments=3,
+        collapse=True,
     )
 
     # Generate forecasts
@@ -245,7 +257,8 @@ def test_panelbox_causality_network_plot(love_zicchino_data):
         pytest.param(
             "gmm",
             marks=pytest.mark.xfail(
-                reason="PanelVAR GMM method not yet implemented", raises=NotImplementedError
+                reason="PanelVAR GMM method not yet implemented",
+                raises=NotImplementedError,
             ),
         ),
     ],

@@ -17,10 +17,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.effects.spatial_effects import (
-    SpatialEffectsResult,
-    _compute_pvalue,
-)
+from panelbox.effects.spatial_effects import SpatialEffectsResult, _compute_pvalue
 
 
 @pytest.fixture(autouse=True)

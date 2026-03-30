@@ -57,7 +57,11 @@ class TestPedroniBasic:
     def test_basic_execution(self, cointegrated_panel_data):
         """Test basic execution with all tests."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         assert isinstance(result, PedroniResult)
@@ -177,11 +181,19 @@ class TestPedroniStatistical:
     ):
         """Compare results for cointegrated vs non-cointegrated data."""
         result_coint = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         result_no_coint = pedroni_test(
-            non_cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            non_cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         # Cointegrated data should generally have more negative rho statistics
@@ -196,7 +208,11 @@ class TestPedroniResult:
     def test_summary_method(self, cointegrated_panel_data):
         """Test summary method."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         summary = result.summary()
@@ -210,7 +226,11 @@ class TestPedroniResult:
     def test_reject_at_method(self, cointegrated_panel_data):
         """Test reject_at method."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         # All tests
@@ -225,7 +245,11 @@ class TestPedroniResult:
     def test_repr_method(self, cointegrated_panel_data):
         """Test __repr__ method."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         repr_str = repr(result)
@@ -271,7 +295,11 @@ class TestPedroniEdgeCases:
     def test_critical_values_presence(self, cointegrated_panel_data):
         """Test that critical values are provided."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         for test in result.statistic:
@@ -287,7 +315,11 @@ class TestPedroniComparison:
     def test_panel_vs_group_tests(self, cointegrated_panel_data):
         """Compare panel and group versions of tests."""
         result = pedroni_test(
-            cointegrated_panel_data, entity_col="entity", time_col="time", y_var="y", x_vars="x"
+            cointegrated_panel_data,
+            entity_col="entity",
+            time_col="time",
+            y_var="y",
+            x_vars="x",
         )
 
         # Both panel and group rho should exist

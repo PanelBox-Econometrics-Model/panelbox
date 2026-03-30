@@ -64,9 +64,19 @@ class TestReportManager:
             },
             "recommendations": [],
             "charts": {
-                "test_overview": {"categories": ["Specification"], "passed": [0], "failed": [1]},
-                "pvalue_distribution": {"test_names": ["Hausman Test"], "pvalues": [0.014]},
-                "test_statistics": {"test_names": ["Hausman Test"], "statistics": [12.5]},
+                "test_overview": {
+                    "categories": ["Specification"],
+                    "passed": [0],
+                    "failed": [1],
+                },
+                "pvalue_distribution": {
+                    "test_names": ["Hausman Test"],
+                    "pvalues": [0.014],
+                },
+                "test_statistics": {
+                    "test_names": ["Hausman Test"],
+                    "statistics": [12.5],
+                },
             },
         }
 
@@ -91,7 +101,9 @@ class TestReportManager:
     def test_generate_validation_report(self, report_manager, sample_validation_data):
         """Test validation report generation."""
         html = report_manager.generate_validation_report(
-            validation_data=sample_validation_data, interactive=True, title="Test Validation Report"
+            validation_data=sample_validation_data,
+            interactive=True,
+            title="Test Validation Report",
         )
 
         assert html is not None

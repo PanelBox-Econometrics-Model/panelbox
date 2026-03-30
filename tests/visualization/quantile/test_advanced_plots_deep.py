@@ -339,13 +339,23 @@ class TestComputeUniformBands:
             def conf_int(self, alpha=0.05):
                 return np.array(
                     [
-                        [self.params[0] - 2 * self.bse[0], self.params[0] + 2 * self.bse[0]],
-                        [self.params[1] - 2 * self.bse[1], self.params[1] + 2 * self.bse[1]],
+                        [
+                            self.params[0] - 2 * self.bse[0],
+                            self.params[0] + 2 * self.bse[0],
+                        ],
+                        [
+                            self.params[1] - 2 * self.bse[1],
+                            self.params[1] + 2 * self.bse[1],
+                        ],
                     ]
                 )
 
         class Result:
-            results = {0.25: ResWithConfInt(), 0.5: ResWithConfInt(), 0.75: ResWithConfInt()}
+            results = {
+                0.25: ResWithConfInt(),
+                0.5: ResWithConfInt(),
+                0.75: ResWithConfInt(),
+            }
 
         lower, upper = viz._compute_uniform_bands(Result(), 0, [0.25, 0.5, 0.75])
         assert len(lower) == 3

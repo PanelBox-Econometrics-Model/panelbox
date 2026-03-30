@@ -182,7 +182,11 @@ def plot_efficiency_distribution(
         # Statistics lines
         if show_stats:
             ax.axvline(
-                mean_eff, color="green", linestyle="--", linewidth=2, label=f"Mean: {mean_eff:.4f}"
+                mean_eff,
+                color="green",
+                linestyle="--",
+                linewidth=2,
+                label=f"Mean: {mean_eff:.4f}",
             )
             ax.axvline(
                 median_eff,

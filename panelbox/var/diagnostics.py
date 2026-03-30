@@ -123,7 +123,8 @@ class GMMDiagnostics:
             Omega_inv = np.linalg.inv(Omega)
         except np.linalg.LinAlgError:
             warnings.warn(
-                "Could not invert moment covariance matrix for Hansen J test", stacklevel=2
+                "Could not invert moment covariance matrix for Hansen J test",
+                stacklevel=2,
             )
             return {
                 "statistic": np.nan,
@@ -823,7 +824,11 @@ def compare_transforms(
             windmeijer_correction=windmeijer_correction,
         )
     except Exception as e:
-        return {"error": f"FOD estimation failed: {e!s}", "fod_result": None, "fd_result": None}
+        return {
+            "error": f"FOD estimation failed: {e!s}",
+            "fod_result": None,
+            "fd_result": None,
+        }
 
     # Estimate with FD
     try:

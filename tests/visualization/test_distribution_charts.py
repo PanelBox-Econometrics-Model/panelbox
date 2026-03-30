@@ -47,7 +47,10 @@ def sample_dataframe():
     """Sample DataFrame for distribution tests."""
     np.random.seed(42)
     return pd.DataFrame(
-        {"value": np.random.normal(0, 1, 150), "category": np.repeat(["X", "Y", "Z"], 50)}
+        {
+            "value": np.random.normal(0, 1, 150),
+            "category": np.repeat(["X", "Y", "Z"], 50),
+        }
     )
 
 

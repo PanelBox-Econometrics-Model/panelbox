@@ -23,7 +23,13 @@ class QuantileBootstrap:
     """
 
     def __init__(
-        self, model, tau, n_boot=999, method="cluster", ci_method="percentile", random_state=None
+        self,
+        model,
+        tau,
+        n_boot=999,
+        method="cluster",
+        ci_method="percentile",
+        random_state=None,
     ):
         """
         Initialize QuantileBootstrap.
@@ -133,7 +139,8 @@ class QuantileBootstrap:
             if not info["converged"]:
                 # Return NaN if not converged
                 return np.full(
-                    self.model.k_exog if hasattr(self.model, "k_exog") else X_boot.shape[1], np.nan
+                    (self.model.k_exog if hasattr(self.model, "k_exog") else X_boot.shape[1]),
+                    np.nan,
                 )
 
             return beta_boot
@@ -141,7 +148,8 @@ class QuantileBootstrap:
         except Exception:
             # Return NaN if optimization fails
             return np.full(
-                self.model.k_exog if hasattr(self.model, "k_exog") else X_boot.shape[1], np.nan
+                self.model.k_exog if hasattr(self.model, "k_exog") else X_boot.shape[1],
+                np.nan,
             )
 
     def _resample_clusters(self):

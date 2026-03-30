@@ -177,7 +177,11 @@ class TestBinaryModelsVsR:
         r_coefs = np.array(r_model["coefficients"][:3])  # Only intercept, x1, x2
         pb_coefs = result.params[result.params.index != "log_sigma_alpha"].values
         np.testing.assert_allclose(
-            pb_coefs, r_coefs, rtol=1e-2, atol=1e-3, err_msg="Coefficients differ from R"
+            pb_coefs,
+            r_coefs,
+            rtol=1e-2,
+            atol=1e-3,
+            err_msg="Coefficients differ from R",
         )
 
         # Compare variance component if available

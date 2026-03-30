@@ -210,7 +210,8 @@ class PanelResults:
         margin = t_critical * self.std_errors
 
         ci = pd.DataFrame(
-            {"lower": self.params - margin, "upper": self.params + margin}, index=self.params.index
+            {"lower": self.params - margin, "upper": self.params + margin},
+            index=self.params.index,
         )
 
         return ci
@@ -561,12 +562,12 @@ class PanelResults:
             "sample_info": {
                 "nobs": int(self.nobs),
                 "n_entities": int(self.n_entities),
-                "n_periods": int(self.n_periods) if self.n_periods is not None else None,
+                "n_periods": (int(self.n_periods) if self.n_periods is not None else None),
                 "df_model": int(self.df_model),
                 "df_resid": int(self.df_resid),
             },
             "rsquared": {
-                "rsquared": float(self.rsquared) if not np.isnan(self.rsquared) else None,
+                "rsquared": (float(self.rsquared) if not np.isnan(self.rsquared) else None),
                 "rsquared_adj": (
                     float(self.rsquared_adj) if not np.isnan(self.rsquared_adj) else None
                 ),
@@ -702,7 +703,7 @@ class PanelResults:
             raise FileNotFoundError(f"File not found: {filepath}")
 
         with open(filepath, "rb") as f:
-            results = pickle.load(f)  # noqa: S301 — intentional deserialization of user's own saved results
+            results = pickle.load(f)  # noqa: S301
 
         if not isinstance(results, cls):
             raise TypeError(

@@ -93,7 +93,12 @@ class TestPanelIVInitialization:
     def test_instrument_not_in_data(self, simple_iv_data):
         """Test error when instrument is not in data."""
         with pytest.raises(ValueError, match=r"Instrument .* not found"):
-            PanelIV("y ~ x | nonexistent_var", simple_iv_data, entity_col="entity", time_col="time")
+            PanelIV(
+                "y ~ x | nonexistent_var",
+                simple_iv_data,
+                entity_col="entity",
+                time_col="time",
+            )
 
     def test_no_endogenous_variables(self, simple_iv_data):
         """Test error when no endogenous variables are identified."""
@@ -296,7 +301,12 @@ class TestPanelIVEdgeCases:
         """Test overidentified model (more instruments than endogenous)."""
         simple_iv_data["z2"] = np.random.randn(len(simple_iv_data))
 
-        iv = PanelIV("y ~ w + x | w + z + z2", simple_iv_data, entity_col="entity", time_col="time")
+        iv = PanelIV(
+            "y ~ w + x | w + z + z2",
+            simple_iv_data,
+            entity_col="entity",
+            time_col="time",
+        )
 
         results = iv.fit()
 

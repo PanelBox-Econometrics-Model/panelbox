@@ -238,7 +238,12 @@ class TestVsRCensored:
 
         # Test right censoring
         model_right = RandomEffectsTobit(
-            y_flat, X_flat, groups, time, censoring_point=censoring_point, censoring_type="right"
+            y_flat,
+            X_flat,
+            groups,
+            time,
+            censoring_point=censoring_point,
+            censoring_type="right",
         )
         result_right = model_right.fit()
 

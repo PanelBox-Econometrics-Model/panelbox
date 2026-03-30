@@ -4,7 +4,9 @@ import pytest
 
 go = pytest.importorskip("plotly.graph_objects")
 
-from panelbox.report.charts.regression_charts import RegressionChartBuilder  # noqa: E402
+from panelbox.report.charts.regression_charts import (  # noqa: E402
+    RegressionChartBuilder,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -67,7 +69,14 @@ def minimal_regression_data():
     """Minimal data with only coefficients."""
     return {
         "coefficients": [
-            {"name": "x1", "coef": 0.5, "se": 0.1, "tstat": 5.0, "pvalue": 0.001, "stars": "***"},
+            {
+                "name": "x1",
+                "coef": 0.5,
+                "se": 0.1,
+                "tstat": 5.0,
+                "pvalue": 0.001,
+                "stars": "***",
+            },
         ],
     }
 

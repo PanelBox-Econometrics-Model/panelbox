@@ -328,7 +328,10 @@ class GeneralNestingSpatial(SpatialPanelModel):
             cov_matrix = np.linalg.inv(-hessian)
             std_errors = np.sqrt(np.diag(cov_matrix))
         except np.linalg.LinAlgError:
-            warnings.warn("Hessian is singular, using identity matrix for covariance", stacklevel=2)
+            warnings.warn(
+                "Hessian is singular, using identity matrix for covariance",
+                stacklevel=2,
+            )
             std_errors = np.ones(len(params_opt))
             cov_matrix = np.eye(len(params_opt))
 
@@ -497,7 +500,9 @@ class GeneralNestingSpatial(SpatialPanelModel):
         return nll
 
     def test_restrictions(
-        self, restrictions: dict[str, float], full_model: SpatialPanelResults | None = None
+        self,
+        restrictions: dict[str, float],
+        full_model: SpatialPanelResults | None = None,
     ) -> dict:
         """
         Likelihood Ratio test for parameter restrictions.

@@ -192,8 +192,18 @@ class TestDiagnosticsUtils:
         from diagnostics_utils import create_results_table
 
         results = {
-            "Test A": {"H0": "Unit root", "statistic": -2.5, "pvalue": 0.03, "reject": True},
-            "Test B": {"H0": "Stationarity", "statistic": 1.8, "pvalue": 0.12, "reject": False},
+            "Test A": {
+                "H0": "Unit root",
+                "statistic": -2.5,
+                "pvalue": 0.03,
+                "reject": True,
+            },
+            "Test B": {
+                "H0": "Stationarity",
+                "statistic": 1.8,
+                "pvalue": 0.12,
+                "reject": False,
+            },
         }
         table = create_results_table(results)
         assert isinstance(table, pd.DataFrame)

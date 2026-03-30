@@ -340,9 +340,11 @@ class SpatialHausmanTest(ValidationTest):
 
         summary_df = pd.DataFrame(
             {
-                "Parameter": self.common_params
-                if not self.use_positional
-                else [f"beta_{i}" for i in self.common_params],
+                "Parameter": (
+                    self.common_params
+                    if not self.use_positional
+                    else [f"beta_{i}" for i in self.common_params]
+                ),
                 f"{model1_name}_coef": params1,
                 f"{model1_name}_se": se1,
                 f"{model2_name}_coef": params2,

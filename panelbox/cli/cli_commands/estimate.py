@@ -111,7 +111,11 @@ Examples:
 
     # Optional arguments
     parser.add_argument(
-        "--output", "-o", type=str, default=None, help="Path to save results (default: no save)"
+        "--output",
+        "-o",
+        type=str,
+        default=None,
+        help="Path to save results (default: no save)",
     )
 
     parser.add_argument(
@@ -193,7 +197,10 @@ def execute(args: argparse.Namespace) -> int:
 
         # Check required columns
         if args.entity not in data.columns:
-            print(f"Error: Entity column '{args.entity}' not found in data", file=sys.stderr)
+            print(
+                f"Error: Entity column '{args.entity}' not found in data",
+                file=sys.stderr,
+            )
             print(f"Available columns: {', '.join(data.columns)}", file=sys.stderr)
             return 1
 

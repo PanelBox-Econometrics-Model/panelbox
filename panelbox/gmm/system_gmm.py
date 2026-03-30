@@ -882,7 +882,11 @@ class SystemGMM(DifferenceGMM):
         return Z_filtered
 
     def _get_valid_mask_system(
-        self, y: np.ndarray, X: np.ndarray, Z: np.ndarray, min_instruments: int | None = None
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+        Z: np.ndarray,
+        min_instruments: int | None = None,
     ) -> np.ndarray:
         """
         Get mask of observations with sufficient valid data for System GMM.

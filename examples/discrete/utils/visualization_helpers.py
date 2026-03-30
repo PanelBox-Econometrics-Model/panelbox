@@ -160,7 +160,12 @@ def plot_predicted_probabilities(
         density=True,
     )
     ax1.hist(
-        pred_probs[actual_y == 1], bins=30, alpha=0.5, label="Actual = 1", color="red", density=True
+        pred_probs[actual_y == 1],
+        bins=30,
+        alpha=0.5,
+        label="Actual = 1",
+        color="red",
+        density=True,
     )
     ax1.set_xlabel("Predicted Probability", fontsize=11)
     ax1.set_ylabel("Density", fontsize=11)
@@ -173,7 +178,11 @@ def plot_predicted_probabilities(
     df["bin"] = pd.cut(df["pred"], bins=bins, include_lowest=True)
     calibration = (
         df.groupby("bin", observed=True)
-        .agg(mean_pred=("pred", "mean"), mean_actual=("actual", "mean"), count=("actual", "size"))
+        .agg(
+            mean_pred=("pred", "mean"),
+            mean_actual=("actual", "mean"),
+            count=("actual", "size"),
+        )
         .reset_index()
     )
 
@@ -478,7 +487,14 @@ def plot_choice_probabilities(
 
     for alt in range(n_alternatives):
         probs = plot_data[:, alt] if len(plot_data.shape) > 1 else plot_data
-        ax.bar(x, probs, bottom=bottom, label=f"Alternative {alt}", color=colors[alt], alpha=0.8)
+        ax.bar(
+            x,
+            probs,
+            bottom=bottom,
+            label=f"Alternative {alt}",
+            color=colors[alt],
+            alpha=0.8,
+        )
         bottom += probs
 
     ax.set_xlabel("Observation", fontsize=12)

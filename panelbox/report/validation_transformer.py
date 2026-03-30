@@ -477,7 +477,10 @@ class ValidationTransformer:
                 all_test_names.append(name)
                 all_pvalues.append(result.pvalue)
 
-        charts["pvalue_distribution"] = {"test_names": all_test_names, "pvalues": all_pvalues}
+        charts["pvalue_distribution"] = {
+            "test_names": all_test_names,
+            "pvalues": all_pvalues,
+        }
 
         # 3. Statistics by Test
         test_stats = []
@@ -545,10 +548,10 @@ class ValidationTransformer:
                         "statistic": result.statistic,
                         "pvalue": result.pvalue,
                         "df": result.df if hasattr(result, "df") else None,
-                        "conclusion": result.conclusion if hasattr(result, "conclusion") else "",
+                        "conclusion": (result.conclusion if hasattr(result, "conclusion") else ""),
                         "passed": not result.reject_null,
                         "alpha": result.alpha if hasattr(result, "alpha") else 0.05,
-                        "metadata": result.metadata if hasattr(result, "metadata") else {},
+                        "metadata": (result.metadata if hasattr(result, "metadata") else {}),
                     }
                 )
 

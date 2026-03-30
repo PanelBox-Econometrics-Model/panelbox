@@ -145,7 +145,13 @@ def save_datasets(output_dir: str = "tests/validation/quantile/fixtures"):
 
     # Save true parameters for validation
     true_params = {
-        "simple": {"intercept": 1.0, "x1": 2.0, "x2": -1.5, "x3": 0.5, "sigma_alpha": 1.0},
+        "simple": {
+            "intercept": 1.0,
+            "x1": 2.0,
+            "x2": -1.5,
+            "x3": 0.5,
+            "sigma_alpha": 1.0,
+        },
         "location_scale": {"location": [1, 2, -1], "scale": [0.5, 0.3, -0.2]},
     }
 

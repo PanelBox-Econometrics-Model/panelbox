@@ -14,7 +14,10 @@ import seaborn as sns
 
 
 def plot_panel_structure(
-    data: pd.DataFrame, entity_col: str, time_col: str, figsize: tuple[int, int] = (12, 6)
+    data: pd.DataFrame,
+    entity_col: str,
+    time_col: str,
+    figsize: tuple[int, int] = (12, 6),
 ) -> None:
     """
     Visualize panel data structure showing entities over time.
@@ -58,7 +61,9 @@ def plot_panel_structure(
 
 
 def summary_stats(
-    data: pd.DataFrame, variables: Optional[list[str]] = None, by_group: Optional[str] = None
+    data: pd.DataFrame,
+    variables: Optional[list[str]] = None,
+    by_group: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Generate comprehensive summary statistics table.

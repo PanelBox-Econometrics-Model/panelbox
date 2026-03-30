@@ -13,7 +13,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_less
 
-from panelbox.standard_errors import RobustCovarianceResult, RobustStandardErrors, robust_covariance
+from panelbox.standard_errors import (
+    RobustCovarianceResult,
+    RobustStandardErrors,
+    robust_covariance,
+)
 from panelbox.standard_errors.utils import (
     compute_bread,
     compute_leverage,

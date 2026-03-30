@@ -205,7 +205,9 @@ def main():
 
         # Generate data
         X, y, entity_ids, time_periods = generate_panel_data(
-            n_entities=config["n_entities"], t_periods=config["t_periods"], n_vars=config["n_vars"]
+            n_entities=config["n_entities"],
+            t_periods=config["t_periods"],
+            n_vars=config["n_vars"],
         )
 
         # ----------------------------------------------------------------

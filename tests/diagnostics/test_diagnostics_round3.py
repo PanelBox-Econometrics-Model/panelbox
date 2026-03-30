@@ -285,7 +285,9 @@ class TestWesterlundUncoveredBranches:
 
     def test_compute_test_stats_all_nan(self):
         """Cover line 332: all NaN alphas returns NaN stats."""
-        from panelbox.diagnostics.cointegration.westerlund import _compute_test_statistics
+        from panelbox.diagnostics.cointegration.westerlund import (
+            _compute_test_statistics,
+        )
 
         result = _compute_test_statistics(
             np.array([np.nan, np.nan]),
@@ -776,7 +778,12 @@ class TestDavidsonMacKinnonUncoveredBranches:
         from panelbox.diagnostics.specification.davidson_mackinnon import JTestResult
 
         result = JTestResult(
-            forward={"statistic": 2.0, "pvalue": 0.04, "alpha_coef": 0.5, "alpha_se": 0.25},
+            forward={
+                "statistic": 2.0,
+                "pvalue": 0.04,
+                "alpha_coef": 0.5,
+                "alpha_se": 0.25,
+            },
             reverse=None,
             model1_name="M1",
             model2_name="M2",
@@ -792,7 +799,12 @@ class TestDavidsonMacKinnonUncoveredBranches:
 
         result = JTestResult(
             forward=None,
-            reverse={"statistic": 2.0, "pvalue": 0.04, "gamma_coef": 0.5, "gamma_se": 0.25},
+            reverse={
+                "statistic": 2.0,
+                "pvalue": 0.04,
+                "gamma_coef": 0.5,
+                "gamma_se": 0.25,
+            },
             model1_name="M1",
             model2_name="M2",
             direction="reverse",

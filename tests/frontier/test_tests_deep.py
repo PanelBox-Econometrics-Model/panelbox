@@ -31,7 +31,10 @@ class TestHausmanSingularButPositiveDefinite:
         # V_diff = V_tfe[:3,:3] - V_tre[:3,:3] = 0.1*I - 0.05*I = 0.05*I
         # This is PD, so Cholesky passes. Now mock inv to raise LinAlgError.
         with (
-            patch("panelbox.frontier.tests.inv", side_effect=np.linalg.LinAlgError("singular")),
+            patch(
+                "panelbox.frontier.tests.inv",
+                side_effect=np.linalg.LinAlgError("singular"),
+            ),
             warnings.catch_warnings(record=True) as w,
         ):
             warnings.simplefilter("always")

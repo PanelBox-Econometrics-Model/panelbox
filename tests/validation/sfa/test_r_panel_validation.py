@@ -186,7 +186,10 @@ class TestRValidation:
             return -ll if np.isfinite(ll) else 1e10
 
         result = minimize(
-            negloglik, theta_init, method="L-BFGS-B", options={"maxiter": 1000, "ftol": 1e-9}
+            negloglik,
+            theta_init,
+            method="L-BFGS-B",
+            options={"maxiter": 1000, "ftol": 1e-9},
         )
 
         assert result.success, f"Optimization failed: {result.message}"

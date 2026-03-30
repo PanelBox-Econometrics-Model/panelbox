@@ -707,7 +707,11 @@ class TestHonoreUncoveredBranches:
             warnings.simplefilter("ignore")
 
             model = HonoreTrimmedEstimator(
-                endog=y, exog=X, groups=groups, time=time, censoring_point=censoring_point
+                endog=y,
+                exog=X,
+                groups=groups,
+                time=time,
+                censoring_point=censoring_point,
             )
 
             assert model.censoring_point == censoring_point

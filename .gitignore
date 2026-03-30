@@ -301,3 +301,6 @@ examples/visualization/outputs/reports/latex/*
 !examples/visualization/outputs/charts/pdf/.gitkeep
 !examples/visualization/outputs/reports/html/.gitkeep
 !examples/visualization/outputs/reports/latex/.gitkeep
+
+# Testing directory (local experiments, never commit)
+testando_lib/

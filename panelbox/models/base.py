@@ -310,9 +310,7 @@ Parameter Estimates:
 
         return summary
 
-    def predict(
-        self, exog: np.ndarray | pd.DataFrame | None = None, **kwargs
-    ) -> np.ndarray:
+    def predict(self, exog: np.ndarray | pd.DataFrame | None = None, **kwargs) -> np.ndarray:
         """
         Generate predictions using fitted parameters.
 

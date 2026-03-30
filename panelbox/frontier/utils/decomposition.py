@@ -456,17 +456,38 @@ class TFPDecomposition:
 
         # Plot TE
         te_vals = decomp_sorted["delta_te"].values
-        ax.bar(x, te_vals, width, label="Efficiency Change (ΔTE)", color="#2ecc71", bottom=bottom)
+        ax.bar(
+            x,
+            te_vals,
+            width,
+            label="Efficiency Change (ΔTE)",
+            color="#2ecc71",
+            bottom=bottom,
+        )
         bottom += te_vals
 
         # Plot TC
         tc_vals = decomp_sorted["delta_tc"].values
-        ax.bar(x, tc_vals, width, label="Technical Change (ΔTC)", color="#3498db", bottom=bottom)
+        ax.bar(
+            x,
+            tc_vals,
+            width,
+            label="Technical Change (ΔTC)",
+            color="#3498db",
+            bottom=bottom,
+        )
         bottom += tc_vals
 
         # Plot SE
         se_vals = decomp_sorted["delta_se"].values
-        ax.bar(x, se_vals, width, label="Scale Effect (ΔSE)", color="#f39c12", bottom=bottom)
+        ax.bar(
+            x,
+            se_vals,
+            width,
+            label="Scale Effect (ΔSE)",
+            color="#f39c12",
+            bottom=bottom,
+        )
 
         # Add total TFP as line
         ax.plot(

@@ -212,7 +212,11 @@ class HonoreTrimmedEstimator:
         return (np.array(delta_y_list), np.array(delta_X_list), np.array(trim_list))
 
     def _trimmed_lad_objective(
-        self, beta: np.ndarray, delta_y: np.ndarray, delta_X: np.ndarray, trim_indicator: np.ndarray
+        self,
+        beta: np.ndarray,
+        delta_y: np.ndarray,
+        delta_X: np.ndarray,
+        trim_indicator: np.ndarray,
     ) -> float:
         """
         Compute the trimmed LAD objective function.
@@ -240,7 +244,11 @@ class HonoreTrimmedEstimator:
         return np.sum(np.abs(trimmed_residuals))
 
     def _trimmed_lad_gradient(
-        self, beta: np.ndarray, delta_y: np.ndarray, delta_X: np.ndarray, trim_indicator: np.ndarray
+        self,
+        beta: np.ndarray,
+        delta_y: np.ndarray,
+        delta_X: np.ndarray,
+        trim_indicator: np.ndarray,
     ) -> np.ndarray:
         """
         Compute the subgradient of the trimmed LAD objective.

@@ -57,7 +57,10 @@ class CanayTwoStep(QuantilePanelModel):
     """
 
     def __init__(
-        self, data: PanelData, formula: str | None = None, tau: float | list[float] = 0.5
+        self,
+        data: PanelData,
+        formula: str | None = None,
+        tau: float | list[float] = 0.5,
     ):
         # Store data and parameters
         self.data = data

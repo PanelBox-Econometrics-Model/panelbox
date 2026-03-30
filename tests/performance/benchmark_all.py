@@ -85,7 +85,13 @@ class PerformanceBenchmarker:
             time_id = np.tile(np.arange(T), N)
 
             data = pd.DataFrame(
-                {"y": y, "x1": X[:, 0], "x2": X[:, 1], "entity": entity_id, "time": time_id}
+                {
+                    "y": y,
+                    "x1": X[:, 0],
+                    "x2": X[:, 1],
+                    "entity": entity_id,
+                    "time": time_id,
+                }
             )
             for i in range(n_moments):
                 data[f"z{i}"] = Z[:, i]
@@ -94,7 +100,11 @@ class PerformanceBenchmarker:
             try:
                 start = time.time()
                 model_2step = SystemGMM(
-                    data=data, dependent="y", lags=1, entity_var="entity", time_var="time"
+                    data=data,
+                    dependent="y",
+                    lags=1,
+                    entity_var="entity",
+                    time_var="time",
                 )
                 model_2step.fit()
                 time_2step = time.time() - start
@@ -125,7 +135,11 @@ class PerformanceBenchmarker:
             try:
                 start = time.time()
                 model_cue = ContinuousUpdatedGMM(
-                    data=data, dependent="y", lags=1, entity_var="entity", time_var="time"
+                    data=data,
+                    dependent="y",
+                    lags=1,
+                    entity_var="entity",
+                    time_var="time",
                 )
                 model_cue.fit(max_iter=100)
                 time_cue = time.time() - start
@@ -178,13 +192,23 @@ class PerformanceBenchmarker:
             time_id = np.tile(np.arange(T), N)
 
             data = pd.DataFrame(
-                {"y": y, "x1": X[:, 0], "x2": X[:, 1], "entity": entity_id, "time": time_id}
+                {
+                    "y": y,
+                    "x1": X[:, 0],
+                    "x2": X[:, 1],
+                    "entity": entity_id,
+                    "time": time_id,
+                }
             )
 
             try:
                 start = time.time()
                 model = BiasCorrectedGMM(
-                    data=data, dependent="y", lags=1, entity_var="entity", time_var="time"
+                    data=data,
+                    dependent="y",
+                    lags=1,
+                    entity_var="entity",
+                    time_var="time",
                 )
                 model.fit()
                 elapsed = time.time() - start
@@ -307,7 +331,10 @@ class PerformanceBenchmarker:
 
                 self.results.append(
                     BenchmarkResult(
-                        method="Heckman MLE", params=config, time_seconds=time_mle, converged=True
+                        method="Heckman MLE",
+                        params=config,
+                        time_seconds=time_mle,
+                        converged=True,
                     )
                 )
             except Exception as e:
@@ -423,7 +450,10 @@ class PerformanceBenchmarker:
 
                 self.results.append(
                     BenchmarkResult(
-                        method="Hadri Test", params=config, time_seconds=elapsed, converged=True
+                        method="Hadri Test",
+                        params=config,
+                        time_seconds=elapsed,
+                        converged=True,
                     )
                 )
             except Exception as e:
@@ -447,7 +477,10 @@ class PerformanceBenchmarker:
 
                 self.results.append(
                     BenchmarkResult(
-                        method="Breitung Test", params=config, time_seconds=elapsed, converged=True
+                        method="Breitung Test",
+                        params=config,
+                        time_seconds=elapsed,
+                        converged=True,
                     )
                 )
             except Exception as e:
@@ -518,7 +551,10 @@ class PerformanceBenchmarker:
 
                 self.results.append(
                     BenchmarkResult(
-                        method="Multinomial FE", params=config, time_seconds=elapsed, converged=True
+                        method="Multinomial FE",
+                        params=config,
+                        time_seconds=elapsed,
+                        converged=True,
                     )
                 )
             except Exception as e:
@@ -560,7 +596,13 @@ class PerformanceBenchmarker:
             y = np.random.poisson(lambda_)
 
             data = pd.DataFrame(
-                {"y": y, "x1": X[:, 0], "x2": X[:, 1], "entity": entity_id, "time": time_id}
+                {
+                    "y": y,
+                    "x1": X[:, 0],
+                    "x2": X[:, 1],
+                    "entity": entity_id,
+                    "time": time_id,
+                }
             )
 
             try:
@@ -579,7 +621,10 @@ class PerformanceBenchmarker:
 
                 self.results.append(
                     BenchmarkResult(
-                        method="PPML FE", params=config, time_seconds=elapsed, converged=True
+                        method="PPML FE",
+                        params=config,
+                        time_seconds=elapsed,
+                        converged=True,
                     )
                 )
             except Exception as e:

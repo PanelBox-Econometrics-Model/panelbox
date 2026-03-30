@@ -538,7 +538,7 @@ class AdvancedDiagnostics:
         self.diagnostics.append(
             DiagnosticResult(
                 test_name="Convergence Check",
-                statistic=gradient_norm if gradient_norm is not None else float(converged),
+                statistic=(gradient_norm if gradient_norm is not None else float(converged)),
                 p_value=1.0 if converged else 0.0,
                 status=status,
                 message=message,

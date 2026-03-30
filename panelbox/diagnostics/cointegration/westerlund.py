@@ -61,9 +61,7 @@ class WesterlundResult:
     n_entities: int
     n_time: int
 
-    def reject_at(
-        self, alpha: float = 0.05, test: str | None = None
-    ) -> bool | dict[str, bool]:
+    def reject_at(self, alpha: float = 0.05, test: str | None = None) -> bool | dict[str, bool]:
         """
         Check if null hypothesis is rejected at given significance level.
 
@@ -253,7 +251,11 @@ def _estimate_ecm(
 
 
 def _select_lags(
-    y: np.ndarray, x: np.ndarray, max_lags: int = 4, criterion: str = "aic", trend: str = "c"
+    y: np.ndarray,
+    x: np.ndarray,
+    max_lags: int = 4,
+    criterion: str = "aic",
+    trend: str = "c",
 ) -> int:
     """
     Select optimal number of lags using information criterion.

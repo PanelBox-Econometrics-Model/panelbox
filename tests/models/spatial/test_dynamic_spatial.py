@@ -836,7 +836,8 @@ class TestDynamicSpatialPanel:
 
         # Patch SpatialPanelResults to return our mock
         with patch(
-            "panelbox.models.spatial.dynamic_spatial.SpatialPanelResults", return_value=mock_result
+            "panelbox.models.spatial.dynamic_spatial.SpatialPanelResults",
+            return_value=mock_result,
         ):
             try:
                 result = model.fit(

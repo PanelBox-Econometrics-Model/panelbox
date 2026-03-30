@@ -162,7 +162,12 @@ class TestDynamicBinaryPanelValidation:
 
         # Simple approach (ignores initial conditions)
         model_simple = DynamicBinaryPanel(
-            self.y, self.X, self.entity, self.time, initial_conditions="simple", effects="pooled"
+            self.y,
+            self.X,
+            self.entity,
+            self.time,
+            initial_conditions="simple",
+            effects="pooled",
         )
         result_simple = model_simple.fit()
 

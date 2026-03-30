@@ -277,7 +277,13 @@ def plot_moran_scatterplot(
     # Quadrant labels
     x_max = max(abs(z.min()), abs(z.max())) + 0.3
     y_max = max(abs(Wz.min()), abs(Wz.max())) + 0.3
-    label_kwargs = {"fontsize": 14, "fontweight": "bold", "alpha": 0.25, "ha": "center", "va": "center"}
+    label_kwargs = {
+        "fontsize": 14,
+        "fontweight": "bold",
+        "alpha": 0.25,
+        "ha": "center",
+        "va": "center",
+    }
     ax.text(x_max * 0.6, y_max * 0.7, "HH", color="#d32f2f", **label_kwargs)
     ax.text(-x_max * 0.6, -y_max * 0.7, "LL", color="#1976d2", **label_kwargs)
     ax.text(x_max * 0.6, -y_max * 0.7, "HL", color="#ff9800", **label_kwargs)

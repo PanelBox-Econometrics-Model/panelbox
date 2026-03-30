@@ -365,7 +365,11 @@ class TestBiasCorrectedGMM:
 
                 # Standard GMM
                 gmm_model = DifferenceGMM(
-                    data=data, dep_var="y", lags=[1], exog_vars=["x"], time_dummies=False
+                    data=data,
+                    dep_var="y",
+                    lags=[1],
+                    exog_vars=["x"],
+                    time_dummies=False,
                 )
                 gmm_results = gmm_model.fit()
 

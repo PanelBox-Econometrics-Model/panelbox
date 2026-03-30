@@ -77,7 +77,11 @@ class TestQuantilePanelModel:
     def test_kwargs_stored_as_attributes(self, panel_data):
         """Test that extra kwargs become attributes (lines 49-51)."""
         model = ConcreteQuantileModel(
-            panel_data, formula="y ~ X1 + X2", tau=0.5, custom_param=42, another_param="test"
+            panel_data,
+            formula="y ~ X1 + X2",
+            tau=0.5,
+            custom_param=42,
+            another_param="test",
         )
         assert model.custom_param == 42
         assert model.another_param == "test"

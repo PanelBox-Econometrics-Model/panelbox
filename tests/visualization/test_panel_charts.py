@@ -18,7 +18,11 @@ from panelbox.visualization.plotly.panel import (
     PanelStructurePlot,
     TimeEffectsPlot,
 )
-from panelbox.visualization.themes import ACADEMIC_THEME, PRESENTATION_THEME, PROFESSIONAL_THEME
+from panelbox.visualization.themes import (
+    ACADEMIC_THEME,
+    PRESENTATION_THEME,
+    PROFESSIONAL_THEME,
+)
 
 
 @pytest.fixture
@@ -66,7 +70,11 @@ def sample_panel_structure_data():
     presence_matrix[5, 5:8] = 0  # Entity 6 has gap
     presence_matrix[7, :3] = 0  # Entity 8 enters late
 
-    return {"entities": entities, "time_periods": time_periods, "presence_matrix": presence_matrix}
+    return {
+        "entities": entities,
+        "time_periods": time_periods,
+        "presence_matrix": presence_matrix,
+    }
 
 
 @pytest.fixture
@@ -92,7 +100,8 @@ def sample_panel_dataframe():
     var3 = entity_effects3 + np.random.randn(n * t) * 2
 
     return pd.DataFrame(
-        {"var1_high_between": var1, "var2_high_within": var2, "var3_balanced": var3}, index=index
+        {"var1_high_between": var1, "var2_high_within": var2, "var3_balanced": var3},
+        index=index,
     )
 
 

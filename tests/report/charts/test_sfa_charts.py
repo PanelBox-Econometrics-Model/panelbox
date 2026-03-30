@@ -16,9 +16,30 @@ def full_sfa_data():
     """Complete SFA transformer output for testing."""
     return {
         "coefficients": [
-            {"name": "x1", "coef": 0.5, "se": 0.1, "tstat": 5.0, "pvalue": 0.001, "stars": "***"},
-            {"name": "x2", "coef": -0.3, "se": 0.15, "tstat": -2.0, "pvalue": 0.046, "stars": "**"},
-            {"name": "x3", "coef": 0.05, "se": 0.2, "tstat": 0.25, "pvalue": 0.80, "stars": ""},
+            {
+                "name": "x1",
+                "coef": 0.5,
+                "se": 0.1,
+                "tstat": 5.0,
+                "pvalue": 0.001,
+                "stars": "***",
+            },
+            {
+                "name": "x2",
+                "coef": -0.3,
+                "se": 0.15,
+                "tstat": -2.0,
+                "pvalue": 0.046,
+                "stars": "**",
+            },
+            {
+                "name": "x3",
+                "coef": 0.05,
+                "se": 0.2,
+                "tstat": 0.25,
+                "pvalue": 0.80,
+                "stars": "",
+            },
         ],
         "variance_components": {
             "sigma_v": 0.3,
@@ -53,7 +74,14 @@ def minimal_sfa_data():
     """Minimal data with only coefficients."""
     return {
         "coefficients": [
-            {"name": "x1", "coef": 0.5, "se": 0.1, "tstat": 5.0, "pvalue": 0.001, "stars": "***"},
+            {
+                "name": "x1",
+                "coef": 0.5,
+                "se": 0.1,
+                "tstat": 5.0,
+                "pvalue": 0.001,
+                "stars": "***",
+            },
         ],
     }
 
@@ -63,7 +91,14 @@ def sfa_data_no_efficiency():
     """SFA data with efficiency=None."""
     return {
         "coefficients": [
-            {"name": "x1", "coef": 0.5, "se": 0.1, "tstat": 5.0, "pvalue": 0.001, "stars": "***"},
+            {
+                "name": "x1",
+                "coef": 0.5,
+                "se": 0.1,
+                "tstat": 5.0,
+                "pvalue": 0.001,
+                "stars": "***",
+            },
         ],
         "variance_components": {"sigma_v": 0.3, "sigma_u": 0.5, "gamma": 0.74},
         "efficiency": None,

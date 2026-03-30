@@ -129,7 +129,10 @@ def plot_irf_grid(irf_result, variables=None, figsize=None, save_path=None):
             ax.grid(True, alpha=0.3)
 
     fig.suptitle(
-        f"Impulse Response Functions ({method_label})", fontsize=14, fontweight="bold", y=1.02
+        f"Impulse Response Functions ({method_label})",
+        fontsize=14,
+        fontweight="bold",
+        y=1.02,
     )
     fig.tight_layout()
 
@@ -213,7 +216,12 @@ def plot_irf_comparison(irf_cholesky, irf_generalized, impulse, response, save_p
     for ax in axes:
         ax.set_ylim(y_min - padding, y_max + padding)
 
-    fig.suptitle(f"IRF Comparison: {impulse} -> {response}", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle(
+        f"IRF Comparison: {impulse} -> {response}",
+        fontsize=14,
+        fontweight="bold",
+        y=1.02,
+    )
     fig.tight_layout()
 
     if save_path is not None:
@@ -262,7 +270,11 @@ def plot_fevd_stacked(fevd_result, variable, save_path=None):
 
     # Stack plot
     ax.stackplot(
-        horizons, *[decomp[:, j] for j in range(K)], labels=var_names, colors=colors, alpha=0.85
+        horizons,
+        *[decomp[:, j] for j in range(K)],
+        labels=var_names,
+        colors=colors,
+        alpha=0.85,
     )
 
     ax.set_xlabel("Horizon", fontsize=12)
@@ -285,7 +297,11 @@ def plot_fevd_stacked(fevd_result, variable, save_path=None):
     )
 
     ax.legend(
-        loc="upper right", title="Shock Source", fontsize=10, title_fontsize=11, framealpha=0.9
+        loc="upper right",
+        title="Shock Source",
+        fontsize=10,
+        title_fontsize=11,
+        framealpha=0.9,
     )
     ax.grid(True, alpha=0.3, axis="y")
 
@@ -408,7 +424,14 @@ def plot_stability_diagram(results, save_path=None):
 
     # Draw unit circle
     theta = np.linspace(0, 2 * np.pi, 200)
-    ax.plot(np.cos(theta), np.sin(theta), "b--", linewidth=1.5, alpha=0.6, label="Unit Circle")
+    ax.plot(
+        np.cos(theta),
+        np.sin(theta),
+        "b--",
+        linewidth=1.5,
+        alpha=0.6,
+        label="Unit Circle",
+    )
 
     # Compute moduli for coloring
     moduli = np.abs(eigenvalues)
@@ -455,7 +478,12 @@ def plot_stability_diagram(results, save_path=None):
         xytext=(max_eig.real + 0.15, max_eig.imag + 0.15),
         fontsize=10,
         arrowprops={"arrowstyle": "->", "color": "gray", "lw": 1.2},
-        bbox={"boxstyle": "round,pad=0.3", "facecolor": "lightyellow", "edgecolor": "gray", "alpha": 0.9},
+        bbox={
+            "boxstyle": "round,pad=0.3",
+            "facecolor": "lightyellow",
+            "edgecolor": "gray",
+            "alpha": 0.9,
+        },
     )
 
     # Axes styling
@@ -588,8 +616,22 @@ def plot_forecast_fan(forecast_result, entity, variable, actual=None, save_path=
             )
 
             # Boundary lines
-            ax.plot(horizons, ci_lo, color="#2166ac", linewidth=0.8, linestyle=":", alpha=0.6)
-            ax.plot(horizons, ci_hi, color="#2166ac", linewidth=0.8, linestyle=":", alpha=0.6)
+            ax.plot(
+                horizons,
+                ci_lo,
+                color="#2166ac",
+                linewidth=0.8,
+                linestyle=":",
+                alpha=0.6,
+            )
+            ax.plot(
+                horizons,
+                ci_hi,
+                color="#2166ac",
+                linewidth=0.8,
+                linestyle=":",
+                alpha=0.6,
+            )
     except (AttributeError, IndexError):
         pass
 

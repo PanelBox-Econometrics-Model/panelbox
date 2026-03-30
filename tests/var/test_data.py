@@ -102,7 +102,12 @@ class TestPanelVARDataBasic:
         data = []
         for i in range(3):
             for t in range(15):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
@@ -176,7 +181,12 @@ class TestPanelVARDataLags:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
@@ -336,7 +346,12 @@ class TestPanelVARDataExogenous:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
@@ -366,13 +381,23 @@ class TestPanelVARDataTrend:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
 
         pvar_data = PanelVARData(
-            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1, trend="none"
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="none",
         )
 
         _y, X = pvar_data.equation_data(0)
@@ -385,7 +410,12 @@ class TestPanelVARDataTrend:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
@@ -411,13 +441,23 @@ class TestPanelVARDataTrend:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
 
         pvar_data = PanelVARData(
-            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1, trend="trend"
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="trend",
         )
 
         _y, X = pvar_data.equation_data(0)
@@ -430,13 +470,23 @@ class TestPanelVARDataTrend:
         data = []
         for i in range(3):
             for t in range(10):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)
 
         pvar_data = PanelVARData(
-            df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1, trend="both"
+            df,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
+            trend="both",
         )
 
         _y, X = pvar_data.equation_data(0)
@@ -453,11 +503,23 @@ class TestPanelVARDataValidation:
 
         # Missing y2
         with pytest.raises(ValueError, match="Missing columns"):
-            PanelVARData(df, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1)
+            PanelVARData(
+                df,
+                endog_vars=["y1", "y2"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+            )
 
         # Missing entity column
         with pytest.raises(ValueError, match="Missing columns"):
-            PanelVARData(df, endog_vars=["y1"], entity_col="wrong_entity", time_col="time", lags=1)
+            PanelVARData(
+                df,
+                endog_vars=["y1"],
+                entity_col="wrong_entity",
+                time_col="time",
+                lags=1,
+            )
 
     def test_invalid_lags_raises_error(self):
         """Test that invalid lag values raise errors."""
@@ -472,7 +534,12 @@ class TestPanelVARDataValidation:
 
         with pytest.raises(ValueError, match="trend must be one of"):
             PanelVARData(
-                df, endog_vars=["y1"], entity_col="entity", time_col="time", lags=1, trend="invalid"
+                df,
+                endog_vars=["y1"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
+                trend="invalid",
             )
 
 
@@ -485,7 +552,12 @@ class TestPanelVARDataRegressorNames:
         data = []
         for i in range(2):
             for t in range(5):
-                row = {"entity": i, "time": t, "y1": np.random.randn(), "y2": np.random.randn()}
+                row = {
+                    "entity": i,
+                    "time": t,
+                    "y1": np.random.randn(),
+                    "y2": np.random.randn(),
+                }
                 data.append(row)
 
         df = pd.DataFrame(data)

@@ -220,7 +220,12 @@ class TestPPMLAdvantages:
                 for j in range(n_countries):
                     if i != j:  # No self-trade
                         data.append(
-                            {"year": year, "origin": i, "dest": j, "pair_id": i * n_countries + j}
+                            {
+                                "year": year,
+                                "origin": i,
+                                "dest": j,
+                                "pair_id": i * n_countries + j,
+                            }
                         )
 
         df = pd.DataFrame(data)

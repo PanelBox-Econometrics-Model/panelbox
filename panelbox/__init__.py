@@ -37,6 +37,9 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 from panelbox.__version__ import __author__, __email__, __license__, __version__
 from panelbox._logging import set_verbosity
+
+# AutoExperiment
+from panelbox.autoexperiment import AutoExperiment, AutoExperimentResults
 from panelbox.core.formula_parser import FormulaParser, parse_formula
 
 # Core classes
@@ -159,15 +162,23 @@ from panelbox.models.selection import (
 from panelbox.models.static.between import BetweenEstimator
 from panelbox.models.static.first_difference import FirstDifferenceEstimator
 from panelbox.models.static.fixed_effects import FixedEffects
+from panelbox.models.static.mean_group import (
+    MeanGroupEstimator,
+    PooledMeanGroupEstimator,
+    hausman_mg_pmg,
+)
 
 # Static panel models
 from panelbox.models.static.pooled_ols import PooledOLS
 from panelbox.models.static.random_effects import RandomEffects
+from panelbox.models.static.sur import SUR, SURResults
 from panelbox.validation.cointegration.kao import KaoTest, KaoTestResult
 
 # Cointegration tests (existing + FASE 3 advanced tests)
 from panelbox.validation.cointegration.pedroni import PedroniTest, PedroniTestResult
-from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import BreuschPaganLMTest
+from panelbox.validation.cross_sectional_dependence.breusch_pagan_lm import (
+    BreuschPaganLMTest,
+)
 from panelbox.validation.cross_sectional_dependence.frees import FreesTest
 
 # Cross-Sectional Dependence Tests
@@ -182,10 +193,16 @@ from panelbox.validation.heteroskedasticity.white import WhiteTest
 from panelbox.validation.robustness.bootstrap import PanelBootstrap
 from panelbox.validation.robustness.checks import RobustnessChecker
 from panelbox.validation.robustness.cross_validation import CVResults, TimeSeriesCV
-from panelbox.validation.robustness.influence import InfluenceDiagnostics, InfluenceResults
+from panelbox.validation.robustness.influence import (
+    InfluenceDiagnostics,
+    InfluenceResults,
+)
 from panelbox.validation.robustness.jackknife import JackknifeResults, PanelJackknife
 from panelbox.validation.robustness.outliers import OutlierDetector, OutlierResults
-from panelbox.validation.robustness.sensitivity import SensitivityAnalysis, SensitivityResults
+from panelbox.validation.robustness.sensitivity import (
+    SensitivityAnalysis,
+    SensitivityResults,
+)
 from panelbox.validation.serial_correlation.baltagi_wu import BaltagiWuTest
 from panelbox.validation.serial_correlation.breusch_godfrey import BreuschGodfreyTest
 
@@ -220,10 +237,17 @@ from panelbox.var import (
 
 # Quantile Regression Visualization (optional - requires matplotlib)
 with contextlib.suppress(ImportError):
-    from panelbox.visualization.quantile import qq_plot, quantile_process_plot, residual_plot
+    from panelbox.visualization.quantile import (
+        qq_plot,
+        quantile_process_plot,
+        residual_plot,
+    )
 
 __all__ = [
     "PPML",
+    "SUR",
+    "AutoExperiment",
+    "AutoExperimentResults",
     "BaltagiWuTest",
     "BaseResult",
     "BetweenEstimator",
@@ -238,9 +262,7 @@ __all__ = [
     "CointegrationRankTest",
     "ComparisonResult",
     "ConditionalLogit",
-    # Advanced GMM (FASE 1)
     "ContinuousUpdatedGMM",
-    # GMM Models
     "DifferenceGMM",
     "DistributionType",
     "EncompassingResult",
@@ -257,7 +279,6 @@ __all__ = [
     "GMMDiagnostics",
     "GMMResults",
     "HadriResult",
-    # Specification Tests (existing + FASE 5)
     "HausmanTest",
     "HausmanTestResult",
     "IPSTest",
@@ -269,64 +290,50 @@ __all__ = [
     "KaoResult",
     "KaoTest",
     "KaoTestResult",
-    # Unit Root Tests (existing + FASE 4)
     "LLCTest",
     "LLCTestResult",
     "LagOrderResult",
+    "MeanGroupEstimator",
     "ModelType",
-    # Heteroskedasticity Tests
     "ModifiedWaldTest",
     "MultinomialLogit",
     "MultinomialLogitResult",
     "MundlakTest",
     "NegativeBinomial",
-    # Discrete Choice Models (FASE 5)
     "NonlinearPanelModel",
     "OrderedLogit",
     "OrderedProbit",
     "OutlierDetector",
     "OutlierResults",
     "PPMLResult",
-    # Robustness
     "PanelBootstrap",
-    # Core
     "PanelData",
-    # Experiment Pattern
     "PanelExperiment",
-    # Selection Models (FASE 2)
     "PanelHeckman",
     "PanelHeckmanResult",
-    # IV Models
     "PanelIV",
     "PanelJackknife",
     "PanelResults",
     "PanelUnitRootResult",
-    # Panel VAR Models
     "PanelVAR",
     "PanelVARData",
     "PanelVARResult",
     "PanelVECM",
     "PanelVECMResult",
     "PedroniResult",
-    # Cointegration Tests (existing + FASE 3)
     "PedroniTest",
     "PedroniTestResult",
-    # Cross-Sectional Dependence Tests
     "PesaranCDTest",
     "PoissonFixedEffects",
     "PoissonQML",
     "PooledLogit",
-    # Static Models
+    "PooledMeanGroupEstimator",
     "PooledOLS",
-    # Count Data Models (FASE 5)
     "PooledPoisson",
     "PooledProbit",
-    # Quantile Regression Models
     "PooledQuantile",
     "PooledQuantileResults",
-    # Quantile Regression Inference
     "QuantileBootstrap",
-    # Quantile Regression Diagnostics
     "QuantileRegressionDiagnostics",
     "RESETTest",
     "RandomEffects",
@@ -338,17 +345,16 @@ __all__ = [
     "ResidualResult",
     "RobustnessChecker",
     "SFResult",
+    "SURResults",
     "SensitivityAnalysis",
     "SensitivityResults",
     "SerializableMixin",
-    # Stochastic Frontier Analysis (FASE 1)
     "StochasticFrontier",
     "SystemGMM",
     "TimeSeriesCV",
     "ValidationResult",
     "WesterlundResult",
     "WhiteTest",
-    # Serial Correlation Tests
     "WooldridgeARTest",
     "ZeroInflatedNegativeBinomial",
     "ZeroInflatedNegativeBinomialResult",
@@ -357,13 +363,13 @@ __all__ = [
     "__author__",
     "__email__",
     "__license__",
-    # Version
     "__version__",
     "breitung_test",
     "compute_imr",
     "cox_test",
     "get_dataset_info",
     "hadri_test",
+    "hausman_mg_pmg",
     "imr_derivative",
     "imr_diagnostics",
     "j_test",
@@ -372,7 +378,6 @@ __all__ = [
     "list_categories",
     "list_datasets",
     "load_abdata",
-    # Datasets
     "load_dataset",
     "load_grunfeld",
     "load_model",
@@ -381,10 +386,8 @@ __all__ = [
     "pedroni_test",
     "plot_causality_network",
     "qq_plot",
-    # Quantile Regression Visualization
     "quantile_process_plot",
     "residual_plot",
-    # Logging
     "set_verbosity",
     "test_selection_effect",
     "wald_encompassing_test",

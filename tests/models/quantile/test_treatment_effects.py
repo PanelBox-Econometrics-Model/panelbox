@@ -7,7 +7,10 @@ import pandas as pd
 import pytest
 
 from panelbox.core.panel_data import PanelData
-from panelbox.models.quantile.treatment_effects import QTEResult, QuantileTreatmentEffects
+from panelbox.models.quantile.treatment_effects import (
+    QTEResult,
+    QuantileTreatmentEffects,
+)
 
 
 class TestQuantileTreatmentEffects:
@@ -113,11 +116,19 @@ class TestQuantileTreatmentEffects:
         panel_data = PanelData(df, entity_col="entity", time_col="time")
 
         qte = QuantileTreatmentEffects(
-            panel_data, outcome="y", treatment="treatment", entity_col="entity", time_col="time"
+            panel_data,
+            outcome="y",
+            treatment="treatment",
+            entity_col="entity",
+            time_col="time",
         )
 
         result = qte.estimate_qte(
-            tau=[0.25, 0.5, 0.75], method="did", pre_post_cutoff=0.5, bootstrap=True, n_boot=100
+            tau=[0.25, 0.5, 0.75],
+            method="did",
+            pre_post_cutoff=0.5,
+            bootstrap=True,
+            n_boot=100,
         )
 
         # Check DiD results

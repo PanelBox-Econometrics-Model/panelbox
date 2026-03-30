@@ -318,17 +318,30 @@ class FixedEffectsQuantile(QuantilePanelModel):
 
         # Optimize
         result = minimize(
-            fun=obj, x0=x0, method="L-BFGS-B", jac=grad, options={"maxiter": 1000, "ftol": 1e-8}
+            fun=obj,
+            x0=x0,
+            method="L-BFGS-B",
+            jac=grad,
+            options={"maxiter": 1000, "ftol": 1e-8},
         )
 
         # Extract parameters
         beta = result.x[: X_train.shape[1]]
         alpha = result.x[X_train.shape[1] :]
 
-        return {"beta": beta, "alpha": alpha, "converged": result.success, "objective": result.fun}
+        return {
+            "beta": beta,
+            "alpha": alpha,
+            "converged": result.success,
+            "objective": result.fun,
+        }
 
     def fit(
-        self, method: str = "L-BFGS-B", cv_folds: int = 5, verbose: bool = False, **kwargs
+        self,
+        method: str = "L-BFGS-B",
+        cv_folds: int = 5,
+        verbose: bool = False,
+        **kwargs,
     ) -> FixedEffectsQuantilePanelResult:
         """
         Fit Fixed Effects Quantile Regression.
@@ -566,7 +579,9 @@ class FixedEffectsQuantilePanelResult:
     """Container for Fixed Effects QR results across multiple quantiles."""
 
     def __init__(
-        self, model: FixedEffectsQuantile, results: dict[float, FixedEffectsQuantileResult]
+        self,
+        model: FixedEffectsQuantile,
+        results: dict[float, FixedEffectsQuantileResult],
     ):
         self.model = model
         self.results = results

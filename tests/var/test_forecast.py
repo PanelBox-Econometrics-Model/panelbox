@@ -58,7 +58,11 @@ def stable_var_data():
 def estimated_var(stable_var_data):
     """Estimate Panel VAR on stable data."""
     pvar_data = PanelVARData(
-        stable_var_data, endog_vars=["x1", "x2"], entity_col="entity", time_col="time", lags=1
+        stable_var_data,
+        endog_vars=["x1", "x2"],
+        entity_col="entity",
+        time_col="time",
+        lags=1,
     )
 
     model = PanelVAR(pvar_data)
@@ -220,7 +224,11 @@ class TestForecastEvaluation:
 
         # Re-estimate on train
         pvar_data = PanelVARData(
-            train_data, endog_vars=["x1", "x2"], entity_col="entity", time_col="time", lags=1
+            train_data,
+            endog_vars=["x1", "x2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(pvar_data)
         result = model.fit(method="ols")

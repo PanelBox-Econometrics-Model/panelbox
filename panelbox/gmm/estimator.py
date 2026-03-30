@@ -431,7 +431,8 @@ class GMMEstimator:
 
         if not converged:
             warnings.warn(
-                f"Iterative GMM did not converge in {self.max_iter} iterations", stacklevel=2
+                f"Iterative GMM did not converge in {self.max_iter} iterations",
+                stacklevel=2,
             )
 
         residuals = y - X @ beta_new

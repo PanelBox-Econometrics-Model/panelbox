@@ -19,7 +19,10 @@ def check_python_version() -> tuple[bool, str]:
     if version.major >= 3 and version.minor >= 8:
         return True, f"✓ Python {version.major}.{version.minor}.{version.micro}"
     else:
-        return False, f"✗ Python {version.major}.{version.minor}.{version.micro} (Need 3.8+)"
+        return (
+            False,
+            f"✗ Python {version.major}.{version.minor}.{version.micro} (Need 3.8+)",
+        )
 
 
 def check_package(package_name: str, min_version: str = None) -> tuple[bool, str]:

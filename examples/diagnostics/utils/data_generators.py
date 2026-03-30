@@ -18,7 +18,6 @@ Functions:
 - generate_eu_regions: EU regional panel (Tutorial 04)
 """
 
-
 import numpy as np
 import pandas as pd
 

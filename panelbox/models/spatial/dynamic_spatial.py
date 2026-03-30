@@ -218,7 +218,15 @@ class DynamicSpatialPanel(SpatialPanelModel):
 
         # Second stage: Optimal GMM with efficient weight matrix
         final_params = self._gmm_second_stage(
-            y_valid, X_valid, y_lag_valid, Wy_valid, Z_valid, initial_params, maxiter, tol, verbose
+            y_valid,
+            X_valid,
+            y_lag_valid,
+            Wy_valid,
+            Z_valid,
+            initial_params,
+            maxiter,
+            tol,
+            verbose,
         )
 
         # Compute standard errors
@@ -458,7 +466,8 @@ class DynamicSpatialPanel(SpatialPanelModel):
             W_opt = np.linalg.inv(S)
         except np.linalg.LinAlgError:
             warnings.warn(
-                "Moment covariance matrix is singular, using pseudo-inverse", stacklevel=2
+                "Moment covariance matrix is singular, using pseudo-inverse",
+                stacklevel=2,
             )
             W_opt = np.linalg.pinv(S)
 

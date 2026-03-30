@@ -19,7 +19,10 @@ class TestCUEGMMvsR:
 
         # Fit PanelBox model
         model = ContinuousUpdatedGMM(
-            data=data, dep_var="y", exog_vars=["x1", "x2"], instruments=["z1", "z2", "z3"]
+            data=data,
+            dep_var="y",
+            exog_vars=["x1", "x2"],
+            instruments=["z1", "z2", "z3"],
         )
         result = model.fit()
 
@@ -45,7 +48,10 @@ class TestCUEGMMvsR:
         data = cue_gmm_r_results["data"]
 
         model = ContinuousUpdatedGMM(
-            data=data, dep_var="y", exog_vars=["x1", "x2"], instruments=["z1", "z2", "z3"]
+            data=data,
+            dep_var="y",
+            exog_vars=["x1", "x2"],
+            instruments=["z1", "z2", "z3"],
         )
         result = model.fit()
 

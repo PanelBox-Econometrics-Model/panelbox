@@ -412,7 +412,12 @@ class PooledLogit(NonlinearPanelModel):
                 "recall": recall,
                 "f1": f1,
                 "auc_roc": auc_roc,
-                "confusion_matrix": {"tp": int(tp), "tn": int(tn), "fp": int(fp), "fn": int(fn)},
+                "confusion_matrix": {
+                    "tp": int(tp),
+                    "tn": int(tn),
+                    "fp": int(fp),
+                    "fn": int(fn),
+                },
             }
 
         results.classification_metrics = classification_metrics_method
@@ -1072,7 +1077,12 @@ class PooledProbit(NonlinearPanelModel):
                 "recall": recall,
                 "f1": f1,
                 "auc_roc": auc_roc,
-                "confusion_matrix": {"tp": int(tp), "tn": int(tn), "fp": int(fp), "fn": int(fn)},
+                "confusion_matrix": {
+                    "tp": int(tp),
+                    "tn": int(tn),
+                    "fp": int(fp),
+                    "fn": int(fn),
+                },
             }
 
         results.classification_metrics = classification_metrics_method
@@ -2063,7 +2073,11 @@ class RandomEffectsProbit(NonlinearPanelModel):
         """
         # Estimate Pooled Probit for starting values
         pooled = PooledProbit(
-            self.formula, self.data.data, self.data.entity_col, self.data.time_col, self.weights
+            self.formula,
+            self.data.data,
+            self.data.entity_col,
+            self.data.time_col,
+            self.weights,
         )
         pooled_result = pooled.fit(cov_type="nonrobust")
 
@@ -2246,7 +2260,8 @@ class RandomEffectsProbit(NonlinearPanelModel):
             # If singular, use pseudo-inverse
             vcov = -np.linalg.pinv(hessian)
             warnings.warn(
-                "Hessian is singular. Using pseudo-inverse for covariance matrix.", stacklevel=2
+                "Hessian is singular. Using pseudo-inverse for covariance matrix.",
+                stacklevel=2,
             )
 
         # Standard errors

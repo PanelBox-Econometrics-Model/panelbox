@@ -261,7 +261,11 @@ def estimate_mle(  # noqa: C901
         options["xtol"] = tol
 
         result = minimize(
-            neg_loglik, start_params, method="Newton-CG", jac=neg_gradient, options=options
+            neg_loglik,
+            start_params,
+            method="Newton-CG",
+            jac=neg_gradient,
+            options=options,
         )
 
     elif optimizer.upper() == "BFGS":

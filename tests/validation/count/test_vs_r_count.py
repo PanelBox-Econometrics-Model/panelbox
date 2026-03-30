@@ -67,7 +67,11 @@ class TestCountModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=1e-3, atol=1e-5, err_msg="Standard errors differ from R"
+            result.bse.values,
+            r_se,
+            rtol=1e-3,
+            atol=1e-5,
+            err_msg="Standard errors differ from R",
         )
 
         # Compare log-likelihood
@@ -142,7 +146,11 @@ class TestCountModelsVsR:
         # Compare standard errors
         r_se = np.array(r_model["std_errors"])
         np.testing.assert_allclose(
-            result.bse.values, r_se, rtol=5e-3, atol=1e-3, err_msg="Standard errors differ from R"
+            result.bse.values,
+            r_se,
+            rtol=5e-3,
+            atol=1e-3,
+            err_msg="Standard errors differ from R",
         )
 
     def test_re_poisson_vs_r(self):
@@ -164,7 +172,11 @@ class TestCountModelsVsR:
         r_coefs = np.array(r_model["coefficients"])
         pb_coefs = result.params[result.params.index != "sigma_alpha"].values
         np.testing.assert_allclose(
-            pb_coefs, r_coefs, rtol=1e-2, atol=1e-3, err_msg="Coefficients differ from R"
+            pb_coefs,
+            r_coefs,
+            rtol=1e-2,
+            atol=1e-3,
+            err_msg="Coefficients differ from R",
         )
 
         # Compare variance component

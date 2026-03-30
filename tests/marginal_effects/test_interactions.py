@@ -20,6 +20,7 @@ from scipy import stats
 
 matplotlib.use("Agg")  # non-interactive backend before any pyplot import
 
+# Import with alias to prevent pytest from collecting it as a test
 from panelbox.marginal_effects.interactions import (
     InteractionEffectsResult,
     _bootstrap_se,
@@ -29,8 +30,6 @@ from panelbox.marginal_effects.interactions import (
     _probit_interaction,
     compute_interaction_effects,
 )
-
-# Import with alias to prevent pytest from collecting it as a test
 from panelbox.marginal_effects.interactions import (
     test_interaction_significance as _test_interaction_significance,
 )

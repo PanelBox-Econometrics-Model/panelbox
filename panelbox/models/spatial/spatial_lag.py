@@ -733,7 +733,12 @@ class SpatialLag(SpatialPanelModel):
 
         # Build parameter names
         if hasattr(self.exog, "columns"):
-            param_names = ["rho", *list(self.exog.columns), "sigma_alpha2", "sigma_epsilon2"]
+            param_names = [
+                "rho",
+                *list(self.exog.columns),
+                "sigma_alpha2",
+                "sigma_epsilon2",
+            ]
         else:
             param_names = ["rho"] + [f"x{i}" for i in range(k)] + ["sigma_alpha2", "sigma_epsilon2"]
 

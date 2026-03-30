@@ -1364,8 +1364,15 @@ class PanelVARResult(SerializableMixin):
         .. [2] Pesaran, H. H., & Shin, Y. (1998). Generalized impulse response
                analysis in linear multivariate models. Economics letters, 58(1), 17-29.
         """
-        from panelbox.var.fevd import FEVDResult, compute_fevd_cholesky, compute_fevd_generalized
-        from panelbox.var.irf import compute_irf_cholesky, compute_phi_non_orthogonalized
+        from panelbox.var.fevd import (
+            FEVDResult,
+            compute_fevd_cholesky,
+            compute_fevd_generalized,
+        )
+        from panelbox.var.irf import (
+            compute_irf_cholesky,
+            compute_phi_non_orthogonalized,
+        )
 
         # Check stability
         if not self.is_stable():
@@ -2222,7 +2229,10 @@ class LagOrderResult:
             n_criteria = len(criteria)
 
             fig = make_subplots(
-                rows=1, cols=n_criteria, subplot_titles=criteria, horizontal_spacing=0.12
+                rows=1,
+                cols=n_criteria,
+                subplot_titles=criteria,
+                horizontal_spacing=0.12,
             )
 
             for i, criterion in enumerate(criteria, 1):

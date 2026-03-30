@@ -96,7 +96,16 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
     elif estimator.lower() == "bc":
         # BC estimator returns efficiency directly
         return _bc_estimator(
-            epsilon, sigma_v, sigma_u, sigma, sigma_sq, dist, sign, frontier_type, ci_level, result
+            epsilon,
+            sigma_v,
+            sigma_u,
+            sigma,
+            sigma_sq,
+            dist,
+            sign,
+            frontier_type,
+            ci_level,
+            result,
         )
     elif estimator.lower() == "mode":
         u_hat = _mode_estimator(epsilon, sigma_v, sigma_u, sigma, dist, sign)
@@ -135,7 +144,12 @@ def estimate_efficiency(result, estimator: str = "bc", ci_level: float = 0.95) -
 
 
 def _jlms_estimator(
-    epsilon: np.ndarray, sigma_v: float, sigma_u: float, sigma: float, dist: str, sign: int
+    epsilon: np.ndarray,
+    sigma_v: float,
+    sigma_u: float,
+    sigma: float,
+    dist: str,
+    sign: int,
 ) -> np.ndarray:
     """JLMS estimator: E[u|ε].
 
@@ -316,7 +330,12 @@ def _bc_estimator(
 
 
 def _bc_half_normal(
-    epsilon: np.ndarray, sigma_v: float, sigma_u: float, sigma: float, sigma_sq: float, sign: int
+    epsilon: np.ndarray,
+    sigma_v: float,
+    sigma_u: float,
+    sigma: float,
+    sigma_sq: float,
+    sign: int,
 ) -> np.ndarray:
     """BC estimator for half-normal.
 
@@ -368,7 +387,12 @@ def _bc_exponential(epsilon: np.ndarray, sigma_v: float, sigma_u: float, sign: i
 
 
 def _mode_estimator(
-    epsilon: np.ndarray, sigma_v: float, sigma_u: float, sigma: float, dist: str, sign: int
+    epsilon: np.ndarray,
+    sigma_v: float,
+    sigma_u: float,
+    sigma: float,
+    dist: str,
+    sign: int,
 ) -> np.ndarray:
     """Modal estimator: M[u|ε].
 

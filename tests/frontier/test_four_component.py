@@ -191,7 +191,12 @@ class TestFourComponentBasic:
         # The key test is that estimates are non-negative, finite, and not all zero
         assert all(np.isfinite([result.sigma_v, result.sigma_u, result.sigma_mu, result.sigma_eta]))
         assert all(
-            [result.sigma_v >= 0, result.sigma_u >= 0, result.sigma_mu >= 0, result.sigma_eta >= 0]
+            [
+                result.sigma_v >= 0,
+                result.sigma_u >= 0,
+                result.sigma_mu >= 0,
+                result.sigma_eta >= 0,
+            ]
         )
 
         # At least some variance components should be non-trivial

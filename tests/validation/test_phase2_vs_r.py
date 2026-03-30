@@ -15,7 +15,11 @@ import pytest
 from panelbox.marginal_effects.discrete_me import compute_ame, compute_mem, compute_mer
 
 # Import panelbox modules
-from panelbox.models.discrete.binary import PooledLogit, PooledProbit, RandomEffectsProbit
+from panelbox.models.discrete.binary import (
+    PooledLogit,
+    PooledProbit,
+    RandomEffectsProbit,
+)
 
 pytestmark = pytest.mark.r_validation
 

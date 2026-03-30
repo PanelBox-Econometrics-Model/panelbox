@@ -199,14 +199,22 @@ class TestDifferenceGMMValidation:
         """Test error when ID variable doesn't exist."""
         with pytest.raises((ValueError, KeyError)):
             DifferenceGMM(
-                data=balanced_panel_data, dep_var="y", lags=1, id_var="nonexistent", time_var="year"
+                data=balanced_panel_data,
+                dep_var="y",
+                lags=1,
+                id_var="nonexistent",
+                time_var="year",
             )
 
     def test_invalid_time_var(self, balanced_panel_data):
         """Test error when time variable doesn't exist."""
         with pytest.raises((ValueError, KeyError)):
             DifferenceGMM(
-                data=balanced_panel_data, dep_var="y", lags=1, id_var="id", time_var="nonexistent"
+                data=balanced_panel_data,
+                dep_var="y",
+                lags=1,
+                id_var="id",
+                time_var="nonexistent",
             )
 
     def test_invalid_exog_var(self, balanced_panel_data):
@@ -338,7 +346,12 @@ class TestDataTransformation:
         """Test that first-difference produces correct values."""
         # Simple data where we can verify differences manually
         data = pd.DataFrame(
-            {"id": [1, 1, 1], "year": [1, 2, 3], "y": [1.0, 2.0, 4.0], "x": [0.5, 1.5, 2.5]}
+            {
+                "id": [1, 1, 1],
+                "year": [1, 2, 3],
+                "y": [1.0, 2.0, 4.0],
+                "x": [0.5, 1.5, 2.5],
+            }
         )
 
         model = DifferenceGMM(

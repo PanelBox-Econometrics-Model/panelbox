@@ -412,7 +412,9 @@ class StandardErrorComparison:
 
         ax2.axhline(y=0, color="black", linestyle="--", alpha=0.3)
         ax2.set_title(
-            "Coefficient Estimates with 95% Confidence Intervals", fontsize=14, fontweight="bold"
+            "Coefficient Estimates with 95% Confidence Intervals",
+            fontsize=14,
+            fontweight="bold",
         )
         ax2.set_xlabel("Coefficient", fontsize=12)
         ax2.set_ylabel("Estimate", fontsize=12)

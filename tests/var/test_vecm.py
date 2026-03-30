@@ -7,7 +7,12 @@ import pandas as pd
 import pytest
 
 from panelbox.var import PanelVARData
-from panelbox.var.vecm import CointegrationRankTest, PanelVECM, PanelVECMResult, RankSelectionResult
+from panelbox.var.vecm import (
+    CointegrationRankTest,
+    PanelVECM,
+    PanelVECMResult,
+    RankSelectionResult,
+)
 
 
 class TestCointegrationRankTest:
@@ -416,12 +421,24 @@ class TestPanelVECM:
                 y[t] = y[t - 1] + dy
 
             for t in range(T):
-                data.append({"entity": i, "time": t, "y1": y[t, 0], "y2": y[t, 1], "y3": y[t, 2]})
+                data.append(
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": y[t, 0],
+                        "y2": y[t, 1],
+                        "y3": y[t, 2],
+                    }
+                )
 
         df = pd.DataFrame(data)
 
         panel_data = PanelVARData(
-            df, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=2
+            df,
+            endog_vars=["y1", "y2", "y3"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         vecm = PanelVECM(panel_data, rank=2)
@@ -805,7 +822,13 @@ class TestVECMFitMethods:
                 y[t] = y[t - 1] + dy
             for t in range(n_periods):
                 data_rows.append(
-                    {"entity": i, "time": t, "y1": y[t, 0], "y2": y[t, 1], "y3": y[t, 2]}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "y1": y[t, 0],
+                        "y2": y[t, 1],
+                        "y3": y[t, 2],
+                    }
                 )
         df = pd.DataFrame(data_rows)
         var_data = PanelVARData(

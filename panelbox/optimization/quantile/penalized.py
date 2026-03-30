@@ -26,7 +26,12 @@ class PenalizedQuantileOptimizer:
     """
 
     def __init__(
-        self, X: np.ndarray, y: np.ndarray, entity_ids: np.ndarray, tau: float, lambda_val: float
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        entity_ids: np.ndarray,
+        tau: float,
+        lambda_val: float,
     ):
         self.X = X
         self.y = y
@@ -190,7 +195,10 @@ class PenalizedQuantileOptimizer:
         return np.concatenate([beta_ols, alpha_init])
 
     def coordinate_descent(
-        self, max_iter: int = 100, tol: float = 1e-6, warm_start: np.ndarray | None = None
+        self,
+        max_iter: int = 100,
+        tol: float = 1e-6,
+        warm_start: np.ndarray | None = None,
     ) -> dict[str, Any]:
         """
         Coordinate descent algorithm for penalized QR.
@@ -231,7 +239,8 @@ class PenalizedQuantileOptimizer:
 
                 # Soft thresholding for L1 penalty
                 alpha[i] = self._soft_threshold(
-                    -gradient_i / self.entity_counts[i], self.lambda_val / self.entity_counts[i]
+                    -gradient_i / self.entity_counts[i],
+                    self.lambda_val / self.entity_counts[i],
                 )
 
             # Check convergence
@@ -240,7 +249,12 @@ class PenalizedQuantileOptimizer:
                 converged = True
                 break
 
-        return {"beta": beta, "alpha": alpha, "converged": converged, "iterations": iteration + 1}
+        return {
+            "beta": beta,
+            "alpha": alpha,
+            "converged": converged,
+            "iterations": iteration + 1,
+        }
 
     def warm_start_path(self, lambda_grid: np.ndarray) -> list:
         """

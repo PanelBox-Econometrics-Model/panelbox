@@ -398,7 +398,10 @@ DECISION_TREE = {
             "1": {"label": "Normality", "recommend": "residual_qq_plot"},
             "2": {"label": "Heteroskedasticity", "recommend": "residual_vs_fitted"},
             "3": {"label": "Variance Stability", "recommend": "scale_location"},
-            "4": {"label": "Influential Observations", "recommend": "residual_vs_leverage"},
+            "4": {
+                "label": "Influential Observations",
+                "recommend": "residual_vs_leverage",
+            },
             "5": {"label": "Serial Correlation", "recommend": "acf_pacf_plot"},
             "6": {"label": "All Diagnostics", "recommend": "residual_diagnostics_all"},
         },
@@ -406,17 +409,26 @@ DECISION_TREE = {
     "model_validation": {
         "question": "What type of validation do you need?",
         "options": {
-            "1": {"label": "Overall Validation Status", "recommend": "validation_dashboard"},
+            "1": {
+                "label": "Overall Validation Status",
+                "recommend": "validation_dashboard",
+            },
             "2": {"label": "Stationarity Tests", "recommend": "unit_root_test_plot"},
             "3": {"label": "Specification Tests", "recommend": "validation_dashboard"},
-            "4": {"label": "P-value Distribution", "recommend": "validation_pvalue_distribution"},
+            "4": {
+                "label": "P-value Distribution",
+                "recommend": "validation_pvalue_distribution",
+            },
         },
     },
     "model_comparison": {
         "question": "What do you want to compare across models?",
         "options": {
             "1": {"label": "Coefficients", "recommend": "coefficient_comparison"},
-            "2": {"label": "Model Fit (R², AIC, BIC)", "recommend": "model_fit_comparison"},
+            "2": {
+                "label": "Model Fit (R², AIC, BIC)",
+                "recommend": "model_fit_comparison",
+            },
             "3": {"label": "Information Criteria", "recommend": "information_criteria"},
             "4": {"label": "Forest Plot (Coefficients)", "recommend": "forest_plot"},
         },
@@ -424,10 +436,19 @@ DECISION_TREE = {
     "panel_analysis": {
         "question": "What panel data characteristic do you want to analyze?",
         "options": {
-            "1": {"label": "Entity-Specific Effects", "recommend": "entity_effects_plot"},
+            "1": {
+                "label": "Entity-Specific Effects",
+                "recommend": "entity_effects_plot",
+            },
             "2": {"label": "Time-Period Effects", "recommend": "time_effects_plot"},
-            "3": {"label": "Between-Within Variation", "recommend": "between_within_plot"},
-            "4": {"label": "Panel Structure/Balance", "recommend": "panel_structure_plot"},
+            "3": {
+                "label": "Between-Within Variation",
+                "recommend": "between_within_plot",
+            },
+            "4": {
+                "label": "Panel Structure/Balance",
+                "recommend": "panel_structure_plot",
+            },
             "5": {
                 "label": "Cross-Sectional Dependence",
                 "recommend": "cross_sectional_dependence_plot",
@@ -437,8 +458,14 @@ DECISION_TREE = {
     "econometric_tests": {
         "question": "What econometric property do you want to test?",
         "options": {
-            "1": {"label": "Serial Correlation (ACF/PACF)", "recommend": "acf_pacf_plot"},
-            "2": {"label": "Unit Roots / Stationarity", "recommend": "unit_root_test_plot"},
+            "1": {
+                "label": "Serial Correlation (ACF/PACF)",
+                "recommend": "acf_pacf_plot",
+            },
+            "2": {
+                "label": "Unit Roots / Stationarity",
+                "recommend": "unit_root_test_plot",
+            },
             "3": {"label": "Cointegration", "recommend": "cointegration_heatmap"},
             "4": {
                 "label": "Cross-Sectional Dependence",

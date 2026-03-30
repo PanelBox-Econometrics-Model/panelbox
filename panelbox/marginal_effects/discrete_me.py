@@ -484,7 +484,9 @@ def compute_mem(result, varlist: list[str] | None = None) -> MarginalEffectsResu
     return MarginalEffectsResult(mem, std_errors, result, me_type="mem", at_values=at_values)
 
 
-def compute_mer(result, at: dict, varlist: list[str] | None = None) -> MarginalEffectsResult:  # noqa: C901
+def compute_mer(  # noqa: C901
+    result, at: dict, varlist: list[str] | None = None
+) -> MarginalEffectsResult:
     """
     Compute Marginal Effects at Representative values (MER).
 
@@ -692,7 +694,11 @@ class OrderedMarginalEffectsResult:
         return np.allclose(sums, 0, atol=tol)
 
     def plot(
-        self, var: str, figsize: tuple = (10, 6), include_ci: bool = True, alpha: float = 0.05
+        self,
+        var: str,
+        figsize: tuple = (10, 6),
+        include_ci: bool = True,
+        alpha: float = 0.05,
     ):
         """
         Plot marginal effects across categories for a variable.
@@ -724,7 +730,13 @@ class OrderedMarginalEffectsResult:
             effects - z_crit * ses
             effects + z_crit * ses
             ax.errorbar(
-                x, effects, yerr=z_crit * ses, fmt="none", color="black", capsize=5, alpha=0.6
+                x,
+                effects,
+                yerr=z_crit * ses,
+                fmt="none",
+                color="black",
+                capsize=5,
+                alpha=0.6,
             )
 
         ax.axhline(y=0, color="red", linestyle="--", alpha=0.5)

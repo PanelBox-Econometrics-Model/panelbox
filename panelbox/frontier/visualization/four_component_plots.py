@@ -183,7 +183,13 @@ def plot_efficiency_scatter(
 
     # Add quadrant labels
     ax.text(
-        0.25, 0.95, "Low Persistent\nHigh Transient", ha="center", va="top", fontsize=9, alpha=0.6
+        0.25,
+        0.95,
+        "Low Persistent\nHigh Transient",
+        ha="center",
+        va="top",
+        fontsize=9,
+        alpha=0.6,
     )
     ax.text(0.75, 0.95, "High Both", ha="center", va="top", fontsize=9, alpha=0.6)
     ax.text(0.25, 0.05, "Low Both", ha="center", va="bottom", fontsize=9, alpha=0.6)
@@ -609,7 +615,14 @@ def plot_comprehensive_summary(
       Max:  {te_overall.max():.3f}
     """
 
-    ax5.text(0.1, 0.5, summary_text, fontsize=9, verticalalignment="center", family="monospace")
+    ax5.text(
+        0.1,
+        0.5,
+        summary_text,
+        fontsize=9,
+        verticalalignment="center",
+        family="monospace",
+    )
 
     # 6. Time evolution (spans all bottom columns)
     ax6 = fig.add_subplot(gs[2, :])
@@ -617,7 +630,9 @@ def plot_comprehensive_summary(
     # Select random entities for evolution
     np.random.seed(42)
     entity_ids = np.random.choice(
-        result.model.n_entities, size=min(n_evolution, result.model.n_entities), replace=False
+        result.model.n_entities,
+        size=min(n_evolution, result.model.n_entities),
+        replace=False,
     )
     colors_evo = plt.cm.tab10(np.linspace(0, 1, len(entity_ids)))
 
@@ -636,7 +651,13 @@ def plot_comprehensive_summary(
             label=f"Entity {entity_id}",
             linewidth=2,
         )
-        ax6.axhline(te_persistent_i, color=colors_evo[idx], linestyle="--", alpha=0.3, linewidth=1)
+        ax6.axhline(
+            te_persistent_i,
+            color=colors_evo[idx],
+            linestyle="--",
+            alpha=0.3,
+            linewidth=1,
+        )
 
     ax6.set_xlabel("Time Period")
     ax6.set_ylabel("Overall Efficiency")
@@ -646,7 +667,10 @@ def plot_comprehensive_summary(
     ax6.grid(True, alpha=0.3)
 
     fig.suptitle(
-        "Four-Component SFA Model: Comprehensive Summary", fontsize=16, fontweight="bold", y=0.995
+        "Four-Component SFA Model: Comprehensive Summary",
+        fontsize=16,
+        fontweight="bold",
+        y=0.995,
     )
 
     return fig

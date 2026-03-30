@@ -28,7 +28,11 @@ from panelbox.standard_errors.driscoll_kraay import DriscollKraayResult
 from panelbox.standard_errors.newey_west import NeweyWestResult
 from panelbox.standard_errors.pcse import PCSEResult
 from panelbox.standard_errors.robust import HC_TYPES, RobustCovarianceResult
-from panelbox.utils.matrix_ops import compute_ols, compute_rsquared, compute_vcov_nonrobust
+from panelbox.utils.matrix_ops import (
+    compute_ols,
+    compute_rsquared,
+    compute_vcov_nonrobust,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +221,13 @@ class PooledOLS(PanelModel):
         cov_type_lower = cov_type.lower()
 
         # Type annotation for result variable to handle different covariance result types
-        result: RobustCovarianceResult | ClusteredCovarianceResult | DriscollKraayResult | NeweyWestResult | PCSEResult
+        result: (
+            RobustCovarianceResult
+            | ClusteredCovarianceResult
+            | DriscollKraayResult
+            | NeweyWestResult
+            | PCSEResult
+        )
 
         if cov_type_lower == "nonrobust":
             vcov = compute_vcov_nonrobust(X, resid, df_resid)

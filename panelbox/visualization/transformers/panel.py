@@ -229,9 +229,7 @@ class PanelDataTransformer:
             ) from e
 
     @staticmethod
-    def calculate_between_within(
-        panel_data, variables: list[str] | None = None
-    ) -> dict[str, Any]:
+    def calculate_between_within(panel_data, variables: list[str] | None = None) -> dict[str, Any]:
         """
         Calculate between and within variance decomposition.
 
@@ -277,7 +275,12 @@ class PanelDataTransformer:
             if not isinstance(df.index, pd.MultiIndex):
                 raise ValueError("DataFrame must have MultiIndex (entity, time)")
 
-            results = {"variables": [], "between_var": [], "within_var": [], "total_var": []}
+            results = {
+                "variables": [],
+                "between_var": [],
+                "within_var": [],
+                "total_var": [],
+            }
 
             # Calculate for each variable
             for var in variables:

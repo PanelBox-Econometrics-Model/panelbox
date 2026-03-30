@@ -83,7 +83,14 @@ def plot_choropleth(
             linewidth=0.5,
         )
     else:
-        gdf.plot(column=variable, ax=ax, cmap=cmap, legend=legend, edgecolor="black", linewidth=0.5)
+        gdf.plot(
+            column=variable,
+            ax=ax,
+            cmap=cmap,
+            legend=legend,
+            edgecolor="black",
+            linewidth=0.5,
+        )
 
     ax.set_title(title or f"Choropleth Map: {variable}", fontsize=14)
     ax.axis("off")
@@ -245,7 +252,8 @@ def plot_moran_scatterplot(
     ax.set_xlabel("Standardized Variable", fontsize=12)
     ax.set_ylabel("Spatial Lag of Variable", fontsize=12)
     ax.set_title(
-        f"Moran Scatterplot\nMoran's I = {moran.I:.4f} (p = {moran.p_sim:.4f})", fontsize=14
+        f"Moran Scatterplot\nMoran's I = {moran.I:.4f} (p = {moran.p_sim:.4f})",
+        fontsize=14,
     )
     ax.legend()
     ax.grid(True, alpha=0.3)
@@ -326,7 +334,11 @@ def plot_lisa_map(
         subset = gdf_copy[gdf_copy["lisa_cluster"] == cluster]
         if len(subset) > 0:
             subset.plot(
-                ax=ax, color=color, edgecolor="black", linewidth=0.5, label=cluster_labels[cluster]
+                ax=ax,
+                color=color,
+                edgecolor="black",
+                linewidth=0.5,
+                label=cluster_labels[cluster],
             )
 
     ax.set_title(f"LISA Cluster Map: {variable}", fontsize=14)

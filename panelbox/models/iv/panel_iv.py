@@ -479,7 +479,7 @@ class PanelIV(PanelModel):
         data_info = {
             "nobs": len(df),
             "n_entities": self.data.n_entities,
-            "n_periods": self.data.n_periods if hasattr(self.data, "n_periods") else None,
+            "n_periods": (self.data.n_periods if hasattr(self.data, "n_periods") else None),
             "df_model": len(params),
             "df_resid": len(df) - len(params),
             "entity_index": entity_index,

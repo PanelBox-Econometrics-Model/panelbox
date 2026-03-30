@@ -143,7 +143,10 @@ class InteractionEffectsResult:
         ax.hist(self.cross_partial, bins=30, edgecolor="black", alpha=0.7)
         ax.axvline(0, color="red", linestyle="--", label="Zero effect")
         ax.axvline(
-            self.mean_effect, color="green", linestyle="-", label=f"Mean = {self.mean_effect:.4f}"
+            self.mean_effect,
+            color="green",
+            linestyle="-",
+            label=f"Mean = {self.mean_effect:.4f}",
         )
         ax.set_xlabel("Interaction Effect")
         ax.set_ylabel("Frequency")
@@ -183,7 +186,13 @@ class InteractionEffectsResult:
         if self.z_statistics is not None:
             ax = axes[1, 0]
             ax.hist(self.z_statistics, bins=30, edgecolor="black", alpha=0.7)
-            ax.axvline(-1.96, color="red", linestyle="--", alpha=0.7, label="5% critical values")
+            ax.axvline(
+                -1.96,
+                color="red",
+                linestyle="--",
+                alpha=0.7,
+                label="5% critical values",
+            )
             ax.axvline(1.96, color="red", linestyle="--", alpha=0.7)
             ax.axvline(0, color="black", linestyle="-", alpha=0.5)
             ax.set_xlabel("Z-statistic")
@@ -503,7 +512,12 @@ def _bootstrap_se(model_result, X, var1_idx, var2_idx, interact_idx, n_bootstrap
 
             if "logit" in model_result.model.__class__.__name__.lower():
                 effects_boot = _logit_interaction(
-                    X_boot, result_boot.params, xb_boot, var1_idx, var2_idx, interact_idx
+                    X_boot,
+                    result_boot.params,
+                    xb_boot,
+                    var1_idx,
+                    var2_idx,
+                    interact_idx,
                 )
             # Add other model types as needed
 

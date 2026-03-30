@@ -142,7 +142,11 @@ class TestQuantilePanelBase:
         model = MagicMock()
         results = {
             0.5: {"params": np.array([1.0, 2.0]), "converged": True, "iterations": 10},
-            0.25: {"params": np.array([0.5, 1.5]), "converged": False, "iterations": 20},
+            0.25: {
+                "params": np.array([0.5, 1.5]),
+                "converged": False,
+                "iterations": 20,
+            },
         }
         qpr = QuantilePanelResult(model, results)
         qpr.summary()
@@ -533,7 +537,10 @@ class TestQuantileMonotonicityCoverage:
             }
         ]
         report = CrossingReport(
-            has_crossing=True, crossings=crossings, total_inversions=5, pct_affected=10.0
+            has_crossing=True,
+            crossings=crossings,
+            total_inversions=5,
+            pct_affected=10.0,
         )
         report.summary()
         out = capsys.readouterr().out
@@ -565,7 +572,10 @@ class TestQuantileMonotonicityCoverage:
             }
         ]
         report = CrossingReport(
-            has_crossing=True, crossings=crossings, total_inversions=5, pct_affected=10.0
+            has_crossing=True,
+            crossings=crossings,
+            total_inversions=5,
+            pct_affected=10.0,
         )
         df = report.to_dataframe()
         assert "tau1" in df.columns
@@ -659,7 +669,10 @@ class TestQuantileMonotonicityCoverage:
             }
         ]
         report = CrossingReport(
-            has_crossing=True, crossings=crossings, total_inversions=5, pct_affected=50.0
+            has_crossing=True,
+            crossings=crossings,
+            total_inversions=5,
+            pct_affected=50.0,
         )
 
         rng = np.random.default_rng(42)
@@ -2069,7 +2082,11 @@ class TestQuantilePanelBaseFit:
         model.k_exog = 3
 
         # Mock optimize_quantile to return a dict result
-        mock_result = {"params": np.array([1.0, 2.0, 3.0]), "converged": True, "iterations": 5}
+        mock_result = {
+            "params": np.array([1.0, 2.0, 3.0]),
+            "converged": True,
+            "iterations": 5,
+        }
         with patch("panelbox.optimization.quantile.optimize_quantile", return_value=mock_result):
             result = model.fit(method="interior-point")
 
@@ -2101,8 +2118,14 @@ class TestQuantilePanelBaseFit:
         mock_boot.ci_upper = np.array([1.2, 2.4])
 
         with (
-            patch("panelbox.optimization.quantile.optimize_quantile", return_value=mock_opt_result),
-            patch("panelbox.inference.quantile.bootstrap.bootstrap_qr", return_value=mock_boot),
+            patch(
+                "panelbox.optimization.quantile.optimize_quantile",
+                return_value=mock_opt_result,
+            ),
+            patch(
+                "panelbox.inference.quantile.bootstrap.bootstrap_qr",
+                return_value=mock_boot,
+            ),
         ):
             result = model.fit(bootstrap=True, n_boot=10)
 
@@ -2162,7 +2185,10 @@ class TestQuantilePanelBaseFit:
             call_count[0] += 1
             return {"params": np.array([1.0, 2.0]) * kwargs["tau"]}
 
-        with patch("panelbox.optimization.quantile.optimize_quantile", side_effect=mock_optimize):
+        with patch(
+            "panelbox.optimization.quantile.optimize_quantile",
+            side_effect=mock_optimize,
+        ):
             result = model.fit()
 
         assert call_count[0] == 3

@@ -216,9 +216,7 @@ class QuantileTreatmentEffects:
 
         return QTEResult(qte_results, method="standard")
 
-    def _qte_unconditional(
-        self, tau_list: np.ndarray, bandwidth: float | None = None
-    ) -> QTEResult:
+    def _qte_unconditional(self, tau_list: np.ndarray, bandwidth: float | None = None) -> QTEResult:
         """
         Unconditional QTE via Recentered Influence Function (RIF).
 
@@ -479,7 +477,10 @@ class QuantileTreatmentEffects:
         return np.array(qte_boot)
 
     def plot_qte(
-        self, results: QTEResult, tau_grid: np.ndarray | None = None, show_ate: bool = True
+        self,
+        results: QTEResult,
+        tau_grid: np.ndarray | None = None,
+        show_ate: bool = True,
     ):
         """Plot Quantile Treatment Effects across τ."""
         import matplotlib.pyplot as plt

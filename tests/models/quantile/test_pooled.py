@@ -56,7 +56,10 @@ class TestPooledQuantileBasic:
     def test_pooled_quantile_basic(self, panel_data):
         """Test basic pooled quantile estimation."""
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=0.5
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=0.5,
         )
 
         results = model.fit()
@@ -69,7 +72,10 @@ class TestPooledQuantileBasic:
     def test_pooled_quantile_single_quantile(self, panel_data):
         """Test with single quantile."""
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=0.5
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=0.5,
         )
 
         results = model.fit()
@@ -86,7 +92,10 @@ class TestPooledQuantileBasic:
         quantiles = [0.25, 0.5, 0.75]
 
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=quantiles
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=quantiles,
         )
 
         results = model.fit()
@@ -103,7 +112,10 @@ class TestPooledQuantileBasic:
         quantiles = [0.1, 0.5, 0.9]
 
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=quantiles
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=quantiles,
         )
 
         results = model.fit()
@@ -140,7 +152,10 @@ class TestPooledQuantileStandardErrors:
     def test_se_types(self, panel_data):
         """Test different standard error types."""
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=0.5
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=0.5,
         )
 
         # Cluster SE
@@ -163,7 +178,10 @@ class TestPooledQuantileStandardErrors:
     def test_cluster_se_larger_than_nonrobust(self, panel_data):
         """Test that cluster SEs account for clustering."""
         model = PooledQuantile(
-            panel_data["y"], panel_data["X"], entity_id=panel_data["entity_id"], quantiles=0.5
+            panel_data["y"],
+            panel_data["X"],
+            entity_id=panel_data["entity_id"],
+            quantiles=0.5,
         )
 
         results_cluster = model.fit(se_type="cluster")

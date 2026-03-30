@@ -81,7 +81,10 @@ def main():
     print()
 
     model = pb.PooledOLS(
-        formula="invest ~ value + capital", data=data, entity_col="firm", time_col="year"
+        formula="invest ~ value + capital",
+        data=data,
+        entity_col="firm",
+        time_col="year",
     )
 
     results = model.fit()

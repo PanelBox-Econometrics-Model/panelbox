@@ -166,7 +166,11 @@ def test_ips_different_trends():
 
     data = generate_stationary_panel()
 
-    for trend, name in [("n", "No trend"), ("c", "Constant"), ("ct", "Constant + trend")]:
+    for trend, name in [
+        ("n", "No trend"),
+        ("c", "Constant"),
+        ("ct", "Constant + trend"),
+    ]:
         print(f"\n{name}:")
         print("-" * 40)
         ips = IPSTest(data, "y", "entity", "time", lags=1, trend=trend)

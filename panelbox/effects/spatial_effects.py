@@ -27,7 +27,9 @@ import pandas as pd
 from scipy import stats
 
 if TYPE_CHECKING:
-    from panelbox.models.spatial.spatial_lag import SpatialPanelResults as SpatialPanelResult
+    from panelbox.models.spatial.spatial_lag import (
+        SpatialPanelResults as SpatialPanelResult,
+    )
 
 try:
     import plotly.graph_objects as go
@@ -520,7 +522,9 @@ class SpatialEffectsResult:
                     "Std.Error": var_effects.get("direct_se", np.nan),
                     "CI.Lower": var_effects.get("direct_ci", (np.nan, np.nan))[0],
                     "CI.Upper": var_effects.get("direct_ci", (np.nan, np.nan))[1],
-                    "P-value": var_effects.get("direct_pvalue", np.nan) if show_pvalues else np.nan,
+                    "P-value": (
+                        var_effects.get("direct_pvalue", np.nan) if show_pvalues else np.nan
+                    ),
                 }
             )
 
@@ -548,7 +552,9 @@ class SpatialEffectsResult:
                     "Std.Error": var_effects.get("total_se", np.nan),
                     "CI.Lower": var_effects.get("total_ci", (np.nan, np.nan))[0],
                     "CI.Upper": var_effects.get("total_ci", (np.nan, np.nan))[1],
-                    "P-value": var_effects.get("total_pvalue", np.nan) if show_pvalues else np.nan,
+                    "P-value": (
+                        var_effects.get("total_pvalue", np.nan) if show_pvalues else np.nan
+                    ),
                 }
             )
 
@@ -590,7 +596,10 @@ class SpatialEffectsResult:
         print("=" * 80)
 
     def plot(
-        self, backend: Literal["plotly", "matplotlib"] = "plotly", show_ci: bool = True, **kwargs
+        self,
+        backend: Literal["plotly", "matplotlib"] = "plotly",
+        show_ci: bool = True,
+        **kwargs,
     ):
         """
         Create bar plot of spatial effects.
@@ -641,7 +650,11 @@ class SpatialEffectsResult:
 
         traces.append(
             go.Bar(
-                name="Direct", x=variables, y=direct_vals, error_y=error_y, marker_color="steelblue"
+                name="Direct",
+                x=variables,
+                y=direct_vals,
+                error_y=error_y,
+                marker_color="steelblue",
             )
         )
 
@@ -656,7 +669,11 @@ class SpatialEffectsResult:
 
         traces.append(
             go.Bar(
-                name="Indirect", x=variables, y=indirect_vals, error_y=error_y, marker_color="coral"
+                name="Indirect",
+                x=variables,
+                y=indirect_vals,
+                error_y=error_y,
+                marker_color="coral",
             )
         )
 
@@ -671,7 +688,11 @@ class SpatialEffectsResult:
 
         traces.append(
             go.Bar(
-                name="Total", x=variables, y=total_vals, error_y=error_y, marker_color="seagreen"
+                name="Total",
+                x=variables,
+                y=total_vals,
+                error_y=error_y,
+                marker_color="seagreen",
             )
         )
 
@@ -685,7 +706,13 @@ class SpatialEffectsResult:
             yaxis_title="Effect Magnitude",
             barmode="group",
             hovermode="x unified",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,
+            },
             **kwargs,
         )
 
@@ -722,13 +749,28 @@ class SpatialEffectsResult:
             total_se = np.array([self.effects[v]["total_se"] for v in variables])
 
             ax.errorbar(
-                x - width, direct_vals, yerr=direct_se * 1.96, fmt="none", color="black", capsize=3
+                x - width,
+                direct_vals,
+                yerr=direct_se * 1.96,
+                fmt="none",
+                color="black",
+                capsize=3,
             )
             ax.errorbar(
-                x, indirect_vals, yerr=indirect_se * 1.96, fmt="none", color="black", capsize=3
+                x,
+                indirect_vals,
+                yerr=indirect_se * 1.96,
+                fmt="none",
+                color="black",
+                capsize=3,
             )
             ax.errorbar(
-                x + width, total_vals, yerr=total_se * 1.96, fmt="none", color="black", capsize=3
+                x + width,
+                total_vals,
+                yerr=total_se * 1.96,
+                fmt="none",
+                color="black",
+                capsize=3,
             )
 
         # Customize plot

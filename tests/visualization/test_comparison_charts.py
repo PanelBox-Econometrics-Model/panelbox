@@ -274,7 +274,10 @@ class TestInformationCriteriaChart:
 
     def test_single_criterion(self):
         """Test with single criterion."""
-        data = {"models": ["Model 1", "Model 2", "Model 3"], "aic": [305.2, 270.5, 295.8]}
+        data = {
+            "models": ["Model 1", "Model 2", "Model 3"],
+            "aic": [305.2, 270.5, 295.8],
+        }
         chart = InformationCriteriaChart()
         chart.create(data)
 

@@ -36,7 +36,12 @@ class TestDumitrescuHurlinValidation:
         """Estatísticas DH devem ser finitas e bem definidas."""
         # Testar y1 -> y2
         result = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # W_bar deve ser positivo e finito
@@ -67,7 +72,12 @@ class TestDumitrescuHurlinValidation:
         """
         # y1 -> y2 (deve detectar)
         result_y1_y2 = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Deve rejeitar H0 (y1 NÃO causa y2)
@@ -75,7 +85,12 @@ class TestDumitrescuHurlinValidation:
 
         # y2 -> y1 (deve detectar)
         result_y2_y1 = dumitrescu_hurlin_test(
-            data=panel_data, cause="y2", effect="y1", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y2",
+            effect="y1",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         assert result_y2_y1.Z_bar_pvalue < 0.10, "Failed to detect known Granger causality y2 -> y1"
@@ -87,7 +102,12 @@ class TestDumitrescuHurlinValidation:
         No DGP: y3 não causa y1 diretamente.
         """
         result_y3_y1 = dumitrescu_hurlin_test(
-            data=panel_data, cause="y3", effect="y1", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y3",
+            effect="y1",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Não deve rejeitar H0 com alta confiança
@@ -118,13 +138,23 @@ class TestDumitrescuHurlinValidation:
         # Amostra pequena
         data_small = generate_panel_var_data(n_entities=20, n_periods=15, seed=42)
         result_small = dumitrescu_hurlin_test(
-            data=data_small, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=data_small,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Amostra grande
         data_large = generate_panel_var_data(n_entities=100, n_periods=30, seed=42)
         result_large = dumitrescu_hurlin_test(
-            data=data_large, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=data_large,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Amostra maior deve ter mais poder (p-value menor)
@@ -139,7 +169,12 @@ class TestDumitrescuHurlinValidation:
         Z-tilde é ajustado para pequenas amostras.
         """
         result = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Ambos devem apontar na mesma direção (mesmo sinal)
@@ -152,7 +187,12 @@ class TestDumitrescuHurlinValidation:
     def test_dh_individual_statistics(self, panel_data):
         """Verificar estatísticas individuais de cada entidade."""
         result = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Deve ter estatísticas por entidade
@@ -200,7 +240,11 @@ class TestLagSelectionValidation:
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
-            panel_data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=1
+            panel_data,
+            endog_vars=["y1", "y2", "y3"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
 
@@ -216,7 +260,11 @@ class TestLagSelectionValidation:
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
-            panel_data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=1
+            panel_data,
+            endog_vars=["y1", "y2", "y3"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
 
@@ -241,7 +289,11 @@ class TestLagSelectionValidation:
             data_df = generate_panel_var_data(n_entities=n_entities, n_periods=25)
 
             data = PanelVARData(
-                data_df, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=1
+                data_df,
+                endog_vars=["y1", "y2", "y3"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
             )
             model = PanelVAR(data)
 
@@ -256,7 +308,11 @@ class TestLagSelectionValidation:
         from panelbox.var import PanelVAR, PanelVARData
 
         data = PanelVARData(
-            panel_data, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=1
+            panel_data,
+            endog_vars=["y1", "y2", "y3"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model = PanelVAR(data)
 
@@ -334,12 +390,22 @@ class TestPanelGrangerCausality:
 
         # y1 -> y2
         result_12 = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # y2 -> y1
         result_21 = dumitrescu_hurlin_test(
-            data=panel_data, cause="y2", effect="y1", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y2",
+            effect="y1",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # Ambos devem ser significativos
@@ -361,7 +427,12 @@ class TestPanelGrangerCausality:
 
         # Por enquanto, apenas verificar que teste funciona
         result = dumitrescu_hurlin_test(
-            data=panel_data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=panel_data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         assert result is not None
@@ -404,7 +475,11 @@ class TestCausalityRobustness:
             data_df = generate_panel_var_data(n_entities=50, n_periods=20, seed=seed)
 
             data = PanelVARData(
-                data_df, endog_vars=["y1", "y2", "y3"], entity_col="entity", time_col="time", lags=1
+                data_df,
+                endog_vars=["y1", "y2", "y3"],
+                entity_col="entity",
+                time_col="time",
+                lags=1,
             )
             model = PanelVAR(data)
 
@@ -429,7 +504,12 @@ class TestCausalityRobustness:
         data = generate_panel_var_data(n_entities=50, n_periods=20)
 
         result = dumitrescu_hurlin_test(
-            data=data, cause="y1", effect="y2", lags=1, entity_col="entity", time_col="time"
+            data=data,
+            cause="y1",
+            effect="y2",
+            lags=1,
+            entity_col="entity",
+            time_col="time",
         )
 
         # W_bar deve capturar média dos efeitos

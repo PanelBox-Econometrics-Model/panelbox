@@ -147,7 +147,10 @@ def test_ar_test_pvalues_bounds(df):
     )
     result = model.fit()
 
-    for test_name, test_result in [("AR(1)", result.ar1_test), ("AR(2)", result.ar2_test)]:
+    for test_name, test_result in [
+        ("AR(1)", result.ar1_test),
+        ("AR(2)", result.ar2_test),
+    ]:
         if test_result is not None:
             p = test_result.pvalue
             if not np.isnan(p):

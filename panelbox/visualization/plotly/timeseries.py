@@ -86,7 +86,10 @@ class PanelTimeSeriesChart(PlotlyChartBase):
                     y=entity_data["value"],
                     mode="lines",
                     name=str(entity),
-                    line={"color": colors[i % len(colors)] if colors else None, "width": 2},
+                    line={
+                        "color": colors[i % len(colors)] if colors else None,
+                        "width": 2,
+                    },
                     hovertemplate=(
                         f"<b>{entity}</b><br>"
                         + "Time: %{x}<br>"
@@ -122,7 +125,13 @@ class PanelTimeSeriesChart(PlotlyChartBase):
             xaxis_title=data.get("xaxis_title", "Time"),
             yaxis_title=data.get("yaxis_title", variable_name),
             hovermode="closest",
-            legend={"orientation": "v", "yanchor": "top", "y": 1, "xanchor": "left", "x": 1.02},
+            legend={
+                "orientation": "v",
+                "yanchor": "top",
+                "y": 1,
+                "xanchor": "left",
+                "x": 1.02,
+            },
         )
 
         return fig

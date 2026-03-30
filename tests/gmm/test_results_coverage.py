@@ -627,7 +627,8 @@ class TestSummaryBranches:
 
     def test_summary_non_difference_no_fd_line(self):
         """Line 634/643: summary() for system model shows neither
-        'First-differences' nor 'Forward Orthogonal Deviations' for fd transformation."""
+        'First-differences' nor 'Forward Orthogonal Deviations' for fd transformation.
+        """
         results = _make_gmm_results(
             model_type="system",
             transformation="fd",

@@ -919,7 +919,14 @@ class TestMarkdownExporter:
     def test_export_summary_stats(self, md_exporter):
         """Test summary statistics export."""
         stats = [
-            {"variable": "x1", "count": 1000, "mean": 5.234, "std": 1.567, "min": 1.2, "max": 9.8},
+            {
+                "variable": "x1",
+                "count": 1000,
+                "mean": 5.234,
+                "std": 1.567,
+                "min": 1.2,
+                "max": 9.8,
+            },
             {
                 "variable": "x2",
                 "count": 1000,
@@ -928,7 +935,14 @@ class TestMarkdownExporter:
                 "min": -10.5,
                 "max": 5.6,
             },
-            {"variable": "y", "count": 1000, "mean": 10.123, "std": 2.456, "min": 3.4, "max": 18.9},
+            {
+                "variable": "y",
+                "count": 1000,
+                "mean": 10.123,
+                "std": 2.456,
+                "min": 3.4,
+                "max": 18.9,
+            },
         ]
 
         markdown = md_exporter.export_summary_stats(stats)
@@ -943,7 +957,16 @@ class TestMarkdownExporter:
 
     def test_export_summary_stats_custom_title(self, md_exporter):
         """Test summary stats with custom title."""
-        stats = [{"variable": "x1", "count": 100, "mean": 1.0, "std": 0.5, "min": 0.0, "max": 2.0}]
+        stats = [
+            {
+                "variable": "x1",
+                "count": 100,
+                "mean": 1.0,
+                "std": 0.5,
+                "min": 0.0,
+                "max": 2.0,
+            }
+        ]
 
         markdown = md_exporter.export_summary_stats(stats, title="Variable Statistics")
 

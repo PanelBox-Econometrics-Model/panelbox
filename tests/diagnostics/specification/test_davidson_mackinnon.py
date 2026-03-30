@@ -42,7 +42,11 @@ class TestJTest:
 
         # Perform J-test
         jtest = j_test(
-            result1, result2, direction="both", model1_name="Correct", model2_name="Incorrect"
+            result1,
+            result2,
+            direction="both",
+            model1_name="Correct",
+            model2_name="Incorrect",
         )
 
         # Forward test: Model 2's fitted values should NOT improve Model 1
@@ -249,8 +253,18 @@ class TestJTestResult:
     def test_jtest_result_repr(self):
         """Test string representation."""
         result = JTestResult(
-            forward={"statistic": 2.5, "pvalue": 0.01, "alpha_coef": 0.5, "alpha_se": 0.2},
-            reverse={"statistic": 1.2, "pvalue": 0.23, "gamma_coef": 0.3, "gamma_se": 0.25},
+            forward={
+                "statistic": 2.5,
+                "pvalue": 0.01,
+                "alpha_coef": 0.5,
+                "alpha_se": 0.2,
+            },
+            reverse={
+                "statistic": 1.2,
+                "pvalue": 0.23,
+                "gamma_coef": 0.3,
+                "gamma_se": 0.25,
+            },
             model1_name="Model A",
             model2_name="Model B",
             direction="both",
@@ -265,7 +279,12 @@ class TestJTestResult:
         """Test interpretation for forward test only."""
         # Reject H0 (favor Model 2)
         result = JTestResult(
-            forward={"statistic": 3.0, "pvalue": 0.001, "alpha_coef": 0.5, "alpha_se": 0.15},
+            forward={
+                "statistic": 3.0,
+                "pvalue": 0.001,
+                "alpha_coef": 0.5,
+                "alpha_se": 0.15,
+            },
             reverse=None,
             model1_name="M1",
             model2_name="M2",
@@ -277,7 +296,12 @@ class TestJTestResult:
 
         # Fail to reject H0 (Model 1 adequate)
         result2 = JTestResult(
-            forward={"statistic": 0.5, "pvalue": 0.6, "alpha_coef": 0.1, "alpha_se": 0.2},
+            forward={
+                "statistic": 0.5,
+                "pvalue": 0.6,
+                "alpha_coef": 0.1,
+                "alpha_se": 0.2,
+            },
             reverse=None,
             model1_name="M1",
             model2_name="M2",
@@ -290,8 +314,18 @@ class TestJTestResult:
     def test_both_interpretation_prefer_model1(self):
         """Test interpretation when Model 1 is preferred."""
         result = JTestResult(
-            forward={"statistic": 1.0, "pvalue": 0.32, "alpha_coef": 0.2, "alpha_se": 0.2},
-            reverse={"statistic": 3.5, "pvalue": 0.001, "gamma_coef": 0.7, "gamma_se": 0.2},
+            forward={
+                "statistic": 1.0,
+                "pvalue": 0.32,
+                "alpha_coef": 0.2,
+                "alpha_se": 0.2,
+            },
+            reverse={
+                "statistic": 3.5,
+                "pvalue": 0.001,
+                "gamma_coef": 0.7,
+                "gamma_se": 0.2,
+            },
             model1_name="M1",
             model2_name="M2",
             direction="both",
@@ -302,8 +336,18 @@ class TestJTestResult:
     def test_both_interpretation_prefer_model2(self):
         """Test interpretation when Model 2 is preferred."""
         result = JTestResult(
-            forward={"statistic": 4.0, "pvalue": 0.0001, "alpha_coef": 0.8, "alpha_se": 0.2},
-            reverse={"statistic": 0.8, "pvalue": 0.42, "gamma_coef": 0.15, "gamma_se": 0.2},
+            forward={
+                "statistic": 4.0,
+                "pvalue": 0.0001,
+                "alpha_coef": 0.8,
+                "alpha_se": 0.2,
+            },
+            reverse={
+                "statistic": 0.8,
+                "pvalue": 0.42,
+                "gamma_coef": 0.15,
+                "gamma_se": 0.2,
+            },
             model1_name="M1",
             model2_name="M2",
             direction="both",
@@ -314,8 +358,18 @@ class TestJTestResult:
     def test_both_interpretation_both_rejected(self):
         """Test interpretation when both models rejected."""
         result = JTestResult(
-            forward={"statistic": 3.0, "pvalue": 0.003, "alpha_coef": 0.6, "alpha_se": 0.2},
-            reverse={"statistic": 2.8, "pvalue": 0.005, "gamma_coef": 0.55, "gamma_se": 0.2},
+            forward={
+                "statistic": 3.0,
+                "pvalue": 0.003,
+                "alpha_coef": 0.6,
+                "alpha_se": 0.2,
+            },
+            reverse={
+                "statistic": 2.8,
+                "pvalue": 0.005,
+                "gamma_coef": 0.55,
+                "gamma_se": 0.2,
+            },
             model1_name="M1",
             model2_name="M2",
             direction="both",
@@ -326,8 +380,18 @@ class TestJTestResult:
     def test_both_interpretation_both_acceptable(self):
         """Test interpretation when both models acceptable."""
         result = JTestResult(
-            forward={"statistic": 1.0, "pvalue": 0.32, "alpha_coef": 0.2, "alpha_se": 0.2},
-            reverse={"statistic": 0.9, "pvalue": 0.37, "gamma_coef": 0.18, "gamma_se": 0.2},
+            forward={
+                "statistic": 1.0,
+                "pvalue": 0.32,
+                "alpha_coef": 0.2,
+                "alpha_se": 0.2,
+            },
+            reverse={
+                "statistic": 0.9,
+                "pvalue": 0.37,
+                "gamma_coef": 0.18,
+                "gamma_se": 0.2,
+            },
             model1_name="M1",
             model2_name="M2",
             direction="both",

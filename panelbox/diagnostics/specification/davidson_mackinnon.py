@@ -378,7 +378,12 @@ def _perform_forward_test(result1, result2) -> dict[str, float]:
     t_stat = augmented_result.tvalues[alpha_idx]
     p_value = augmented_result.pvalues[alpha_idx]
 
-    return {"statistic": t_stat, "pvalue": p_value, "alpha_coef": alpha_coef, "alpha_se": alpha_se}
+    return {
+        "statistic": t_stat,
+        "pvalue": p_value,
+        "alpha_coef": alpha_coef,
+        "alpha_se": alpha_se,
+    }
 
 
 def _perform_reverse_test(result1, result2) -> dict[str, float]:
@@ -432,4 +437,9 @@ def _perform_reverse_test(result1, result2) -> dict[str, float]:
     t_stat = augmented_result.tvalues[gamma_idx]
     p_value = augmented_result.pvalues[gamma_idx]
 
-    return {"statistic": t_stat, "pvalue": p_value, "gamma_coef": gamma_coef, "gamma_se": gamma_se}
+    return {
+        "statistic": t_stat,
+        "pvalue": p_value,
+        "gamma_coef": gamma_coef,
+        "gamma_se": gamma_se,
+    }

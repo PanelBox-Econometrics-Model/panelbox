@@ -424,7 +424,10 @@ class TestOneStepVsTwoStep:
         # Two-step result (very similar)
         result_2step = type("MockResult", (), {})()
         noise = np.random.randn(4) * 0.01  # Very small difference
-        result_2step.params_by_eq = [params_base[:2] + noise[:2], params_base[2:] + noise[2:]]
+        result_2step.params_by_eq = [
+            params_base[:2] + noise[:2],
+            params_base[2:] + noise[2:],
+        ]
         result_2step.gmm_step = "two-step"
 
         # Import the actual PanelVARGMMResult class
@@ -481,7 +484,14 @@ class TestHansenJLinAlgError:
         # Make some columns of Z identical to create singularity
         base_col = np.random.randn(n_obs)
         instruments = np.column_stack(
-            [base_col, base_col, base_col, base_col, np.random.randn(n_obs), np.random.randn(n_obs)]
+            [
+                base_col,
+                base_col,
+                base_col,
+                base_col,
+                np.random.randn(n_obs),
+                np.random.randn(n_obs),
+            ]
         )
 
         diag = GMMDiagnostics(residuals, instruments, n_params, n_entities=10)

@@ -1243,8 +1243,15 @@ class PanelVECMResult:
         >>> fevd = results.fevd(periods=20)
         >>> fevd.plot(variable="y1")
         """
-        from panelbox.var.fevd import FEVDResult, compute_fevd_cholesky, compute_fevd_generalized
-        from panelbox.var.irf import compute_irf_cholesky, compute_phi_non_orthogonalized
+        from panelbox.var.fevd import (
+            FEVDResult,
+            compute_fevd_cholesky,
+            compute_fevd_generalized,
+        )
+        from panelbox.var.irf import (
+            compute_irf_cholesky,
+            compute_phi_non_orthogonalized,
+        )
 
         # Convert VECM to VAR
         A_matrices = self.to_var()

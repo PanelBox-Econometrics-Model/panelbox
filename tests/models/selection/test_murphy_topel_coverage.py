@@ -168,9 +168,7 @@ class TestHeckmanTwoStepVariance:
 
     def test_full_pipeline(self):
         """Run the full Heckman two-step variance correction."""
-        from panelbox.models.selection.murphy_topel import (
-            heckman_two_step_variance,
-        )
+        from panelbox.models.selection.murphy_topel import heckman_two_step_variance
 
         rng = np.random.RandomState(42)
         n = 100
@@ -218,9 +216,7 @@ class TestBootstrapTwoStepVariance:
 
     def test_not_implemented(self):
         """Bootstrap should raise NotImplementedError."""
-        from panelbox.models.selection.murphy_topel import (
-            bootstrap_two_step_variance,
-        )
+        from panelbox.models.selection.murphy_topel import bootstrap_two_step_variance
 
         def dummy_estimator(data):
             return np.array([1.0, 2.0])
@@ -230,9 +226,7 @@ class TestBootstrapTwoStepVariance:
 
     def test_not_implemented_with_seed(self):
         """Bootstrap with seed still raises NotImplementedError."""
-        from panelbox.models.selection.murphy_topel import (
-            bootstrap_two_step_variance,
-        )
+        from panelbox.models.selection.murphy_topel import bootstrap_two_step_variance
 
         def dummy_estimator(data):
             return np.array([1.0, 2.0])

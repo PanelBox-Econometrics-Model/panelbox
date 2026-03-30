@@ -389,7 +389,7 @@ class PanelVAR:
                     endog_vars=self.data.endog_vars,
                     entity_col=self.data.entity_col,
                     time_col=self.data.time_col,
-                    exog_vars=self.data.exog_vars if len(self.data.exog_vars) > 0 else None,
+                    exog_vars=(self.data.exog_vars if len(self.data.exog_vars) > 0 else None),
                     lags=p,
                     trend=self.data.trend,
                     dropna=self.data.dropna,

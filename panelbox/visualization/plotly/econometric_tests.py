@@ -468,7 +468,10 @@ class UnitRootTestPlot(PlotlyChartBase):
         trace_stats = go.Bar(
             x=test_names,
             y=test_stats,
-            marker={"color": colors, "line": {"color": self.theme.get_color(0), "width": 1}},
+            marker={
+                "color": colors,
+                "line": {"color": self.theme.get_color(0), "width": 1},
+            },
             name="Test Statistic",
             text=[f"{stat:.3f}<br>p={pval:.4f}" for stat, pval in zip(test_stats, pvalues)],
             textposition="outside",

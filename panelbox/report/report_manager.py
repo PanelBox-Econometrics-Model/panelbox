@@ -217,7 +217,10 @@ class ReportManager:
 
         # Generate
         return self.generate_report(
-            report_type="validation", template=template, context=context, include_plotly=interactive
+            report_type="validation",
+            template=template,
+            context=context,
+            include_plotly=interactive,
         )
 
     def generate_regression_report(
@@ -271,11 +274,17 @@ class ReportManager:
         }
 
         return self.generate_report(
-            report_type="regression", template=template, context=context, include_plotly=True
+            report_type="regression",
+            template=template,
+            context=context,
+            include_plotly=True,
         )
 
     def generate_gmm_report(
-        self, gmm_data: dict[str, Any], title: str | None = None, subtitle: str | None = None
+        self,
+        gmm_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
     ) -> str:
         """
         Generate a GMM results report.
@@ -368,7 +377,10 @@ class ReportManager:
         }
 
         return self.generate_report(
-            report_type="discrete", template=template, context=context, include_plotly=True
+            report_type="discrete",
+            template=template,
+            context=context,
+            include_plotly=True,
         )
 
     def generate_sfa_report(
@@ -509,7 +521,10 @@ class ReportManager:
         }
 
         return self.generate_report(
-            report_type="quantile", template=template, context=context, include_plotly=True
+            report_type="quantile",
+            template=template,
+            context=context,
+            include_plotly=True,
         )
 
     def generate_residual_report(
@@ -693,7 +708,7 @@ class ReportManager:
         context = {
             "report_title": title or "Model Comparison Report",
             "report_subtitle": subtitle,
-            "n_models": len(models_info) if models_info else comparison_data.get("n_models"),
+            "n_models": (len(models_info) if models_info else comparison_data.get("n_models")),
             "best_model_aic": comparison_data.get("best_model_aic"),
             "best_model_bic": comparison_data.get("best_model_bic"),
             "models_info": models_info,
@@ -715,6 +730,47 @@ class ReportManager:
             template=template,
             context=context,
             include_plotly=interactive,
+        )
+
+    def generate_autoexperiment_report(
+        self,
+        autoexperiment_data: dict[str, Any],
+        title: str | None = None,
+        subtitle: str | None = None,
+    ) -> str:
+        """
+        Generate an AutoExperiment report.
+
+        Convenience method for AutoExperiment reports.
+
+        Parameters
+        ----------
+        autoexperiment_data : dict
+            Context data prepared by AutoExperimentReportGenerator._build_template_data()
+        title : str, optional
+            Report title
+        subtitle : str, optional
+            Report subtitle
+
+        Returns
+        -------
+        str
+            Complete HTML AutoExperiment report
+        """
+        template = "autoexperiment/index.html"
+
+        context = {
+            "report_title": title or "AutoExperiment Report \u2014 PanelBox",
+            "report_subtitle": subtitle,
+            **autoexperiment_data,
+        }
+
+        return self.generate_report(
+            report_type="autoexperiment",
+            template=template,
+            context=context,
+            include_plotly=False,
+            custom_css=["autoexperiment_report.css"],
         )
 
     def save_report(self, html: str, output_path: str | Path, overwrite: bool = False) -> Path:

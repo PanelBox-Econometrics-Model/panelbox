@@ -201,7 +201,7 @@ class PairwiseCorrelationChart(PlotlyChartBase):
                             go.Histogram(
                                 x=subset[var_x],
                                 name=str(group) if group is not None else var_x,
-                                marker_color=colors[g_idx % len(colors)] if colors else None,
+                                marker_color=(colors[g_idx % len(colors)] if colors else None),
                                 opacity=0.7,
                                 showlegend=(row == 1 and col == 1 and group is not None),
                                 legendgroup=str(group) if group is not None else None,
@@ -222,7 +222,7 @@ class PairwiseCorrelationChart(PlotlyChartBase):
                                 name=str(group) if group is not None else None,
                                 marker={
                                     "size": 4,
-                                    "color": colors[g_idx % len(colors)] if colors else None,
+                                    "color": (colors[g_idx % len(colors)] if colors else None),
                                     "opacity": 0.5,
                                 },
                                 showlegend=False,

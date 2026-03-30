@@ -434,7 +434,8 @@ class ContinuousUpdatedGMM:
         # Check if data has MultiIndex for clustering
         if not isinstance(self.data.index, pd.MultiIndex):
             warnings.warn(
-                "Data does not have MultiIndex, using homoskedastic variance", stacklevel=2
+                "Data does not have MultiIndex, using homoskedastic variance",
+                stacklevel=2,
             )
             return (1 / self.n) * (moment_contributions.T @ moment_contributions)
 

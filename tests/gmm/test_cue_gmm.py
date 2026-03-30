@@ -571,7 +571,11 @@ class TestCUEGMM:
 
         # Analytical
         model_analytical = ContinuousUpdatedGMM(
-            data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"], se_type="analytical"
+            data=data,
+            dep_var="y",
+            exog_vars=["x"],
+            instruments=["z1", "z2"],
+            se_type="analytical",
         )
         model_analytical.fit(verbose=False)
         se_analytical = model_analytical.bse_
@@ -745,7 +749,11 @@ class TestCUEGMM:
 
         with pytest.raises(ValueError, match="se_type must be one of"):
             ContinuousUpdatedGMM(
-                data=data, dep_var="y", exog_vars=["x"], instruments=["z1", "z2"], se_type="invalid"
+                data=data,
+                dep_var="y",
+                exog_vars=["x"],
+                instruments=["z1", "z2"],
+                se_type="invalid",
             )
 
     def test_invalid_bootstrap_method(self, simple_iv_data):

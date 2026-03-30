@@ -81,7 +81,12 @@ try:
         ModelFitComparisonChart,
     )
     from .plotly.correlation import CorrelationHeatmapChart, PairwiseCorrelationChart
-    from .plotly.distribution import BoxPlotChart, HistogramChart, KDEChart, ViolinPlotChart
+    from .plotly.distribution import (
+        BoxPlotChart,
+        HistogramChart,
+        KDEChart,
+        ViolinPlotChart,
+    )
     from .plotly.econometric_tests import (
         ACFPACFPlot,
         CointegrationHeatmap,
@@ -103,7 +108,11 @@ try:
         ResidualVsLeveragePlot,
         ScaleLocationPlot,
     )
-    from .plotly.timeseries import FacetedTimeSeriesChart, PanelTimeSeriesChart, TrendLineChart
+    from .plotly.timeseries import (
+        FacetedTimeSeriesChart,
+        PanelTimeSeriesChart,
+        TrendLineChart,
+    )
     from .plotly.validation import (
         PValueDistributionChart,
         TestComparisonHeatmap,

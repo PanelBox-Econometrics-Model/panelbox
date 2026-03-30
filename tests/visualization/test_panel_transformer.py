@@ -53,7 +53,13 @@ def unbalanced_panel_dataframe():
     for entity in range(1, 6):
         n_periods = np.random.randint(3, 8)  # Variable periods per entity
         for t in range(n_periods):
-            data.append({"entity": f"E{entity:02d}", "time": 2000 + t, "value": np.random.randn()})
+            data.append(
+                {
+                    "entity": f"E{entity:02d}",
+                    "time": 2000 + t,
+                    "value": np.random.randn(),
+                }
+            )
 
     df = pd.DataFrame(data)
     df = df.set_index(["entity", "time"])
@@ -72,12 +78,16 @@ def mock_panel_results():
 
     # Mock standard errors
     mock.std_errors = pd.Series(
-        data=np.random.uniform(0.1, 0.3, 5), index=["A", "B", "C", "D", "E"], name="std_errors"
+        data=np.random.uniform(0.1, 0.3, 5),
+        index=["A", "B", "C", "D", "E"],
+        name="std_errors",
     )
 
     # Mock time effects
     mock.time_effects = pd.Series(
-        data=np.random.randn(10) * 0.3, index=list(range(2000, 2010)), name="time_effects"
+        data=np.random.randn(10) * 0.3,
+        index=list(range(2000, 2010)),
+        name="time_effects",
     )
 
     return mock
@@ -219,7 +229,11 @@ class TestCalculateBetweenWithin:
 
     def test_with_dict_data(self):
         """Test that dict data is rejected (not a DataFrame)."""
-        dict_data = {"variables": ["x", "y"], "between_var": [1.0, 2.0], "within_var": [0.5, 1.5]}
+        dict_data = {
+            "variables": ["x", "y"],
+            "between_var": [1.0, 2.0],
+            "within_var": [0.5, 1.5],
+        }
 
         # Dict data should raise ValueError since method expects DataFrame
         with pytest.raises(ValueError):
@@ -411,7 +425,10 @@ class TestPanelDataTransformerIntegration:
         assert all(k in ps for k in ["entities", "time_periods", "presence_matrix"])
 
         # Matrix dimensions should match
-        assert ps["presence_matrix"].shape == (len(ps["entities"]), len(ps["time_periods"]))
+        assert ps["presence_matrix"].shape == (
+            len(ps["entities"]),
+            len(ps["time_periods"]),
+        )
 
 
 class TestPanelDataTransformerEdgeCases:
@@ -420,7 +437,8 @@ class TestPanelDataTransformerEdgeCases:
     def test_empty_dataframe(self):
         """Test with empty DataFrame."""
         df = pd.DataFrame(
-            columns=["value"], index=pd.MultiIndex.from_tuples([], names=["entity", "time"])
+            columns=["value"],
+            index=pd.MultiIndex.from_tuples([], names=["entity", "time"]),
         )
 
         # Empty dataframe should raise ValueError or return empty structure
@@ -440,7 +458,8 @@ class TestPanelDataTransformerEdgeCases:
         n_periods = 5
 
         index = pd.MultiIndex.from_product(
-            [[f"E{i}" for i in range(n_entities)], list(range(n_periods))], names=["entity", "time"]
+            [[f"E{i}" for i in range(n_entities)], list(range(n_periods))],
+            names=["entity", "time"],
         )
 
         df = pd.DataFrame({"constant": [5.0] * (n_entities * n_periods)}, index=index)

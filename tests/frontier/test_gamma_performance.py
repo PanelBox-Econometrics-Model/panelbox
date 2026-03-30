@@ -59,7 +59,11 @@ class TestGammaPerformance:
 
         for n_sim in n_sims:
             model = StochasticFrontier(
-                data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="gamma"
+                data=df,
+                depvar="y",
+                exog=["x1", "x2"],
+                frontier="production",
+                dist="gamma",
             )
 
             start = time.time()
@@ -91,7 +95,11 @@ class TestGammaPerformance:
         for run in range(n_runs):
             # Halton (should be deterministic)
             model_h = StochasticFrontier(
-                data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="gamma"
+                data=df,
+                depvar="y",
+                exog=["x1", "x2"],
+                frontier="production",
+                dist="gamma",
             )
             result_h = model_h.fit()
             logliks_halton.append(result_h.loglik)
@@ -99,7 +107,11 @@ class TestGammaPerformance:
             # Random (will vary across runs)
             np.random.seed(run)
             StochasticFrontier(
-                data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="gamma"
+                data=df,
+                depvar="y",
+                exog=["x1", "x2"],
+                frontier="production",
+                dist="gamma",
             )
             # We would need to modify code to use random instead of Halton
             # For now, just test that Halton is stable
@@ -170,7 +182,11 @@ class TestGammaPerformance:
             df = pd.DataFrame({"y": y, "x1": X[:, 1], "x2": X[:, 2]})
 
             model = StochasticFrontier(
-                data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="gamma"
+                data=df,
+                depvar="y",
+                exog=["x1", "x2"],
+                frontier="production",
+                dist="gamma",
             )
 
             start = time.time()

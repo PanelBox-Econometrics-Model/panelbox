@@ -95,7 +95,10 @@ class BenchmarkRunner:
 
             except subprocess.TimeoutExpired:
                 print(f"✗ TIMEOUT: {name}")
-                results[name] = {"status": "timeout", "reason": "Execution timeout (60s)"}
+                results[name] = {
+                    "status": "timeout",
+                    "reason": "Execution timeout (60s)",
+                }
             except Exception as e:
                 print(f"✗ ERROR: {name} - {e}")
                 results[name] = {"status": "error", "error": str(e)}

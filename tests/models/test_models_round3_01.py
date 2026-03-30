@@ -706,7 +706,11 @@ class TestSpatialLag:
         from panelbox.models.spatial.spatial_lag import SpatialLag
 
         return SpatialLag(
-            formula="y ~ x1 + x2", data=self.df, entity_col="entity", time_col="time", W=self.W
+            formula="y ~ x1 + x2",
+            data=self.df,
+            entity_col="entity",
+            time_col="time",
+            W=self.W,
         )
 
     def test_fit_qml_fe(self):
@@ -861,7 +865,11 @@ class TestSpatialError:
         from panelbox.models.spatial.spatial_error import SpatialError
 
         return SpatialError(
-            formula="y ~ x1 + x2", data=self.df, entity_col="entity", time_col="time", W=self.W
+            formula="y ~ x1 + x2",
+            data=self.df,
+            entity_col="entity",
+            time_col="time",
+            W=self.W,
         )
 
     def test_fit_gmm_pooled(self):
@@ -1433,7 +1441,11 @@ class TestTobitModels:
         from panelbox.models.censored.tobit import RandomEffectsTobit
 
         model = RandomEffectsTobit(
-            self.y_left, self.X, groups=self.entity, censoring_point=0.0, quadrature_points=5
+            self.y_left,
+            self.X,
+            groups=self.entity,
+            censoring_point=0.0,
+            quadrature_points=5,
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -1446,7 +1458,11 @@ class TestTobitModels:
         from panelbox.models.censored.tobit import RandomEffectsTobit
 
         model = RandomEffectsTobit(
-            self.y_left, self.X, groups=self.entity, censoring_point=0.0, quadrature_points=5
+            self.y_left,
+            self.X,
+            groups=self.entity,
+            censoring_point=0.0,
+            quadrature_points=5,
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -1459,7 +1475,11 @@ class TestTobitModels:
         from panelbox.models.censored.tobit import RandomEffectsTobit
 
         model = RandomEffectsTobit(
-            self.y_left, self.X, groups=self.entity, censoring_point=0.0, quadrature_points=5
+            self.y_left,
+            self.X,
+            groups=self.entity,
+            censoring_point=0.0,
+            quadrature_points=5,
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

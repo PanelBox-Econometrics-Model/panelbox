@@ -42,7 +42,11 @@ class TestMLEEstimation:
         log_output = X @ beta_true + v - u
 
         df = pd.DataFrame(
-            {"log_output": log_output, "log_labor": log_labor, "log_capital": log_capital}
+            {
+                "log_output": log_output,
+                "log_labor": log_labor,
+                "log_capital": log_capital,
+            }
         )
 
         return {
@@ -112,7 +116,11 @@ class TestMLEEstimation:
         log_output = X @ beta_true + v - u
 
         df = pd.DataFrame(
-            {"log_output": log_output, "log_labor": log_labor, "log_capital": log_capital}
+            {
+                "log_output": log_output,
+                "log_labor": log_labor,
+                "log_capital": log_capital,
+            }
         )
 
         # Estimate
@@ -322,7 +330,11 @@ class TestRobustness:
         df = pd.DataFrame({"y": y, "x1": x1, "x2": x2})
 
         sf = StochasticFrontier(
-            data=df, depvar="y", exog=["x1", "x2"], frontier="production", dist="half_normal"
+            data=df,
+            depvar="y",
+            exog=["x1", "x2"],
+            frontier="production",
+            dist="half_normal",
         )
 
         result = sf.fit(method="mle", verbose=False)
@@ -369,7 +381,11 @@ class TestModelCreation:
 
         for frontier_type in ["production", "cost"]:
             sf = StochasticFrontier(
-                data=df, depvar="y", exog=["x"], frontier=frontier_type, dist="half_normal"
+                data=df,
+                depvar="y",
+                exog=["x"],
+                frontier=frontier_type,
+                dist="half_normal",
             )
 
             assert sf.frontier_type.value == frontier_type
@@ -397,7 +413,11 @@ class TestModelCreation:
 
         # Multiple exog
         sf2 = StochasticFrontier(
-            data=df, depvar="y", exog=["x1", "x2", "x3"], frontier="production", dist="half_normal"
+            data=df,
+            depvar="y",
+            exog=["x1", "x2", "x3"],
+            frontier="production",
+            dist="half_normal",
         )
 
         assert len(sf2.exog) == 3
@@ -606,7 +626,14 @@ class TestTransformParameters:
         np.testing.assert_allclose(params[3], 0.04, rtol=1e-10)
         np.testing.assert_allclose(params[4], 0.3)
         np.testing.assert_allclose(params[5], -0.2)
-        assert names == ["const", "x1", "sigma_v_sq", "sigma_u_sq", "delta_z1", "delta_z2"]
+        assert names == [
+            "const",
+            "x1",
+            "sigma_v_sq",
+            "sigma_u_sq",
+            "delta_z1",
+            "delta_z2",
+        ]
 
     def test_gamma_distribution(self):
         """Test parameter transformation for gamma distribution."""
@@ -660,7 +687,14 @@ class TestTransformParameters:
         np.testing.assert_allclose(params[3], 0.3)  # delta
         np.testing.assert_allclose(params[4], -0.1)  # gamma
         np.testing.assert_allclose(params[5], 0.2)  # gamma
-        assert names == ["const", "x1", "sigma_v_sq", "delta_z1", "gamma_w1", "gamma_w2"]
+        assert names == [
+            "const",
+            "x1",
+            "sigma_v_sq",
+            "delta_z1",
+            "gamma_w1",
+            "gamma_w2",
+        ]
 
     def test_wang_model_no_hetero_vars(self):
         """Test Wang model transformation with empty hetero_var_names."""

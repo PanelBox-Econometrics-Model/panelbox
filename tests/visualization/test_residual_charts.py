@@ -91,7 +91,11 @@ class TestQQPlot:
         """Test with confidence bands."""
         chart = QQPlot()
         chart.create(
-            {"residuals": sample_residuals, "show_confidence": True, "confidence_level": 0.95}
+            {
+                "residuals": sample_residuals,
+                "show_confidence": True,
+                "confidence_level": 0.95,
+            }
         )
 
         assert chart.figure is not None
@@ -163,7 +167,13 @@ class TestResidualVsFittedPlot:
     def test_without_lowess(self, sample_fitted, sample_residuals):
         """Test without LOWESS smoothing."""
         chart = ResidualVsFittedPlot()
-        chart.create({"fitted": sample_fitted, "residuals": sample_residuals, "add_lowess": False})
+        chart.create(
+            {
+                "fitted": sample_fitted,
+                "residuals": sample_residuals,
+                "add_lowess": False,
+            }
+        )
 
         assert chart.figure is not None
 
@@ -171,7 +181,11 @@ class TestResidualVsFittedPlot:
         """Test with reference line at y=0."""
         chart = ResidualVsFittedPlot()
         chart.create(
-            {"fitted": sample_fitted, "residuals": sample_residuals, "add_reference": True}
+            {
+                "fitted": sample_fitted,
+                "residuals": sample_residuals,
+                "add_reference": True,
+            }
         )
 
         assert chart.figure is not None
@@ -234,7 +248,13 @@ class TestScaleLocationPlot:
     def test_without_lowess(self, sample_fitted, sample_residuals):
         """Test without LOWESS smoothing."""
         chart = ScaleLocationPlot()
-        chart.create({"fitted": sample_fitted, "residuals": sample_residuals, "add_lowess": False})
+        chart.create(
+            {
+                "fitted": sample_fitted,
+                "residuals": sample_residuals,
+                "add_lowess": False,
+            }
+        )
 
         assert chart.figure is not None
 
@@ -271,7 +291,11 @@ class TestResidualVsLeveragePlot:
         """Test with Cook's distance."""
         chart = ResidualVsLeveragePlot()
         chart.create(
-            {"residuals": sample_residuals, "leverage": sample_leverage, "cooks_d": sample_cooks_d}
+            {
+                "residuals": sample_residuals,
+                "leverage": sample_leverage,
+                "cooks_d": sample_cooks_d,
+            }
         )
 
         assert chart.figure is not None
@@ -294,7 +318,11 @@ class TestResidualVsLeveragePlot:
         """Test without contours."""
         chart = ResidualVsLeveragePlot()
         chart.create(
-            {"residuals": sample_residuals, "leverage": sample_leverage, "show_contours": False}
+            {
+                "residuals": sample_residuals,
+                "leverage": sample_leverage,
+                "show_contours": False,
+            }
         )
 
         assert chart.figure is not None
@@ -304,7 +332,13 @@ class TestResidualVsLeveragePlot:
         labels = [f"Obs{i}" for i in range(len(sample_residuals))]
 
         chart = ResidualVsLeveragePlot()
-        chart.create({"residuals": sample_residuals, "leverage": sample_leverage, "labels": labels})
+        chart.create(
+            {
+                "residuals": sample_residuals,
+                "leverage": sample_leverage,
+                "labels": labels,
+            }
+        )
 
         assert chart.figure is not None
 

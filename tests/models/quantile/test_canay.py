@@ -331,7 +331,10 @@ class TestCanayTwoStepResult:
 
         # Create fixed effects and FE-OLS result
         fixed_effects = np.random.randn(10)
-        fe_ols_result = {"params": np.array([2.0, -1.0]), "cov_matrix": np.eye(2) * 0.05}
+        fe_ols_result = {
+            "params": np.array([2.0, -1.0]),
+            "cov_matrix": np.eye(2) * 0.05,
+        }
 
         return CanayTwoStepResult(model, results, fixed_effects, fe_ols_result)
 

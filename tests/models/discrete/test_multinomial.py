@@ -160,7 +160,12 @@ class TestMultinomialLogitFixedEffects:
         for i in range(self.n_entities):
             for t in range(self.n_periods):
                 data.append(
-                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "x1": np.random.randn(),
+                        "x2": np.random.randn(),
+                    }
                 )
 
         self.df = pd.DataFrame(data)
@@ -200,7 +205,11 @@ class TestMultinomialLogitFixedEffects:
         X = self.df[["x1", "x2"]].values
 
         model = MultinomialLogit(
-            y, X, n_alternatives=self.n_alternatives, method="fixed_effects", entity_col="entity"
+            y,
+            X,
+            n_alternatives=self.n_alternatives,
+            method="fixed_effects",
+            entity_col="entity",
         )
 
         # Should raise warning about feasibility
@@ -237,7 +246,12 @@ class TestMultinomialLogitRandomEffects:
         for i in range(self.n_entities):
             for t in range(self.n_periods):
                 data.append(
-                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "x1": np.random.randn(),
+                        "x2": np.random.randn(),
+                    }
                 )
 
         self.df = pd.DataFrame(data)
@@ -276,7 +290,11 @@ class TestMultinomialLogitRandomEffects:
         X = self.df[["x1", "x2"]].values
 
         model = MultinomialLogit(
-            y, X, n_alternatives=self.n_alternatives, method="random_effects", entity_col="entity"
+            y,
+            X,
+            n_alternatives=self.n_alternatives,
+            method="random_effects",
+            entity_col="entity",
         )
 
         result = model.fit(maxiter=50)
@@ -312,7 +330,12 @@ class TestMultinomialLogitComparison:
         for i in range(self.n_entities):
             for t in range(self.n_periods):
                 data.append(
-                    {"entity": i, "time": t, "x1": np.random.randn(), "x2": np.random.randn()}
+                    {
+                        "entity": i,
+                        "time": t,
+                        "x1": np.random.randn(),
+                        "x2": np.random.randn(),
+                    }
                 )
 
         self.df = pd.DataFrame(data)

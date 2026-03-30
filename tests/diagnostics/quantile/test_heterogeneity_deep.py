@@ -15,9 +15,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from panelbox.diagnostics.quantile.heterogeneity import (
-    HeterogeneityTests,
-)
+from panelbox.diagnostics.quantile.heterogeneity import HeterogeneityTests
 
 # ---------------------------------------------------------------------------
 # Helpers

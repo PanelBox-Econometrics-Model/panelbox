@@ -75,7 +75,10 @@ def load_spatial_dataset(
 
 
 def merge_data_shapefile(
-    df: pd.DataFrame, gdf: gpd.GeoDataFrame, entity_id: str = "entity_id", how: str = "inner"
+    df: pd.DataFrame,
+    gdf: gpd.GeoDataFrame,
+    entity_id: str = "entity_id",
+    how: str = "inner",
 ) -> gpd.GeoDataFrame:
     """
     Merge panel data with shapefile geometry.
@@ -111,7 +114,10 @@ def merge_data_shapefile(
 
 
 def balance_panel(
-    df: pd.DataFrame, entity_id: str = "entity_id", time_id: str = "year", method: str = "complete"
+    df: pd.DataFrame,
+    entity_id: str = "entity_id",
+    time_id: str = "year",
+    method: str = "complete",
 ) -> pd.DataFrame:
     """
     Create balanced panel from potentially unbalanced data.

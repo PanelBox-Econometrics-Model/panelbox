@@ -63,7 +63,7 @@ class HistogramChart(PlotlyChartBase):
                         name=str(group),
                         opacity=0.7,
                         nbinsx=self._calculate_bins(group_values, bins),
-                        histnorm="probability density" if show_kde or show_normal else "",
+                        histnorm=("probability density" if show_kde or show_normal else ""),
                     )
                 )
         else:
@@ -126,7 +126,8 @@ class HistogramChart(PlotlyChartBase):
             title=data.get("title", "Distribution Histogram"),
             xaxis_title=data.get("xaxis_title", "Value"),
             yaxis_title=data.get(
-                "yaxis_title", "Frequency" if not (show_kde or show_normal) else "Density"
+                "yaxis_title",
+                "Frequency" if not (show_kde or show_normal) else "Density",
             ),
             barmode="overlay" if groups is not None else "stack",
             hovermode="closest",
@@ -214,7 +215,11 @@ class KDEChart(PlotlyChartBase):
                                     y=np.zeros_like(group_values),
                                     mode="markers",
                                     name=f"{group} (rug)",
-                                    marker={"symbol": "line-ns", "size": 10, "line": {"width": 1}},
+                                    marker={
+                                        "symbol": "line-ns",
+                                        "size": 10,
+                                        "line": {"width": 1},
+                                    },
                                     showlegend=False,
                                 )
                             )

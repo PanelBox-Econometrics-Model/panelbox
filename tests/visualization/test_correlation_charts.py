@@ -116,7 +116,10 @@ class TestCorrelationHeatmapChart:
         corr_matrix = np.array([[1.0, 0.5, -0.3], [0.5, 1.0, 0.2], [-0.3, 0.2, 1.0]])
         chart = CorrelationHeatmapChart()
         chart.create(
-            {"correlation_matrix": corr_matrix, "variable_names": ["Income", "Age", "Education"]}
+            {
+                "correlation_matrix": corr_matrix,
+                "variable_names": ["Income", "Age", "Education"],
+            }
         )
 
         assert chart.figure is not None
@@ -133,7 +136,10 @@ class TestCorrelationHeatmapChart:
         """Test custom title."""
         chart = CorrelationHeatmapChart()
         chart.create(
-            {"correlation_matrix": sample_correlation_matrix, "title": "Custom Correlation Matrix"}
+            {
+                "correlation_matrix": sample_correlation_matrix,
+                "title": "Custom Correlation Matrix",
+            }
         )
 
         assert chart.figure is not None
@@ -170,7 +176,11 @@ class TestPairwiseCorrelationChart:
         """Test with group coloring."""
         chart = PairwiseCorrelationChart()
         chart.create(
-            {"data": sample_grouped_dataframe, "variables": ["A", "B", "C"], "group": "group"}
+            {
+                "data": sample_grouped_dataframe,
+                "variables": ["A", "B", "C"],
+                "group": "group",
+            }
         )
 
         assert chart.figure is not None
@@ -221,7 +231,10 @@ class TestChartIntegration:
     def test_all_charts_create_html(self, sample_correlation_matrix, sample_dataframe):
         """Test that all charts can export to HTML."""
         charts_data = [
-            (CorrelationHeatmapChart(), {"correlation_matrix": sample_correlation_matrix}),
+            (
+                CorrelationHeatmapChart(),
+                {"correlation_matrix": sample_correlation_matrix},
+            ),
             (PairwiseCorrelationChart(), {"data": sample_dataframe}),
         ]
 
@@ -235,7 +248,10 @@ class TestChartIntegration:
     def test_all_charts_create_json(self, sample_correlation_matrix, sample_dataframe):
         """Test that all charts can export to JSON."""
         charts_data = [
-            (CorrelationHeatmapChart(), {"correlation_matrix": sample_correlation_matrix}),
+            (
+                CorrelationHeatmapChart(),
+                {"correlation_matrix": sample_correlation_matrix},
+            ),
             (PairwiseCorrelationChart(), {"data": sample_dataframe}),
         ]
 

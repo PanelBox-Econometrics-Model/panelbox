@@ -111,7 +111,11 @@ class PanelCorrectedStandardErrors:
     """
 
     def __init__(
-        self, X: np.ndarray, resid: np.ndarray, entity_ids: np.ndarray, time_ids: np.ndarray
+        self,
+        X: np.ndarray,
+        resid: np.ndarray,
+        entity_ids: np.ndarray,
+        time_ids: np.ndarray,
     ):
         self.X = X
         self.resid = resid
@@ -271,7 +275,9 @@ class PanelCorrectedStandardErrors:
             import warnings
 
             warnings.warn(
-                "X'ΩX matrix is singular. Using pseudoinverse.", UserWarning, stacklevel=2
+                "X'ΩX matrix is singular. Using pseudoinverse.",
+                UserWarning,
+                stacklevel=2,
             )
             cov_matrix = np.linalg.pinv(XtOmegaX)
 

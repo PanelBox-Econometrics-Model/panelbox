@@ -16,7 +16,11 @@ class TestGrangerCausality:
     def test_granger_causality_basic(self, simple_panel_data):
         """Test basic Granger causality test."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -45,7 +49,11 @@ class TestGrangerCausality:
     def test_granger_causality_reverse(self, simple_panel_data):
         """Test Granger causality in reverse direction."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -63,7 +71,11 @@ class TestGrangerCausality:
         """Test Granger causality with different lag orders."""
         # Test with p=1
         data_1 = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
         model_1 = PanelVAR(data_1)
         results_1 = model_1.fit()
@@ -74,7 +86,11 @@ class TestGrangerCausality:
 
         # Test with p=3
         data_3 = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=3
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=3,
         )
         model_3 = PanelVAR(data_3)
         results_3 = model_3.fit()
@@ -86,7 +102,11 @@ class TestGrangerCausality:
     def test_granger_causality_invalid_variable(self, simple_panel_data):
         """Test that invalid variable names raise errors."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -128,7 +148,11 @@ class TestGrangerCausality:
     def test_granger_causality_repr(self, simple_panel_data):
         """Test string representation of Granger causality result."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -149,7 +173,11 @@ class TestWaldTestGeneral:
     def test_wald_test_single_restriction(self, simple_panel_data):
         """Test Wald test with single restriction."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -179,7 +207,11 @@ class TestWaldTestGeneral:
     def test_wald_test_multiple_restrictions(self, simple_panel_data):
         """Test Wald test with multiple restrictions."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=2
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=2,
         )
 
         model = PanelVAR(data)
@@ -203,7 +235,11 @@ class TestWaldTestGeneral:
     def test_wald_test_with_r_vector(self, simple_panel_data):
         """Test Wald test with non-zero r vector."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)
@@ -225,7 +261,11 @@ class TestWaldTestGeneral:
     def test_wald_test_invalid_equation(self, simple_panel_data):
         """Test that invalid equation index raises error."""
         data = PanelVARData(
-            simple_panel_data, endog_vars=["y1", "y2"], entity_col="entity", time_col="time", lags=1
+            simple_panel_data,
+            endog_vars=["y1", "y2"],
+            entity_col="entity",
+            time_col="time",
+            lags=1,
         )
 
         model = PanelVAR(data)

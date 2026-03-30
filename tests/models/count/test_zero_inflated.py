@@ -10,7 +10,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from panelbox.models.count import PooledPoisson, ZeroInflatedNegativeBinomial, ZeroInflatedPoisson
+from panelbox.models.count import (
+    PooledPoisson,
+    ZeroInflatedNegativeBinomial,
+    ZeroInflatedPoisson,
+)
 
 
 class TestZeroInflatedPoisson:

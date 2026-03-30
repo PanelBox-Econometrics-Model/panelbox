@@ -432,7 +432,11 @@ class TestCSSDirectCoverageBatch4:
 
         assert isinstance(summary, pd.DataFrame)
         assert len(summary) == 3
-        assert list(summary["Specification"]) == ["None (FE only)", "Linear", "Quadratic"]
+        assert list(summary["Specification"]) == [
+            "None (FE only)",
+            "Linear",
+            "Quadratic",
+        ]
         assert "R\u00b2" in summary.columns
         assert "\u03c3_v" in summary.columns
         assert "Mean_Efficiency" in summary.columns

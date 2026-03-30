@@ -40,7 +40,13 @@ def create_sample_results():
         "cov_kwds": {"use_correction": True},
     }
 
-    data_info = {"nobs": n, "n_entities": 10, "n_periods": 10, "df_model": k, "df_resid": n - k - 1}
+    data_info = {
+        "nobs": n,
+        "n_entities": 10,
+        "n_periods": 10,
+        "df_model": k,
+        "df_resid": n - k - 1,
+    }
 
     rsquared_dict = {
         "rsquared": 0.75,

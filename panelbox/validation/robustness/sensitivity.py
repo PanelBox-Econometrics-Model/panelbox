@@ -240,11 +240,15 @@ class SensitivityAnalysis:
 
         # Convert to DataFrames
         estimates_df = pd.DataFrame(
-            estimates_list, index=[f"excl_{e}" for e in self.entities], columns=self.params.index
+            estimates_list,
+            index=[f"excl_{e}" for e in self.entities],
+            columns=self.params.index,
         )
 
         std_errors_df = pd.DataFrame(
-            std_errors_list, index=[f"excl_{e}" for e in self.entities], columns=self.params.index
+            std_errors_list,
+            index=[f"excl_{e}" for e in self.entities],
+            columns=self.params.index,
         )
 
         subsample_info_df = pd.DataFrame(subsample_info)
@@ -672,7 +676,10 @@ class SensitivityAnalysis:
 
         # Create new model
         new_model = model_class(
-            formula=formula, data=data, entity_col=self.entity_col, time_col=self.time_col
+            formula=formula,
+            data=data,
+            entity_col=self.entity_col,
+            time_col=self.time_col,
         )
 
         return new_model

@@ -374,7 +374,11 @@ class TestLLCTestIntegration:
         print("Integration Test: Comparing Different Trend Specifications")
         print("=" * 70)
 
-        for trend, name in [("n", "No trend"), ("c", "Constant"), ("ct", "Constant and trend")]:
+        for trend, name in [
+            ("n", "No trend"),
+            ("c", "Constant"),
+            ("ct", "Constant and trend"),
+        ]:
             llc = LLCTest(data, "series", "firm", "year", lags=1, trend=trend)
             result = llc.run()
             print(f"\n{name}:")

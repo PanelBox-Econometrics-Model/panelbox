@@ -57,7 +57,10 @@ class TestSensitivityAnalysis:
             class MockResult:
                 def __init__(self):
                     # Same coefficients regardless of instruments
-                    self.params_by_eq = [np.array([0.5, 0.3, 0.1]), np.array([0.2, 0.4, 0.05])]
+                    self.params_by_eq = [
+                        np.array([0.5, 0.3, 0.1]),
+                        np.array([0.2, 0.4, 0.05]),
+                    ]
                     self.n_instruments = max_instruments
 
             return MockResult()

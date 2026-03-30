@@ -91,7 +91,9 @@ def test_bar_chart_validation_length_mismatch():
 def test_bar_chart_via_factory():
     """Test creating bar chart via factory."""
     chart = ChartFactory.create(
-        chart_type="bar_chart", data={"x": ["A", "B"], "y": [10, 20]}, theme="professional"
+        chart_type="bar_chart",
+        data={"x": ["A", "B"], "y": [10, 20]},
+        theme="professional",
     )
 
     assert isinstance(chart, BarChart)

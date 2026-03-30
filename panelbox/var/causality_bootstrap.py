@@ -160,7 +160,13 @@ class BootstrapGrangerResult:
 
             # Shade rejection region
             x_max = max(self.observed_stat, np.max(self.bootstrap_dist)) * 1.1
-            ax.axvspan(critical_95, x_max, alpha=0.2, color="red", label="Rejection region (5%)")
+            ax.axvspan(
+                critical_95,
+                x_max,
+                alpha=0.2,
+                color="red",
+                label="Rejection region (5%)",
+            )
 
             ax.set_xlabel("Wald Statistic", fontsize=12)
             ax.set_ylabel("Density", fontsize=12)

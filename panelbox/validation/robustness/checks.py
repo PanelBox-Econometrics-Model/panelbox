@@ -133,7 +133,9 @@ class RobustnessChecker:
         # Pivot to wide format
         if len(df) > 0:
             table = df.pivot(
-                index="Parameter", columns="Specification", values=["Coefficient", "SE", "p-value"]
+                index="Parameter",
+                columns="Specification",
+                values=["Coefficient", "SE", "p-value"],
             )
         else:
             table = pd.DataFrame()

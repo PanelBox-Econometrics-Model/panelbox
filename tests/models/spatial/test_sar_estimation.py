@@ -167,7 +167,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -199,7 +203,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2 + x3", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2 + x3",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -225,7 +233,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -277,7 +289,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -312,7 +328,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -330,7 +350,8 @@ class TestSAREstimation:
         y_reconstructed = result.fittedvalues + result.resid
         # Check that they're at least correlated
         correlation = np.corrcoef(
-            y_reconstructed.flatten(), model._within_transformation(model.endog).flatten()
+            y_reconstructed.flatten(),
+            model._within_transformation(model.endog).flatten(),
         )[0, 1]
         assert correlation > 0.95
 
@@ -350,7 +371,11 @@ class TestSAREstimation:
 
         # Estimate model with L-BFGS-B optimizer
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml", optimizer="l-bfgs-b")
@@ -387,7 +412,11 @@ class TestSAREstimation:
 
         # Estimate model with ML random effects
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="random", method="ml")
@@ -431,7 +460,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -455,7 +488,11 @@ class TestSAREstimation:
 
         # Estimate model
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -491,7 +528,11 @@ class TestSAREstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -535,7 +576,11 @@ class TestSAREstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         with pytest.raises(NotImplementedError, match="not yet implemented"):
@@ -553,7 +598,11 @@ class TestSAREstimation:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -736,7 +785,11 @@ class TestSARPooledQML:
 
         # Estimate model with pooled effects
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="pooled", method="qml")
@@ -807,7 +860,11 @@ class TestSARPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Use pooled to avoid FE dimension issues
@@ -829,7 +886,11 @@ class TestSARPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         model.fit(effects="pooled", method="qml")
@@ -854,7 +915,11 @@ class TestSARPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         model.fit(effects="pooled", method="qml")
@@ -907,7 +972,11 @@ class TestSARResultsSummary:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -942,7 +1011,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -972,7 +1045,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1007,7 +1084,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1042,7 +1123,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1073,7 +1158,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1106,7 +1195,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1128,7 +1221,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1172,7 +1269,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Fit random effects model (has sigma params)
@@ -1205,7 +1306,11 @@ class TestSARResultsPredict:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         result = model.fit(effects="fixed", method="qml")
@@ -1236,7 +1341,11 @@ class TestSARSingularHessian:
         W_obj = SpatialWeights(W)
 
         model = SpatialLag(
-            formula="y ~ x1 + x2", data=data, entity_col="entity", time_col="time", W=W_obj
+            formula="y ~ x1 + x2",
+            data=data,
+            entity_col="entity",
+            time_col="time",
+            W=W_obj,
         )
 
         # Monkeypatch scipy.linalg.inv to raise LinAlgError on first call

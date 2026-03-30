@@ -106,7 +106,14 @@ def create_spatial_panel_data(
         # Store data
         for i in range(N):
             data.append(
-                {"entity": i, "time": t, "y": y[i], "x1": X[i, 0], "x2": X[i, 1], "x3": X[i, 2]}
+                {
+                    "entity": i,
+                    "time": t,
+                    "y": y[i],
+                    "x1": X[i, 0],
+                    "x2": X[i, 1],
+                    "x3": X[i, 2],
+                }
             )
 
     df = pd.DataFrame(data)
