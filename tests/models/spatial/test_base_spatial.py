@@ -591,14 +591,21 @@ class TestBaseSpatialBoundsLarge:
             # Force the large matrix path (lines 382-386)
             # by setting a condition that triggers eigs usage
             from scipy.sparse import csc_matrix
-            from scipy.sparse.linalg import eigs
+            from scipy.sparse.linalg import ArpackNoConvergence, eigs
 
             W_sparse = csc_matrix(W_arg) if not issparse(W_arg) else W_arg
 
             # Get extremal eigenvalues using two separate calls
             # (since "BE" doesn't work with sparse eigs)
-            eig_max, _ = eigs(W_sparse, k=1, which="LM")  # Largest magnitude
-            eig_min, _ = eigs(W_sparse, k=1, which="SM", sigma=0)  # Smallest magnitude
+            try:
+                eig_max, _ = eigs(W_sparse, k=1, which="LM")  # Largest magnitude
+                eig_min, _ = eigs(W_sparse, k=1, which="SM", sigma=0)  # Smallest magnitude
+            except ArpackNoConvergence:
+                # ARPACK may not converge on small matrices depending on the
+                # platform's LAPACK; the dense spectrum is exact here
+                dense = np.linalg.eigvals(W_sparse.toarray())
+                eig_max = np.array([dense[np.argmax(np.abs(dense))]])
+                eig_min = np.array([dense[np.argmin(np.abs(dense))]])
 
             model._W_eigenvalues = np.array([eig_min[0].real, eig_max[0].real])
 

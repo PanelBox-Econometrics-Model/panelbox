@@ -289,7 +289,7 @@ class ModifiedWaldTest(ValidationTest):
 
         # Compute variance for each entity
         entity_vars = resid_df.groupby("entity")["resid"].var()
-        entity_counts = resid_df.groupby("entity").size()
+        entity_counts: pd.Series = resid_df.groupby("entity").size()
 
         n_entities = len(entity_vars)
 
