@@ -550,25 +550,21 @@ class GMMEstimator:
         L = Z.shape[1]
         resid_1 = resid_1.reshape(-1, 1) if resid_1.ndim == 1 else resid_1
 
+        # Per-individual moments A_i = Z_i'X_i (L x K) and b_i = Z_i'u_i (L,):
+        # Z_i'(x_ij u_i' + u_i x_ij')Z_i = A_i[:, j] b_i' + b_i A_i[:, j]', so the
+        # sum over individuals is C_j + C_j' with C_j = sum_i outer(A_i[:, j], b_i)
+        A = np.zeros((N, L, K))
+        B = np.zeros((N, L))
+        for idx, uid in enumerate(unique_ids):
+            mask = ids == uid
+            Z_i = Z[mask]
+            A[idx] = Z_i.T @ X[mask]
+            B[idx] = (Z_i.T @ resid_1[mask]).ravel()
+        C = np.einsum("nlj,nm->jlm", A, B)  # (K, L, L)
+
         D = np.empty((K, K), dtype=np.float64)
-
         for j in range(K):
-            # Compute derivative of W₂ w.r.t. βⱼ
-            zxz = np.zeros((L, L))
-
-            for uid in unique_ids:
-                mask = ids == uid
-                X_i = X[mask]  # (T_i × K)
-                u_1i = resid_1[mask]  # (T_i × 1)
-                Z_i = Z[mask]  # (T_i × L)
-
-                # xu = x_ij @ u_1i' = (T_i × 1) @ (1 × T_i) = (T_i × T_i)
-                xu = X_i[:, j : j + 1] @ u_1i.T
-                # Z_i' @ (xu + xu') @ Z_i = (L × L)
-                zxz += Z_i.T @ (xu + xu.T) @ Z_i
-
-            partial_dir = (-1.0 / N) * zxz
-
+            partial_dir = (-1.0 / N) * (C[j] + C[j].T)
             # Dj = -M2_XZ_W2 @ partial_dir @ W2_inv @ zs2
             Dj = -1.0 * np.linalg.multi_dot([M2_XZ_W2, partial_dir, W2_inv, zs2])
             D[:, j : j + 1] = Dj

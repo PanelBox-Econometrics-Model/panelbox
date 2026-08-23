@@ -215,23 +215,23 @@ class InstrumentBuilder:
             else:
                 instrument_names.append(f"{var}_L{lag}")
 
-        # Fill instrument matrix
-        for i, (current_id, current_time) in enumerate(zip(ids, times)):
-            for lag_idx, lag in enumerate(range(min_lag, max_lag + 1)):
-                # Find value at t-lag
-                mask = (ids == current_id) & (times == current_time - lag)
-                if np.any(mask):
-                    lag_idx_data = np.where(mask)[0][0]
-                    if equation == "diff":
-                        # Roodman (2009): IV-style instruments enter as first-differences
-                        # in the transformed (differenced) equation: Δx_{i,t-k}
-                        mask_prev = (ids == current_id) & (times == current_time - lag - 1)
-                        if np.any(mask_prev):
-                            prev_idx_data = np.where(mask_prev)[0][0]
-                            Z[i, lag_idx] = var_data[lag_idx_data] - var_data[prev_idx_data]
-                    else:
-                        # For level equation, instruments enter as levels
-                        Z[i, lag_idx] = var_data[lag_idx_data]
+        # Fill instrument matrix. Lags are taken by calendar time (not row
+        # position) so gaps in unbalanced panels yield NaN rather than a
+        # wrong observation.
+        series = pd.Series(var_data, index=pd.MultiIndex.from_arrays([ids, times]))
+
+        def value_at(shift: int) -> np.ndarray:
+            key = pd.MultiIndex.from_arrays([ids, times - shift])
+            return series.reindex(key).to_numpy(dtype=float)
+
+        for lag_idx, lag in enumerate(range(min_lag, max_lag + 1)):
+            if equation == "diff":
+                # Roodman (2009): IV-style instruments enter as first-differences
+                # in the transformed (differenced) equation: Δx_{i,t-k}
+                Z[:, lag_idx] = value_at(lag) - value_at(lag + 1)
+            else:
+                # For level equation, instruments enter as levels
+                Z[:, lag_idx] = value_at(lag)
 
         return InstrumentSet(
             Z=Z,
@@ -308,6 +308,23 @@ class InstrumentBuilder:
         if max_lag is None:
             max_lag = int(1e6)  # Effectively infinite
 
+        # Lagged values looked up by calendar time, computed once per lag depth
+        # and then masked period by period (GMM-style block structure)
+        series = pd.Series(var_data, index=pd.MultiIndex.from_arrays([ids, times]))
+
+        def value_at(shift: int) -> np.ndarray:
+            key = pd.MultiIndex.from_arrays([ids, times - shift])
+            return series.reindex(key).to_numpy(dtype=float)
+
+        overall_max_lag = min(max_lag, len(self.time_periods) - 1)
+        lagged = {}
+        for lag in range(min_lag, overall_max_lag + 1):
+            if equation == "diff":
+                lagged[lag] = value_at(lag)
+            else:
+                # For level equation, use differences
+                lagged[lag] = value_at(lag) - value_at(lag + 1)
+
         # Build instruments time period by time period
         Z_list = []
         instrument_names = []
@@ -316,39 +333,12 @@ class InstrumentBuilder:
             # Skip early periods where no lags available
             if t_idx < min_lag:
                 continue
-
-            # Determine available lags for this period
-            available_lags = []
+            mask_t = times == t
             for lag in range(min_lag, min(max_lag + 1, t_idx + 1)):
-                available_lags.append(lag)
-
-            if not available_lags:
-                continue
-
-            # Create instrument columns for this time period
-            for lag in available_lags:
                 col = np.full(n_obs, np.nan)
-                col_name = f"{var}_t{t}_L{lag}"
-
-                # Fill only for observations at time t
-                mask_t = times == t
-                for i in np.where(mask_t)[0]:
-                    current_id = ids[i]
-                    # Find lagged value
-                    mask_lag = (ids == current_id) & (times == t - lag)
-                    if np.any(mask_lag):
-                        lag_idx = np.where(mask_lag)[0][0]
-                        if equation == "diff":
-                            col[i] = var_data[lag_idx]
-                        else:
-                            # For level equation, use differences
-                            mask_lag1 = (ids == current_id) & (times == t - lag - 1)
-                            if np.any(mask_lag1):
-                                lag1_idx = np.where(mask_lag1)[0][0]
-                                col[i] = var_data[lag_idx] - var_data[lag1_idx]
-
+                col[mask_t] = lagged[lag][mask_t]
                 Z_list.append(col)
-                instrument_names.append(col_name)
+                instrument_names.append(f"{var}_t{t}_L{lag}")
 
         # Stack into matrix
         Z = np.column_stack(Z_list) if Z_list else np.empty((n_obs, 0))
