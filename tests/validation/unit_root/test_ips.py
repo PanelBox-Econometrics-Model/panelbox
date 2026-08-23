@@ -550,21 +550,30 @@ class TestIPSSimpleADFException:
         assert n_obs == 0
 
 
-class TestIPSCriticalValuesBranches:
-    """Additional critical value tests for specific T ranges."""
+class TestIPSMoments:
+    """Moments of the individual ADF t-statistic (IPS 2003, Table 3)."""
 
-    def test_get_critical_values_c_medium(self):
-        """Directly test _get_critical_values for trend='c', T in (25,50] - covers lines 384-385."""
-        data = _generate_stationary_panel(n_entities=3, n_time=10)
-        test = IPSTest(data, "y", "entity", "time", lags=1, trend="c")
-        crit = test._get_critical_values(35)
-        assert crit["mean"] == -1.66
-        assert crit["std"] == 0.96
+    def test_tabulated_values_are_returned_exactly(self):
+        from panelbox.validation.unit_root.ips import _ips_moments
 
-    def test_get_critical_values_c_long(self):
-        """Directly test _get_critical_values for trend='c', T > 50 - covers lines 390-391."""
-        data = _generate_stationary_panel(n_entities=3, n_time=10)
-        test = IPSTest(data, "y", "entity", "time", lags=1, trend="c")
-        crit = test._get_critical_values(60)
-        assert crit["mean"] == -1.73
-        assert crit["std"] == 1.00
+        assert _ips_moments(50, 0, "c") == (-1.527, 0.760)
+        assert _ips_moments(100, 2, "ct") == (-2.158, 0.613)
+
+    def test_interpolates_between_tabulated_lengths(self):
+        from panelbox.validation.unit_root.ips import _ips_moments
+
+        mean, var = _ips_moments(35, 0, "c")
+        assert mean == pytest.approx((-1.526 - 1.523) / 2, abs=1e-9)
+        assert var == pytest.approx((0.789 + 0.770) / 2, abs=1e-9)
+
+    def test_clips_outside_tabulated_range(self):
+        from panelbox.validation.unit_root.ips import _ips_moments
+
+        assert _ips_moments(5, 0, "c") == _ips_moments(10, 0, "c")
+        assert _ips_moments(500, 0, "c") == _ips_moments(100, 0, "c")
+
+    def test_untabulated_short_panels_use_nearest_available_length(self):
+        from panelbox.validation.unit_root.ips import _ips_moments
+
+        # lags = 8 is tabulated only from T = 25 onwards
+        assert _ips_moments(10, 8, "c") == _ips_moments(25, 8, "c")

@@ -21,6 +21,133 @@ from scipy import stats
 
 logger = logging.getLogger(__name__)
 
+# Mean and standard deviation adjustments for the LLC t-statistic
+# (Levin, Lin and Chu 2002, Table 2), indexed by the effective time
+# dimension T~ = T - lags - 1. Values are linearly interpolated in between.
+_LLC_ADJ_T = np.array([25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 250, 500])
+_LLC_ADJ = {
+    "n": (
+        np.array([0.004, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        np.array(
+            [
+                1.049,
+                1.035,
+                1.027,
+                1.021,
+                1.017,
+                1.014,
+                1.011,
+                1.008,
+                1.007,
+                1.006,
+                1.005,
+                1.001,
+                1.0,
+            ]
+        ),
+    ),
+    "c": (
+        np.array(
+            [
+                -0.554,
+                -0.546,
+                -0.541,
+                -0.537,
+                -0.533,
+                -0.531,
+                -0.527,
+                -0.524,
+                -0.521,
+                -0.520,
+                -0.518,
+                -0.509,
+                -0.500,
+            ]
+        ),
+        np.array(
+            [
+                0.919,
+                0.889,
+                0.867,
+                0.850,
+                0.837,
+                0.826,
+                0.810,
+                0.798,
+                0.789,
+                0.782,
+                0.776,
+                0.742,
+                0.707,
+            ]
+        ),
+    ),
+    "ct": (
+        np.array(
+            [
+                -0.703,
+                -0.674,
+                -0.653,
+                -0.637,
+                -0.624,
+                -0.614,
+                -0.598,
+                -0.587,
+                -0.578,
+                -0.571,
+                -0.566,
+                -0.533,
+                -0.500,
+            ]
+        ),
+        np.array(
+            [
+                1.003,
+                0.949,
+                0.906,
+                0.871,
+                0.842,
+                0.818,
+                0.780,
+                0.751,
+                0.728,
+                0.710,
+                0.695,
+                0.603,
+                0.500,
+            ]
+        ),
+    ),
+}
+
+
+def _llc_adjustment(t_tilde: float, trend: str) -> tuple[float, float]:
+    """Interpolated (mu*, sigma*) for the effective time dimension."""
+    mu, sig = _LLC_ADJ[trend]
+    t = float(np.clip(t_tilde, _LLC_ADJ_T[0], _LLC_ADJ_T[-1]))
+    return float(np.interp(t, _LLC_ADJ_T, mu)), float(np.interp(t, _LLC_ADJ_T, sig))
+
+
+def _long_run_variance(y: np.ndarray, trend: str, q: int | None = None) -> float:
+    """Bartlett-kernel long-run variance of the first difference of ``y``.
+
+    Truncation lag defaults to round(3.21 * T ** (1/3)) as in LLC (2002).
+    """
+    T = len(y)
+    if q is None:
+        q = round(3.21 * T ** (1.0 / 3.0))
+    dx = np.diff(y)
+    if trend == "c":
+        dx = dx - dx.mean()
+    elif trend == "ct":
+        X = np.column_stack([np.ones(len(dx)), np.arange(1, len(dx) + 1)])
+        dx = dx - X @ np.linalg.lstsq(X, dx, rcond=None)[0]
+    n = len(dx)
+    lrv = np.sum(dx**2) / n
+    for lag in range(1, min(q, n - 1) + 1):
+        lrv += 2.0 * (1.0 - lag / (q + 1.0)) * np.sum(dx[:-lag] * dx[lag:]) / n
+    return float(lrv)
+
 
 @dataclass
 class LLCTestResult:
@@ -317,10 +444,10 @@ class LLCTest:
     def _process_entity(
         self,
         entity,
-    ) -> tuple[np.ndarray, np.ndarray, float, int] | None:
+    ) -> tuple[np.ndarray, np.ndarray, float, int, float] | None:
         """Process a single entity for the LLC test.
 
-        Returns (e_tilde, v_tilde, sigma_i, T_i) or None if entity is skipped.
+        Returns (e_tilde, v_tilde, sigma_i, T_i, s_i) or None if entity is skipped.
         """
         entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values
 
@@ -334,13 +461,14 @@ class LLCTest:
 
         Z = self._build_regressors(dy, T_i)
 
-        if len(Z) > 0 and len(y_lag) == T_i and len(dy_dep) == T_i:
-            return self._orthogonalize(Z, dy_dep, y_lag, T_i)
-
-        if len(y_lag) == T_i and len(dy_dep) == T_i:
-            return (dy_dep, y_lag, np.std(dy_dep, ddof=1), T_i)
-
-        return None
+        if len(y_lag) != T_i or len(dy_dep) != T_i:
+            return None
+        out = self._orthogonalize(Z, dy_dep, y_lag, T_i)
+        if out is None:
+            return None
+        e_tilde, v_tilde, sigma_i, T_i = out
+        s_i = np.sqrt(_long_run_variance(entity_data, self.trend)) / sigma_i
+        return (e_tilde, v_tilde, sigma_i, T_i, s_i)
 
     def _build_regressors(self, dy: np.ndarray, T_i: int) -> list[np.ndarray]:
         """Build regressor matrix (lagged differences + deterministics)."""
@@ -369,14 +497,22 @@ class LLCTest:
         y_lag: np.ndarray,
         T_i: int,
     ) -> tuple[np.ndarray, float, float, int] | None:
-        """Orthogonalize Δy and y_{t-1} w.r.t. regressors Z."""
+        """Orthogonalize Δy and y_{t-1} w.r.t. regressors Z.
+
+        ``sigma_i`` is the residual standard deviation of the full ADF
+        regression Δy on (y_{t-1}, Z), without degrees-of-freedom correction.
+        """
         try:
-            Z_mat = np.column_stack(Z)
-            beta_dy = np.linalg.lstsq(Z_mat, dy_dep, rcond=None)[0]
-            e_tilde = dy_dep - Z_mat @ beta_dy
-            beta_y = np.linalg.lstsq(Z_mat, y_lag, rcond=None)[0]
-            v_tilde = y_lag - Z_mat @ beta_y
-            sigma_i = np.std(e_tilde, ddof=1)
+            if len(Z) > 0:
+                Z_mat = np.column_stack(Z)
+                e_tilde = dy_dep - Z_mat @ np.linalg.lstsq(Z_mat, dy_dep, rcond=None)[0]
+                v_tilde = y_lag - Z_mat @ np.linalg.lstsq(Z_mat, y_lag, rcond=None)[0]
+                X_full = np.column_stack([y_lag, Z_mat])
+            else:
+                e_tilde, v_tilde = dy_dep, y_lag
+                X_full = y_lag.reshape(-1, 1)
+            resid = dy_dep - X_full @ np.linalg.lstsq(X_full, dy_dep, rcond=None)[0]
+            sigma_i = float(np.sqrt(np.sum(resid**2) / len(resid)))
             if sigma_i > 0 and len(e_tilde) > 0:
                 return (e_tilde, v_tilde, sigma_i, T_i)
         except Exception:
@@ -389,36 +525,45 @@ class LLCTest:
         v_tilde_list: list[np.ndarray],
         sigma_list: list[float],
         T_list: list[int],
+        s_list: list[float],
     ) -> LLCTestResult:
-        """Normalize, pool, and run regression to compute the LLC test statistic."""
-        e_normalized_list = []
-        v_normalized_list = []
-        for e_tilde, v_tilde, sigma_i, T_i in zip(e_tilde_list, v_tilde_list, sigma_list, T_list):
-            e_normalized_list.append(e_tilde / sigma_i)
-            v_normalized_list.append(v_tilde / (sigma_i * np.sqrt(T_i)))
+        """Pool the normalized series and compute the adjusted LLC statistic.
 
-        e_pooled = np.concatenate(e_normalized_list)
-        v_pooled = np.concatenate(v_normalized_list)
+        Follows Levin, Lin and Chu (2002), eq. (12):
+
+            t* = (t_rho - N T~ S_N sigma_eps^-2 se(rho) mu*_T~) / sigma*_T~
+
+        where S_N is the average ratio of long-run to short-run standard
+        deviations and (mu*, sigma*) come from Table 2. For unbalanced
+        panels T~ is the average effective length.
+        """
+        e_pooled = np.concatenate([e / s for e, s in zip(e_tilde_list, sigma_list)])
+        v_pooled = np.concatenate([v / s for v, s in zip(v_tilde_list, sigma_list)])
 
         rho = np.sum(e_pooled * v_pooled) / np.sum(v_pooled**2)
         resid = e_pooled - rho * v_pooled
         n_total = len(e_pooled)
-        sigma2 = np.sum(resid**2) / (n_total - 1)
-        se_rho = np.sqrt(sigma2 / np.sum(v_pooled**2))
+        rss = float(np.sum(resid**2))
+        se_rho = np.sqrt((rss / n_total) / np.sum(v_pooled**2))
+        t_rho = rho / se_rho
 
-        # Simplified approach: use the t-statistic directly.
-        # For moderate/large N and T the distribution is approximately normal.
-        t_adj = rho / se_rho
+        n_entities = len(e_tilde_list)
+        t_tilde = float(np.mean(T_list))
+        sigma_eps2 = rss / (n_entities * t_tilde)
+        s_bar = float(np.mean(s_list))
+        mu_star, sigma_star = _llc_adjustment(t_tilde, self.trend)
+
+        t_adj = (t_rho - n_entities * t_tilde * s_bar / sigma_eps2 * se_rho * mu_star) / sigma_star
         pvalue = stats.norm.cdf(t_adj)
 
         det_map = {"n": "None", "c": "Constant", "ct": "Constant and Trend"}
 
         self.result = LLCTestResult(
-            statistic=t_adj,
-            pvalue=pvalue,
+            statistic=float(t_adj),
+            pvalue=float(pvalue),
             lags=self.lags,
             n_obs=n_total,
-            n_entities=len(e_tilde_list),
+            n_entities=n_entities,
             test_type="LLC",
             deterministics=det_map[self.trend],
         )
@@ -449,17 +594,19 @@ class LLCTest:
         v_tilde_list = []
         sigma_list = []
         T_list = []
+        s_list = []
 
         for entity in self.entities:
             result = self._process_entity(entity)
             if result is not None:
-                e_tilde, v_tilde, sigma_i, T_i = result
+                e_tilde, v_tilde, sigma_i, T_i, s_i = result
                 e_tilde_list.append(e_tilde)
                 v_tilde_list.append(v_tilde)
                 sigma_list.append(sigma_i)
                 T_list.append(T_i)
+                s_list.append(s_i)
 
         if len(e_tilde_list) == 0:
             raise ValueError("Insufficient data for LLC test")
 
-        return self._pooled_regression(e_tilde_list, v_tilde_list, sigma_list, T_list)
+        return self._pooled_regression(e_tilde_list, v_tilde_list, sigma_list, T_list, s_list)

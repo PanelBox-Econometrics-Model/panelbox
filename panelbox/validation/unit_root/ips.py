@@ -22,6 +22,87 @@ from scipy import stats
 
 logger = logging.getLogger(__name__)
 
+# Moments of the individual ADF t-statistic under the null (Im, Pesaran and
+# Shin 2003, Table 3), used to standardize t-bar into the W_tbar statistic.
+# Rows: ADF lags 0..8; columns: effective T in _IPS_T. NaN = not tabulated.
+_IPS_T = np.array([10, 15, 20, 25, 30, 40, 50, 60, 70, 100], dtype=float)
+_NA = np.nan
+_IPS_MOMENTS = {
+    "c": {
+        "mean": np.array(
+            [
+                [-1.504, -1.514, -1.522, -1.520, -1.526, -1.523, -1.527, -1.519, -1.524, -1.532],
+                [-1.488, -1.503, -1.516, -1.514, -1.519, -1.520, -1.524, -1.519, -1.522, -1.530],
+                [-1.319, -1.387, -1.428, -1.443, -1.460, -1.476, -1.493, -1.490, -1.498, -1.514],
+                [-1.306, -1.366, -1.413, -1.433, -1.453, -1.471, -1.489, -1.486, -1.495, -1.512],
+                [-1.171, -1.260, -1.329, -1.363, -1.394, -1.428, -1.454, -1.458, -1.470, -1.495],
+                [_NA, _NA, -1.313, -1.351, -1.384, -1.421, -1.451, -1.454, -1.467, -1.494],
+                [_NA, _NA, _NA, -1.289, -1.331, -1.380, -1.418, -1.427, -1.444, -1.476],
+                [_NA, _NA, _NA, -1.273, -1.319, -1.371, -1.411, -1.423, -1.441, -1.474],
+                [_NA, _NA, _NA, -1.212, -1.266, -1.329, -1.377, -1.393, -1.415, -1.456],
+            ]
+        ),
+        "var": np.array(
+            [
+                [1.069, 0.923, 0.851, 0.809, 0.789, 0.770, 0.760, 0.749, 0.736, 0.735],
+                [1.255, 1.011, 0.915, 0.861, 0.831, 0.803, 0.781, 0.770, 0.753, 0.745],
+                [1.421, 1.078, 0.969, 0.905, 0.865, 0.830, 0.798, 0.789, 0.766, 0.754],
+                [1.759, 1.181, 1.037, 0.952, 0.907, 0.858, 0.819, 0.802, 0.782, 0.761],
+                [2.080, 1.279, 1.097, 1.005, 0.946, 0.886, 0.842, 0.819, 0.801, 0.771],
+                [_NA, _NA, 1.171, 1.055, 0.980, 0.912, 0.863, 0.839, 0.814, 0.781],
+                [_NA, _NA, _NA, 1.114, 1.023, 0.942, 0.886, 0.858, 0.834, 0.795],
+                [_NA, _NA, _NA, 1.164, 1.062, 0.968, 0.910, 0.875, 0.851, 0.806],
+                [_NA, _NA, _NA, 1.217, 1.105, 0.996, 0.929, 0.896, 0.871, 0.818],
+            ]
+        ),
+    },
+    "ct": {
+        "mean": np.array(
+            [
+                [-2.166, -2.167, -2.168, -2.167, -2.172, -2.173, -2.176, -2.174, -2.174, -2.177],
+                [-2.173, -2.169, -2.172, -2.172, -2.173, -2.177, -2.180, -2.178, -2.176, -2.179],
+                [-1.914, -1.999, -2.047, -2.074, -2.095, -2.120, -2.137, -2.143, -2.146, -2.158],
+                [-1.922, -1.977, -2.032, -2.065, -2.091, -2.117, -2.137, -2.142, -2.146, -2.158],
+                [-1.750, -1.823, -1.911, -1.968, -2.009, -2.057, -2.091, -2.103, -2.114, -2.135],
+                [_NA, _NA, -1.888, -1.955, -1.998, -2.051, -2.087, -2.101, -2.111, -2.135],
+                [_NA, _NA, _NA, -1.868, -1.923, -1.995, -2.042, -2.065, -2.081, -2.113],
+                [_NA, _NA, _NA, -1.851, -1.912, -1.986, -2.036, -2.063, -2.079, -2.112],
+                [_NA, _NA, _NA, -1.761, -1.835, -1.925, -1.987, -2.024, -2.046, -2.088],
+            ]
+        ),
+        "var": np.array(
+            [
+                [1.132, 0.869, 0.763, 0.713, 0.690, 0.655, 0.633, 0.621, 0.610, 0.597],
+                [1.453, 0.975, 0.845, 0.769, 0.734, 0.687, 0.654, 0.641, 0.627, 0.605],
+                [1.627, 1.036, 0.882, 0.796, 0.756, 0.702, 0.661, 0.653, 0.634, 0.613],
+                [2.482, 1.214, 0.983, 0.861, 0.808, 0.735, 0.688, 0.674, 0.650, 0.625],
+                [3.947, 1.332, 1.052, 0.913, 0.845, 0.759, 0.705, 0.685, 0.662, 0.629],
+                [_NA, _NA, 1.165, 0.991, 0.899, 0.792, 0.730, 0.705, 0.673, 0.638],
+                [_NA, _NA, _NA, 1.055, 0.945, 0.828, 0.753, 0.725, 0.689, 0.650],
+                [_NA, _NA, _NA, 1.145, 1.009, 0.872, 0.786, 0.747, 0.713, 0.661],
+                [_NA, _NA, _NA, 1.208, 1.063, 0.902, 0.808, 0.766, 0.728, 0.670],
+            ]
+        ),
+    },
+}
+
+
+def _ips_moments(t_eff: float, lags: int, trend: str) -> tuple[float, float]:
+    """Interpolated (E[t], Var[t]) for one entity's effective length and lags.
+
+    The "no deterministics" case is not tabulated by IPS; the intercept
+    moments are used as the closest available approximation.
+    """
+    key = "ct" if trend == "ct" else "c"
+    row = min(max(int(lags), 0), 8)
+    mean_row = _IPS_MOMENTS[key]["mean"][row]
+    var_row = _IPS_MOMENTS[key]["var"][row]
+    ok = ~np.isnan(mean_row)
+    t = float(np.clip(t_eff, _IPS_T[ok][0], _IPS_T[ok][-1]))
+    return float(np.interp(t, _IPS_T[ok], mean_row[ok])), float(
+        np.interp(t, _IPS_T[ok], var_row[ok])
+    )
+
 
 @dataclass
 class IPSTestResult:
@@ -168,6 +249,7 @@ class IPSTest:
         time_col: str,
         lags: Any | None = None,
         trend: str = "c",
+        df_correction: bool = False,
     ):
         self.data = data.copy()
         self.variable = variable
@@ -175,6 +257,10 @@ class IPSTest:
         self.time_col = time_col
         self.lags = lags
         self.trend = trend
+        # plm::purtest computes the individual ADF t-statistics without a
+        # degrees-of-freedom correction (dfcor = FALSE); keep that default
+        # so results are comparable to the reference implementation
+        self.df_correction = df_correction
 
         # Validate inputs
         if variable not in data.columns:
@@ -324,7 +410,8 @@ class IPSTest:
 
                 # Standard error of ρ
                 n = len(resid)
-                sigma2 = np.sum(resid**2) / (n - len(params))
+                dof = n - len(params) if self.df_correction else n
+                sigma2 = np.sum(resid**2) / dof
                 X_cov = np.linalg.inv(X_mat.T @ X_mat) * sigma2
                 se_rho = np.sqrt(X_cov[rho_idx, rho_idx])
 
@@ -341,68 +428,13 @@ class IPSTest:
                 resid = dy_dep - X_mat.flatten() * params[0]
 
                 n = len(resid)
-                sigma2 = np.sum(resid**2) / (n - 1)
+                sigma2 = np.sum(resid**2) / (n - 1 if self.df_correction else n)
                 se_rho = np.sqrt(sigma2 / np.sum(y_lag**2))
                 t_stat = params[0] / se_rho
 
                 return t_stat, n
             except Exception:
                 return np.nan, 0
-
-    def _get_critical_values(self, T: int) -> dict[str, float]:
-        """
-        Get simulated mean and variance for standardization.
-
-        Based on IPS (2003) Table 2.
-
-        Parameters
-        ----------
-        T : int
-            Average time dimension
-
-        Returns
-        -------
-        dict
-            Dictionary with 'mean' and 'std' for the t-bar distribution under H0
-        """
-        # Simulated values from IPS (2003) Table 2
-        # These are approximations for large T
-
-        if self.trend == "n":
-            # No deterministic terms
-            if T <= 25:
-                mean = -1.00
-                std = 0.80
-            elif T <= 50:
-                mean = -1.01
-                std = 0.81
-            else:
-                mean = -1.02
-                std = 0.82
-        elif self.trend == "c":
-            # Constant
-            if T <= 25:
-                mean = -1.53
-                std = 0.90
-            elif T <= 50:
-                mean = -1.66
-                std = 0.96
-            else:
-                mean = -1.73
-                std = 1.00
-        else:  # 'ct'
-            # Constant and trend
-            if T <= 25:
-                mean = -2.17
-                std = 0.93
-            elif T <= 50:
-                mean = -2.33
-                std = 0.99
-            else:
-                mean = -2.51
-                std = 1.04
-
-        return {"mean": mean, "std": std}
 
     def run(self) -> IPSTestResult:
         """
@@ -443,6 +475,7 @@ class IPSTest:
         t_stats_dict = {}
         n_obs_total = 0
         T_list = []
+        moments = []
 
         for entity in self.entities:
             entity_data = self.data[self.data[self.entity_col] == entity][self.variable].values
@@ -455,6 +488,7 @@ class IPSTest:
                 t_stats_dict[entity] = t_stat
                 n_obs_total += n_obs
                 T_list.append(n_obs)
+                moments.append(_ips_moments(n_obs, lags, self.trend))
 
         if len(t_stats) == 0:
             raise ValueError("Insufficient data for IPS test")
@@ -463,12 +497,11 @@ class IPSTest:
         N = len(t_stats)
         t_bar = np.mean(t_stats)
 
-        # Step 4: Standardize using critical values
-        T_avg = np.mean(T_list)
-        crit_vals = self._get_critical_values(int(T_avg))
-
-        E_t = crit_vals["mean"]
-        Var_t = crit_vals["std"] ** 2
+        # Step 4: Standardize with the IPS (2003, Table 3) moments, averaged
+        # over entities so that unbalanced panels and entity-specific lags
+        # are handled as in plm::purtest
+        E_t = float(np.mean([m[0] for m in moments]))
+        Var_t = float(np.mean([m[1] for m in moments]))
 
         # W-statistic (IPS standardized statistic)
         W_stat = np.sqrt(N) * (t_bar - E_t) / np.sqrt(Var_t)
