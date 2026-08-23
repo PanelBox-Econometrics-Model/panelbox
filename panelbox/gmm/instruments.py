@@ -411,7 +411,7 @@ class InstrumentBuilder:
 
             # Include lag if coverage is sufficient
             coverage = n_valid / n_obs
-            if coverage >= min_coverage:
+            if n_valid > 0 and coverage >= min_coverage:
                 valid_lags.append(lag)
 
         return valid_lags
@@ -445,7 +445,9 @@ class InstrumentBuilder:
 
         # Smart selection: Filter lags with sufficient data coverage
         # This helps with unbalanced panels by excluding mostly-NaN lags
-        possible_lags = self._analyze_lag_availability(var, min_lag, max_lag, min_coverage=0.10)
+        # Keep every lag with at least one observation (xtabond2 behaviour);
+        # missing instrument entries are set to zero downstream.
+        possible_lags = self._analyze_lag_availability(var, min_lag, max_lag, min_coverage=0.0)
 
         # If no lags meet the coverage threshold, use at least min_lag and min_lag+1
         if not possible_lags and min_lag <= max_lag:

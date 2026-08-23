@@ -338,19 +338,19 @@ class SystemGMM(DifferenceGMM):
         Z_lgmm = Z_level_gmm.Z[valid_diff]
 
         # Filter invalid columns and apply nan_to_num
-        Z_dgmm_clean = self._filter_invalid_columns(Z_dgmm, min_coverage=0.10)
-        Z_lgmm_clean = self._filter_invalid_columns(Z_lgmm, min_coverage=0.10)
-        Z_div_clean = self._filter_invalid_columns(Z_div, min_coverage=0.10)
+        Z_dgmm_clean = self._filter_invalid_columns(Z_dgmm, min_coverage=0.0)
+        Z_lgmm_clean = self._filter_invalid_columns(Z_lgmm, min_coverage=0.0)
+        Z_div_clean = self._filter_invalid_columns(Z_div, min_coverage=0.0)
 
         # Build IV instruments as shared columns for level equation.
         # For exogenous vars, level equation uses levels (not differences).
         Z_liv_cols = []
-        for var in self.exog_vars:
+        for var in list(self.exog_vars) + getattr(self, "_time_dummy_cols", []):
             Z_lev_iv = self.instrument_builder.create_iv_style_instruments(
                 var=var, min_lag=0, max_lag=self.iv_max_lag, equation="level"
             )
             Z_liv_cols.append(
-                self._filter_invalid_columns(Z_lev_iv.Z[valid_diff], min_coverage=0.10)
+                self._filter_invalid_columns(Z_lev_iv.Z[valid_diff], min_coverage=0.0)
             )
 
         # Build stacked instrument matrix following pydynpd/xtabond2 convention:
@@ -419,16 +419,7 @@ class SystemGMM(DifferenceGMM):
             T_total = int(np.sum(mask))
             # Each individual has T_diff rows in diff block + T_level rows in level block
             # After trimming (Bug 7 fix), T_diff == T_level, so T_total = 2 * T_diff
-            T_half = T_total // 2
-            if T_half > 0:
-                H_diff = self.estimator.build_H_matrix(T_half, "fd")
-                H_level = np.eye(T_total - T_half)
-                H_i = np.zeros((T_total, T_total))
-                H_i[:T_half, :T_half] = H_diff
-                H_i[T_half:, T_half:] = H_level
-            else:
-                H_i = np.eye(T_total)
-            H_blocks[uid] = H_i
+            H_blocks[uid] = self._build_system_H(T_total)
 
         # Step 5: Estimate GMM on stacked system (pass ids for per-individual weights)
         if self.gmm_type == "one_step":
@@ -624,13 +615,22 @@ class SystemGMM(DifferenceGMM):
         regressors.extend(self.endogenous_vars)
         regressors.extend(self.predetermined_vars)
 
-        # Add time dummies if requested
+        # Add time dummies if requested (also stored on self.data so they can
+        # serve as their own instruments; see _generate_instruments_system)
+        self._time_dummy_cols = []
         if self.time_dummies:
-            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", drop_first=True)
+            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", dtype=float)
+            # Keep dummies only for periods inside the differenced estimation
+            # sample: the first 1 + max(lags) periods are consumed by the lag
+            # and the first difference (matches xtabond2's dummy set)
+            n_drop = 1 + max(self.lags)
+            time_dummies = time_dummies.iloc[:, n_drop:]
             for col in time_dummies.columns:
                 df[col] = time_dummies[col]
+                self.data[col] = time_dummies[col]
                 if col not in regressors:
                     regressors.append(col)
+                self._time_dummy_cols.append(col)
 
         # Extract level data (ALL rows initially)
         y_level_all = df[self.dep_var].values.reshape(-1, 1)
@@ -670,6 +670,10 @@ class SystemGMM(DifferenceGMM):
         Z_level_gmm : InstrumentSet
             GMM-style instruments for level equations
         """
+        # Refresh the builder so it sees columns added by the transform step
+        # (lags, time dummies) before any instrument is generated
+        self.instrument_builder = InstrumentBuilder(self.data, self.id_var, self.time_var)
+
         # Generate diff instruments in separate groups (GMM vs IV)
         diff_gmm_sets = []
         diff_iv_sets = []
@@ -706,6 +710,13 @@ class SystemGMM(DifferenceGMM):
                 var=var, min_lag=0, max_lag=self.iv_max_lag, equation="diff"
             )
             diff_iv_sets.append(Z_exog)
+
+        # Time dummies are strictly exogenous: each instruments itself
+        for col in getattr(self, "_time_dummy_cols", []):
+            Z_td = self.instrument_builder.create_iv_style_instruments(
+                var=col, min_lag=0, max_lag=0, equation="diff"
+            )
+            diff_iv_sets.append(Z_td)
 
         # Combine diff GMM instruments
         n_obs = len(self.data)
@@ -817,10 +828,10 @@ class SystemGMM(DifferenceGMM):
 
         # Filter out invalid instrument columns (all NaN or insufficient coverage)
         # For difference instruments
-        Z_diff_clean = self._filter_invalid_columns(Z_diff.Z, min_coverage=0.10)
+        Z_diff_clean = self._filter_invalid_columns(Z_diff.Z, min_coverage=0.0)
 
         # For level instruments
-        Z_level_clean = self._filter_invalid_columns(Z_level.Z, min_coverage=0.10)
+        Z_level_clean = self._filter_invalid_columns(Z_level.Z, min_coverage=0.0)
 
         # Create block diagonal matrix
         n_instruments_total = Z_diff_clean.shape[1] + Z_level_clean.shape[1]
@@ -835,7 +846,27 @@ class SystemGMM(DifferenceGMM):
 
         return Z_stacked
 
-    def _filter_invalid_columns(self, Z: np.ndarray, min_coverage: float = 0.10) -> np.ndarray:
+    def _build_system_H(self, T_total: int) -> np.ndarray:
+        """Weighting matrix for one entity's stacked [diff; level] rows.
+
+        Follows the default xtabond2 ``h(3)``: tridiagonal block for the
+        differenced rows, identity for the level rows, and off-diagonal
+        blocks linking the differenced error of period t (which contains
+        e_t and -e_{t-1}) to the level rows of t and t-1.
+        """
+        T_half = T_total // 2
+        if T_half == 0:
+            return np.eye(T_total)
+        H_i = np.zeros((T_total, T_total))
+        H_i[:T_half, :T_half] = self.estimator.build_H_matrix(T_half, "fd")
+        H_i[T_half:, T_half:] = np.eye(T_total - T_half)
+        for r in range(T_half):
+            H_i[r, T_half + r] = H_i[T_half + r, r] = 1.0
+            if r > 0:
+                H_i[r, T_half + r - 1] = H_i[T_half + r - 1, r] = -1.0
+        return H_i
+
+    def _filter_invalid_columns(self, Z: np.ndarray, min_coverage: float = 0.0) -> np.ndarray:
         """
         Filter out instrument columns with insufficient coverage.
 
@@ -861,8 +892,10 @@ class SystemGMM(DifferenceGMM):
         # Calculate coverage per column
         coverage = n_valid_per_col / n_obs
 
-        # Keep columns with sufficient coverage
-        valid_cols = coverage >= min_coverage
+        # Keep columns with sufficient coverage. The default keeps every
+        # column with at least one observation, as xtabond2 does (missing
+        # instrument entries are then set to zero).
+        valid_cols = (coverage > 0) & (coverage >= min_coverage)
 
         # If no columns are valid, return at least one column (all zeros)
         # This prevents dimension errors, though estimation may fail later
@@ -969,8 +1002,8 @@ class SystemGMM(DifferenceGMM):
         n_obs = Z_diff_Z.shape[0]
 
         # Filter invalid columns
-        Z_diff_clean = self._filter_invalid_columns(Z_diff_Z, min_coverage=0.10)
-        Z_level_clean = self._filter_invalid_columns(Z_level_Z, min_coverage=0.10)
+        Z_diff_clean = self._filter_invalid_columns(Z_diff_Z, min_coverage=0.0)
+        Z_level_clean = self._filter_invalid_columns(Z_level_Z, min_coverage=0.0)
 
         # Full system instruments (block diagonal)
         n_instr_total = Z_diff_clean.shape[1] + Z_level_clean.shape[1]

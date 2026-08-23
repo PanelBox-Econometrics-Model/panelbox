@@ -641,12 +641,21 @@ class DifferenceGMM:
         regressors.extend(self.endogenous_vars)
         regressors.extend(self.predetermined_vars)
 
-        # Add time dummies if requested
+        # Add time dummies if requested. They are strictly exogenous, so they
+        # are also stored on self.data to serve as their own instruments.
+        self._time_dummy_cols = []
         if self.time_dummies:
-            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", drop_first=True)
+            time_dummies = pd.get_dummies(df[self.time_var], prefix="year", dtype=float)
+            # Keep dummies only for periods inside the differenced estimation
+            # sample: the first 1 + max(lags) periods are consumed by the lag
+            # and the first difference (matches xtabond2's dummy set)
+            n_drop = 1 + max(self.lags)
+            time_dummies = time_dummies.iloc[:, n_drop:]
             for col in time_dummies.columns:
                 df[col] = time_dummies[col]
+                self.data[col] = time_dummies[col]
                 regressors.append(col)
+                self._time_dummy_cols.append(col)
 
         # First-difference transformation
         df["y_diff"] = df.groupby(self.id_var)[self.dep_var].diff()
@@ -701,6 +710,14 @@ class DifferenceGMM:
             )
             instrument_sets.append(Z_exog)
 
+        # Time dummies are strictly exogenous: each instruments itself
+        # (entering as a first difference in the differenced equation)
+        for col in getattr(self, "_time_dummy_cols", []):
+            Z_td = self.instrument_builder.create_iv_style_instruments(
+                var=col, min_lag=0, max_lag=0, equation="diff"
+            )
+            instrument_sets.append(Z_td)
+
         # Instruments for predetermined variables (GMM-style, lag 2+)
         for var in self.predetermined_vars:
             Z_pred = self.instrument_builder.create_gmm_style_instruments(
@@ -750,9 +767,7 @@ class DifferenceGMM:
 
         # Time dummies
         if self.time_dummies:
-            time_periods = sorted(self.data[self.time_var].unique())[1:]  # Drop first
-            for t in time_periods:
-                var_names.append(f"year_{t}")
+            var_names.extend(getattr(self, "_time_dummy_cols", []))
 
         return var_names
 
