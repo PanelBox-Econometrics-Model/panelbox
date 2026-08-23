@@ -5,6 +5,23 @@ All notable changes to PanelBox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-08-22
+
+### Fixed
+
+- **Dynamic GMM instruments**: time dummies now enter the instrument matrix as IV-style instruments (they were regressors only, leaving collapsed specifications with year dummies under-identified); dummies are generated only for periods inside the differenced sample; every instrument column with at least one observation is kept instead of dropping columns and collapsed lags below 10% coverage, matching xtabond2
+- **System GMM weighting**: the one-step weighting matrix now includes the off-diagonal blocks of xtabond2's default `h(3)`, linking differenced and level equations
+- **LLC unit-root test**: implemented the Levin, Lin and Chu (2002) adjustment terms (Bartlett long-run variance ratio and Table 2 mean/variance corrections); the unadjusted statistic was rejecting a true unit root almost surely
+- **IPS unit-root test**: replaced approximate moments with the IPS (2003) Table 3 values per lag order, interpolated in each entity's effective T; new `df_correction` option (default `False`, matching plm)
+
+### Changed
+
+- **Performance**: vectorized instrument construction and the Windmeijer correction; two-step system GMM on a N=2500, T=10 panel drops from 35 s to 4.6 s
+
+### Validation
+
+- Difference GMM reproduces R `plm::pgmm` to three decimals on the Arellano-Bond data; system GMM matches the pydynpd xtabond2 replica within 1-2%; IPS matches `plm::purtest` exactly and LLC within 2%. Regression tests pin these reference values.
+
 ## [1.0.0] - 2026-03-01
 
 ### Changed

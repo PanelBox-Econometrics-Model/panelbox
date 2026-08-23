@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __author__ = "Gustavo Haase, Paulo Dourado"
 __email__ = "gustavo.haase@gmail.com"
 __license__ = "MIT"
 
 # Version history
+# 1.0.2 (2026-08-22): GMM instrument/weighting fixes (xtabond2-consistent), LLC/IPS
+#                     corrections validated against plm, vectorized GMM internals
 # 1.0.0 (2026-03-01): First Stable Release
 #                     - Interactive Plotly charts for all report types
 #                     - Report System v2 with unified templates and chart builders
