@@ -288,8 +288,10 @@ class ModifiedWaldTest(ValidationTest):
         resid_df = self._prepare_residual_data()
 
         # Compute variance for each entity
-        entity_vars = resid_df.groupby("entity")["resid"].var()
-        entity_counts: pd.Series = resid_df.groupby("entity").size()
+        # Plain dicts keep the per-entity lookups free of pandas overload
+        # ambiguity across pandas/pyright versions
+        entity_vars: dict = resid_df.groupby("entity")["resid"].var().to_dict()
+        entity_counts: dict = resid_df.groupby("entity").size().to_dict()
 
         n_entities = len(entity_vars)
 
@@ -305,7 +307,7 @@ class ModifiedWaldTest(ValidationTest):
 
         # Wald statistic
         wald_stat = 0.0
-        for entity in entity_vars.index:
+        for entity in entity_vars:
             T_i = entity_counts[entity]
             sigma2_i = entity_vars[entity]
 
@@ -322,10 +324,12 @@ class ModifiedWaldTest(ValidationTest):
         metadata = {
             "n_entities": n_entities,
             "pooled_variance": pooled_var,
-            "min_entity_var": entity_vars.min(),
-            "max_entity_var": entity_vars.max(),
+            "min_entity_var": min(entity_vars.values()),
+            "max_entity_var": max(entity_vars.values()),
             "variance_ratio": (
-                entity_vars.max() / entity_vars.min() if entity_vars.min() > 0 else np.inf
+                max(entity_vars.values()) / min(entity_vars.values())
+                if min(entity_vars.values()) > 0
+                else np.inf
             ),
         }
 
