@@ -254,7 +254,7 @@ class PanelIV(PanelModel):
 
         # Build instrument matrix: all instruments + exogenous variables
         Z_vars = self.instruments + exogenous_vars
-        Z_data = self._get_dataframe()[Z_vars].values
+        Z_data = np.asarray(self._get_dataframe()[Z_vars].values, dtype=float)
 
         # Add intercept if pooled or RE
         if self.model_type_iv in ["pooled", "re"]:

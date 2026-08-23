@@ -97,17 +97,17 @@ class QuantileTreatmentEffects:
         self.d = df[self.treatment].values
 
         if self.covariates:
-            self.X = df[self.covariates].values
+            self.X = np.asarray(df[self.covariates].values, dtype=float)
         else:
             self.X = np.ones((len(self.y), 1))  # Intercept only
 
         # Store entity and time if available
-        if self.entity_col:
+        if self.entity_col is not None:
             self.entities = df[self.entity_col].values
         else:
             self.entities = None
 
-        if self.time_col:
+        if self.time_col is not None:
             self.time = df[self.time_col].values
         else:
             self.time = None
