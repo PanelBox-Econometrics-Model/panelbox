@@ -513,7 +513,10 @@ class LLCTest:
                 X_full = y_lag.reshape(-1, 1)
             resid = dy_dep - X_full @ np.linalg.lstsq(X_full, dy_dep, rcond=None)[0]
             sigma_i = float(np.sqrt(np.sum(resid**2) / len(resid)))
-            if sigma_i > 0 and len(e_tilde) > 0:
+            # A (numerically) perfect fit means the entity carries no
+            # information for the pooled regression; skip it
+            scale = max(1.0, float(np.max(np.abs(dy_dep))))
+            if sigma_i > 1e-10 * scale and len(e_tilde) > 0:
                 return (e_tilde, v_tilde, sigma_i, T_i)
         except Exception:
             logger.debug("Orthogonalization failed for entity")

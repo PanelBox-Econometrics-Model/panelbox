@@ -142,6 +142,7 @@ validation:
 
 not_in_nav: |
   /404.md
+  /regulatory/*.md
 
 extra_css:
   - stylesheets/extra.css

@@ -466,7 +466,7 @@ class TestMeanGroupEstimator:
 
         data = pd.DataFrame(rows)
         model = MeanGroupEstimator("y ~ x1", data, "entity", "time", min_obs_per_entity=10)
-        with pytest.warns(UserWarning, match="Excluded"):
+        with pytest.warns(UserWarning, match="(?i)excluded"):
             results = model.fit()
 
         summary_str = results.summary()

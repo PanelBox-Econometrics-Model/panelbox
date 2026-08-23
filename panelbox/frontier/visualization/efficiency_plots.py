@@ -349,7 +349,7 @@ def plot_efficiency_ranking(
         return fig
 
     elif backend == "matplotlib":
-        import matplotlib.cm as cm
+        import matplotlib
         import matplotlib.pyplot as plt
         from matplotlib.colors import Normalize
 
@@ -359,7 +359,7 @@ def plot_efficiency_ranking(
 
         # Color mapping
         norm = Normalize(vmin=0, vmax=1)
-        cmap = cm.get_cmap(colorscale)
+        cmap = matplotlib.colormaps[colorscale]
         colors = [cmap(norm(e)) for e in eff_normalized]
 
         # Horizontal bar chart
@@ -381,7 +381,7 @@ def plot_efficiency_ranking(
         ax.grid(True, axis="x", alpha=0.3)
 
         # Add colorbar
-        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm = matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         cbar = plt.colorbar(sm, ax=ax)
         cbar.set_label("Efficiency (normalized)", rotation=270, labelpad=20)

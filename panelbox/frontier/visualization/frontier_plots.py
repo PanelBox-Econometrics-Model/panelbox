@@ -168,7 +168,7 @@ def plot_frontier_2d(
         return fig
 
     elif backend == "matplotlib":
-        import matplotlib.cm as cm
+        import matplotlib
         import matplotlib.pyplot as plt
         from matplotlib.colors import Normalize
 
@@ -176,7 +176,7 @@ def plot_frontier_2d(
 
         # Color mapping for efficiency
         norm = Normalize(vmin=eff_sample.min(), vmax=eff_sample.max())
-        cmap = cm.get_cmap("RdYlGn")
+        cmap = matplotlib.colormaps["RdYlGn"]
         [cmap(norm(e)) for e in eff_sample]
 
         # Observations

@@ -19,7 +19,9 @@ def _fit_or_skip(model_cls, formula, df, entity, time, **fit_kwargs):
         result = model_cls(formula, df, entity, time).fit(**fit_kwargs)
     except (np.linalg.LinAlgError, ValueError):
         assume(False)
+    assume(np.all(np.isfinite(result.params.values)))
     assume(np.all(np.isfinite(result.std_errors.values)))
+    assume(np.all(result.std_errors.values > 0))
     return result
 
 

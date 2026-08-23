@@ -318,9 +318,15 @@ class RandomEffects(PanelModel):
         std_errors = np.sqrt(np.diag(vcov))
 
         # Compute panel R-squared measures
-        rsquared_within, rsquared_between, rsquared_overall = compute_panel_rsquared(
-            y, fitted, resid, entities
-        )
+        rsquared_within, rsquared_between, _ = compute_panel_rsquared(y, fitted, resid, entities)
+        # GLS fitted values do not minimize the OLS residual sum of squares,
+        # so 1 - RSS/TSS can be negative. Use the squared correlation between
+        # fitted and observed values (Stata's xtreg, re convention).
+        y_flat, fitted_flat = np.asarray(y).ravel(), np.asarray(fitted).ravel()
+        if np.std(y_flat) > 0 and np.std(fitted_flat) > 0:
+            rsquared_overall = float(np.corrcoef(y_flat, fitted_flat)[0, 1] ** 2)
+        else:
+            rsquared_overall = 0.0
 
         # Adjusted R-squared (overall)
         rsquared_adj = 1 - (1 - rsquared_overall) * (n - 1) / df_resid

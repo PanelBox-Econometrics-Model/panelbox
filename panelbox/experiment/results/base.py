@@ -52,9 +52,7 @@ class BaseResult(ABC):
     >>> result.save_json("result.json")
     """
 
-    def __init__(
-        self, timestamp: datetime | None = None, metadata: dict[str, Any] | None = None
-    ):
+    def __init__(self, timestamp: datetime | None = None, metadata: dict[str, Any] | None = None):
         """
         Initialize BaseResult.
 
