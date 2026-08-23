@@ -517,7 +517,11 @@ def plot_efficiency_boxplot(
         data = list(groups.values)
 
         # Box plot
-        bp = ax.boxplot(data, labels=labels, patch_artist=True, notch=True, showmeans=True)
+        # `labels` was renamed to `tick_labels` in matplotlib 3.9 and removed later;
+        # setting the tick labels afterwards works on every supported version
+        bp = ax.boxplot(data, patch_artist=True, notch=True, showmeans=True)
+        ax.set_xticks(range(1, len(labels) + 1))
+        ax.set_xticklabels(labels)
 
         # Color boxes
         colors = plt.cm.Set3(np.linspace(0, 1, len(labels)))
